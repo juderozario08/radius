@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func RequireAuth() gin.HandlerFunc {
@@ -26,11 +28,26 @@ func RequireAuth() gin.HandlerFunc {
 		}
 
 		tokenString := split[1]
-		if tokenString == "" {
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+			_, ok := token.Method.(*jwt.SigningMethodHMAC)
+			if !ok {
+				return nil, fmt.Errorf("Unexpected signing method")
+			}
+			return []byte(os.Getenv("JWT_SECRET")), nil
+		})
+		if err != nil || !token.Valid {
 			fmt.Println("Invalid token: ", tokenString)
-			ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid token!"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
-		fmt.Println("Welcome " + ctx.ClientIP() + "!")
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if ok {
+			ctx.Set("employee_id", claims["employee_id"])
+			ctx.Set("role", claims["role"])
+		}
+		ctx.Set("token_string", tokenString)
+		ctx.Next()
 	}
 }

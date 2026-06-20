@@ -1,0 +1,16 @@
+CREATE TYPE measuring_units AS ENUM ('EACH', 'CASE', 'PACK') ;
+CREATE TYPE employee_roles AS ENUM ('SALES', 'SERVICE', 'MANAGER', 'ADMIN') ;
+CREATE TYPE stock_transfer_status AS ENUM ('PENDING', 'IN_TRANSIT', 'RECEIVED', 'CANCELLED');
+CREATE TYPE purchase_orders_status AS ENUM ('DRAFT', 'SENT', 'PARTIAL', 'RECEIVED', 'CANCELLED');
+CREATE TYPE out_of_stock_log_detected_by AS ENUM ('SYSTEM', 'EMPLOYEE');
+CREATE TYPE out_of_stock_log_resolution AS ENUM ('RESTOCKED', 'DISCONTINUED', 'RELOCATED');
+CREATE TYPE fill_reports_status AS ENUM ('OPEN', 'IN_PROGRESS', 'COMPLETED') ;
+CREATE TYPE price_tag_jobs_job_type AS ENUM ('PLANOGRAM', 'PRICE CHANGE', 'NEW ITEM', 'CLEARANCE');
+CREATE TYPE price_tag_jobs_status AS ENUM ('PENDING', 'PRINTED') ;
+CREATE TYPE price_tag_job_items_label_template AS ENUM ('SHELF TAG', 'SMALL BUSINESS', 'BUSINESS', 'LARGE', 'CLEARANCE');
+CREATE TYPE transactions_type AS ENUM ('SALE', 'RETURN', 'VOID') ;
+CREATE TYPE transactions_payment_method AS ENUM ('CASH', 'CARD', 'GIFT CARD') ;
+CREATE TYPE transactions_status AS ENUM ('COMPLETED', 'VOIDED', 'REFUNDED') ;
+CREATE TYPE online_order_type AS ENUM ('PICKUP', 'DELIVERY', 'SHIPPING') ;
+CREATE TYPE online_order_status AS ENUM ('PLACED', 'PICKING', 'PACKED', 'READY', 'OUT FOR DELIVERY', 'COMPLETED', 'CANCELLED') ;
+CREATE TYPE cycle_count_status AS ENUM ('NOT STARTED', 'IN PROGRESS', 'COMPLETED') ;

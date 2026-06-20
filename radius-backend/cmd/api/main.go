@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"radius/internal/auth"
+	"radius/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -65,7 +65,7 @@ func main() {
 	router.POST("/register", Signup)
 
 	api := router.Group("/api")
-	api.Use(auth.RequireAuth)
+	api.Use(middleware.RequireAuth())
 	{
 		api.POST("/login", Login)
 		api.POST("/logout")

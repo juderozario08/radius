@@ -2,57 +2,27 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"radius/internal/database"
 	"radius/internal/middleware"
+	"radius/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-type SignupBody struct {
-	FirstName       string `json:"first_name" binding:"required"`
-	LastName        string `json:"last_name" binding:"required"`
-	Email           string `json:"email" binding:"required"`
-	Password        string `json:"password" binding:"required"`
-	ConfirmPassword string `json:"confirm_password" binding:"required"`
-}
-
-type LoginBody struct {
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
-func Login(ctx *gin.Context) {
-	var body LoginBody
-
-	err := ctx.ShouldBindJSON(&body)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "Data received",
-		"email":   body.Email,
-	})
-}
-
-func Signup(ctx *gin.Context) {
-	var body SignupBody
-
-	err := ctx.ShouldBindJSON(&body)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "Data received",
-		"name":    body.FirstName + " " + body.LastName,
-		"email":   body.Email,
-	})
-}
-
 func main() {
+	db, err := database.ConnectDB()
+	if err != nil {
+		log.Printf("Error connecting to database: %v\n", err)
+	}
+
+	err = db.RunMigrations("migrations")
+	if err != nil {
+		log.Printf("Could not run migrations: %v\n", err)
+	}
+
 	router := gin.Default()
 
 	router.GET("/health", func(ctx *gin.Context) {
@@ -62,16 +32,20 @@ func main() {
 		})
 	})
 
-	router.POST("/register", Signup)
+	router.POST("/register", service.Register)
+	router.POST("/login", service.Login)
 
 	api := router.Group("/api")
 	api.Use(middleware.RequireAuth())
 	{
-		api.POST("/login", Login)
-		api.POST("/logout")
+		api.POST("/logout", service.Logout)
 	}
 
-	fmt.Println("Listening on PORT 8080")
-	fmt.Println("http://0.0.0.0:8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	fmt.Println("Listening on PORT " + port)
+	fmt.Println("http://0.0.0.0:" + port)
 	router.Run()
 }

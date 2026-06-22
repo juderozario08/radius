@@ -1,0 +1,16 @@
+DROP TYPE measuring_units;
+DROP TYPE employee_roles;
+DROP TYPE stock_transfer_status;
+DROP TYPE purchase_orders_status;
+DROP TYPE out_of_stock_log_detected_by;
+DROP TYPE out_of_stock_log_resolution;
+DROP TYPE fill_reports_status;
+DROP TYPE price_tag_jobs_job_type;
+DROP TYPE price_tag_jobs_status;
+DROP TYPE price_tag_job_items_label_template;
+DROP TYPE transactions_type;
+DROP TYPE transactions_payment_method;
+DROP TYPE transactions_status;
+DROP TYPE online_order_type;
+DROP TYPE online_order_status;
+DROP TYPE cycle_count_status;

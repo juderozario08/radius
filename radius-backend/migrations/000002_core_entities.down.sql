@@ -1,0 +1,5 @@
+DROP TABLE stores CASCADE;
+DROP TABLE categories CASCADE;
+DROP TABLE suppliers CASCADE;
+DROP TABLE products CASCADE;
+DROP TABLE product_suppliers CASCADE;

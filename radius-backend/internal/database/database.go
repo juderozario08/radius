@@ -10,6 +10,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database"
 	_ "github.com/golang-migrate/migrate/v4/database/multistmt"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
 
@@ -20,7 +21,7 @@ type DB struct {
 func ConnectDB() (*DB, error) {
 	connectionString := os.Getenv("DATABASE_URL")
 	if connectionString == "" {
-		return nil, fmt.Errorf("DATABASE_URL environment variable not set")
+		return nil, fmt.Errorf("DATABASE_URL environment variable not set\n")
 	}
 
 	db, err := sql.Open("postgres", connectionString)
@@ -42,16 +43,16 @@ func (d *DB) RunMigrations(migrationsPath string) error {
 
 	driver, err := postgres.WithInstance(d.DB, &postgres.Config{})
 	if err != nil {
-		return fmt.Errorf("Creating migration driver: %w", err)
+		return fmt.Errorf("Creating migration driver: %w\n", err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance("file://"+migrationsPath, "postgres", driver)
 	if err != nil {
-		return fmt.Errorf("Loading migration files: %w", err)
+		return fmt.Errorf("Loading migration files: %w\n", err)
 	}
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("running migrations: %w", err)
+		return fmt.Errorf("Error running migrations: %w\n", err)
 	}
 
 	return nil

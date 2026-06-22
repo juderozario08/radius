@@ -1,0 +1,2 @@
+DROP TABLE employees CASCADE;
+DROP TABLE sessions CASCADE;

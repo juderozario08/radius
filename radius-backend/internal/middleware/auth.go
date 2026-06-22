@@ -32,7 +32,7 @@ func RequireAuth() gin.HandlerFunc {
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 			_, ok := token.Method.(*jwt.SigningMethodHMAC)
 			if !ok {
-				return nil, fmt.Errorf("Unexpected signing method")
+				return nil, fmt.Errorf("Unexpected signing method\n")
 			}
 			return []byte(os.Getenv("JWT_SECRET")), nil
 		})

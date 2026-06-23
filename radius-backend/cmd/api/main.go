@@ -7,6 +7,7 @@ import (
 	"radius/internal/database"
 	"radius/internal/repository"
 	"radius/internal/router"
+	"radius/internal/service"
 
 	"github.com/joho/godotenv"
 )
@@ -29,7 +30,31 @@ func main() {
 		log.Printf("Could not run migrations: %v\n", err)
 	}
 
-	employeeRepo := repository.NewEmployeeRepo(db)
+	employeeRepo := repository.NewEmployeeRepo(db.DB)
+	_ = employeeRepo
+	sessionRepo := repository.NewSessionRepo(db.DB)
+	_ = sessionRepo
+	storeRepo := repository.NewStoreRepo(db.DB)
+	_ = storeRepo
+	inventoryRepo := repository.NewInventoryRepo(db.DB)
+	_ = inventoryRepo
+	merchandisingRepo := repository.NewMerchandisingRepo(db.DB)
+	_ = merchandisingRepo
+	ordersRepo := repository.NewOrdersRepo(db.DB)
+	_ = ordersRepo
+	productsRepo := repository.NewProductRepo(db.DB)
+	_ = productsRepo
+	salesRepo := repository.NewSalesRepo(db.DB)
+	_ = salesRepo
+
+	jwtSecretCode := os.Getenv("JWT_SECRET_CODE")
+	if jwtSecretCode == "" {
+		log.Printf("Could not find JWT_SECRET_CODE\n")
+		return
+	}
+
+	authService := service.NewAuthService(employeeRepo, sessionRepo, []byte(jwtSecretCode))
+	_ = authService
 
 	router := router.NewRouter()
 

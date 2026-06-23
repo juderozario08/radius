@@ -7,11 +7,11 @@ import (
 )
 
 type InventoryRepo struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
-func GetInventoryRepo(db *sql.DB) *InventoryRepo {
-	return &InventoryRepo{db: db}
+func NewInventoryRepo(db *sql.DB) *InventoryRepo {
+	return &InventoryRepo{DB: db}
 }
 
 func (db *InventoryRepo) GetProductBySku(ctx context.Context, sku int) (*models.Employee, error) {

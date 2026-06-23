@@ -7,11 +7,11 @@ import (
 )
 
 type EmployeeRepo struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 func NewEmployeeRepo(db *sql.DB) *EmployeeRepo {
-	return &EmployeeRepo{db: db}
+	return &EmployeeRepo{DB: db}
 }
 
 func (db *EmployeeRepo) GetByEmail(ctx context.Context, email string) (*models.Employee, error) {

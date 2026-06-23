@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"net/mail"
+	"radius/internal/repository"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +20,20 @@ type SignupBody struct {
 type LoginBody struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type AuthService struct {
+	employeeRepo *repository.EmployeeRepo
+	sessionRepo  *repository.SessionRepo
+	jwtSecret    []byte
+}
+
+func NewAuthService(employeeRepo *repository.EmployeeRepo, sessionRepo *repository.SessionRepo, jwtSecret []byte) *AuthService {
+	return &AuthService{
+		employeeRepo: employeeRepo,
+		sessionRepo:  sessionRepo,
+		jwtSecret:    jwtSecret,
+	}
 }
 
 func Login(ctx *gin.Context) {

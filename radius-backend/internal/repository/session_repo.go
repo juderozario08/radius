@@ -7,11 +7,11 @@ import (
 )
 
 type SessionRepo struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 func NewSessionRepo(db *sql.DB) *SessionRepo {
-	return &SessionRepo{db: db}
+	return &SessionRepo{DB: db}
 }
 
 func (db *EmployeeRepo) GetSessionByToken(ctx context.Context, email string) (*models.Employee, error) {

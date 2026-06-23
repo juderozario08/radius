@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"radius/internal/database"
+	"radius/internal/handler"
 	"radius/internal/repository"
 	"radius/internal/router"
 	"radius/internal/service"
@@ -31,32 +32,25 @@ func main() {
 	}
 
 	employeeRepo := repository.NewEmployeeRepo(db.DB)
-	_ = employeeRepo
 	sessionRepo := repository.NewSessionRepo(db.DB)
-	_ = sessionRepo
-	storeRepo := repository.NewStoreRepo(db.DB)
-	_ = storeRepo
-	inventoryRepo := repository.NewInventoryRepo(db.DB)
-	_ = inventoryRepo
-	merchandisingRepo := repository.NewMerchandisingRepo(db.DB)
-	_ = merchandisingRepo
-	ordersRepo := repository.NewOrdersRepo(db.DB)
-	_ = ordersRepo
-	productsRepo := repository.NewProductRepo(db.DB)
-	_ = productsRepo
-	salesRepo := repository.NewSalesRepo(db.DB)
-	_ = salesRepo
+	// storeRepo := repository.NewStoreRepo(db.DB)
+	// inventoryRepo := repository.NewInventoryRepo(db.DB)
+	// merchandisingRepo := repository.NewMerchandisingRepo(db.DB)
+	// ordersRepo := repository.NewOrdersRepo(db.DB)
+	// productsRepo := repository.NewProductRepo(db.DB)
+	// salesRepo := repository.NewSalesRepo(db.DB)
 
-	jwtSecretCode := os.Getenv("JWT_SECRET_CODE")
+	jwtSecretCode := os.Getenv("JWT_SECRET_KEY")
 	if jwtSecretCode == "" {
-		log.Printf("Could not find JWT_SECRET_CODE\n")
+		log.Printf("Could not find JWT_SECRET_KEY\n")
 		return
 	}
 
 	authService := service.NewAuthService(employeeRepo, sessionRepo, []byte(jwtSecretCode))
-	_ = authService
 
-	router := router.NewRouter()
+	router := router.New(router.Handlers{
+		AuthHandler: handler.NewAuthHandler(authService),
+	})
 
 	port := os.Getenv("PORT")
 	if port == "" {

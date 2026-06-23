@@ -14,14 +14,14 @@ func NewSessionRepo(db *sql.DB) *SessionRepo {
 	return &SessionRepo{DB: db}
 }
 
-func (db *EmployeeRepo) GetSessionByToken(ctx context.Context, email string) (*models.Employee, error) {
+func (r *EmployeeRepo) GetSessionByToken(ctx context.Context, email string) (*models.Employee, error) {
 	return nil, nil
 }
 
-func (db *EmployeeRepo) GetAllSessions(ctx context.Context, id int) (*models.Employee, error) {
+func (r *EmployeeRepo) GetAllSessions(ctx context.Context, id int) (*models.Employee, error) {
 	return nil, nil
 }
 
-func (db *EmployeeRepo) CreateSession(ctx context.Context, model models.Employee) (*models.Employee, error) {
+func (r *EmployeeRepo) CreateSession(ctx context.Context, model models.Employee) (*models.Employee, error) {
 	return nil, nil
 }

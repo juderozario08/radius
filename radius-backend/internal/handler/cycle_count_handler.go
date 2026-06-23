@@ -1,6 +1,7 @@
 package handler
 
-type CycleCountHandler struct {
+type CycleCountHandler struct{}
 
+func NewCycleCountHandler() *CycleCountHandler {
+	return &CycleCountHandler{}
 }
-

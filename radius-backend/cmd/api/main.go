@@ -47,9 +47,35 @@ func main() {
 	}
 
 	authService := service.NewAuthService(employeeRepo, sessionRepo, []byte(jwtSecretCode))
+	// barcodeService := service.NewBarcodeService()
+	// cycleCountService := service.NewCycleCountService()
+	// fillReportService := service.NewFillReportService()
+	// inventoryService := service.NewInventoryService()
+	// onlineOrderService := service.NewOnlineOrderService()
+	// outOfStockService := service.NewOutOfStockService()
+	// planogramService := service.NewPlanogramService()
+	// posService := service.NewPOSService()
+	// pricingService := service.NewPricingService()
+	// productService := service.NewProductService()
+	// storeService := service.NewStoreService()
+	// transactionService := service.NewTransactionService()
+	// transferService := service.NewTransferService()
 
-	router := router.New(router.Handlers{
-		AuthHandler: handler.NewAuthHandler(authService),
+	router := router.NewRouter(router.Handlers{
+		AuthHandler:        handler.NewAuthHandler(authService),
+		BarcodeHandler:     handler.NewBarcodeHandler(),
+		CycleCountHandler:  handler.NewCycleCountHandler(),
+		FillReportHandler:  handler.NewFillReportHandler(),
+		InventoryHandler:   handler.NewInventoryHandler(),
+		OnlineOrderHandler: handler.NewOnlineOrderHandler(),
+		OutOfStockHandler:  handler.NewOutOfStockHandler(),
+		PlanogramHandler:   handler.NewPlanogramHandler(),
+		POSHandler:         handler.NewPOSHandler(),
+		PricingHandler:     handler.NewPricingHandler(),
+		ProductHandler:     handler.NewProductHandler(),
+		StoreHandler:       handler.NewStoreHandler(),
+		TransactionHandler: handler.NewTransactionHandler(),
+		TransferHandler:    handler.NewTransactionHandler(),
 	})
 
 	port := os.Getenv("PORT")

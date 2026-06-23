@@ -26,7 +26,7 @@ type Handlers struct {
 	TransferHandler    *handler.TransactionHandler
 }
 
-func New(h Handlers) *gin.Engine {
+func NewRouter(h Handlers) *gin.Engine {
 	ginMode := os.Getenv("GIN_MODE")
 	switch ginMode {
 	case "", "debug":

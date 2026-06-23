@@ -1,4 +1,7 @@
 package handler
 
-type PlanogramHandler struct {}
+type PlanogramHandler struct{}
 
+func NewPlanogramHandler() *PlanogramHandler {
+	return &PlanogramHandler{}
+}

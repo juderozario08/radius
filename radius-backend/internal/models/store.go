@@ -39,6 +39,22 @@ type Employee struct {
 	IsActive   bool         `json:"is_active"`
 }
 
+type EmployeeWithPassword struct {
+	EmployeeId   int          `json:"employee_id"   binding:"required"`
+	Email        string       `json:"email"         binding:"required,email"`
+	PasswordHash string       `json:"password_hash" binding:"required"`
+	StoreId      int          `json:"store_id"      binding:"required"`
+	FirstName    string       `json:"first_name"    binding:"required"`
+	LastName     string       `json:"last_name"     binding:"required"`
+	Role         EmployeeRole `json:"role"          binding:"required"`
+	Phone        string       `json:"phone"         binding:"required"`
+	Address      string       `json:"address"       binding:"required"`
+	City         string       `json:"city"          binding:"required"`
+	Province     string       `json:"province"      binding:"required"`
+	PostalCode   string       `json:"postal_code"   binding:"required"`
+	IsActive     bool         `json:"is_active"`
+}
+
 type CreateEmployeeRequest struct {
 	Email           string       `json:"email"            binding:"required,email"`
 	StoreId         int          `json:"store_id"         binding:"required"`
@@ -55,7 +71,15 @@ type CreateEmployeeRequest struct {
 	IsActive        bool         `json:"is_active"`
 }
 
-type CreateEmployee struct {
+type CreateEmployeeResponse struct {
+	EmployeeId int    `json:"employee_id" binding:"required"`
+	FirstName  string `json:"first_name"  binding:"required"`
+	LastName   string `json:"last_name"   binding:"required"`
+	StoreId    string `json:"store_id"    binding:"required"`
+	Role       string `json:"role"        binding:"required"`
+}
+
+type CreateEmployeeRow struct {
 	Email        string       `json:"email"`
 	StoreId      int          `json:"store_id"`
 	FirstName    string       `json:"first_name"`

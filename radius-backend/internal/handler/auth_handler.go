@@ -33,19 +33,12 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, gin.H{
-		"message":     "New employee created",
-		"id":          employee.EmployeeId,
-		"email":       employee.Email,
-		"store_id":    employee.StoreId,
-		"first_name":  employee.FirstName,
-		"last_name":   employee.LastName,
-		"role":        employee.Role,
-		"phone":       employee.Phone,
-		"address":     employee.Address,
-		"city":        employee.City,
-		"province":    employee.Province,
-		"postal_code": employee.PostalCode,
-		"is_active":   employee.IsActive,
+		"message":    "New employee created",
+		"id":         employee.EmployeeId,
+		"store_id":   employee.StoreId,
+		"first_name": employee.FirstName,
+		"last_name":  employee.LastName,
+		"role":       employee.Role,
 	})
 }
 

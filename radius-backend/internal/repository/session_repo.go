@@ -14,7 +14,7 @@ func NewSessionRepo(db *sql.DB) *SessionRepo {
 	return &SessionRepo{DB: db}
 }
 
-func (r *EmployeeRepo) GetSessionByToken(ctx context.Context, email string) (*models.Employee, error) {
+func (r *EmployeeRepo) GetSessionByToken(ctx context.Context, email string) (*models.Session, error) {
 	return nil, nil
 }
 
@@ -22,6 +22,6 @@ func (r *EmployeeRepo) GetAllSessions(ctx context.Context, id int) (*models.Empl
 	return nil, nil
 }
 
-func (r *EmployeeRepo) CreateSession(ctx context.Context, model models.Employee) (*models.Employee, error) {
+func (r *SessionRepo) CreateSession(ctx context.Context, model models.CreateSessionRequest) (*models.CreateSessionResponse, error) {
 	return nil, nil
 }

@@ -13,3 +13,12 @@ type Session struct {
 	CreatedAt  time.Time  `json:"created_at"`
 	ExpiresAt  *time.Time `json:"expires_at"`
 }
+
+type CreateSessionRequest struct {
+	Token string `json:"token"`
+}
+
+type CreateSessionResponse struct {
+	SessionId  int `json:"session_id"`
+	EmployeeId int `json:"employee_id"`
+}

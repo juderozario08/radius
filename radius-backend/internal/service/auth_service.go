@@ -66,7 +66,8 @@ func (s *AuthService) Register(ctx context.Context, model models.CreateEmployeeR
 	return employee, nil
 }
 
-func (s *AuthService) Login(ctx context.Context) {
+func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginRequest) (employee *models.Employee, token string, err error) {
+	return nil, "", nil
 }
 
 func checkEmailPattern(email string) bool {

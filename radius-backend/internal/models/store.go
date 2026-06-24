@@ -26,15 +26,15 @@ const (
 
 type Employee struct {
 	EmployeeId int          `json:"employee_id" binding:"required"`
-	Email      string       `json:"email" binding:"required,email"`
-	StoreId    int          `json:"store_id" binding:"required"`
-	FirstName  string       `json:"first_name" binding:"required"`
-	LastName   string       `json:"last_name" binding:"required"`
-	Role       EmployeeRole `json:"role" binding:"required"`
-	Phone      string       `json:"phone" binding:"required"`
-	Address    string       `json:"address" binding:"required"`
-	City       string       `json:"city" binding:"required"`
-	Province   string       `json:"province" binding:"required"`
+	Email      string       `json:"email"       binding:"required,email"`
+	StoreId    int          `json:"store_id"    binding:"required"`
+	FirstName  string       `json:"first_name"  binding:"required"`
+	LastName   string       `json:"last_name"   binding:"required"`
+	Role       EmployeeRole `json:"role"        binding:"required"`
+	Phone      string       `json:"phone"       binding:"required"`
+	Address    string       `json:"address"     binding:"required"`
+	City       string       `json:"city"        binding:"required"`
+	Province   string       `json:"province"    binding:"required"`
 	PostalCode string       `json:"postal_code" binding:"required"`
 	IsActive   bool         `json:"is_active"`
 }
@@ -68,4 +68,17 @@ type CreateEmployee struct {
 	Province     string       `json:"province"`
 	PostalCode   string       `json:"postal_code"`
 	IsActive     bool         `json:"is_active"`
+}
+
+type EmployeeLoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+type EmployeeLoginResponse struct {
+	Token      string       `json:"token"`
+	EmployeeId int          `json:"employee_id"`
+	LastName   string       `json:"last_name"`
+	Role       EmployeeRole `json:"role"`
+	StoreId    int          `json:"store_id"`
 }

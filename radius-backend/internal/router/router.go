@@ -46,7 +46,7 @@ func NewRouter(h Handlers) *gin.Engine {
 		})
 	})
 
-	router.POST("/register", h.AuthHandler.Register)
+	router.POST("/create_employee", h.AuthHandler.Register)
 	router.POST("/login", h.AuthHandler.Login)
 
 	api := router.Group("/api")

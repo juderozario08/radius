@@ -3,25 +3,103 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"radius/internal/models"
 )
 
 type SessionRepo struct {
-	DB *sql.DB
+	db *sql.DB
 }
 
 func NewSessionRepo(db *sql.DB) *SessionRepo {
-	return &SessionRepo{DB: db}
+	return &SessionRepo{db: db}
 }
 
-func (r *EmployeeRepo) GetSessionByToken(ctx context.Context, email string) (*models.Session, error) {
-	return nil, nil
+func (r *SessionRepo) GetSessionByHashedToken(ctx context.Context, tokenHash string) (*models.Session, error) {
+	var session models.Session
+	query := `
+		SELECT session_id, employee_id, store_id, token_hash
+		FROM sessions
+		WHERE token_hash = $1
+	`
+	err := r.db.QueryRowContext(ctx, query, tokenHash).Scan(
+		&session.SessionId, &session.EmployeeId, &session.StoreId, &session.TokenHash,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &session, nil
 }
 
-func (r *EmployeeRepo) GetAllSessions(ctx context.Context, id int) (*models.Employee, error) {
-	return nil, nil
+func (r *SessionRepo) GetSessionById(ctx context.Context, id int) (*models.Session, error) {
+	var session models.Session
+	query := `
+		SELECT session_id, employee_id, store_id, token_hash
+		FROM sessions
+		WHERE session_id = $1
+	`
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&session.SessionId, &session.EmployeeId, &session.StoreId, &session.TokenHash,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &session, nil
+}
+
+func (r *SessionRepo) DeleteSessionById(ctx context.Context, id int) error {
+	query := `DELETE FROM sessions WHERE session_id = $1;`
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("No session found with that ID")
+	}
+
+	return nil
+}
+
+func (r *SessionRepo) DeleteSessionByHashedToken(ctx context.Context, tokenHash string) error {
+	query := `DELETE FROM sessions WHERE token_hash = $1;`
+	result, err := r.db.ExecContext(ctx, query, tokenHash)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("No session found with that token")
+	}
+
+	return nil
 }
 
 func (r *SessionRepo) CreateSession(ctx context.Context, model models.CreateSessionRequest) (*models.CreateSessionResponse, error) {
-	return nil, nil
+	var session models.CreateSessionResponse
+	query := `
+		INSERT INTO sessions (employee_id, token_hash, ip_address, expires_at, store_id)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING session_id, employee_id, store_id;
+	`
+	err := r.db.QueryRowContext(
+		ctx, query, model.EmployeeId, model.TokenHash,
+		model.IpAddress.String(), model.ExpiresAt, model.StoreId,
+	).Scan(&session.SessionId, &session.EmployeeId, &session.StoreId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &session, nil
 }

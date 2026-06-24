@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
+	"radius/internal/service"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func RequireAuth() gin.HandlerFunc {
+func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
@@ -34,18 +34,30 @@ func RequireAuth() gin.HandlerFunc {
 			if !ok {
 				return nil, fmt.Errorf("Unexpected signing method\n")
 			}
-			return []byte(os.Getenv("JWT_SECRET")), nil
+			return secret, nil
 		})
-		if err != nil || !token.Valid {
-			fmt.Println("Invalid token: ", tokenString)
+		if err != nil {
+			log.Println("JWT Parsing Error: ", err.Error())
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			return
+		}
+		if !token.Valid {
+			log.Println("Token is invalid (no specific error)")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
+		err = authService.ValidateSession(ctx.Request.Context(), tokenString)
+		if err != nil {
+			log.Println("Session not found. Error: ", err.Error())
+			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Session not found. Error: " + err.Error()})
+			return
+		}
+
+		_, ok := token.Claims.(jwt.MapClaims)
 		if ok {
-			ctx.Set("employee_id", claims["employee_id"])
-			ctx.Set("role", claims["role"])
+			// ctx.Set("employee_id", claims["employee_id"])
+			// ctx.Set("role", claims["role"])
 		}
 		ctx.Set("token_string", tokenString)
 		ctx.Next()

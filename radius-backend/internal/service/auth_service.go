@@ -2,40 +2,47 @@ package service
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
-	"log"
-	"net/http"
-	"net/mail"
-	"os"
+	"net"
 	"radius/internal/models"
 	"radius/internal/repository"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	EmployeeRepo *repository.EmployeeRepo
-	SessionRepo  *repository.SessionRepo
-	JWTSecret    []byte
+	employeeRepo *repository.EmployeeRepo
+	sessionRepo  *repository.SessionRepo
+	jwtSecret    []byte
 }
 
 func NewAuthService(employeeRepo *repository.EmployeeRepo, sessionRepo *repository.SessionRepo, jwtSecret []byte) *AuthService {
 	return &AuthService{
-		EmployeeRepo: employeeRepo,
-		SessionRepo:  sessionRepo,
-		JWTSecret:    jwtSecret,
+		employeeRepo: employeeRepo,
+		sessionRepo:  sessionRepo,
+		jwtSecret:    jwtSecret,
 	}
 }
 
-func (s *AuthService) generateToken(id int, email string, role string) (string, error) {
+func (s *AuthService) generateToken(id int, email string, role models.EmployeeRole) (string, error) {
 	claims := jwt.MapClaims{
 		"id":    id,
 		"email": email,
 		"role":  role,
+		"exp":   jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	return token.SignedString(s.jwtSecret)
+}
+
+func (s *AuthService) hashTokenForDB(token string) string {
+	t := sha256.Sum256([]byte(token))
+	hash := hex.EncodeToString(t[:])
+	return hash
 }
 
 func (s *AuthService) hashPassword(password string) (string, error) {
@@ -58,19 +65,21 @@ func (s *AuthService) Register(ctx context.Context, model models.CreateEmployeeR
 		return nil, err
 	}
 
-	employee, err := s.EmployeeRepo.CreateEmployee(ctx, models.CreateEmployeeRow{
-		Email:        model.Email,
-		StoreId:      model.StoreId,
-		FirstName:    model.FirstName,
-		LastName:     model.LastName,
-		Role:         model.Role,
+	employee, err := s.employeeRepo.CreateEmployee(ctx, models.CreateEmployeeRow{
 		PasswordHash: hash,
-		Phone:        model.Phone,
-		Address:      model.Address,
-		City:         model.City,
-		Province:     model.Province,
-		PostalCode:   model.PostalCode,
-		IsActive:     model.IsActive,
+		EmployeeBase: models.EmployeeBase{
+			Email:      model.Email,
+			StoreId:    model.StoreId,
+			FirstName:  model.FirstName,
+			LastName:   model.LastName,
+			Role:       model.Role,
+			Phone:      model.Phone,
+			Address:    model.Address,
+			City:       model.City,
+			Province:   model.Province,
+			PostalCode: model.PostalCode,
+			IsActive:   model.IsActive,
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -79,34 +88,72 @@ func (s *AuthService) Register(ctx context.Context, model models.CreateEmployeeR
 	return employee, nil
 }
 
-func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginRequest) (*models.EmployeeLoginResponse, string, error) {
-	employee, err := s.EmployeeRepo.GetByEmail(ctx, model.Email)
+func (s *AuthService) ValidateSession(ctx context.Context, tokenString string) error {
+	hashedToken := s.hashTokenForDB(tokenString)
+	_, err := s.sessionRepo.GetSessionByHashedToken(ctx, hashedToken)
 	if err != nil {
-		return nil, "", err
+		return errors.New("Session not found, expired or logged out")
+	}
+
+	return nil
+}
+
+func (s *AuthService) createSession(ctx context.Context, employeeId int, role models.EmployeeRole, email string, ipAddress string, storeId int) (string, int, error) {
+	token, err := s.generateToken(employeeId, email, role)
+	if err != nil {
+		return "", -1, err
+	}
+
+	tokenHash := s.hashTokenForDB(token)
+	expiresAt := time.Now().Add(time.Hour * 24)
+
+	session, err := s.sessionRepo.CreateSession(ctx, models.CreateSessionRequest{
+		EmployeeId: employeeId,
+		StoreId:    storeId,
+		IpAddress:  net.ParseIP(ipAddress),
+		TokenHash:  tokenHash,
+		ExpiresAt:  expiresAt,
+	})
+	if err != nil {
+		return "", -1, err
+	}
+
+	return token, session.SessionId, nil
+}
+
+func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginRequest, ipAddress string) (*models.EmployeeLoginResponse, error) {
+	employee, err := s.employeeRepo.GetByEmail(ctx, model.Email)
+	if err != nil {
+		return nil, err
+	}
+	if employee == nil {
+		return nil, errors.New("Invalid Credentials")
 	}
 
 	if !s.checkPasswordHash(model.Password, employee.PasswordHash) {
-		return nil, "", errors.New("Password does not match")
+		return nil, errors.New("Invalid Credentials")
 	}
 
-	// TODO: DO SESSION TOKEN LOGIC HERE
-	token, err := s.generateToken(employee.EmployeeId, employee.Email, string(employee.Role))
+	token, sessionId, err := s.createSession(ctx, employee.EmployeeId, employee.Role, employee.Email, ipAddress, employee.StoreId)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	s.SessionRepo.Create
-	return &models.EmployeeLoginResponse{}, "", nil
+	return &models.EmployeeLoginResponse{
+		SessionId:  sessionId,
+		Token:      token,
+		EmployeeId: employee.EmployeeId,
+		LastName:   employee.LastName,
+		Role:       employee.Role,
+		StoreId:    employee.StoreId,
+	}, nil
 }
 
-func checkEmailPattern(email string) bool {
-	_, err := mail.ParseAddress(email)
+func (s *AuthService) Logout(ctx context.Context, tokenString string) error {
+	hashedToken := s.hashTokenForDB(tokenString)
+	err := s.sessionRepo.DeleteSessionByHashedToken(ctx, hashedToken)
 	if err != nil {
-		log.Printf("%v is invalid: %v\n", email, err)
-		return false
+		return err
 	}
-	return true
-}
-
-func (s *AuthService) Logout(ctx context.Context) {
+	return nil
 }

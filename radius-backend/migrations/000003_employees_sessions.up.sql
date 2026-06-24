@@ -16,9 +16,10 @@ CREATE TABLE employees (
 
 CREATE TABLE sessions (
     session_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    store_id INT REFERENCES stores (store_id) NOT NULL,
     employee_id INT REFERENCES employees(employee_id) ON DELETE CASCADE NOT NULL,
     token_hash TEXT UNIQUE NOT NULL,
     ip_address INET NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    expires_at TIMESTAMPTZ -- Sessions should always have an explicit expiration
+    expires_at TIMESTAMPTZ NOT NULL
 );

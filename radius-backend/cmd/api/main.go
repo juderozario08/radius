@@ -20,6 +20,18 @@ func main() {
 		return
 	}
 
+	jwtSecretCode := os.Getenv("JWT_SECRET_KEY")
+	if jwtSecretCode == "" {
+		log.Printf("Could not find JWT_SECRET_KEY\n")
+		return
+	}
+	jwtSecret := []byte(jwtSecretCode)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	db, err := database.ConnectDB()
 	if err != nil {
 		log.Printf("Error connecting to database: %v\n", err)
@@ -40,12 +52,6 @@ func main() {
 	// productsRepo := repository.NewProductRepo(db.DB)
 	// salesRepo := repository.NewSalesRepo(db.DB)
 
-	jwtSecretCode := os.Getenv("JWT_SECRET_KEY")
-	if jwtSecretCode == "" {
-		log.Printf("Could not find JWT_SECRET_KEY\n")
-		return
-	}
-
 	authService := service.NewAuthService(employeeRepo, sessionRepo, []byte(jwtSecretCode))
 	// barcodeService := service.NewBarcodeService()
 	// cycleCountService := service.NewCycleCountService()
@@ -61,7 +67,7 @@ func main() {
 	// transactionService := service.NewTransactionService()
 	// transferService := service.NewTransferService()
 
-	router := router.NewRouter(router.Handlers{
+	appHandlers := router.Handlers{
 		AuthHandler:        handler.NewAuthHandler(authService),
 		BarcodeHandler:     handler.NewBarcodeHandler(),
 		CycleCountHandler:  handler.NewCycleCountHandler(),
@@ -76,14 +82,14 @@ func main() {
 		StoreHandler:       handler.NewStoreHandler(),
 		TransactionHandler: handler.NewTransactionHandler(),
 		TransferHandler:    handler.NewTransactionHandler(),
-	})
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
 	}
 
-	fmt.Println("Listening on PORT " + port)
-	fmt.Println("http://0.0.0.0:" + port)
+	router := router.NewRouter(router.Config{
+		Handlers:    appHandlers,
+		JWTSecret:   jwtSecret,
+		AuthService: authService,
+	})
+
+	fmt.Printf("Listening on PORT %s http:://0.0.0.0:%s\n", port, port)
 	router.Run()
 }

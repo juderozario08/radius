@@ -5,9 +5,16 @@ import (
 	"os"
 	"radius/internal/handler"
 	"radius/internal/middleware"
+	"radius/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
+
+type Config struct {
+	Handlers    Handlers
+	JWTSecret   []byte
+	AuthService *service.AuthService
+}
 
 type Handlers struct {
 	AuthHandler        *handler.AuthHandler
@@ -26,7 +33,7 @@ type Handlers struct {
 	TransferHandler    *handler.TransactionHandler
 }
 
-func NewRouter(h Handlers) *gin.Engine {
+func NewRouter(cfg Config) *gin.Engine {
 	ginMode := os.Getenv("GIN_MODE")
 	switch ginMode {
 	case "", "debug":
@@ -39,20 +46,23 @@ func NewRouter(h Handlers) *gin.Engine {
 
 	router := gin.Default()
 
-	router.GET("/health", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{
-			"status":  http.StatusOK,
-			"message": "Server is working!",
+	public := router.Group("/")
+	{
+		public.GET("/health", func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, gin.H{
+				"status":  http.StatusOK,
+				"message": "Server is working!",
+			})
 		})
-	})
 
-	router.POST("/create_employee", h.AuthHandler.Register)
-	router.POST("/login", h.AuthHandler.Login)
+		public.POST("/create_employee", cfg.Handlers.AuthHandler.Register)
+		public.POST("/login", cfg.Handlers.AuthHandler.Login)
+	}
 
 	api := router.Group("/api")
-	api.Use(middleware.RequireAuth())
+	api.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService))
 	{
-		api.POST("/logout", h.AuthHandler.Logout)
+		api.POST("/logout", cfg.Handlers.AuthHandler.Logout)
 	}
 
 	return router

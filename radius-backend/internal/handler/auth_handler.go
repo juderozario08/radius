@@ -33,7 +33,6 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, gin.H{
-		"message":    "New employee created",
 		"id":         employee.EmployeeId,
 		"store_id":   employee.StoreId,
 		"first_name": employee.FirstName,
@@ -50,20 +49,24 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	employee, token, err := h.authService.Login(ctx.Request.Context(), body)
+	employeeLoginResponse, err := h.authService.Login(ctx.Request.Context(), body, ctx.ClientIP())
 	if err != nil {
 		log.Println("Error logging in employee: " + err.Error())
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusAccepted, models.EmployeeLoginResponse{
-		Token:      token,
-		EmployeeId: employee.EmployeeId,
-		LastName:   employee.LastName,
-		Role:       employee.Role,
-		StoreId:    employee.StoreId,
-	})
+	ctx.JSON(http.StatusAccepted, employeeLoginResponse)
 }
 
 func (h *AuthHandler) Logout(ctx *gin.Context) {
+	tokenString := ctx.MustGet("token_string").(string)
+	err := h.authService.Logout(ctx.Request.Context(), tokenString)
+	if err != nil {
+		log.Println("Error logging out: " + err.Error())
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusAccepted, gin.H{"message": "Successfully logged out"})
 }

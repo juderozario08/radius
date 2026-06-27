@@ -1,7 +1,13 @@
 package handler
 
-type CycleCountHandler struct{}
+import "radius/internal/service"
 
-func NewCycleCountHandler() *CycleCountHandler {
-	return &CycleCountHandler{}
+type CycleCountHandler struct {
+	cycleCountService *service.CycleCountService
+}
+
+func NewCycleCountHandler(cycleCountService *service.CycleCountService) *CycleCountHandler {
+	return &CycleCountHandler{
+		cycleCountService: cycleCountService,
+	}
 }

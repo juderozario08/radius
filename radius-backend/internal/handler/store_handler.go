@@ -1,7 +1,13 @@
 package handler
 
-type StoreHandler struct{}
+import "radius/internal/service"
 
-func NewStoreHandler() *StoreHandler {
-	return &StoreHandler{}
+type StoreHandler struct {
+	storeService *service.StoreService
+}
+
+func NewStoreHandler(storeService *service.StoreService) *StoreHandler {
+	return &StoreHandler{
+		storeService: storeService,
+	}
 }

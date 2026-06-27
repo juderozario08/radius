@@ -1,7 +1,13 @@
 package handler
 
-type OnlineOrderHandler struct{}
+import "radius/internal/service"
 
-func NewOnlineOrderHandler() *OnlineOrderHandler {
-	return &OnlineOrderHandler{}
+type OnlineOrderHandler struct {
+	onlineOrderService *service.OnlineOrderService
+}
+
+func NewOnlineOrderHandler(onlineOrderService *service.OnlineOrderService) *OnlineOrderHandler {
+	return &OnlineOrderHandler{
+		onlineOrderService: onlineOrderService,
+	}
 }

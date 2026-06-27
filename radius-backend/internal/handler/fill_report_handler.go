@@ -1,7 +1,13 @@
 package handler
 
-type FillReportHandler struct{}
+import "radius/internal/service"
 
-func NewFillReportHandler() *FillReportHandler {
-	return &FillReportHandler{}
+type FillReportHandler struct {
+	fillReportService *service.FillReportService
+}
+
+func NewFillReportHandler(fillReportService *service.FillReportService) *FillReportHandler {
+	return &FillReportHandler{
+		fillReportService: fillReportService,
+	}
 }

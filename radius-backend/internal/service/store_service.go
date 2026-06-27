@@ -1,7 +1,21 @@
 package service
 
-type StoreService struct{}
+import "radius/internal/repository"
 
-func NewStoreService() *StoreService {
-	return &StoreService{}
+type StoreService struct {
+	storeRepo    *repository.StoreRepo
+	employeeRepo *repository.EmployeeRepo
+	productsRepo *repository.ProductRepo
+}
+
+func NewStoreService(
+	storeRepo *repository.StoreRepo,
+	employeeRepo *repository.EmployeeRepo,
+	productsRepo *repository.ProductRepo,
+) *StoreService {
+	return &StoreService{
+		storeRepo:    storeRepo,
+		employeeRepo: employeeRepo,
+		productsRepo: productsRepo,
+	}
 }

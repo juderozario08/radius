@@ -1,7 +1,13 @@
 package handler
 
-type TransactionHandler struct{}
+import "radius/internal/service"
 
-func NewTransactionHandler() *TransactionHandler {
-	return &TransactionHandler{}
+type TransactionHandler struct {
+	transactionService *service.TransactionService
+}
+
+func NewTransactionHandler(transactionService *service.TransactionService) *TransactionHandler {
+	return &TransactionHandler{
+		transactionService: transactionService,
+	}
 }

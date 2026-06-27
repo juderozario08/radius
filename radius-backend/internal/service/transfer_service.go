@@ -1,7 +1,24 @@
 package service
 
-type TransferService struct{}
+import "radius/internal/repository"
 
-func NewTransferService() *TransferService {
-	return &TransferService{}
+type TransferService struct {
+	storeRepo     *repository.StoreRepo
+	inventoryRepo *repository.InventoryRepo
+	employeeRepo  *repository.EmployeeRepo
+	sessionRepo   *repository.SessionRepo
+}
+
+func NewTransferService(
+	storeRepo *repository.StoreRepo,
+	inventoryRepo *repository.InventoryRepo,
+	employeeRepo *repository.EmployeeRepo,
+	sessionRepo *repository.SessionRepo,
+) *TransferService {
+	return &TransferService{
+		storeRepo:     storeRepo,
+		inventoryRepo: inventoryRepo,
+		employeeRepo:  employeeRepo,
+		sessionRepo:   sessionRepo,
+	}
 }

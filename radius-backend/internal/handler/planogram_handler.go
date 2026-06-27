@@ -1,7 +1,13 @@
 package handler
 
-type PlanogramHandler struct{}
+import "radius/internal/service"
 
-func NewPlanogramHandler() *PlanogramHandler {
-	return &PlanogramHandler{}
+type PlanogramHandler struct {
+	planogramService *service.PlanogramService
+}
+
+func NewPlanogramHandler(planogramService *service.PlanogramService) *PlanogramHandler {
+	return &PlanogramHandler{
+		planogramService: planogramService,
+	}
 }

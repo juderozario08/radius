@@ -31,7 +31,7 @@ type Handlers struct {
 	ProductHandler     *handler.ProductHandler
 	StoreHandler       *handler.StoreHandler
 	TransactionHandler *handler.TransactionHandler
-	TransferHandler    *handler.TransactionHandler
+	TransferHandler    *handler.TransferHandler
 	SessionHandler     *handler.SessionHandler
 }
 

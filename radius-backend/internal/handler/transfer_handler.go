@@ -1,7 +1,13 @@
 package handler
 
-type TransferHandler struct{}
+import "radius/internal/service"
 
-func NewTransferHandler() *TransferHandler {
-	return &TransferHandler{}
+type TransferHandler struct {
+	transferService *service.TransferService
+}
+
+func NewTransferHandler(transferService *service.TransferService) *TransferHandler {
+	return &TransferHandler{
+		transferService: transferService,
+	}
 }

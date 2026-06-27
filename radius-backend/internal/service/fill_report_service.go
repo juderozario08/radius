@@ -1,7 +1,27 @@
 package service
 
-type FillReportService struct{}
+import "radius/internal/repository"
 
-func NewFillReportService() *FillReportService {
-	return &FillReportService{}
+type FillReportService struct {
+	storeRepo     *repository.StoreRepo
+	employeeRepo  *repository.EmployeeRepo
+	sessionRepo   *repository.SessionRepo
+	inventoryRepo *repository.InventoryRepo
+	productsRepo  *repository.ProductRepo
+}
+
+func NewFillReportService(
+	storeRepo *repository.StoreRepo,
+	employeeRepo *repository.EmployeeRepo,
+	sessionRepo *repository.SessionRepo,
+	inventoryRepo *repository.InventoryRepo,
+	productsRepo *repository.ProductRepo,
+) *FillReportService {
+	return &FillReportService{
+		storeRepo:     storeRepo,
+		employeeRepo:  employeeRepo,
+		sessionRepo:   sessionRepo,
+		inventoryRepo: inventoryRepo,
+		productsRepo:  productsRepo,
+	}
 }

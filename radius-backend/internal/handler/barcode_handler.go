@@ -1,7 +1,13 @@
 package handler
 
-type BarcodeHandler struct{}
+import "radius/internal/service"
 
-func NewBarcodeHandler() *BarcodeHandler {
-	return &BarcodeHandler{}
+type BarcodeHandler struct {
+	barcodeService *service.BarcodeService
+}
+
+func NewBarcodeHandler(barcodeService *service.BarcodeService) *BarcodeHandler {
+	return &BarcodeHandler{
+		barcodeService: barcodeService,
+	}
 }

@@ -1,7 +1,13 @@
 package handler
 
-type OutOfStockHandler struct{}
+import "radius/internal/service"
 
-func NewOutOfStockHandler() *OutOfStockHandler {
-	return &OutOfStockHandler{}
+type OutOfStockHandler struct {
+	outOfStockService *service.OutOfStockService
+}
+
+func NewOutOfStockHandler(outOfStockService *service.OutOfStockService) *OutOfStockHandler {
+	return &OutOfStockHandler{
+		outOfStockService: outOfStockService,
+	}
 }

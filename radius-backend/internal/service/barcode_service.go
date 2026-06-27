@@ -1,7 +1,27 @@
 package service
 
-type BarcodeService struct{}
+import "radius/internal/repository"
 
-func NewBarcodeService() *BarcodeService {
-	return &BarcodeService{}
+type BarcodeService struct {
+	storeRepo     *repository.StoreRepo
+	employeeRepo  *repository.EmployeeRepo
+	sessionRepo   *repository.SessionRepo
+	inventoryRepo *repository.InventoryRepo
+	productsRepo  *repository.ProductRepo
+}
+
+func NewBarcodeService(
+	storeRepo *repository.StoreRepo,
+	employeeRepo *repository.EmployeeRepo,
+	sessionRepo *repository.SessionRepo,
+	inventoryRepo *repository.InventoryRepo,
+	productsRepo *repository.ProductRepo,
+) *BarcodeService {
+	return &BarcodeService{
+		storeRepo:     storeRepo,
+		employeeRepo:  employeeRepo,
+		sessionRepo:   sessionRepo,
+		inventoryRepo: inventoryRepo,
+		productsRepo:  productsRepo,
+	}
 }

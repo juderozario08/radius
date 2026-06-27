@@ -1,7 +1,21 @@
 package service
 
-type TransactionService struct{}
+import "radius/internal/repository"
 
-func NewTransactionService() *TransactionService {
-	return &TransactionService{}
+type TransactionService struct {
+	salesRepo    *repository.SalesRepo
+	employeeRepo *repository.EmployeeRepo
+	sessionRepo  *repository.SessionRepo
+}
+
+func NewTransactionService(
+	salesRepo *repository.SalesRepo,
+	employeeRepo *repository.EmployeeRepo,
+	sessionRepo *repository.SessionRepo,
+) *TransactionService {
+	return &TransactionService{
+		salesRepo:    salesRepo,
+		employeeRepo: employeeRepo,
+		sessionRepo:  sessionRepo,
+	}
 }

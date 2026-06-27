@@ -1,7 +1,15 @@
 package handler
 
-type POSHandler struct{}
+import "radius/internal/service"
 
-func NewPOSHandler() *POSHandler {
-	return &POSHandler{}
+type POSHandler struct {
+	posService *service.POSService
+}
+
+func NewPOSHandler(
+	posService *service.POSService,
+) *POSHandler {
+	return &POSHandler{
+		posService: posService,
+	}
 }

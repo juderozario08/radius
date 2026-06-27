@@ -1,7 +1,13 @@
 package handler
 
-type InventoryHandler struct{}
+import "radius/internal/service"
 
-func NewInventoryHandler() *InventoryHandler {
-	return &InventoryHandler{}
+type InventoryHandler struct {
+	inventoryService *service.InventoryService
+}
+
+func NewInventoryHandler(inventoryService *service.InventoryService) *InventoryHandler {
+	return &InventoryHandler{
+		inventoryService: inventoryService,
+	}
 }

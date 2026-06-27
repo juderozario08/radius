@@ -1,7 +1,24 @@
 package service
 
-type PlanogramService struct{}
+import "radius/internal/repository"
 
-func NewPlanogramService() *PlanogramService {
-	return &PlanogramService{}
+type PlanogramService struct {
+	merchandisingRepo *repository.MerchandisingRepo
+	employeeRepo      *repository.EmployeeRepo
+	storeRepo         *repository.StoreRepo
+	sessionRepo       *repository.SessionRepo
+}
+
+func NewPlanogramService(
+	merchandisingRepo *repository.MerchandisingRepo,
+	employeeRepo *repository.EmployeeRepo,
+	storeRepo *repository.StoreRepo,
+	sessionRepo *repository.SessionRepo,
+) *PlanogramService {
+	return &PlanogramService{
+		merchandisingRepo: merchandisingRepo,
+		employeeRepo:      employeeRepo,
+		storeRepo:         storeRepo,
+		sessionRepo:       sessionRepo,
+	}
 }

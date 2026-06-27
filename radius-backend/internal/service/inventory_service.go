@@ -1,7 +1,27 @@
 package service
 
-type InventoryService struct{}
+import "radius/internal/repository"
 
-func NewInventoryService() *InventoryService {
-	return &InventoryService{}
+type InventoryService struct {
+	storeRepo     *repository.StoreRepo
+	employeeRepo  *repository.EmployeeRepo
+	sessionRepo   *repository.SessionRepo
+	inventoryRepo *repository.InventoryRepo
+	productsRepo  *repository.ProductRepo
+}
+
+func NewInventoryService(
+	storeRepo *repository.StoreRepo,
+	employeeRepo *repository.EmployeeRepo,
+	sessionRepo *repository.SessionRepo,
+	inventoryRepo *repository.InventoryRepo,
+	productsRepo *repository.ProductRepo,
+) *InventoryService {
+	return &InventoryService{
+		storeRepo:     storeRepo,
+		employeeRepo:  employeeRepo,
+		sessionRepo:   sessionRepo,
+		inventoryRepo: inventoryRepo,
+		productsRepo:  productsRepo,
+	}
 }

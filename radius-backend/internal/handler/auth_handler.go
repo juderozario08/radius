@@ -25,20 +25,14 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	employee, err := h.authService.Register(ctx.Request.Context(), body)
+	employeeRegisterResponse, err := h.authService.Register(ctx.Request.Context(), body)
 	if err != nil {
 		log.Println("Error registering employee: " + err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{
-		"id":         employee.EmployeeId,
-		"store_id":   employee.StoreId,
-		"first_name": employee.FirstName,
-		"last_name":  employee.LastName,
-		"role":       employee.Role,
-	})
+	ctx.JSON(http.StatusCreated, employeeRegisterResponse)
 }
 
 func (h *AuthHandler) Login(ctx *gin.Context) {
@@ -56,6 +50,7 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
+	ctx.Set("role", employeeLoginResponse.Role)
 	ctx.JSON(http.StatusAccepted, employeeLoginResponse)
 }
 

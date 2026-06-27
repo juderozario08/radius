@@ -54,10 +54,11 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 			return
 		}
 
-		_, ok := token.Claims.(jwt.MapClaims)
+		claims, ok := token.Claims.(jwt.MapClaims)
 		if ok {
-			// ctx.Set("employee_id", claims["employee_id"])
-			// ctx.Set("role", claims["role"])
+			ctx.Set("employee_id", claims["employee_id"])
+			ctx.Set("email", claims["email"])
+			ctx.Set("role", claims["role"])
 		}
 		ctx.Set("token_string", tokenString)
 		ctx.Next()

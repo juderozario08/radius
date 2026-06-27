@@ -39,11 +39,6 @@ type EmployeeBase struct {
 }
 
 type Employee struct {
-	EmployeeId int `json:"employee_id"`
-	EmployeeBase
-}
-
-type EmployeeWithPassword struct {
 	EmployeeId   int    `json:"employee_id"`
 	PasswordHash string `json:"-"`
 	EmployeeBase

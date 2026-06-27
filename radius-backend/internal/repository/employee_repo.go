@@ -14,8 +14,12 @@ func NewEmployeeRepo(db *sql.DB) *EmployeeRepo {
 	return &EmployeeRepo{db: db}
 }
 
-func (r *EmployeeRepo) GetByEmail(ctx context.Context, email string) (*models.EmployeeWithPassword, error) {
-	var employee models.EmployeeWithPassword
+func (r *EmployeeRepo) GetAllEmployees(ctx context.Context) ([]*models.Employee, error) {
+	return nil, nil
+}
+
+func (r *EmployeeRepo) GetByEmail(ctx context.Context, email string) (*models.Employee, error) {
+	var employee models.Employee
 	query := `
 		SELECT employee_id, email, password_hash, store_id, first_name, last_name, role, phone, address, city, province, postal_code, is_active FROM
 		employees WHERE email = $1
@@ -37,6 +41,7 @@ func (r *EmployeeRepo) GetByEmail(ctx context.Context, email string) (*models.Em
 func (r *EmployeeRepo) GetById(ctx context.Context, id int) (*models.Employee, error) {
 	return nil, nil
 }
+
 func (r *EmployeeRepo) CreateEmployee(ctx context.Context, model models.CreateEmployeeRow) (*models.CreateEmployeeResponse, error) {
 	var employee models.CreateEmployeeResponse
 	query := `

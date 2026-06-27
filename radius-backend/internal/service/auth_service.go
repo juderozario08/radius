@@ -30,10 +30,10 @@ func NewAuthService(employeeRepo *repository.EmployeeRepo, sessionRepo *reposito
 
 func (s *AuthService) generateToken(id int, email string, role models.EmployeeRole) (string, error) {
 	claims := jwt.MapClaims{
-		"id":    id,
-		"email": email,
-		"role":  role,
-		"exp":   jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+		"employee_id": id,
+		"email":       email,
+		"role":        role,
+		"exp":         jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(s.jwtSecret)

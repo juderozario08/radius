@@ -37,6 +37,7 @@ func main() {
 		log.Printf("Error connecting to database: %v\n", err)
 		return
 	}
+	defer db.Close()
 
 	err = db.RunMigrations("migrations")
 	if err != nil {
@@ -53,6 +54,7 @@ func main() {
 	// salesRepo := repository.NewSalesRepo(db.DB)
 
 	authService := service.NewAuthService(employeeRepo, sessionRepo, []byte(jwtSecretCode))
+	sessionService := service.NewSessionService(employeeRepo, sessionRepo, []byte(jwtSecretCode))
 	// barcodeService := service.NewBarcodeService()
 	// cycleCountService := service.NewCycleCountService()
 	// fillReportService := service.NewFillReportService()
@@ -82,6 +84,7 @@ func main() {
 		StoreHandler:       handler.NewStoreHandler(),
 		TransactionHandler: handler.NewTransactionHandler(),
 		TransferHandler:    handler.NewTransactionHandler(),
+		SessionHandler:     handler.NewSessionHandler(sessionService),
 	}
 
 	router := router.NewRouter(router.Config{

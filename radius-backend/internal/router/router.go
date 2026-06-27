@@ -5,6 +5,7 @@ import (
 	"os"
 	"radius/internal/handler"
 	"radius/internal/middleware"
+	"radius/internal/models"
 	"radius/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -31,6 +32,7 @@ type Handlers struct {
 	StoreHandler       *handler.StoreHandler
 	TransactionHandler *handler.TransactionHandler
 	TransferHandler    *handler.TransactionHandler
+	SessionHandler     *handler.SessionHandler
 }
 
 func NewRouter(cfg Config) *gin.Engine {
@@ -55,7 +57,6 @@ func NewRouter(cfg Config) *gin.Engine {
 			})
 		})
 
-		public.POST("/create_employee", cfg.Handlers.AuthHandler.Register)
 		public.POST("/login", cfg.Handlers.AuthHandler.Login)
 	}
 
@@ -63,6 +64,14 @@ func NewRouter(cfg Config) *gin.Engine {
 	api.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService))
 	{
 		api.POST("/logout", cfg.Handlers.AuthHandler.Logout)
+	}
+
+	admin := router.Group("/api/admin")
+	admin.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService))
+	admin.Use(middleware.RequireRole(models.RoleAdmin))
+	{
+		admin.POST("/create_employees", cfg.Handlers.AuthHandler.Register)
+		admin.GET("/get_all_sessions", cfg.Handlers.SessionHandler.GetAllSessions)
 	}
 
 	return router

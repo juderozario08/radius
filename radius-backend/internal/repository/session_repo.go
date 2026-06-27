@@ -103,3 +103,38 @@ func (r *SessionRepo) CreateSession(ctx context.Context, model models.CreateSess
 
 	return &session, nil
 }
+
+func (r *SessionRepo) GetAllSessions(ctx context.Context) ([]models.Session, error) {
+	query := `
+        SELECT session_id, employee_id, store_id, ip_address, created_at, expires_at
+        FROM sessions;
+    `
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var sessions []models.Session
+	for rows.Next() {
+		var s models.Session
+		err := rows.Scan(
+			&s.SessionId,
+			&s.EmployeeId,
+			&s.StoreId,
+			&s.IpAddress,
+			&s.CreatedAt,
+			&s.ExpiresAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		sessions = append(sessions, s)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return sessions, nil
+}

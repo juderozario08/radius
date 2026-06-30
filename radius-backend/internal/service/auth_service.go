@@ -121,8 +121,8 @@ func (s *AuthService) createSession(ctx context.Context, employeeId int, role mo
 	return token, session.SessionId, nil
 }
 
-func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginRequest, ipAddress string) (*models.EmployeeLoginResponse, error) {
-	employee, err := s.employeeRepo.GetByEmail(ctx, model.Email)
+func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginRequest, ipAddress string) (*models.GetEmployeeByEmailWithSessionResponse, error) {
+	employee, err := s.employeeRepo.GetByEmailWithSession(ctx, model.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginReque
 		return nil, err
 	}
 
-	return &models.EmployeeLoginResponse{
+	return &models.GetEmployeeByEmailWithSessionResponse{
 		SessionId:  sessionId,
 		Token:      token,
 		EmployeeId: employee.EmployeeId,

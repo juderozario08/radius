@@ -25,5 +25,4 @@ func (h *SessionHandler) GetAllSessions(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, sessionResponse)
-	return
 }

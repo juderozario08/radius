@@ -21,12 +21,65 @@ func (r *EmployeeRepo) GetAllEmployees(ctx context.Context) ([]*models.Employee,
 func (r *EmployeeRepo) GetByEmail(ctx context.Context, email string) (*models.Employee, error) {
 	var employee models.Employee
 	query := `
-		SELECT employee_id, email, password_hash, store_id, first_name, last_name, role, phone, address, city, province, postal_code, is_active FROM
-		employees WHERE email = $1
+		SELECT
+			e.employee_id,
+			e.email,
+			e.password_hash,
+			e.store_id,
+			e.first_name,
+			e.last_name,
+			e.role,
+			e.phone,
+			e.address,
+			e.city,
+			e.province,
+			e.postal_code,
+			e.is_active
+		FROM employees as e
+		WHERE e.email = $1;
 	`
 	err := r.db.QueryRowContext(
 		ctx, query, email,
 	).Scan(
+		&employee.EmployeeId, &employee.Email, &employee.PasswordHash,
+		&employee.StoreId, &employee.FirstName, &employee.LastName, &employee.Role,
+		&employee.Phone, &employee.Address, &employee.City,
+		&employee.Province, &employee.PostalCode, &employee.IsActive,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &employee, nil
+}
+
+func (r *EmployeeRepo) GetByEmailWithSession(ctx context.Context, email string) (*models.GetEmployeeByEmailWithSession, error) {
+	var employee models.GetEmployeeByEmailWithSession
+	query := `
+		SELECT
+			s.session_id,
+			s.token_hash,
+			e.employee_id,
+			e.email,
+			e.password_hash,
+			e.store_id,
+			e.first_name,
+			e.last_name,
+			e.role,
+			e.phone,
+			e.address,
+			e.city,
+			e.province,
+			e.postal_code,
+			e.is_active
+		FROM employees as e
+		LEFT JOIN sessions as s
+		ON s.employee_id = e.employee_id
+		WHERE e.email = $1;
+	`
+	err := r.db.QueryRowContext(
+		ctx, query, email,
+	).Scan(
+		&employee.SessionId, &employee.TokenHash,
 		&employee.EmployeeId, &employee.Email, &employee.PasswordHash,
 		&employee.StoreId, &employee.FirstName, &employee.LastName, &employee.Role,
 		&employee.Phone, &employee.Address, &employee.City,

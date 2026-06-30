@@ -39,6 +39,23 @@ type SessionsResponse struct {
 }
 
 type GetAllSessionsResponse struct {
-	Message  string             `json:"message"`
-	Sessions []SessionsResponse `json:"sessions"`
+	Message  string           `json:"message"`
+	Sessions []GetAllSessions `json:"sessions"`
+}
+
+type GetAllSessions struct {
+	SessionId  int          `json:"session_id"`
+	IpAddress  string       `json:"ip_address"`
+	EmployeeId int          `json:"employee_id"`
+	StoreId    int          `json:"store_id"`
+	FirstName  string       `json:"first_name"`
+	LastName   string       `json:"last_name"`
+	Email      string       `json:"email"`
+	Role       EmployeeRole `json:"role"`
+	Phone      string       `json:"phone"`
+	Address    string       `json:"address"`
+	City       string       `json:"city"`
+	Province   string       `json:"province"`
+	PostalCode string       `json:"postal_code"`
+	IsActive   bool         `json:"is_active"`
 }

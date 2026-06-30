@@ -104,10 +104,26 @@ func (r *SessionRepo) CreateSession(ctx context.Context, model models.CreateSess
 	return &session, nil
 }
 
-func (r *SessionRepo) GetAllSessions(ctx context.Context) ([]models.Session, error) {
+func (r *SessionRepo) GetAllSessions(ctx context.Context) ([]models.GetAllSessions, error) {
 	query := `
-        SELECT session_id, employee_id, store_id, ip_address, created_at, expires_at
-        FROM sessions;
+		SELECT
+			sessions.session_id,
+			sessions.ip_address,
+			employees.employee_id,
+			employees.store_id,
+			employees.first_name,
+			employees.last_name,
+			employees.email,
+			employees.role,
+			employees.phone,
+			employees.address,
+			employees.city,
+			employees.province,
+			employees.postal_code,
+			employees.is_active
+		FROM sessions
+		INNER JOIN employees
+			ON employees.employee_id = sessions.employee_id;
     `
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
@@ -115,16 +131,24 @@ func (r *SessionRepo) GetAllSessions(ctx context.Context) ([]models.Session, err
 	}
 	defer rows.Close()
 
-	var sessions []models.Session
+	var sessions []models.GetAllSessions
 	for rows.Next() {
-		var s models.Session
+		var s models.GetAllSessions
 		err := rows.Scan(
 			&s.SessionId,
+			&s.IpAddress,
 			&s.EmployeeId,
 			&s.StoreId,
-			&s.IpAddress,
-			&s.CreatedAt,
-			&s.ExpiresAt,
+			&s.FirstName,
+			&s.LastName,
+			&s.Email,
+			&s.Role,
+			&s.Phone,
+			&s.Address,
+			&s.City,
+			&s.Province,
+			&s.PostalCode,
+			&s.IsActive,
 		)
 		if err != nil {
 			return nil, err

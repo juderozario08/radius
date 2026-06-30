@@ -81,3 +81,39 @@ type EmployeeLogoutRequest struct {
 	SessionId int    `json:"session_id"  binding:"required"`
 	Token     string `json:"token"       binding:"required"`
 }
+
+type GetEmployeeByEmailWithSession struct {
+	SessionId    int          `json:"session_id"`
+	TokenHash    int          `json:"token_hash"`
+	EmployeeId   int          `json:"employee_id"`
+	Email        string       `json:"email"`
+	PasswordHash string       `json:"password_hash"`
+	StoreId      int          `json:"store_id"`
+	FirstName    string       `json:"first_name"`
+	LastName     string       `json:"last_name"`
+	Role         EmployeeRole `json:"role"`
+	Phone        string       `json:"phone"`
+	Address      string       `json:"address"`
+	City         string       `json:"city"`
+	Province     string       `json:"province"`
+	PostalCode   string       `json:"postal_code"`
+	IsActive     bool         `json:"is_active"`
+}
+
+type GetEmployeeByEmailWithSessionResponse struct {
+	SessionId    int          `json:"session_id"`
+	Token        string       `json:"token"`
+	EmployeeId   int          `json:"employee_id"`
+	Email        string       `json:"email"`
+	PasswordHash string       `json:"password_hash"`
+	StoreId      int          `json:"store_id"`
+	FirstName    string       `json:"first_name"`
+	LastName     string       `json:"last_name"`
+	Role         EmployeeRole `json:"role"`
+	Phone        string       `json:"phone"`
+	Address      string       `json:"address"`
+	City         string       `json:"city"`
+	Province     string       `json:"province"`
+	PostalCode   string       `json:"postal_code"`
+	IsActive     bool         `json:"is_active"`
+}

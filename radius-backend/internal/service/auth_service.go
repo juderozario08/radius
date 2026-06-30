@@ -33,7 +33,7 @@ func (s *AuthService) generateToken(id int, email string, role models.EmployeeRo
 		"employee_id": id,
 		"email":       email,
 		"role":        role,
-		"exp":         jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+		"exp":         time.Now().Add(time.Hour * 24).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(s.jwtSecret)
@@ -121,7 +121,7 @@ func (s *AuthService) createSession(ctx context.Context, employeeId int, role mo
 	return token, session.SessionId, nil
 }
 
-func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginRequest, ipAddress string) (*models.GetEmployeeByEmailWithSessionResponse, error) {
+func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginRequest, ipAddress string) (*models.LoginResult, error) {
 	employee, err := s.employeeRepo.GetByEmailWithSession(ctx, model.Email)
 	if err != nil {
 		return nil, err
@@ -134,18 +134,33 @@ func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginReque
 		return nil, errors.New("Invalid Credentials")
 	}
 
+	if employee.SessionId != nil && !model.Force {
+		return &models.LoginResult{
+			RequiresConfirmation: true,
+		}, nil
+	}
+
+	if employee.SessionId != nil && model.Force {
+		if err := s.sessionRepo.DeleteSessionById(ctx, *employee.SessionId); err != nil {
+			return nil, err
+		}
+	}
+
 	token, sessionId, err := s.createSession(ctx, employee.EmployeeId, employee.Role, employee.Email, ipAddress, employee.StoreId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.GetEmployeeByEmailWithSessionResponse{
-		SessionId:  sessionId,
-		Token:      token,
-		EmployeeId: employee.EmployeeId,
-		LastName:   employee.LastName,
-		Role:       employee.Role,
-		StoreId:    employee.StoreId,
+	return &models.LoginResult{
+		RequiresConfirmation: false,
+		Session: &models.EmployeeLoginResponse{
+			Token:      token,
+			SessionId:  sessionId,
+			EmployeeId: employee.EmployeeId,
+			LastName:   employee.LastName,
+			Role:       employee.Role,
+			StoreId:    employee.StoreId,
+		},
 	}, nil
 }
 

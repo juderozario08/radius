@@ -38,20 +38,25 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 func (h *AuthHandler) Login(ctx *gin.Context) {
 	var body models.EmployeeLoginRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Println("Error binding JSON: " + err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	employeeLoginResponse, err := h.authService.Login(ctx.Request.Context(), body, ctx.ClientIP())
+	result, err := h.authService.Login(ctx.Request.Context(), body, ctx.ClientIP())
 	if err != nil {
-		log.Println("Error logging in employee: " + err.Error())
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.Set("role", employeeLoginResponse.Role)
-	ctx.JSON(http.StatusAccepted, employeeLoginResponse)
+	if result.RequiresConfirmation {
+		ctx.JSON(http.StatusConflict, gin.H{
+			"requires_confirmation": true,
+			"message":               "Already logged in on another device. Would you like to continue logging out of the previous session?",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, result.Session)
 }
 
 func (h *AuthHandler) Logout(ctx *gin.Context) {

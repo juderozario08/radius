@@ -1,0 +1,39 @@
+{
+    "expo": {
+        "name": "Radius",
+        "slug": "radius-frontend",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/images/icon.png",
+        "scheme": "radius",
+        "userInterfaceStyle": "automatic",
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.anonymous.Radius"
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/images/adaptive-icon.png",
+                "backgroundColor": "#ffffff"
+            },
+            "package": "com.anonymous.Radius"
+        },
+        "web": {
+            "bundler": "metro",
+            "favicon": "./assets/images/favicon.png"
+        },
+        "plugins": [
+            "expo-router",
+            [
+                "expo-secure-store",
+                {
+                    "configureAndroidBackup": true,
+                    "faceIDPermission": "Allow Radius to access your Face ID biometric data."
+                }
+            ]
+        ],
+        "experiments": {
+            "typedRoutes": true
+        }
+    }
+}

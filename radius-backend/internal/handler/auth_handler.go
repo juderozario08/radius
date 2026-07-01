@@ -51,7 +51,7 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 	if result.RequiresConfirmation {
 		ctx.JSON(http.StatusConflict, gin.H{
 			"requires_confirmation": true,
-			"message":               "Already logged in on another device. Would you like to continue logging out of the previous session?",
+			"error":                 "Already logged in on another device. Would you like to continue logging out of the previous session?",
 		})
 		return
 	}

@@ -8,6 +8,7 @@ import (
 	"net"
 	"radius/internal/models"
 	"radius/internal/repository"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -68,7 +69,7 @@ func (s *AuthService) Register(ctx context.Context, model models.CreateEmployeeR
 	employee, err := s.employeeRepo.CreateEmployee(ctx, models.CreateEmployeeRow{
 		PasswordHash: hash,
 		EmployeeBase: models.EmployeeBase{
-			Email:      model.Email,
+			Email:      strings.ToLower(model.Email),
 			StoreId:    model.StoreId,
 			FirstName:  model.FirstName,
 			LastName:   model.LastName,
@@ -122,7 +123,8 @@ func (s *AuthService) createSession(ctx context.Context, employeeId int, role mo
 }
 
 func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginRequest, ipAddress string) (*models.LoginResult, error) {
-	employee, err := s.employeeRepo.GetByEmailWithSession(ctx, model.Email)
+	email := strings.ToLower(model.Email)
+	employee, err := s.employeeRepo.GetByEmailWithSession(ctx, email)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +148,7 @@ func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginReque
 		}
 	}
 
-	token, sessionId, err := s.createSession(ctx, employee.EmployeeId, employee.Role, employee.Email, ipAddress, employee.StoreId)
+	token, sessionId, err := s.createSession(ctx, employee.EmployeeId, employee.Role, email, ipAddress, employee.StoreId)
 	if err != nil {
 		return nil, err
 	}

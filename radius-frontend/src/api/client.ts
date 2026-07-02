@@ -23,8 +23,13 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
     }
 
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error ?? 'An unexpected error occurred');
+        let errorMessage = 'An unexpected error occurred';
+        try {
+            const errorBody = await response.json();
+            errorMessage = errorBody.error || errorMessage;
+        } catch (e) { }
+
+        throw new Error(errorMessage);
     }
 
     return response.json() as Promise<T>;

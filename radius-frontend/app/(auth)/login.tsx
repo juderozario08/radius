@@ -3,17 +3,6 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useAuth } from '@/hooks/useAuth'
 import { apiFetch, ConflictError } from '@/api/client'
 
-type EmployeeRolesType = "SALES" | "SERVICE" | "MANAGER" | "ADMIN"
-
-type LoginResponseType = {
-    token: string | null
-    session_id: number
-    employee_id: number
-    last_name: string
-    role: EmployeeRolesType
-    store_id: number
-}
-
 export default function LoginScreen() {
     const { login } = useAuth()
     const [email, setEmail] = useState('')
@@ -23,13 +12,11 @@ export default function LoginScreen() {
     async function submitLogin(force: boolean) {
         setLoading(true)
         try {
-            const res = await apiFetch<LoginResponseType>('/login', {
+            const res = await apiFetch<{ token: string }>('/login', {
                 method: 'POST',
                 body: JSON.stringify({ email, password, force }),
             })
-            if (res.token) {
-                await login(res.token)
-            }
+            await login(res.token)
         } catch (e) {
             if (e instanceof ConflictError) {
                 Alert.alert(
@@ -74,34 +61,9 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        padding: 24,
-        backgroundColor: '#fff'
-    },
-    title: {
-        fontSize: 32,
-        fontWeight: '700',
-        marginBottom: 40
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 14,
-        marginBottom: 12,
-        fontSize: 16
-    },
-    button: {
-        backgroundColor: '#CC0000',
-        padding: 16,
-        borderRadius: 8,
-        alignItems: 'center'
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600'
-    },
+    container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
+    title: { fontSize: 32, fontWeight: '700', marginBottom: 40 },
+    input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 14, marginBottom: 12, fontSize: 16 },
+    button: { backgroundColor: '#CC0000', padding: 16, borderRadius: 8, alignItems: 'center' },
+    buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 })

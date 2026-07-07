@@ -29,7 +29,8 @@ export default function AppLayout() {
                         height: 30,
                         marginRight: 10,
                     }} />
-                </TouchableOpacity>)
+                </TouchableOpacity>
+            )
         }}>
             <Tabs.Screen name="dashboard" options={{ title: 'Home' }} />
             <Tabs.Screen name="inventory" options={{ title: 'Inventory' }} />

@@ -75,6 +75,7 @@ func NewRouter(cfg Config) *gin.Engine {
 	api.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService))
 	{
 		api.POST("/logout", cfg.Handlers.AuthHandler.Logout)
+		api.POST("/verify_token", cfg.Handlers.AuthHandler.VerifyToken)
 	}
 
 	admin := router.Group("/api/admin")

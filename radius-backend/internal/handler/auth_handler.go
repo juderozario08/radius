@@ -70,3 +70,7 @@ func (h *AuthHandler) Logout(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusAccepted, gin.H{"message": "Successfully logged out"})
 }
+
+func (h *AuthHandler) VerifyToken(ctx *gin.Context) {
+	ctx.JSON(http.StatusAccepted, gin.H{"message": "Session verified"})
+}

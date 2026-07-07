@@ -1,46 +1,79 @@
-import { createContext, useState, useEffect, ReactNode } from 'react'
-import { getToken, saveToken, deleteToken } from '@/utils/token'
+import { apiFetch } from "@/api/client";
+import { deleteToken, getToken, saveToken } from "@/utils/token";
+import { createContext, ReactNode, useEffect, useState } from "react";
+import Toast from "react-native-toast-message";
 
 type AuthContextType = {
-    token: string | null
-    isAuthenticated: boolean
-    isLoading: boolean
-    login: (token: string) => Promise<void>
-    logout: () => Promise<void>
-}
+    token: string | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+    login: (token: string) => Promise<void>;
+    logout: () => Promise<void>;
+};
 
-export const AuthContext = createContext<AuthContextType | null>(null)
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [token, setToken] = useState<string | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
+    const [token, setToken] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        getToken().then(t => {
-            setToken(t)
-            setIsLoading(false)
-        })
-    }, [])
+        const verifyToken = async () => {
+            try {
+                const t = await getToken();
+                if (!t) {
+                    setIsLoading(false);
+                    return;
+                }
+                const res = await apiFetch<{ message: string }>("/api/verify_token", {
+                    method: "POST",
+                });
+                setToken(t);
+                setIsLoading(false);
+                Toast.show({
+                    type: "success",
+                    text1: res.message,
+                    visibilityTime: 3000,
+                    autoHide: true,
+                    position: "bottom",
+                });
+            } catch (err) {
+                await deleteToken();
+                setToken(null);
+                setIsLoading(false);
+                Toast.show({
+                    type: "error",
+                    text1: String(err),
+                    visibilityTime: 3000,
+                    autoHide: true,
+                    position: "bottom",
+                });
+            }
+        };
+        verifyToken();
+    }, []);
 
     async function login(t: string) {
-        await saveToken(t)
-        setToken(t)
+        await saveToken(t);
+        setToken(t);
     }
 
     async function logout() {
-        await deleteToken()
-        setToken(null)
+        await deleteToken();
+        setToken(null);
     }
 
     return (
-        <AuthContext.Provider value={{
-            token,
-            isAuthenticated: !!token,
-            isLoading,
-            login,
-            logout,
-        }}>
+        <AuthContext.Provider
+            value={{
+                token,
+                isAuthenticated: !!token,
+                isLoading,
+                login,
+                logout,
+            }}
+        >
             {children}
         </AuthContext.Provider>
-    )
+    );
 }

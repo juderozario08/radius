@@ -15,8 +15,8 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
-			log.Println("Missing authorization header")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing authorization header"})
+			log.Println("User missing authorization header")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "An error occured while authorizing the user."})
 			return
 		}
 
@@ -37,32 +37,32 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 		})
 		if err != nil {
 			log.Println("JWT parsing error:", err.Error())
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 		if !token.Valid {
 			log.Println("Token is invalid")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 
 		if err := authService.ValidateSession(ctx.Request.Context(), tokenString); err != nil {
 			log.Println("Session validation failed:", err.Error())
-			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "session not found or expired"})
+			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			log.Println("Could not extract claims from token")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token claims"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 
 		employeeId, ok := claims["employee_id"]
 		if !ok {
 			log.Println("employee_id claim missing or wrong type")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token claims"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 

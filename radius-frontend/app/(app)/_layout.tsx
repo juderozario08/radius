@@ -5,6 +5,20 @@ import { Redirect, Tabs } from "expo-router";
 import { Alert, Image, TouchableOpacity } from "react-native";
 import Toast from "react-native-toast-message";
 
+const activeTintColor = "#C70202";
+const inactiveTintColor = "#8E8E8E";
+
+function getIcon(focused: boolean, activeSource: any, inactiveSource: any) {
+    return (
+        <Image
+            resizeMethod="scale"
+            source={focused ? activeSource : inactiveSource}
+            style={{ width: 30, height: 30 }}
+            resizeMode="contain"
+        />
+    );
+}
+
 export default function AppLayout() {
     const { isAuthenticated, logout } = useAuth();
 
@@ -45,14 +59,58 @@ export default function AppLayout() {
                         />
                     </TouchableOpacity>
                 ),
+                tabBarActiveTintColor: activeTintColor,
+                tabBarInactiveTintColor: inactiveTintColor,
             }}
         >
-            <Tabs.Screen name="dashboard" options={{ title: "Home" }} />
-            <Tabs.Screen name="inventory" options={{ title: "Inventory" }} />
-            <Tabs.Screen name="orders" options={{ title: "Orders" }} />
-            <Tabs.Screen name="reports" options={{ title: "Reports" }} />
-            <Tabs.Screen name="store" options={{ title: "Store" }} />
-            <Tabs.Screen name="profile" options={{ title: "Profile" }} />
+            <Tabs.Screen
+                name="dashboard"
+                options={{
+                    title: "Home",
+                    tabBarIcon: ({ focused }) =>
+                        getIcon(
+                            focused,
+                            require("@/assets/images/home-active.png"),
+                            require("@/assets/images/home-inactive.png")
+                        ),
+                }}
+            />
+            <Tabs.Screen
+                name="price_tags"
+                options={{
+                    title: "Price Tags",
+                    tabBarIcon: ({ focused }) =>
+                        getIcon(
+                            focused,
+                            require("@/assets/images/barcode-active.png"),
+                            require("@/assets/images/barcode-inactive.png")
+                        ),
+                }}
+            />
+            <Tabs.Screen
+                name="inventory"
+                options={{
+                    title: "Inventory",
+                    tabBarIcon: ({ focused }) =>
+                        getIcon(
+                            focused,
+                            require("@/assets/images/inventory-active.png"),
+                            require("@/assets/images/inventory-inactive.png")
+                        ),
+                }}
+            />
+            <Tabs.Screen
+                name="store"
+                options={{
+                    title: "Store",
+                    tabBarIcon: ({ focused }) =>
+                        getIcon(
+                            focused,
+                            require("@/assets/images/store-active.png"),
+                            require("@/assets/images/store-inactive.png")
+                        ),
+                }}
+            />
         </Tabs>
     );
 }

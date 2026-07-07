@@ -12,6 +12,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 function checkEmail(email: string): boolean {
     let atSeen = false;
@@ -99,8 +100,8 @@ export default function LoginScreen() {
                 body: JSON.stringify({ email, password, force }),
             });
             await login(res.token);
-        } catch (e) {
-            if (e instanceof ConflictError) {
+        } catch (err) {
+            if (err instanceof ConflictError) {
                 Alert.alert(
                     "Already logged in",
                     "This account is active on another device. Log out of that device and log in here?",
@@ -111,10 +112,11 @@ export default function LoginScreen() {
                 );
                 return;
             }
-            Alert.alert(
-                "Error",
-                e instanceof Error ? e.message : "Could not connect to server",
-            );
+            Toast.show({
+                type: "error",
+                text1: String(err),
+                position: "bottom",
+            });
         } finally {
             setLoading(false);
         }

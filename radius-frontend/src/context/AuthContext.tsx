@@ -33,9 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 Toast.show({
                     type: "success",
                     text1: res.message,
-                    visibilityTime: 3000,
-                    autoHide: true,
-                    position: "bottom",
+                    visibilityTime: 1000,
                 });
             } catch (err) {
                 await deleteToken();
@@ -44,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 Toast.show({
                     type: "error",
                     text1: String(err),
-                    visibilityTime: 3000,
+                    visibilityTime: 1000,
                     autoHide: true,
                     position: "bottom",
                 });

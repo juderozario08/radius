@@ -1,7 +1,7 @@
 import { apiFetch } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LogoutResponse } from "@/types/auth.types";
-import { Redirect, Tabs } from "expo-router";
+import { Redirect, router, Tabs } from "expo-router";
 import { Alert, Image, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -58,7 +58,7 @@ export default function AppLayout() {
             screenOptions={{
                 headerShown: true,
                 headerRight: () => (
-                    <View style={{ flexDirection: 'row', marginBottom: 10, marginRight: 10 }}>
+                    <View style={{ flexDirection: 'row', marginRight: 10 }}>
                         <TouchableOpacity onPress={getNotifications}>
                             <Image
                                 source={require("@/assets/images/notification-bell.png")}
@@ -87,18 +87,21 @@ export default function AppLayout() {
             <Tabs.Screen
                 name="home"
                 options={{
+                    headerTitleAlign: "center",
                     title: "Home",
-                    tabBarIcon: ({ focused }) =>
-                        getIcon(
+                    tabBarIcon: ({ focused }) => {
+                        return getIcon(
                             focused,
                             require("@/assets/images/home-active.png"),
                             require("@/assets/images/home-inactive.png")
-                        ),
+                        )
+                    }
                 }}
             />
             <Tabs.Screen
                 name="price_tags"
                 options={{
+                    headerTitleAlign: "center",
                     title: "Price Tags",
                     tabBarIcon: ({ focused }) =>
                         getIcon(
@@ -111,6 +114,7 @@ export default function AppLayout() {
             <Tabs.Screen
                 name="inventory"
                 options={{
+                    headerTitleAlign: "center",
                     title: "Inventory",
                     tabBarIcon: ({ focused }) =>
                         getIcon(
@@ -123,6 +127,7 @@ export default function AppLayout() {
             <Tabs.Screen
                 name="store"
                 options={{
+                    headerTitleAlign: "center",
                     title: "Store",
                     tabBarIcon: ({ focused }) =>
                         getIcon(

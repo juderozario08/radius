@@ -1,10 +1,10 @@
 
 import { View, Text, StyleSheet } from "react-native";
 
-export default function Mims() {
+export default function Orders() {
     return (
         <View style={styles.container}>
-            <Text>Mims</Text>
+            <Text>Orders</Text>
         </View>
     )
 }

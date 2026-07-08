@@ -1,7 +1,7 @@
 import { router, Href } from "expo-router";
-import { View, Text, StyleSheet, SafeAreaView, Image, ImageSourcePropType, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Image, ImageSourcePropType, TouchableOpacity } from "react-native";
 
-type BackRoomKeys = 'receive' | 'cycle_count' | 'returns';
+type BackRoomKeys = 'receiving' | 'cycle_count' | 'returns';
 type SalesFloorKeys = 'mims' | 'search' | 'is4tc' | 'fill_report' | 'item_adjust' | 'activities' | 'orders';
 
 type ButtonConfig = {
@@ -11,7 +11,7 @@ type ButtonConfig = {
 };
 
 const backRoomMapping: Record<BackRoomKeys, ButtonConfig> = {
-    receive: { title: 'Receive', path: '/(app)/home/actions/back_room/Receive', imagePath: require('@/assets/images/receiving.png') },
+    receiving: { title: 'Receiving', path: '/(app)/home/actions/back_room/Receiving', imagePath: require('@/assets/images/receiving.png') },
     cycle_count: { title: 'Cycle Count', path: '/(app)/home/actions/back_room/CycleCount', imagePath: require('@/assets/images/cycle_count.png') },
     returns: { title: 'Returns', path: '/(app)/home/actions/back_room/Returns', imagePath: require('@/assets/images/returns.png') }
 };
@@ -23,12 +23,12 @@ const salesFloorMapping: Record<SalesFloorKeys, ButtonConfig> = {
     fill_report: { title: 'Fill Report', path: '/(app)/home/actions/sales_floor/FillReport', imagePath: require('@/assets/images/fill_report.png') },
     item_adjust: { title: 'Item Adjust', path: '/(app)/home/actions/sales_floor/ItemAdjust', imagePath: require('@/assets/images/item_adjust.png') },
     activities: { title: 'Activities', path: '/(app)/home/actions/sales_floor/Activities', imagePath: require('@/assets/images/activities.png') },
-    orders: { title: 'Orders', path: '/(app)/home/actions/sales_floor/OnlineOrders', imagePath: require('@/assets/images/orders.png') }
+    orders: { title: 'Orders', path: '/(app)/home/actions/sales_floor/Orders', imagePath: require('@/assets/images/orders.png') }
 };
 
 export default function Actions() {
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             {/* Back Room Section */}
             <Text style={styles.sectionTitle}>Back Room</Text>
             <View style={styles.grid}>
@@ -62,7 +62,7 @@ export default function Actions() {
                     </View>
                 ))}
             </View>
-        </SafeAreaView>
+        </View>
     );
 }
 

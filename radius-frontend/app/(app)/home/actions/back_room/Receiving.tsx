@@ -1,10 +1,9 @@
-
 import { View, Text, StyleSheet } from "react-native";
 
-export default function Mims() {
+export default function Receiving() {
     return (
         <View style={styles.container}>
-            <Text>Mims</Text>
+            <Text>Receiving</Text>
         </View>
     )
 }

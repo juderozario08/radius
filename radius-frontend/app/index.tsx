@@ -14,6 +14,6 @@ export default function Index() {
     }
 
     return isAuthenticated
-        ? <Redirect href="/(app)/dashboard" />
+        ? <Redirect href="/(app)/home/dashboard" />
         : <Redirect href="/(auth)/login" />
 }

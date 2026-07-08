@@ -1,0 +1,24 @@
+import { View, Text, StyleSheet } from "react-native";
+
+export default function Dashboard() {
+    return (
+        <View style={styles.container}>
+            <Text style={styles.title}>Dashboard</Text>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 16 }}>No Tasks Here</Text>
+            </View>
+        </View>
+    )
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1
+    },
+    title: {
+        marginLeft: 15,
+        marginTop: 15,
+        fontSize: 25,
+        fontWeight: 'bold'
+    }
+})

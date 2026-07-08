@@ -2,7 +2,7 @@ import { apiFetch } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LogoutResponse } from "@/types/auth.types";
 import { Redirect, Tabs } from "expo-router";
-import { Alert, Image, TouchableOpacity } from "react-native";
+import { Alert, Image, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 const activeTintColor = "#C70202";
@@ -43,28 +43,49 @@ export default function AppLayout() {
         }
     }
 
+    // NOTE: FIGURE OUT LATER HOW TO DO NOTIFICATIONS VIEW FOR ACTIVITIES GOING ON
+    async function getNotifications() {
+        Toast.show({
+            type: 'info',
+            text1: 'Show notifications',
+            position: 'bottom',
+            visibilityTime: 1000
+        })
+    }
+
     return (
         <Tabs
             screenOptions={{
                 headerShown: true,
                 headerRight: () => (
-                    <TouchableOpacity onPress={submitLogout}>
-                        <Image
-                            source={require("@/assets/images/logout.png")}
-                            style={{
-                                width: 30,
-                                height: 30,
-                                marginRight: 10,
-                            }}
-                        />
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', marginBottom: 10, marginRight: 10 }}>
+                        <TouchableOpacity onPress={getNotifications}>
+                            <Image
+                                source={require("@/assets/images/notification-bell.png")}
+                                style={{
+                                    width: 30,
+                                    height: 30,
+                                }}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={submitLogout}>
+                            <Image
+                                source={require("@/assets/images/logout.png")}
+                                style={{
+                                    width: 30,
+                                    height: 30,
+                                    marginLeft: 10
+                                }}
+                            />
+                        </TouchableOpacity>
+                    </View>
                 ),
                 tabBarActiveTintColor: activeTintColor,
                 tabBarInactiveTintColor: inactiveTintColor,
             }}
         >
             <Tabs.Screen
-                name="dashboard"
+                name="home"
                 options={{
                     title: "Home",
                     tabBarIcon: ({ focused }) =>

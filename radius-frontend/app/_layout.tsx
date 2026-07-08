@@ -17,7 +17,7 @@ function InitialLayout() {
         if (!isAuthenticated) {
             router.replace("/(auth)/login");
         } else {
-            router.replace("/(app)/dashboard");
+            router.replace("/(app)/home/dashboard");
         }
     }, [isAuthenticated, isLoading]);
 

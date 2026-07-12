@@ -7,7 +7,7 @@ export default function ActionsLayout() {
             <Stack.Screen name="back_room/Receiving" />
             <Stack.Screen name="back_room/CycleCount" />
             <Stack.Screen name="back_room/Returns" />
-            <Stack.Screen name="sales_floor/Mims" />
+            <Stack.Screen name="Mims" />
             <Stack.Screen name="sales_floor/Search" />
             <Stack.Screen name="sales_floor/IS4TC" />
             <Stack.Screen name="sales_floor/FillReport" />

@@ -1,31 +1,25 @@
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
-import { View, Text, StyleSheet } from "react-native";
+import { useEffect } from "react";
+import { View, Text } from "react-native";
 
-export default function Mims() {
+const Notifications = () => {
+    useEffect(() => { }, [])
     return (
         <View style={{ flex: 1 }}>
             <HeaderComponent
                 headerLeft={(<BackButton />)}
                 headerCenter={(
                     <View style={{ flexDirection: 'row' }}>
-                        <Text>Mims</Text>
+                        <Text>Notifications</Text>
                     </View>
                 )} />
-            <View style={styles.container}>
-                <Text>Mims</Text>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <Text>Notification Screen</Text>
             </View>
         </View>
     )
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    title: {
-    }
-})
 
+export default Notifications;

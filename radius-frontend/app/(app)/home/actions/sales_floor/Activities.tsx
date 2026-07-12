@@ -1,9 +1,20 @@
+import BackButton from "@/components/common/BackButton";
+import HeaderComponent from "@/components/common/HeaderComponent";
 import { View, Text, StyleSheet } from "react-native";
 
 export default function Activities() {
     return (
-        <View style={styles.container}>
-            <Text>Activities</Text>
+        <View style={{ flex: 1 }}>
+            <HeaderComponent
+                headerLeft={(<BackButton />)}
+                headerCenter={(
+                    <View style={{ flexDirection: 'row' }}>
+                        <Text>Activities</Text>
+                    </View>
+                )} />
+            <View style={styles.container}>
+                <Text>Activities</Text>
+            </View>
         </View>
     )
 }

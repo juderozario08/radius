@@ -1,4 +1,7 @@
-import { Href, Link, router } from "expo-router";
+import HeaderComponent from "@/components/common/HeaderComponent";
+import LogoutComponent from "@/components/common/Logout";
+import NotificationIconComponent from "@/components/common/Notification";
+import { Href, router } from "expo-router";
 import { View, Text, StyleSheet, Image, ImageSourcePropType, TouchableOpacity } from "react-native";
 
 type ButtonConfig = {
@@ -14,7 +17,7 @@ const backRoomMapping: ButtonConfig[] = [
 ]
 
 const salesFloorMapping: ButtonConfig[] = [
-    { title: 'MIMS', path: '/(app)/home/actions/sales_floor/Mims', imagePath: require('@/assets/images/mims.png') },
+    { title: 'MIMS', path: '/(app)/inventory', imagePath: require('@/assets/images/mims.png') },
     { title: 'Search', path: '/(app)/home/actions/sales_floor/Search', imagePath: require('@/assets/images/search.png') },
     { title: 'IS4TC', path: '/(app)/home/actions/sales_floor/IS4TC', imagePath: require('@/assets/images/is4tc.png') },
     { title: 'Fill Report', path: '/(app)/home/actions/sales_floor/FillReport', imagePath: require('@/assets/images/fill_report.png') },
@@ -25,31 +28,40 @@ const salesFloorMapping: ButtonConfig[] = [
 
 export default function Actions() {
     return (
-        <View style={styles.container}>
-            {/* Back Room Section */}
-            <Text style={styles.sectionTitle}>Back Room</Text>
-            <View style={styles.grid}>
-                {backRoomMapping.map((config, key) => (
-                    <View key={key}>
-                        <TouchableOpacity style={styles.button} onPress={() => router.navigate(config.path)}>
-                            <Image source={config.imagePath} style={{ width: 30, height: 30 }} />
-                        </TouchableOpacity>
-                        <Text style={styles.buttonText}>{config.title}</Text>
+        <View style={{ flex: 1 }}>
+            <HeaderComponent
+                headerRight={(
+                    <View style={{ flexDirection: 'row' }}>
+                        <NotificationIconComponent />
+                        <LogoutComponent />
                     </View>
-                ))}
-            </View>
+                )} />
+            <View style={styles.container}>
+                {/* Back Room Section */}
+                <Text style={styles.sectionTitle}>Back Room</Text>
+                <View style={styles.grid}>
+                    {backRoomMapping.map((config, key) => (
+                        <View key={key}>
+                            <TouchableOpacity style={styles.button} onPress={() => router.navigate(config.path)}>
+                                <Image source={config.imagePath} style={{ width: 30, height: 30 }} />
+                            </TouchableOpacity>
+                            <Text style={styles.buttonText}>{config.title}</Text>
+                        </View>
+                    ))}
+                </View>
 
-            {/* Sales Floor Section */}
-            <Text style={[styles.sectionTitle, { marginTop: 50 }]}>Sales Floor</Text>
-            <View style={styles.grid}>
-                {salesFloorMapping.map((config, key) => (
-                    <View key={key}>
-                        <TouchableOpacity style={styles.button} onPress={() => router.navigate(config.path)}>
-                            <Image source={config.imagePath} style={{ width: 30, height: 30 }} />
-                        </TouchableOpacity>
-                        <Text style={styles.buttonText}>{config.title}</Text>
-                    </View>
-                ))}
+                {/* Sales Floor Section */}
+                <Text style={[styles.sectionTitle, { marginTop: 50 }]}>Sales Floor</Text>
+                <View style={styles.grid}>
+                    {salesFloorMapping.map((config, key) => (
+                        <View key={key}>
+                            <TouchableOpacity style={styles.button} onPress={() => router.navigate(config.path)}>
+                                <Image source={config.imagePath} style={{ width: 30, height: 30 }} />
+                            </TouchableOpacity>
+                            <Text style={styles.buttonText}>{config.title}</Text>
+                        </View>
+                    ))}
+                </View>
             </View>
         </View>
     );
@@ -86,7 +98,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
-        width: 88,
+        width: 83,
         marginBottom: 5
     },
     buttonText: {

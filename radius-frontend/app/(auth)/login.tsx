@@ -104,8 +104,7 @@ export default function LoginScreen() {
                 body: JSON.stringify({ email, password, force }),
             });
 
-            await SecureStore.setItemAsync("user_info", JSON.stringify(res));
-            await login(res.token);
+            await login(res);
         } catch (err) {
             if (err instanceof ConflictError) {
                 Alert.alert(

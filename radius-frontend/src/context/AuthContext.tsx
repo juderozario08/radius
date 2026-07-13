@@ -3,12 +3,17 @@ import { apiFetch } from "@/api/client";
 import { deleteToken, getToken, saveToken } from "@/utils/token";
 import { createContext, ReactNode, useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
+import * as SecureStore from "expo-secure-store";
+import { LoginResponse } from "@/types/auth.types";
+
+export type UserInfo = Omit<LoginResponse, 'token'>;
 
 type AuthContextType = {
     token: string | null;
+    user: UserInfo | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: (token: string) => Promise<void>;
+    login: (userData: LoginResponse) => Promise<void>;
     logout: () => Promise<void>;
 };
 
@@ -16,6 +21,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [token, setToken] = useState<string | null>(null);
+    const [user, setUser] = useState<UserInfo | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -29,6 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const res = await apiFetch<{ message: string }>("/api/verify_token", {
                     method: "POST",
                 });
+
+                const userInfoStr = await SecureStore.getItemAsync("user_info");
+                if (userInfoStr) {
+                    setUser(JSON.parse(userInfoStr));
+                }
+
                 setToken(t);
                 setIsLoading(false);
                 Toast.show({
@@ -38,7 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
             } catch (err) {
                 await deleteToken();
+                await SecureStore.deleteItemAsync("user_info");
                 setToken(null);
+                setUser(null);
                 setIsLoading(false);
                 Toast.show({
                     type: "error",
@@ -52,20 +66,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         verifyToken();
     }, []);
 
-    async function login(t: string) {
-        await saveToken(t);
-        setToken(t);
+    async function login(userData: LoginResponse) {
+        await saveToken(userData.token);
+        await SecureStore.setItemAsync("user_info", JSON.stringify(userData));
+        setToken(userData.token);
+
+        const { token, ...userInfo } = userData;
+        setUser(userInfo);
     }
 
     async function logout() {
         await deleteToken();
+        await SecureStore.deleteItemAsync("user_info");
         setToken(null);
+        setUser(null);
     }
 
     return (
         <AuthContext.Provider
             value={{
                 token,
+                user,
                 isAuthenticated: !!token,
                 isLoading,
                 login,

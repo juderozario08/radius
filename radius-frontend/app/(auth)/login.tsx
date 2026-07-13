@@ -103,7 +103,6 @@ export default function LoginScreen() {
                 method: "POST",
                 body: JSON.stringify({ email, password, force }),
             });
-            console.log(res);
 
             await SecureStore.setItemAsync("user_info", JSON.stringify(res));
             await login(res.token);

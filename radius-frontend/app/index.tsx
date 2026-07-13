@@ -1,3 +1,4 @@
+//radius-frontend/app/index.tsx
 import { Redirect } from 'expo-router'
 import { View, ActivityIndicator } from 'react-native'
 import { useAuth } from '@/hooks/useAuth'

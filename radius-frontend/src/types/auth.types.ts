@@ -1,3 +1,4 @@
+//radius-frontend/src/types/auth.types.ts
 export type EmployeeRole = "SALES" | "SERVICE" | "MANAGER" | "ADMIN";
 
 export type LoginResponse = {

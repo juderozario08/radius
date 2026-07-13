@@ -1,8 +1,9 @@
-import HeaderComponent from "@/components/common/HeaderComponent";
-import LogoutComponent from "@/components/common/Logout";
-import NotificationIconComponent from "@/components/common/Notification";
+//radius-frontend/app/(app)/home/actions/index.tsx
 import { Href, router } from "expo-router";
-import { View, Text, StyleSheet, Image, ImageSourcePropType, TouchableOpacity } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, StyleSheet, Image, ImageSourcePropType, TouchableOpacity, ScrollView } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import { EmployeeRole, LoginResponse } from "@/types/auth.types";
 
 type ButtonConfig = {
     title: string;
@@ -17,7 +18,7 @@ const backRoomMapping: ButtonConfig[] = [
 ]
 
 const salesFloorMapping: ButtonConfig[] = [
-    { title: 'MIMS', path: '/(app)/inventory', imagePath: require('@/assets/images/mims.png') },
+    { title: 'MIMS', path: '/(app)/home/actions/sales_floor/Mims', imagePath: require('@/assets/images/mims.png') },
     { title: 'Search', path: '/(app)/home/actions/sales_floor/Search', imagePath: require('@/assets/images/search.png') },
     { title: 'IS4TC', path: '/(app)/home/actions/sales_floor/IS4TC', imagePath: require('@/assets/images/is4tc.png') },
     { title: 'Fill Report', path: '/(app)/home/actions/sales_floor/FillReport', imagePath: require('@/assets/images/fill_report.png') },
@@ -26,43 +27,58 @@ const salesFloorMapping: ButtonConfig[] = [
     { title: 'Orders', path: '/(app)/home/actions/sales_floor/Orders', imagePath: require('@/assets/images/orders.png') }
 ];
 
+const adminActionsMapping: ButtonConfig[] = [
+    { title: 'Employees', path: '/(app)/home/actions/admin/Employees', imagePath: require('@/assets/images/employees.png') },
+]
+
+const Subsection = ({ title, mapping }: { title: string, mapping: ButtonConfig[] }) => {
+    return (
+        <View>
+            <Text style={styles.sectionTitle}>{title}</Text>
+            <View style={styles.grid}>
+                {mapping.map((config, key) => (
+                    <View key={key}>
+                        <TouchableOpacity style={styles.button} onPress={() => router.navigate(config.path)}>
+                            <Image source={config.imagePath} style={{ width: 30, height: 30 }} />
+                        </TouchableOpacity>
+                        <Text style={styles.buttonText}>{config.title}</Text>
+                    </View>
+                ))}
+            </View>
+        </View>
+    )
+}
+
 export default function Actions() {
+    const [role, setRole] = useState<EmployeeRole>('SALES');
+
+    useEffect(() => {
+        const getUserAndSetRole = async () => {
+            try {
+                const res = await SecureStore.getItemAsync("user_info");
+                if (res) {
+                    const userInfo = JSON.parse(res) as LoginResponse;
+                    setRole(userInfo.role);
+                }
+            } catch (error) {
+                console.error("Failed to fetch or parse user role:", error);
+            }
+        };
+
+        getUserAndSetRole();
+    }, []);
+
     return (
         <View style={{ flex: 1 }}>
-            <HeaderComponent
-                headerRight={(
-                    <View style={{ flexDirection: 'row' }}>
-                        <NotificationIconComponent />
-                        <LogoutComponent />
-                    </View>
-                )} />
-            <View style={styles.container}>
-                {/* Back Room Section */}
-                <Text style={styles.sectionTitle}>Back Room</Text>
-                <View style={styles.grid}>
-                    {backRoomMapping.map((config, key) => (
-                        <View key={key}>
-                            <TouchableOpacity style={styles.button} onPress={() => router.navigate(config.path)}>
-                                <Image source={config.imagePath} style={{ width: 30, height: 30 }} />
-                            </TouchableOpacity>
-                            <Text style={styles.buttonText}>{config.title}</Text>
-                        </View>
-                    ))}
+            <ScrollView>
+                <View style={styles.container}>
+                    <Subsection title="Back Room" mapping={backRoomMapping} />
+                    <View style={{ marginTop: 50 }} />
+                    <Subsection title="Sales Floor" mapping={salesFloorMapping} />
+                    <View style={{ marginTop: 50 }} />
+                    {role === 'ADMIN' && <Subsection title="Admin Actions" mapping={adminActionsMapping} />}
                 </View>
-
-                {/* Sales Floor Section */}
-                <Text style={[styles.sectionTitle, { marginTop: 50 }]}>Sales Floor</Text>
-                <View style={styles.grid}>
-                    {salesFloorMapping.map((config, key) => (
-                        <View key={key}>
-                            <TouchableOpacity style={styles.button} onPress={() => router.navigate(config.path)}>
-                                <Image source={config.imagePath} style={{ width: 30, height: 30 }} />
-                            </TouchableOpacity>
-                            <Text style={styles.buttonText}>{config.title}</Text>
-                        </View>
-                    ))}
-                </View>
-            </View>
+            </ScrollView>
         </View>
     );
 }

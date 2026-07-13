@@ -1,3 +1,4 @@
+//radius-frontend/src/utils/roles.ts
 export type EmployeeRole = 'SALES' | 'SERVICE' | 'MANAGER' | 'ADMIN';
 
 export type Permission = 'view_employees' | 'create_employee' | 'view_transfers' | 'approve_po' | 'view_inventory' | 'view_orders';

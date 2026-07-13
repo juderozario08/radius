@@ -1,3 +1,4 @@
+//radius-frontend/app/(app)/home/_layout.tsx
 import {
     createMaterialTopTabNavigator,
     MaterialTopTabNavigationOptions,
@@ -6,6 +7,9 @@ import {
 import { withLayoutContext } from "expo-router";
 import { ParamListBase, TabNavigationState } from "@react-navigation/native";
 import { StyleSheet, View } from "react-native";
+import NotificationIconComponent from "@/components/common/NotificationIcon";
+import LogoutComponent from "@/components/common/Logout";
+import HeaderComponent from "@/components/common/HeaderComponent";
 
 const { Navigator } = createMaterialTopTabNavigator();
 
@@ -29,7 +33,7 @@ function DotIndicator({ state }: { state: TabNavigationState<ParamListBase> }) {
                         styles.dot,
                         { backgroundColor: index === state.index ? activeDotColor : inactiveDotColor },
                     ]}
-                />
+                ></View>
             ))}
         </View>
     );
@@ -37,16 +41,25 @@ function DotIndicator({ state }: { state: TabNavigationState<ParamListBase> }) {
 
 export default function HomeLayout() {
     return (
-        <MaterialTopTabs
-            tabBarPosition="bottom"
-            tabBar={({ state }) => <DotIndicator state={state} />}
-            screenOptions={{
-                swipeEnabled: true,
-            }}
-        >
-            <MaterialTopTabs.Screen name="dashboard" />
-            <MaterialTopTabs.Screen name="actions" />
-        </MaterialTopTabs>
+        <View style={{ flex: 1 }}>
+            <HeaderComponent
+                headerRight={(
+                    <View style={{ flexDirection: 'row' }}>
+                        <NotificationIconComponent />
+                        <LogoutComponent />
+                    </View>
+                )} />
+            <MaterialTopTabs
+                tabBarPosition="bottom"
+                tabBar={({ state }) => <DotIndicator state={state} />}
+                screenOptions={{
+                    swipeEnabled: true,
+                }}
+            >
+                <MaterialTopTabs.Screen name="dashboard" />
+                <MaterialTopTabs.Screen name="actions" />
+            </MaterialTopTabs>
+        </View>
     );
 }
 

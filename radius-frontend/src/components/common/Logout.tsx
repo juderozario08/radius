@@ -1,3 +1,4 @@
+//radius-frontend/src/components/common/Logout.tsx
 import { apiFetch } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LogoutResponse } from "@/types/auth.types";

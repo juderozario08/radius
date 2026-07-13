@@ -1,7 +1,9 @@
+//radius-frontend/app/(auth)/login.tsx
 import { apiFetch, ConflictError } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LoginResponse } from "@/types/auth.types";
 import { useState } from "react";
+import * as SecureStore from "expo-secure-store";
 import {
     Alert,
     KeyboardAvoidingView,
@@ -84,6 +86,8 @@ function checkPassword(password: string): string[] {
     return result;
 } */
 
+{/* {"employee_id": 1, "last_name": "Rozario", "role": "ADMIN", "session_id": 72, "store_id": 26,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Imp1ZGUucm96YXJpb0BnbWFpbC5jb20iLCJlbXBsb3llZV9pZCI6MSwiZXhwIjoxNzgzOTg2OTA3LCJyb2xlIjoiQURNSU4ifQ.U1HSVexaHKiaYEyp9ccpHTD9UHL_IcVpP9maYs214ko"} */}
 export default function LoginScreen() {
     const { login } = useAuth();
     const [email, setEmail] = useState("");
@@ -99,6 +103,9 @@ export default function LoginScreen() {
                 method: "POST",
                 body: JSON.stringify({ email, password, force }),
             });
+            console.log(res);
+
+            await SecureStore.setItemAsync("user_info", JSON.stringify(res));
             await login(res.token);
         } catch (err) {
             if (err instanceof ConflictError) {

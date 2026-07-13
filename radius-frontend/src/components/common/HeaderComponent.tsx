@@ -1,3 +1,4 @@
+//radius-frontend/src/components/common/HeaderComponent.tsx
 import { View } from "react-native";
 
 interface HeaderComponentType {

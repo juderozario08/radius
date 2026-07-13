@@ -1,5 +1,5 @@
+//radius-frontend/src/components/common/NotificationIcon.tsx
 import { useNotifications } from "@/hooks/useNotification";
-import { router } from "expo-router";
 import { TouchableOpacity, Image } from "react-native"
 
 const NotificationIconComponent = () => {
@@ -7,7 +7,6 @@ const NotificationIconComponent = () => {
 
     return (
         <TouchableOpacity onPress={() => {
-            router.push('/(app)/notifications');
             getNotifications();
         }}>
             <Image

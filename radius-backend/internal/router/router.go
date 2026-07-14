@@ -5,7 +5,6 @@ import (
 	"os"
 	"radius/internal/handler"
 	"radius/internal/middleware"
-	"radius/internal/models"
 	"radius/internal/service"
 	"time"
 
@@ -63,7 +62,6 @@ func NewRouter(cfg Config) *gin.Engine {
 	{
 		public.GET("/health", func(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, gin.H{
-				"status":  http.StatusOK,
 				"message": "Server is working!",
 			})
 		})
@@ -80,10 +78,30 @@ func NewRouter(cfg Config) *gin.Engine {
 
 	admin := router.Group("/api/admin")
 	admin.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService))
-	admin.Use(middleware.RequireRole(models.RoleAdmin))
+	admin.Use(middleware.RequirePermission(middleware.PermViewAdminActions))
 	{
-		admin.POST("/create_employees", cfg.Handlers.AuthHandler.Register)
-		admin.GET("/get_all_sessions", cfg.Handlers.SessionHandler.GetAllSessions)
+		admin.GET("/health", func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, gin.H{
+				"message": "Admin route is working!",
+			})
+		})
+		admin.POST("/create_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.AuthHandler.Register)
+		admin.POST("/deactivate_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.AuthHandler.Register)
+		admin.GET("/get_all_employees", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.SessionHandler.GetAllSessions)
+		admin.GET("/get_all_sessions", middleware.RequirePermission(middleware.PermManageSessions), cfg.Handlers.SessionHandler.GetAllSessions)
+		admin.GET("/get_session", middleware.RequirePermission(middleware.PermManageSessions))
+		admin.GET("/delete_session", middleware.RequirePermission(middleware.PermManageSessions))
+	}
+
+	manager := router.Group("/api/manager")
+	manager.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService))
+	// manager.Use(middleware.RequirePermission())
+	{
+		manager.GET("/health", func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, gin.H{
+				"message": "Manager route is working!",
+			})
+		})
 	}
 
 	return router

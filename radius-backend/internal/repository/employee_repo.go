@@ -15,7 +15,7 @@ func NewEmployeeRepo(db *sql.DB) *EmployeeRepo {
 	return &EmployeeRepo{db: db}
 }
 
-func (r *EmployeeRepo) GetByEmail(ctx context.Context, email string) (*models.Employee, error) {
+func (r *EmployeeRepo) GetEmployeeByEmail(ctx context.Context, email string) (*models.Employee, error) {
 	var employee models.Employee
 	query := `
 		SELECT
@@ -40,7 +40,7 @@ func (r *EmployeeRepo) GetByEmail(ctx context.Context, email string) (*models.Em
 	return &employee, nil
 }
 
-func (r *EmployeeRepo) GetByEmailWithSession(ctx context.Context, email string) (*models.GetEmployeeByEmailWithSession, error) {
+func (r *EmployeeRepo) GetEmployeeByEmailWithSession(ctx context.Context, email string) (*models.GetEmployeeByEmailWithSession, error) {
 	var employee models.GetEmployeeByEmailWithSession
 	query := `
 		SELECT
@@ -70,7 +70,7 @@ func (r *EmployeeRepo) GetByEmailWithSession(ctx context.Context, email string) 
 	return &employee, nil
 }
 
-func (r *EmployeeRepo) GetById(ctx context.Context, id int) (*models.Employee, error) {
+func (r *EmployeeRepo) GetEmployeeById(ctx context.Context, id int) (*models.Employee, error) {
 	return nil, nil
 }
 

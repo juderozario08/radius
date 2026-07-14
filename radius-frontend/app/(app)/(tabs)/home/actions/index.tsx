@@ -3,6 +3,9 @@ import { Href, router } from "expo-router";
 import { View, Text, StyleSheet, Image, ImageSourcePropType, TouchableOpacity, ScrollView } from "react-native";
 import Gate from "@/components/common/Gate";
 import { Permission } from "@/utils/roles";
+import HeaderComponent from "@/components/common/HeaderComponent";
+import NotificationIconComponent from "@/components/common/NotificationIcon";
+import LogoutComponent from "@/components/common/Logout";
 
 type ButtonConfig = {
     title: string;
@@ -18,17 +21,18 @@ const backRoomMapping: ButtonConfig[] = [
 ]
 
 const salesFloorMapping: ButtonConfig[] = [
-    { title: 'MIMS', path: '/(app)/(tabs)/home/actions/sales_floor/Mims', imagePath: require('@/assets/images/mims.png') },
-    { title: 'Search', path: '/(app)/(tabs)/home/actions/sales_floor/Search', imagePath: require('@/assets/images/search.png') },
+    { title: 'MIMS', path: '/(app)/(tabs)/inventory', imagePath: require('@/assets/images/mims.png') },
     { title: 'IS4TC', path: '/(app)/(tabs)/home/actions/sales_floor/IS4TC', imagePath: require('@/assets/images/is4tc.png') },
     { title: 'Fill Report', path: '/(app)/(tabs)/home/actions/sales_floor/FillReport', imagePath: require('@/assets/images/fill_report.png') },
     { title: 'Item Adjust', path: '/(app)/(tabs)/home/actions/sales_floor/ItemAdjust', imagePath: require('@/assets/images/item_adjust.png') },
     { title: 'Activities', path: '/(app)/(tabs)/home/actions/sales_floor/Activities', imagePath: require('@/assets/images/activities.png') },
-    { title: 'Orders', path: '/(app)/(tabs)/home/actions/sales_floor/Orders', imagePath: require('@/assets/images/orders.png') }
+    { title: 'Orders', path: '/(app)/(tabs)/home/actions/sales_floor/Orders', imagePath: require('@/assets/images/orders.png') },
+    { title: 'Transactions', path: '/(app)/(tabs)/home/actions/sales_floor/Transactions', imagePath: require('@/assets/images/transactions.png') },
 ];
 
 const adminActionsMapping: ButtonConfig[] = [
     { title: 'Employees', path: '/(app)/(tabs)/home/actions/admin/Employees', imagePath: require('@/assets/images/employees.png') },
+    { title: 'Sessions', path: '/(app)/(tabs)/home/actions/admin/Sessions', imagePath: require('@/assets/images/sessions.png') },
 ]
 
 const Subsection = ({ title, mapping }: { title: string, mapping: ButtonConfig[] }) => {
@@ -52,6 +56,13 @@ const Subsection = ({ title, mapping }: { title: string, mapping: ButtonConfig[]
 export default function Actions() {
     return (
         <View style={{ flex: 1 }}>
+            <HeaderComponent
+                headerRight={(
+                    <View style={{ flexDirection: 'row' }}>
+                        <NotificationIconComponent />
+                        <LogoutComponent />
+                    </View>
+                )} />
             <ScrollView>
                 <View style={styles.container}>
                     {/* Only employees with the 'view_back_room' permission will see this */}

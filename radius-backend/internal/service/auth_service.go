@@ -1,24 +1,51 @@
+// radius-backend/internal/service/auth_service.go
 package service
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
+	"log"
 	"net"
 	"radius/internal/models"
 	"radius/internal/repository"
+	"radius/internal/utils"
 	"strings"
 	"time"
-
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
 	employeeRepo *repository.EmployeeRepo
 	sessionRepo  *repository.SessionRepo
 	jwtSecret    []byte
+}
+
+func (s *AuthService) StartSessionCleanupWorker(ctx context.Context, interval time.Duration) {
+	cleanup := func() {
+		rowsDeleted, err := s.sessionRepo.DeleteExpiredSessions(ctx)
+		if err != nil {
+			log.Printf("[Worker] Error cleaning up expired sessions: %v", err)
+		} else if rowsDeleted > 0 {
+			log.Printf("[Worker] Successfully cleaned up %d expired orphaned sessions", rowsDeleted)
+		}
+	}
+
+	go func() {
+		log.Println("[Worker] Running initial session cleanup...")
+		cleanup()
+
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				cleanup()
+			case <-ctx.Done():
+				log.Println("[Worker] Stopping session cleanup worker")
+				return
+			}
+		}
+	}()
 }
 
 func NewAuthService(employeeRepo *repository.EmployeeRepo, sessionRepo *repository.SessionRepo, jwtSecret []byte) *AuthService {
@@ -29,39 +56,12 @@ func NewAuthService(employeeRepo *repository.EmployeeRepo, sessionRepo *reposito
 	}
 }
 
-func (s *AuthService) generateToken(id int, email string, role models.EmployeeRole) (string, error) {
-	claims := jwt.MapClaims{
-		"employee_id": id,
-		"email":       email,
-		"role":        role,
-		"exp":         time.Now().Add(time.Hour * 24).Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(s.jwtSecret)
-}
-
-func (s *AuthService) hashTokenForDB(token string) string {
-	t := sha256.Sum256([]byte(token))
-	hash := hex.EncodeToString(t[:])
-	return hash
-}
-
-func (s *AuthService) hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func (s *AuthService) checkPasswordHash(password string, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
 func (s *AuthService) Register(ctx context.Context, model models.CreateEmployeeRequest) (*models.CreateEmployeeResponse, error) {
 	if model.ConfirmPassword != model.Password {
 		return nil, errors.New("password and confirm password do not match")
 	}
 
-	hash, err := s.hashPassword(model.Password)
+	hash, err := utils.HashPassword(model.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -90,22 +90,28 @@ func (s *AuthService) Register(ctx context.Context, model models.CreateEmployeeR
 }
 
 func (s *AuthService) ValidateSession(ctx context.Context, tokenString string) error {
-	hashedToken := s.hashTokenForDB(tokenString)
-	_, err := s.sessionRepo.GetSessionByHashedToken(ctx, hashedToken)
+	hashedToken := utils.HashTokenForDB(tokenString)
+
+	session, err := s.sessionRepo.GetSessionByHashedToken(ctx, hashedToken)
 	if err != nil {
-		return errors.New("Session not found, expired or logged out")
+		return errors.New("Session not found or logged out")
+	}
+
+	if time.Now().After(session.ExpiresAt) {
+		_ = s.sessionRepo.DeleteSessionByHash(ctx, hashedToken)
+		return errors.New("Session expired and has been removed")
 	}
 
 	return nil
 }
 
 func (s *AuthService) createSession(ctx context.Context, employeeId int, role models.EmployeeRole, email string, ipAddress string, storeId int) (string, int, error) {
-	token, err := s.generateToken(employeeId, email, role)
+	token, err := utils.GenerateToken(employeeId, email, role, s.jwtSecret)
 	if err != nil {
 		return "", -1, err
 	}
 
-	tokenHash := s.hashTokenForDB(token)
+	tokenHash := utils.HashTokenForDB(token)
 	expiresAt := time.Now().Add(time.Hour * 24)
 
 	session, err := s.sessionRepo.CreateSession(ctx, models.CreateSessionRequest{
@@ -124,7 +130,7 @@ func (s *AuthService) createSession(ctx context.Context, employeeId int, role mo
 
 func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginRequest, ipAddress string) (*models.LoginResult, error) {
 	email := strings.ToLower(model.Email)
-	employee, err := s.employeeRepo.GetByEmailWithSession(ctx, email)
+	employee, err := s.employeeRepo.GetEmployeeByEmailWithSession(ctx, email)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +138,7 @@ func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginReque
 		return nil, errors.New("Invalid Credentials")
 	}
 
-	if !s.checkPasswordHash(model.Password, employee.PasswordHash) {
+	if !utils.CheckPasswordHash(model.Password, employee.PasswordHash) {
 		return nil, errors.New("Invalid Credentials")
 	}
 
@@ -167,7 +173,7 @@ func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginReque
 }
 
 func (s *AuthService) Logout(ctx context.Context, tokenString string) error {
-	hashedToken := s.hashTokenForDB(tokenString)
+	hashedToken := utils.HashTokenForDB(tokenString)
 	err := s.sessionRepo.DeleteSessionByHashedToken(ctx, hashedToken)
 	if err != nil {
 		return err

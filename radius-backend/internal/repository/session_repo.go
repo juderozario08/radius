@@ -1,3 +1,4 @@
+// radius-backend/internal/repository/session_repo.go
 package repository
 
 import (
@@ -18,18 +19,24 @@ func NewSessionRepo(db *sql.DB) *SessionRepo {
 func (r *SessionRepo) GetSessionByHashedToken(ctx context.Context, tokenHash string) (*models.Session, error) {
 	var session models.Session
 	query := `
-		SELECT session_id, employee_id, store_id, token_hash
-		FROM sessions
-		WHERE token_hash = $1
-	`
+        SELECT session_id, employee_id, store_id, token_hash, expires_at
+        FROM sessions
+        WHERE token_hash = $1
+    `
 	err := r.db.QueryRowContext(ctx, query, tokenHash).Scan(
-		&session.SessionId, &session.EmployeeId, &session.StoreId, &session.TokenHash,
+		&session.SessionId, &session.EmployeeId, &session.StoreId, &session.TokenHash, &session.ExpiresAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	return &session, nil
+}
+
+func (r *SessionRepo) DeleteSessionByHash(ctx context.Context, tokenHash string) error {
+	query := `DELETE FROM sessions WHERE token_hash = $1`
+	_, err := r.db.ExecContext(ctx, query, tokenHash)
+	return err
 }
 
 func (r *SessionRepo) GetSessionById(ctx context.Context, id int) (*models.Session, error) {
@@ -148,4 +155,15 @@ func (r *SessionRepo) GetAllSessions(ctx context.Context) ([]models.GetAllSessio
 	}
 
 	return sessions, nil
+}
+
+func (r *SessionRepo) DeleteExpiredSessions(ctx context.Context) (int64, error) {
+	query := `DELETE FROM sessions WHERE expires_at < NOW()`
+
+	result, err := r.db.ExecContext(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.RowsAffected()
 }

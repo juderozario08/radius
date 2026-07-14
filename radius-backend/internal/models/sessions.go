@@ -59,3 +59,8 @@ type GetAllSessions struct {
 	PostalCode string       `json:"postal_code"`
 	IsActive   bool         `json:"is_active"`
 }
+
+type GetSessionByHashedTokenResponse struct {
+	Session
+	Message string
+}

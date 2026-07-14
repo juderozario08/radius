@@ -1,11 +1,9 @@
 //radius-frontend/app/(app)/(tabs)/_layout.tsx
+import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { Redirect, Tabs } from "expo-router";
 import React from "react";
 import { Image } from "react-native";
-
-const activeTintColor = "#C70202";
-const inactiveTintColor = "#8E8E8E";
 
 function getIcon(focused: boolean, activeSource: any, inactiveSource: any) {
     return (
@@ -27,8 +25,8 @@ export default function AppLayout() {
         <Tabs
             screenOptions={{
                 headerShown: false,
-                tabBarActiveTintColor: activeTintColor,
-                tabBarInactiveTintColor: inactiveTintColor,
+                tabBarActiveTintColor: COLORS.activeTint,
+                tabBarInactiveTintColor: COLORS.inactiveTint,
             }}
         >
             <Tabs.Screen

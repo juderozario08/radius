@@ -7,9 +7,7 @@ import {
 import { withLayoutContext } from "expo-router";
 import { ParamListBase, TabNavigationState } from "@react-navigation/native";
 import { StyleSheet, View } from "react-native";
-import NotificationIconComponent from "@/components/common/NotificationIcon";
-import LogoutComponent from "@/components/common/Logout";
-import HeaderComponent from "@/components/common/HeaderComponent";
+import { COLORS } from "@/constants/colors";
 
 const { Navigator } = createMaterialTopTabNavigator();
 
@@ -20,9 +18,6 @@ export const MaterialTopTabs = withLayoutContext<
     MaterialTopTabNavigationEventMap
 >(Navigator);
 
-const activeDotColor = "#C70202";
-const inactiveDotColor = "#D1D1D6";
-
 function DotIndicator({ state }: { state: TabNavigationState<ParamListBase> }) {
     return (
         <View style={styles.dotContainer} pointerEvents="none">
@@ -31,7 +26,7 @@ function DotIndicator({ state }: { state: TabNavigationState<ParamListBase> }) {
                     key={route.key}
                     style={[
                         styles.dot,
-                        { backgroundColor: index === state.index ? activeDotColor : inactiveDotColor },
+                        { backgroundColor: index === state.index ? COLORS.activeDot : COLORS.inactiveDot },
                     ]}
                 ></View>
             ))}
@@ -42,13 +37,6 @@ function DotIndicator({ state }: { state: TabNavigationState<ParamListBase> }) {
 export default function HomeLayout() {
     return (
         <View style={{ flex: 1 }}>
-            <HeaderComponent
-                headerRight={(
-                    <View style={{ flexDirection: 'row' }}>
-                        <NotificationIconComponent />
-                        <LogoutComponent />
-                    </View>
-                )} />
             <MaterialTopTabs
                 tabBarPosition="bottom"
                 tabBar={({ state }) => <DotIndicator state={state} />}

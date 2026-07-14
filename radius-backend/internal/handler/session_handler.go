@@ -26,3 +26,23 @@ func (h *SessionHandler) GetAllSessions(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, sessionResponse)
 }
+
+func (h *SessionHandler) GetSessions(ctx *gin.Context) {
+	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context())
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, sessionResponse)
+}
+
+func (h *SessionHandler) DeleteSessions(ctx *gin.Context) {
+	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context())
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, sessionResponse)
+}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"radius/internal/repository"
 	"radius/internal/router"
 	"radius/internal/service"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -86,6 +88,9 @@ func main() {
 		TransferHandler:    handler.NewTransferHandler(transferService),
 		SessionHandler:     handler.NewSessionHandler(sessionService),
 	}
+
+	bgCtx := context.Background()
+	authService.StartSessionCleanupWorker(bgCtx, 24*time.Hour)
 
 	router := router.NewRouter(router.Config{
 		Handlers:    appHandlers,

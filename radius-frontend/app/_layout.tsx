@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 
-function InitialLayout() {
+function LoadingLayout() {
     const { isAuthenticated, isLoading } = useAuth();
     const router = useRouter();
 
@@ -37,7 +37,7 @@ export default function RootLayout() {
     return (
         <AuthProvider>
             <StoreProvider>
-                <InitialLayout />
+                <LoadingLayout />
                 <CustomToast />
             </StoreProvider>
         </AuthProvider>

@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { COLORS } from "@/constants/colors";
 
 function checkEmail(email: string): boolean {
     let atSeen = false;
@@ -134,7 +135,7 @@ export default function LoginScreen() {
                 <TextInput
                     style={[styles.input, { marginBottom: 25 }]}
                     placeholder="Email"
-                    placeholderTextColor={"#aaa"}
+                    placeholderTextColor={COLORS.placeholder}
                     value={email}
                     onChangeText={(t) => {
                         setEmail(t);
@@ -154,7 +155,7 @@ export default function LoginScreen() {
                     <TextInput
                         style={styles.input}
                         placeholder="Password"
-                        placeholderTextColor={"#aaa"}
+                        placeholderTextColor={COLORS.placeholder}
                         value={password}
                         onChangeText={(t) => {
                             setPassword(t);

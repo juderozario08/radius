@@ -1,5 +1,5 @@
 //radius-frontend/src/components/common/Logout.tsx
-import { apiFetch } from "@/api/client";
+import { apiFetch, UnauthorizedError } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LogoutResponse } from "@/types/auth.types";
 import { TouchableOpacity, Image, Alert } from "react-native"
@@ -24,6 +24,9 @@ const LogoutComponent = () => {
         } catch (err) {
             console.error(err);
             Alert.alert("An error occured", String(err));
+            if (err instanceof UnauthorizedError) {
+                await logout();
+            }
         }
     }
 

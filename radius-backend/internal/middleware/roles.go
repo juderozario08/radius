@@ -90,7 +90,7 @@ func RequirePermission(requiredPerm Permission) gin.HandlerFunc {
 		userRole, exists := ctx.Get("role")
 
 		if !exists {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Role not found in context"})
+			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Role not found in context"})
 			return
 		}
 

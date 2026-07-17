@@ -3,7 +3,6 @@ import { apiFetch, ConflictError } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LoginResponse } from "@/types/auth.types";
 import { useState } from "react";
-import * as SecureStore from "expo-secure-store";
 import {
     Alert,
     KeyboardAvoidingView,
@@ -41,54 +40,6 @@ function checkEmail(email: string): boolean {
     return atSeen && dotAfterAtSeen && charsAfterFinalDot;
 }
 
-/*
-function checkPassword(password: string): string[] {
-    let symbol = false;
-    let number = false;
-    let lower = false;
-    let upper = false;
-    let length = password.length >= 8;
-
-    const symbols = ['!', '@', '.', ',', '?', '$'];
-
-    const result: string[] = [];
-
-    for (let i = 0; length && i < password.length; i++) {
-        if (!symbol && symbols.includes(password[i])) {
-            symbol = true;
-        }
-        if (!number && /\d/.test(password[i])) {
-            number = true;
-        }
-        if (!upper && /[A-Z]/.test(password[i])) {
-            upper = true;
-        }
-        if (!lower && /[a-z]/.test(password[i])) {
-            lower = true;
-        }
-    }
-
-    if (!length) {
-        return ["Password must be at least 8 characters"];
-    }
-    if (!upper) {
-        result.push("Password requires at least 1 upper case character.")
-    }
-    if (!lower) {
-        result.push("Password requires at least 1 lower case character.")
-    }
-    if (!number) {
-        result.push("Password requires at least 1 number.")
-    }
-    if (!symbol) {
-        result.push("Password must contain one of the following symbols " + symbols.toString().replaceAll(",", "") + ".")
-    }
-
-    return result;
-} */
-
-{/* {"employee_id": 1, "last_name": "Rozario", "role": "ADMIN", "session_id": 72, "store_id": 26,
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Imp1ZGUucm96YXJpb0BnbWFpbC5jb20iLCJlbXBsb3llZV9pZCI6MSwiZXhwIjoxNzgzOTg2OTA3LCJyb2xlIjoiQURNSU4ifQ.U1HSVexaHKiaYEyp9ccpHTD9UHL_IcVpP9maYs214ko"} */}
 export default function LoginScreen() {
     const { login } = useAuth();
     const [email, setEmail] = useState("");

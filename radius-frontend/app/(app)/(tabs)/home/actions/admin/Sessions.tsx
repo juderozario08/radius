@@ -3,9 +3,10 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, ActivityIndicator } from "react-native";
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
-import { apiFetch } from "@/api/client";
+import { apiFetch, UnauthorizedError } from "@/api/client";
 import Toast from "react-native-toast-message";
 import { GetAllSessionsResponse, Session } from "@/types/admin.types";
+import { useAuth } from "@/hooks/useAuth";
 
 const renderSessionCard = ({ item }: { item: Session }) => (
     <View style={styles.card}>
@@ -50,6 +51,7 @@ const renderSessionCard = ({ item }: { item: Session }) => (
 );
 
 export default function Sessions() {
+    const { logout } = useAuth();
     const [sessions, setSessions] = useState<Session[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -66,7 +68,6 @@ export default function Sessions() {
             const data = await apiFetch<GetAllSessionsResponse>("/api/admin/get_all_sessions")
             setSessions(data.sessions || []);
         } catch (err) {
-            setError("Could not load sessions. Please try again.");
             Toast.show({
                 type: "error",
                 text1: String(err),
@@ -74,6 +75,11 @@ export default function Sessions() {
                 autoHide: true,
                 position: "bottom",
             });
+            if (err instanceof UnauthorizedError) {
+                await logout();
+            } else {
+                setError("Could not load sessions. Please try again.");
+            }
         } finally {
             setIsLoading(false);
         }

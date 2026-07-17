@@ -1,4 +1,4 @@
-//radius-backend/internal/service/employee_service.go
+// radius-backend/internal/service/employee_service.go
 package service
 
 import (
@@ -27,5 +27,15 @@ func (s *EmployeeService) GetAllEmployees(ctx context.Context) (*models.GetAllEm
 	return &models.GetAllEmployeesResponse{
 		Employees: employees,
 		Message:   "Retrieved all existing employees",
+	}, nil
+}
+
+func (s *EmployeeService) DeleteEmployee(ctx context.Context, employeeId int) (*models.DeleteEmployeeRespnose, error) {
+	err := s.employeeRepo.DeleteEmployeeById(ctx, employeeId)
+	if err != nil {
+		return nil, err
+	}
+	return &models.DeleteEmployeeRespnose{
+		Message: "Session deleted successfully",
 	}, nil
 }

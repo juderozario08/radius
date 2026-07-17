@@ -1,4 +1,4 @@
-//radius-backend/internal/middleware/auth.go
+// radius-backend/internal/middleware/auth.go
 package middleware
 
 import (

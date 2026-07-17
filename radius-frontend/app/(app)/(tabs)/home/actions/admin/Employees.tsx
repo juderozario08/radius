@@ -16,9 +16,10 @@ import {
 } from "react-native";
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
-import { apiFetch } from "@/api/client";
-import Toast from "react-native-toast-message";
+import { apiFetch, UnauthorizedError } from "@/api/client";
 import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
+import { useAuth } from "@/hooks/useAuth";
+import Toast from "react-native-toast-message";
 
 interface EmployeeCardModalType {
     item: Employee;
@@ -95,6 +96,7 @@ interface CreateEmployeeModalType {
 }
 
 const CreateEmployeeModal: React.FC<CreateEmployeeModalType> = ({ visible, onClose, onSuccess }) => {
+    const { logout } = useAuth();
     const [formData, setFormData] = useState({
         first_name: '', last_name: '', email: '', password: '', role: 'SALES',
         phone: '', address: '', city: '', province: '', postal_code: '', store_id: '', is_active: true,
@@ -116,7 +118,12 @@ const CreateEmployeeModal: React.FC<CreateEmployeeModalType> = ({ visible, onClo
 
     const handleCreateEmployee = async () => {
         if (!formData.first_name || !formData.last_name || !formData.email || !formData.store_id) {
-            Toast.show({ type: "error", text1: "Please fill in all required fields", position: "bottom" });
+            Toast.show({
+                type: "error",
+                text1: "Please fill in all required fields",
+                position: "bottom",
+                visibilityTime: 1000,
+            });
             return;
         }
 
@@ -133,7 +140,14 @@ const CreateEmployeeModal: React.FC<CreateEmployeeModalType> = ({ visible, onClo
             onSuccess();
             onClose();
         } catch (err) {
-            Toast.show({ type: "error", text1: String(err), position: "bottom" });
+            Toast.show({
+                type: "error",
+                text1: String(err),
+                position: "bottom"
+            });
+            if (err instanceof UnauthorizedError) {
+                await logout();
+            }
         } finally {
             setIsCreating(false);
         }
@@ -286,6 +300,7 @@ const CreateEmployeeModal: React.FC<CreateEmployeeModalType> = ({ visible, onClo
 };
 
 export default function Employees() {
+    const { logout } = useAuth();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -314,7 +329,6 @@ export default function Employees() {
             })
             setEmployees(data.employees || []);
         } catch (err) {
-            setError("Could not load employees. Please try again.");
             Toast.show({
                 type: "error",
                 text1: String(err),
@@ -322,6 +336,11 @@ export default function Employees() {
                 autoHide: true,
                 position: "bottom",
             });
+            if (err instanceof UnauthorizedError) {
+                await logout();
+            } else {
+                setError("Could not load employees. Please try again.");
+            }
         } finally {
             setIsLoading(false);
         }

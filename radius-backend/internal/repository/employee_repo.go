@@ -1,4 +1,4 @@
-//radius-backend/internal/repository/employee_repo.go
+// radius-backend/internal/repository/employee_repo.go
 package repository
 
 import (
@@ -147,4 +147,10 @@ func (r *EmployeeRepo) CreateEmployee(ctx context.Context, model models.CreateEm
 		return nil, err
 	}
 	return &employee, nil
+}
+
+func (r *EmployeeRepo) DeleteEmployeeById(ctx context.Context, id int) error {
+	query := `DELETE FROM employees WHERE employee_id = $1;`
+	_, err := r.db.ExecContext(ctx, query, id)
+	return err
 }

@@ -1,6 +1,6 @@
 //radius-frontend/src/api/client.ts
-import { getToken } from "@/utils/token";
-import * as SecureStore from "expo-secure-store";
+import { useAuth } from "@/hooks/useAuth";
+import { deleteToken, getToken } from "@/utils/token";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -12,6 +12,13 @@ export class ConflictError extends Error {
     constructor(message: string) {
         super(message);
         this.name = "ConflictError";
+    }
+}
+
+export class UnauthorizedError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "UnauthorizedError";
     }
 }
 
@@ -31,7 +38,7 @@ export async function apiFetch<T>(
     });
 
     if (response.status === 401) {
-        await SecureStore.deleteItemAsync("session_token");
+        throw new UnauthorizedError("Invalid or expired session");
     }
 
     if (response.status === 409) {

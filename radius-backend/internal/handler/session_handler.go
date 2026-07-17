@@ -1,7 +1,8 @@
-//radius-backend/internal/handler/session_handler.go
+// radius-backend/internal/handler/session_handler.go
 package handler
 
 import (
+	"log"
 	"net/http"
 	"radius/internal/service"
 
@@ -28,7 +29,7 @@ func (h *SessionHandler) GetAllSessions(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, sessionResponse)
 }
 
-func (h *SessionHandler) GetSessions(ctx *gin.Context) {
+func (h *SessionHandler) GetSession(ctx *gin.Context) {
 	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context())
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -38,8 +39,16 @@ func (h *SessionHandler) GetSessions(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, sessionResponse)
 }
 
-func (h *SessionHandler) DeleteSessions(ctx *gin.Context) {
-	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context())
+func (h *SessionHandler) DeleteSession(ctx *gin.Context) {
+	var body struct {
+		SessionId int `json:"session_id" binding:"required"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		log.Println("Error binding JSON: " + err.Error())
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	sessionResponse, err := h.sessionService.DeleteSession(ctx.Request.Context(), body.SessionId)
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

@@ -70,3 +70,13 @@ func (s *SessionService) GetAllSessions(ctx context.Context) (*models.GetAllSess
 		Message:  "Retrieved all existing sessions",
 	}, nil
 }
+
+func (s *SessionService) DeleteSession(ctx context.Context, sessionId int) (*models.DeleteSessionRespnose, error) {
+	err := s.sessionRepo.DeleteSessionById(ctx, sessionId)
+	if err != nil {
+		return nil, err
+	}
+	return &models.DeleteSessionRespnose{
+		Message: "Session deleted successfully",
+	}, nil
+}

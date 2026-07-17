@@ -1,4 +1,4 @@
-//radius-backend/internal/models/employee.go
+// radius-backend/internal/models/employee.go
 package models
 
 type EmployeeRole string
@@ -59,4 +59,8 @@ type GetEmployeeByEmailWithSession struct {
 type GetAllEmployeesResponse struct {
 	Employees []Employee `json:"employees"`
 	Message   string     `json:"message"`
+}
+
+type DeleteEmployeeRespnose struct {
+	Message string `json:"message"`
 }

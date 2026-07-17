@@ -1,4 +1,4 @@
-//radius-backend/internal/router/router.go
+// radius-backend/internal/router/router.go
 package router
 
 import (
@@ -91,8 +91,8 @@ func NewRouter(cfg Config) *gin.Engine {
 		admin.POST("/deactivate_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.AuthHandler.Register)
 		admin.GET("/get_all_employees", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.GetAllEmployees)
 		admin.GET("/get_all_sessions", middleware.RequirePermission(middleware.PermManageSessions), cfg.Handlers.SessionHandler.GetAllSessions)
-		admin.GET("/get_session", middleware.RequirePermission(middleware.PermManageSessions))
-		admin.GET("/delete_session", middleware.RequirePermission(middleware.PermManageSessions))
+		admin.GET("/delete_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.DeleteEmployee)
+		admin.GET("/delete_session", middleware.RequirePermission(middleware.PermManageSessions), cfg.Handlers.SessionHandler.DeleteSession)
 	}
 
 	manager := router.Group("/api/manager")

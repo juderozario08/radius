@@ -1,4 +1,4 @@
-//radius-backend/internal/models/sessions.go
+// radius-backend/internal/models/sessions.go
 package models
 
 import (
@@ -59,4 +59,8 @@ type GetAllSessions struct {
 	Province   string       `json:"province"`
 	PostalCode string       `json:"postal_code"`
 	IsActive   bool         `json:"is_active"`
+}
+
+type DeleteSessionRespnose struct {
+	Message string `json:"message"`
 }

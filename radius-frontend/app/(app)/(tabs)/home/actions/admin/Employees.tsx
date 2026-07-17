@@ -143,7 +143,7 @@ const CreateEmployeeModal: React.FC<CreateEmployeeModalType> = ({ visible, onClo
         <Modal
             visible={visible}
             transparent={true}
-            animationType="slide"
+            animationType="fade"
             onRequestClose={onClose}
         >
             <KeyboardAvoidingView
@@ -418,7 +418,7 @@ export default function Employees() {
             <Modal
                 visible={modalVisible}
                 transparent={true}
-                animationType="slide"
+                animationType="fade"
                 onRequestClose={handleCloseModal}
             >
                 <View style={styles.modalOverlay}>

@@ -1,4 +1,4 @@
-//radius-backend/internal/service/session_service.go
+// radius-backend/internal/service/session_service.go
 package service
 
 import (
@@ -25,11 +25,18 @@ func NewSessionService(employeeRepo *repository.EmployeeRepo, sessionRepo *repos
 
 func (s *SessionService) StartSessionCleanupWorker(ctx context.Context, interval time.Duration) {
 	cleanup := func() {
-		rowsDeleted, err := s.sessionRepo.DeleteExpiredSessions(ctx)
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[Worker] panic recovered: %v", r)
+			}
+		}()
+		cctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		rowsDeleted, err := s.sessionRepo.DeleteExpiredSessions(cctx)
 		if err != nil {
 			log.Printf("[Worker] Error cleaning up expired sessions: %v", err)
 		} else if rowsDeleted > 0 {
-			log.Printf("[Worker] Successfully cleaned up %d expired orphaned sessions", rowsDeleted)
+			log.Printf("[Worker] cleaned up %d sessions", rowsDeleted)
 		}
 	}
 

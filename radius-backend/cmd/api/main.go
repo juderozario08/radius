@@ -1,4 +1,4 @@
-//radius-backend/cmd/api/main.go
+// radius-backend/cmd/api/main.go
 package main
 
 import (
@@ -93,7 +93,7 @@ func main() {
 	}
 
 	bgCtx := context.Background()
-	sessionService.StartSessionCleanupWorker(bgCtx, 20*time.Second)
+	sessionService.StartSessionCleanupWorker(bgCtx, 24*time.Hour)
 
 	router := router.NewRouter(router.Config{
 		Handlers:    appHandlers,

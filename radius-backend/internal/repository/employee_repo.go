@@ -74,8 +74,57 @@ func (r *EmployeeRepo) GetEmployeeById(ctx context.Context, id int) (*models.Emp
 	return nil, nil
 }
 
-func (r *EmployeeRepo) GetAllEmployees(ctx context.Context) ([]*models.Employee, error) {
-	return nil, nil
+func (r *EmployeeRepo) GetAllEmployees(ctx context.Context) ([]models.Employee, error) {
+	query := `
+		SELECT
+			employee_id,
+			store_id,
+			first_name,
+			last_name,
+			email,
+			role,
+			phone,
+			address,
+			city,
+			province,
+			postal_code,
+			is_active
+		FROM employees;
+    `
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var employees []models.Employee
+	for rows.Next() {
+		var e models.Employee
+		err := rows.Scan(
+			&e.EmployeeId,
+			&e.StoreId,
+			&e.FirstName,
+			&e.LastName,
+			&e.Email,
+			&e.Role,
+			&e.Phone,
+			&e.Address,
+			&e.City,
+			&e.Province,
+			&e.PostalCode,
+			&e.IsActive,
+		)
+		if err != nil {
+			return nil, err
+		}
+		employees = append(employees, e)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return employees, nil
 }
 
 func (r *EmployeeRepo) CreateEmployee(ctx context.Context, model models.CreateEmployeeRow) (*models.CreateEmployeeResponse, error) {

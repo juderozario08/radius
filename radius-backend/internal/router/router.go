@@ -20,6 +20,7 @@ type Config struct {
 
 type Handlers struct {
 	AuthHandler        *handler.AuthHandler
+	EmployeeHandler    *handler.EmployeeHandler
 	BarcodeHandler     *handler.BarcodeHandler
 	CycleCountHandler  *handler.CycleCountHandler
 	FillReportHandler  *handler.FillReportHandler
@@ -87,7 +88,7 @@ func NewRouter(cfg Config) *gin.Engine {
 		})
 		admin.POST("/create_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.AuthHandler.Register)
 		admin.POST("/deactivate_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.AuthHandler.Register)
-		admin.GET("/get_all_employees", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.SessionHandler.GetAllSessions)
+		admin.GET("/get_all_employees", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.GetAllEmployees)
 		admin.GET("/get_all_sessions", middleware.RequirePermission(middleware.PermManageSessions), cfg.Handlers.SessionHandler.GetAllSessions)
 		admin.GET("/get_session", middleware.RequirePermission(middleware.PermManageSessions))
 		admin.GET("/delete_session", middleware.RequirePermission(middleware.PermManageSessions))

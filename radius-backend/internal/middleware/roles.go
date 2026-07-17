@@ -2,7 +2,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"radius/internal/models"
 	"slices"
@@ -89,8 +88,6 @@ func hasPermission(role models.EmployeeRole, perm Permission) bool {
 func RequirePermission(requiredPerm Permission) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userRole, exists := ctx.Get("role")
-
-		fmt.Println("Role from context:", userRole)
 
 		if !exists {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Role not found in context"})

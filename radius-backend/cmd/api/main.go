@@ -55,6 +55,7 @@ func main() {
 	productsRepo := repository.NewProductRepo(db.DB)
 	salesRepo := repository.NewSalesRepo(db.DB)
 
+	employeeService := service.NewEmployeeService(employeeRepo)
 	authService := service.NewAuthService(employeeRepo, sessionRepo, []byte(jwtSecretCode))
 	sessionService := service.NewSessionService(employeeRepo, sessionRepo, []byte(jwtSecretCode))
 	barcodeService := service.NewBarcodeService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
@@ -87,6 +88,7 @@ func main() {
 		TransactionHandler: handler.NewTransactionHandler(transactionService),
 		TransferHandler:    handler.NewTransferHandler(transferService),
 		SessionHandler:     handler.NewSessionHandler(sessionService),
+		EmployeeHandler:    handler.NewEmployeeHandler(employeeService),
 	}
 
 	bgCtx := context.Background()

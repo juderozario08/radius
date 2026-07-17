@@ -3,27 +3,53 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, ActivityIndicator } from "react-native";
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
-import { useAuth } from "@/hooks/useAuth"; // To get the token for the request
+import { apiFetch } from "@/api/client";
+import Toast from "react-native-toast-message";
+import { GetAllSessionsResponse, Session } from "@/types/admin.types";
 
-interface Session {
-    session_id: number;
-    ip_address: string;
-    employee_id: number;
-    store_id: number;
-    first_name: string;
-    last_name: string;
-    email: string;
-    role: string;
-    phone: string;
-    address: string;
-    city: string;
-    province: string;
-    postal_code: string;
-    is_active: boolean;
-}
+const renderSessionCard = ({ item }: { item: Session }) => (
+    <View style={styles.card}>
+        <View style={styles.cardHeader}>
+            <Text style={styles.name}>{item.first_name} {item.last_name}</Text>
+            <View style={[
+                styles.statusBadge,
+                { backgroundColor: item.is_active ? '#E8F5E9' : '#FFEBEE' }
+            ]}>
+                <Text style={[
+                    styles.statusText,
+                    { color: item.is_active ? '#2E7D32' : '#C70202' }
+                ]}>
+                    {item.is_active ? 'Active' : 'Inactive'}
+                </Text>
+            </View>
+        </View>
+
+        <View style={styles.detailsContainer}>
+            <Text style={styles.detailRow}>
+                <Text style={styles.label}>Role: </Text>
+                <Text style={styles.value}>{item.role[0] + item.role.substring(1).toLowerCase()}</Text>
+            </Text>
+            <Text style={styles.detailRow}>
+                <Text style={styles.label}>Email: </Text>
+                <Text style={styles.value}>{item.email}</Text>
+            </Text>
+            <Text style={styles.detailRow}>
+                <Text style={styles.label}>IP Address: </Text>
+                <Text style={styles.value}>{item.ip_address}</Text>
+            </Text>
+            <Text style={styles.detailRow}>
+                <Text style={styles.label}>Store ID: </Text>
+                <Text style={styles.value}>{item.store_id}</Text>
+            </Text>
+            <Text style={styles.detailRow}>
+                <Text style={styles.label}>Session ID: </Text>
+                <Text style={styles.value}>{item.session_id}</Text>
+            </Text>
+        </View>
+    </View>
+);
 
 export default function Sessions() {
-    const { token } = useAuth();
     const [sessions, setSessions] = useState<Session[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -37,66 +63,22 @@ export default function Sessions() {
             setIsLoading(true);
             setError(null);
 
-            const response = await fetch("http://localhost:8080/api/admin/get_all_sessions", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (!response.ok) throw new Error("Failed to fetch sessions");
-
-            const data = await response.json();
+            const data = await apiFetch<GetAllSessionsResponse>("/api/admin/get_all_sessions")
             setSessions(data.sessions || []);
-
         } catch (err) {
             setError("Could not load sessions. Please try again.");
-            console.error(err);
+            Toast.show({
+                type: "error",
+                text1: String(err),
+                visibilityTime: 1000,
+                autoHide: true,
+                position: "bottom",
+            });
         } finally {
             setIsLoading(false);
         }
     };
 
-    const renderSessionCard = ({ item }: { item: Session }) => (
-        <View style={styles.card}>
-            <View style={styles.cardHeader}>
-                <Text style={styles.name}>{item.first_name} {item.last_name}</Text>
-                <View style={[
-                    styles.statusBadge,
-                    { backgroundColor: item.is_active ? '#E8F5E9' : '#FFEBEE' }
-                ]}>
-                    <Text style={[
-                        styles.statusText,
-                        { color: item.is_active ? '#2E7D32' : '#C70202' }
-                    ]}>
-                        {item.is_active ? 'Active' : 'Inactive'}
-                    </Text>
-                </View>
-            </View>
-
-            <View style={styles.detailsContainer}>
-                <Text style={styles.detailRow}>
-                    <Text style={styles.label}>Role: </Text>
-                    <Text style={styles.value}>{item.role[0] + item.role.substring(1).toLowerCase()}</Text>
-                </Text>
-                <Text style={styles.detailRow}>
-                    <Text style={styles.label}>Email: </Text>
-                    <Text style={styles.value}>{item.email}</Text>
-                </Text>
-                <Text style={styles.detailRow}>
-                    <Text style={styles.label}>IP Address: </Text>
-                    <Text style={styles.value}>{item.ip_address}</Text>
-                </Text>
-                <Text style={styles.detailRow}>
-                    <Text style={styles.label}>Store ID: </Text>
-                    <Text style={styles.value}>{item.store_id}</Text>
-                </Text>
-                <Text style={styles.detailRow}>
-                    <Text style={styles.label}>Session ID: </Text>
-                    <Text style={styles.value}>{item.session_id}</Text>
-                </Text>
-            </View>
-        </View>
-    );
 
     return (
         <View style={styles.container}>

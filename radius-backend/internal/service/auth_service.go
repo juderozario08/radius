@@ -57,10 +57,6 @@ func NewAuthService(employeeRepo *repository.EmployeeRepo, sessionRepo *reposito
 }
 
 func (s *AuthService) Register(ctx context.Context, model models.CreateEmployeeRequest) (*models.CreateEmployeeResponse, error) {
-	if model.ConfirmPassword != model.Password {
-		return nil, errors.New("password and confirm password do not match")
-	}
-
 	hash, err := utils.HashPassword(model.Password)
 	if err != nil {
 		return nil, err
@@ -140,6 +136,10 @@ func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginReque
 
 	if !utils.CheckPasswordHash(model.Password, employee.PasswordHash) {
 		return nil, errors.New("Invalid Credentials")
+	}
+
+	if employee.IsActive != nil && !(*employee.IsActive) {
+		return nil, errors.New("Inactive Account")
 	}
 
 	if employee.SessionId != nil && !model.Force {

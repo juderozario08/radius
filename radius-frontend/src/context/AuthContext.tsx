@@ -4,7 +4,7 @@ import { deleteToken, getToken, saveToken } from "@/utils/token";
 import { createContext, ReactNode, useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 import * as SecureStore from "expo-secure-store";
-import { LoginResponse } from "@/types/auth.types";
+import { LoginResponse, LogoutResponse } from "@/types/auth.types";
 
 export type UserInfo = Omit<LoginResponse, 'token'>;
 
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setIsLoading(false);
                     return;
                 }
-                const res = await apiFetch<{ message: string }>("/api/verify_token", {
+                const res = await apiFetch<LogoutResponse>("/api/verify_token", {
                     method: "POST",
                 });
 

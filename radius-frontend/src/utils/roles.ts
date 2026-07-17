@@ -43,10 +43,12 @@ export const ROLE_PERMISSIONS: Record<EmployeeRole, Permission[]> = {
     MANAGER: [
         'view_sales_floor',
         'view_back_room',
+
         'view_inventory',
         'view_orders',
         'view_employees',
         'view_transfers',
+
         'submit_item_adjustment',
         'delete_own_item_adjustment',
         'adjust_inventory',

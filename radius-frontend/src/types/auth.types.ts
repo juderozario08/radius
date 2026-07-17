@@ -1,7 +1,7 @@
 //radius-frontend/src/types/auth.types.ts
 export type EmployeeRole = "SALES" | "SERVICE" | "MANAGER" | "ADMIN";
 
-export type LoginResponse = {
+export interface LoginResponse {
     token: string;
     session_id: number;
     employee_id: number;
@@ -10,6 +10,6 @@ export type LoginResponse = {
     store_id: number;
 };
 
-export type LogoutResponse = {
+export interface LogoutResponse {
     message: string;
 };

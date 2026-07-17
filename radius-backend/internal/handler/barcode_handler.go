@@ -1,3 +1,4 @@
+//radius-backend/internal/handler/barcode_handler.go
 package handler
 
 import "radius/internal/service"

@@ -1,3 +1,4 @@
+//radius-backend/internal/models/inventory.go
 package models
 
 import "time"

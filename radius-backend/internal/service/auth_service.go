@@ -4,7 +4,6 @@ package service
 import (
 	"context"
 	"errors"
-	"log"
 	"net"
 	"radius/internal/models"
 	"radius/internal/repository"
@@ -17,35 +16,6 @@ type AuthService struct {
 	employeeRepo *repository.EmployeeRepo
 	sessionRepo  *repository.SessionRepo
 	jwtSecret    []byte
-}
-
-func (s *AuthService) StartSessionCleanupWorker(ctx context.Context, interval time.Duration) {
-	cleanup := func() {
-		rowsDeleted, err := s.sessionRepo.DeleteExpiredSessions(ctx)
-		if err != nil {
-			log.Printf("[Worker] Error cleaning up expired sessions: %v", err)
-		} else if rowsDeleted > 0 {
-			log.Printf("[Worker] Successfully cleaned up %d expired orphaned sessions", rowsDeleted)
-		}
-	}
-
-	go func() {
-		log.Println("[Worker] Running initial session cleanup...")
-		cleanup()
-
-		ticker := time.NewTicker(interval)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-				cleanup()
-			case <-ctx.Done():
-				log.Println("[Worker] Stopping session cleanup worker")
-				return
-			}
-		}
-	}()
 }
 
 func NewAuthService(employeeRepo *repository.EmployeeRepo, sessionRepo *repository.SessionRepo, jwtSecret []byte) *AuthService {

@@ -1,3 +1,4 @@
+//radius-backend/internal/service/pos_service.go
 package service
 
 import "radius/internal/repository"

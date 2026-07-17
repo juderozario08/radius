@@ -1,3 +1,4 @@
+//radius-backend/internal/models/sales.go
 package models
 
 import "time"

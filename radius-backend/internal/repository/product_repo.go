@@ -1,3 +1,4 @@
+//radius-backend/internal/repository/product_repo.go
 package repository
 
 import "database/sql"

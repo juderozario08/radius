@@ -1,3 +1,4 @@
+//radius-backend/internal/repository/inventory_repo.go
 package repository
 
 import (

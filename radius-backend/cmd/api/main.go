@@ -17,10 +17,13 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Printf(".env file does not exist")
-		return
+	if os.Getenv("GIN_MODE") != "release" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Printf("Error loading .env file: %v", err)
+		} else {
+			log.Println("Loaded local .env file successfully")
+		}
 	}
 
 	jwtSecretCode := os.Getenv("JWT_SECRET_KEY")

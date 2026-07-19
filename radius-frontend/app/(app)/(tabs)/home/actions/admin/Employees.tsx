@@ -4,9 +4,14 @@ import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { COLORS } from "@/constants/colors";
 import { ENDPOINTS } from "@/constants/routes";
+import { globalStyles } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { EmployeeRole } from "@/types/auth.types";
+import { capitalize, showToast } from "@/utils/helpers";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { DetailRow } from "@/components/common/DetailRow";
+import { ActionButtonRow } from "@/components/common/ActionButtonRow";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -23,7 +28,6 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import Toast from "react-native-toast-message";
 
 const ROLES: EmployeeRole[] = ["SALES", "SERVICE", "MANAGER", "ADMIN"];
 
@@ -42,15 +46,6 @@ const STATUS_OPTIONS: PillOption<boolean>[] = [
     { label: "Active", value: true },
     { label: "Inactive", value: false },
 ];
-
-function capitalize(value: string): string {
-    if (!value) return value;
-    return value.charAt(0) + value.slice(1).toLowerCase();
-}
-
-function showToast(type: "success" | "error", text: string) {
-    Toast.show({ type, text1: text, position: "bottom", visibilityTime: 1000 });
-}
 
 async function callApi<T>(endpoint: string, options: { method: string; body?: any }, logout: () => Promise<void>): Promise<T | null> {
     try {
@@ -83,88 +78,26 @@ interface EmployeeFormValues {
 }
 
 const createEmptyFormValues = (): EmployeeFormValues => ({
-    first_name: "",
-    last_name: "",
-    email: "",
-    password: "",
-    role: "SALES",
-    phone: "",
-    address: "",
-    city: "",
-    province: "",
-    postal_code: "",
-    store_id: "",
-    is_active: true,
+    first_name: "", last_name: "", email: "", password: "", role: "SALES",
+    phone: "", address: "", city: "", province: "", postal_code: "", store_id: "", is_active: true,
 });
 
 const employeeToFormValues = (employee: Employee): EmployeeFormValues => ({
-    first_name: employee.first_name,
-    last_name: employee.last_name,
-    email: employee.email,
-    password: "",
-    role: employee.role,
-    phone: employee.phone,
-    address: employee.address,
-    city: employee.city,
-    province: employee.province,
-    postal_code: employee.postal_code,
-    store_id: String(employee.store_id),
+    first_name: employee.first_name, last_name: employee.last_name, email: employee.email, password: "",
+    role: employee.role, phone: employee.phone, address: employee.address, city: employee.city,
+    province: employee.province, postal_code: employee.postal_code, store_id: String(employee.store_id),
     is_active: employee.is_active,
 });
 
 const formValuesToEmployee = (formValues: EmployeeFormValues, base: Employee): Employee => ({
     ...base,
-    first_name: formValues.first_name,
-    last_name: formValues.last_name,
-    email: formValues.email,
-    role: formValues.role,
-    phone: formValues.phone,
-    address: formValues.address,
-    city: formValues.city,
-    province: formValues.province,
-    postal_code: formValues.postal_code,
-    store_id: parseInt(formValues.store_id, 10),
+    first_name: formValues.first_name, last_name: formValues.last_name, email: formValues.email,
+    role: formValues.role, phone: formValues.phone, address: formValues.address, city: formValues.city,
+    province: formValues.province, postal_code: formValues.postal_code, store_id: parseInt(formValues.store_id, 10),
     is_active: formValues.is_active,
 });
 
-const StatusBadge: React.FC<{ isActive: boolean }> = ({ isActive }) => (
-    <View style={[styles.statusBadge, { backgroundColor: isActive ? COLORS.activeBg : COLORS.inactiveBg }]}>
-        <Text style={[styles.statusText, { color: isActive ? COLORS.activeText : COLORS.inactiveText }]}>
-            {isActive ? "Active" : "Inactive"}
-        </Text>
-    </View>
-);
-
-const DetailRow: React.FC<{ label: string; value: string | number; layout?: "inline" | "row" }> = ({
-    label,
-    value,
-    layout = "row",
-}) => {
-    if (layout === "inline") {
-        return (
-            <Text style={styles.detailRow}>
-                <Text style={styles.label}>{label}</Text>
-                <Text style={styles.value}>{value}</Text>
-            </Text>
-        );
-    }
-    return (
-        <View style={styles.row}>
-            <Text style={styles.label}>{label}</Text>
-            <Text style={styles.value}>{value}</Text>
-        </View>
-    );
-};
-
-function PillGroup<T,>({
-    options,
-    value,
-    onChange,
-}: {
-    options: PillOption<T>[];
-    value: T;
-    onChange: (value: T) => void;
-}) {
+function PillGroup<T,>({ options, value, onChange }: { options: PillOption<T>[]; value: T; onChange: (value: T) => void; }) {
     return (
         <View style={styles.rolesContainer}>
             {options.map((option) => {
@@ -175,54 +108,13 @@ function PillGroup<T,>({
                         style={[styles.rolePill, isSelected && styles.rolePillActive]}
                         onPress={() => onChange(option.value)}
                     >
-                        <Text style={[styles.rolePillText, isSelected && styles.rolePillTextActive]}>
-                            {option.label}
-                        </Text>
+                        <Text style={[styles.rolePillText, isSelected && styles.rolePillTextActive]}>{option.label}</Text>
                     </TouchableOpacity>
                 );
             })}
         </View>
     );
 }
-
-type ButtonKind = "neutral" | "primary" | "accent" | "danger";
-const BUTTON_KIND_STYLES: Record<ButtonKind, { container: object; text: object }> = {
-    neutral: { container: { backgroundColor: COLORS.neutralBg }, text: { color: COLORS.textPrimary } },
-    primary: { container: { backgroundColor: COLORS.primary }, text: { color: COLORS.primaryText } },
-    accent: { container: { backgroundColor: COLORS.accent }, text: { color: COLORS.accentText } },
-    danger: { container: { backgroundColor: COLORS.danger }, text: { color: COLORS.dangerText } },
-};
-
-interface ActionButtonConfig {
-    key: string;
-    label: string;
-    kind: ButtonKind;
-    onPress: () => void;
-    loading?: boolean;
-    disabled?: boolean;
-}
-
-const ActionButtonRow: React.FC<{ buttons: ActionButtonConfig[] }> = ({ buttons }) => (
-    <View style={styles.actionRow}>
-        {buttons.map((button) => {
-            const kindStyle = BUTTON_KIND_STYLES[button.kind];
-            return (
-                <TouchableOpacity
-                    key={button.key}
-                    style={[styles.actionButton, kindStyle.container]}
-                    onPress={button.onPress}
-                    disabled={button.disabled || button.loading}
-                >
-                    {button.loading ? (
-                        <ActivityIndicator color={kindStyle.text.color as string} />
-                    ) : (
-                        <Text style={[styles.actionButtonText, kindStyle.text]}>{button.label}</Text>
-                    )}
-                </TouchableOpacity>
-            );
-        })}
-    </View>
-);
 
 interface EmployeeDetailModalProps {
     employee: Employee | null;
@@ -232,13 +124,7 @@ interface EmployeeDetailModalProps {
     onTerminated: () => void;
 }
 
-const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({
-    employee,
-    visible,
-    onClose,
-    onEdit,
-    onTerminated,
-}) => {
+const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, visible, onClose, onEdit, onTerminated }) => {
     const { logout } = useAuth();
     const [isTerminating, setIsTerminating] = useState(false);
 
@@ -273,41 +159,37 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({
 
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContentWrapper}>
-                    <View style={styles.modalCardContainer}>
-                        <View style={styles.modalHeader}>
+            <View style={globalStyles.modalOverlay}>
+                <View style={globalStyles.modalContentWrapper}>
+                    <View style={globalStyles.modalCardContainer}>
+                        <View style={globalStyles.modalHeader}>
                             <View>
-                                <Text style={styles.modalName}>
-                                    {employee.first_name} {employee.last_name}
-                                </Text>
-                                <Text style={styles.modalRole}>{capitalize(employee.role)}</Text>
+                                <Text style={globalStyles.modalName}>{employee.first_name} {employee.last_name}</Text>
+                                <Text style={globalStyles.modalRole}>{capitalize(employee.role)}</Text>
                             </View>
                             <StatusBadge isActive={employee.is_active} />
                         </View>
 
-                        <View style={styles.divider} />
+                        <View style={globalStyles.divider} />
 
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Contact Information</Text>
+                        <View style={globalStyles.section}>
+                            <Text style={globalStyles.sectionTitle}>Contact Information</Text>
                             <DetailRow label="Email:" value={employee.email} />
                             <DetailRow label="Phone:" value={employee.phone} />
                         </View>
 
-                        <View style={styles.divider} />
+                        <View style={globalStyles.divider} />
 
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Address</Text>
-                            <Text style={styles.value}>{employee.address}</Text>
-                            <Text style={styles.value}>
-                                {employee.city}, {employee.province} {employee.postal_code}
-                            </Text>
+                        <View style={globalStyles.section}>
+                            <Text style={globalStyles.sectionTitle}>Address</Text>
+                            <Text style={globalStyles.emptyText}>{employee.address}</Text>
+                            <Text style={globalStyles.emptyText}>{employee.city}, {employee.province} {employee.postal_code}</Text>
                         </View>
 
-                        <View style={styles.divider} />
+                        <View style={globalStyles.divider} />
 
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>System Details</Text>
+                        <View style={globalStyles.section}>
+                            <Text style={globalStyles.sectionTitle}>System Details</Text>
                             <DetailRow label="Employee ID:" value={employee.employee_id} />
                             <DetailRow label="Store ID:" value={employee.store_id} />
                         </View>
@@ -317,13 +199,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({
                         buttons={[
                             { key: "close", label: "Close", kind: "neutral", onPress: onClose, disabled: isTerminating },
                             { key: "edit", label: "Edit", kind: "accent", onPress: () => onEdit(employee), disabled: isTerminating },
-                            {
-                                key: "terminate",
-                                label: "Terminate",
-                                kind: "danger",
-                                onPress: handleTerminatePress,
-                                loading: isTerminating,
-                            },
+                            { key: "terminate", label: "Terminate", kind: "danger", onPress: handleTerminatePress, loading: isTerminating },
                         ]}
                     />
                 </View>
@@ -392,10 +268,10 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
 
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onBack}>
-            <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-                <View style={[styles.modalContentWrapper, { maxHeight: "85%" }]}>
+            <KeyboardAvoidingView style={globalStyles.modalOverlay} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+                <View style={[globalStyles.modalContentWrapper, { maxHeight: "85%" }]}>
                     <View style={[styles.formHeader, isEditMode && styles.formHeaderEdit]}>
-                        <Text style={styles.modalName}>{isEditMode ? "Edit Employee" : "Create Employee"}</Text>
+                        <Text style={globalStyles.modalName}>{isEditMode ? "Edit Employee" : "Create Employee"}</Text>
                     </View>
 
                     <ScrollView style={styles.formContainer} showsVerticalScrollIndicator>
@@ -593,10 +469,10 @@ export default function Employees() {
     );
 
     return (
-        <View style={styles.container}>
+        <View style={globalStyles.container}>
             <HeaderComponent
                 headerLeft={<BackButton />}
-                headerCenter={<Text style={styles.headerTitle}>Employees</Text>}
+                headerCenter={<Text style={globalStyles.headerTitle}>Employees</Text>}
                 headerRight={
                     <TouchableOpacity onPress={handleOpenCreateForm}>
                         <Image source={require("@/assets/images/plus.png")} style={styles.addIcon} />
@@ -604,19 +480,19 @@ export default function Employees() {
                 }
             />
 
-            <View style={styles.content}>
+            <View style={globalStyles.content}>
                 {isLoading ? (
-                    <ActivityIndicator size="large" color={COLORS.primary} style={styles.centerElement} />
+                    <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
                 ) : error ? (
-                    <Text style={styles.errorText}>{error}</Text>
+                    <Text style={globalStyles.errorText}>{error}</Text>
                 ) : employees.length === 0 ? (
-                    <Text style={styles.emptyText}>No employees found.</Text>
+                    <Text style={globalStyles.emptyText}>No employees found.</Text>
                 ) : (
                     <FlatList
                         data={employees}
                         keyExtractor={(item) => item.employee_id.toString()}
                         renderItem={renderEmployeeCard}
-                        contentContainerStyle={styles.listContainer}
+                        contentContainerStyle={globalStyles.listContainer}
                         showsVerticalScrollIndicator={false}
                     />
                 )}
@@ -642,13 +518,7 @@ export default function Employees() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.background },
-    headerTitle: { fontWeight: "bold", fontSize: 20 },
     addIcon: { width: 30, height: 30 },
-    content: { flex: 1 },
-    centerElement: { flex: 1, justifyContent: "center", alignItems: "center" },
-    listContainer: { padding: 16, gap: 12 },
-
     card: {
         backgroundColor: COLORS.surface,
         borderRadius: 12,
@@ -671,97 +541,7 @@ const styles = StyleSheet.create({
         borderBottomColor: COLORS.border,
     },
     name: { fontSize: 18, fontWeight: "700", color: COLORS.textPrimary },
-    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-    statusText: { fontSize: 12, fontWeight: "600" },
     detailsContainer: { gap: 6 },
-    detailRow: { fontSize: 14 },
-    label: { color: COLORS.textSecondary, fontWeight: "500" },
-    value: { color: COLORS.textPrimary, fontWeight: "400" },
-    errorText: {
-        color: COLORS.primary,
-        textAlign: "center",
-        marginTop: 40,
-        fontSize: 16
-    },
-    emptyText: {
-        color: COLORS.textSecondary,
-        textAlign: "center",
-        marginTop: 40,
-        fontSize: 16
-    },
-
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20,
-    },
-    modalContentWrapper: {
-        width: "100%",
-        backgroundColor: COLORS.surface,
-        borderRadius: 16,
-        overflow: "hidden",
-    },
-    modalCardContainer: {
-        padding: 20,
-        width: "100%"
-    },
-    modalHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 16
-    },
-    modalName: {
-        fontSize: 22,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-        marginBottom: 4
-    },
-    modalRole: {
-        fontSize: 16,
-        fontWeight: "500",
-        color: COLORS.textSecondary,
-        textTransform: "capitalize"
-    },
-    divider: {
-        height: 1,
-        backgroundColor: COLORS.border,
-        marginVertical: 12
-    },
-    section: { gap: 8 },
-    sectionTitle: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: "#9E9E9E",
-        textTransform: "uppercase",
-        marginBottom: 4,
-    },
-    row: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center"
-    },
-    actionRow: {
-        flexDirection: "row",
-        justifyContent: "center",
-        gap: 16,
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-    },
-    actionButton: {
-        flex: 0,
-        minWidth: 92,
-        paddingVertical: 10,
-        paddingHorizontal: 18,
-        borderRadius: 20,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    actionButtonText: { fontWeight: "600", fontSize: 14 },
 
     formHeader: { padding: 20, borderBottomWidth: 1, borderBottomColor: COLORS.border, backgroundColor: "#FAFAFA" },
     formHeaderEdit: { borderBottomColor: COLORS.accent, backgroundColor: "#EEF3F8" },

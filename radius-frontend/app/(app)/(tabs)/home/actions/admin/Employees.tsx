@@ -351,7 +351,7 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                                 onChangeText={(text) => updateField("province", text)}
                             />
                             <TextInput
-                                style={[styles.input, { flex: 1.5 }]}
+                                style={[styles.input, { flex: 1 }]}
                                 placeholder="Postal"
                                 autoCapitalize="characters"
                                 value={formValues.postal_code}

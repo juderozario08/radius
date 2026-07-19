@@ -1,9 +1,27 @@
 //radius-frontend/src/constants/colors.ts
-
 export const COLORS = {
     activeDot: "#C70202",
     activeTint: "#C70202",
     inactiveDot: "#D1D1D6",
     inactiveTint: "#8E8E8E",
     placeholder: "#AAAAAA",
-}
+
+    primary: "#C70202",
+    primaryText: "#FFFFFF",
+    accent: "#2F5D8A",
+    accentText: "#FFFFFF",
+    danger: "#B00020",
+    dangerText: "#FFFFFF",
+    activeBg: "#E8F5E9",
+    activeText: "#2E7D32",
+    inactiveBg: "#FFEBEE",
+    inactiveText: "#C70202",
+    textPrimary: "#333333",
+    textSecondary: "#757575",
+    border: "#EEEEEE",
+    inputBg: "#F9F9F9",
+    inputBorder: "#E0E0E0",
+    surface: "#FFFFFF",
+    background: "#F5F5F5",
+    neutralBg: "#F0F0F0",
+};

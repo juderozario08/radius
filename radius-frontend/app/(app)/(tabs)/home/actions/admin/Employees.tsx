@@ -1,188 +1,417 @@
 // radius-frontend/app/(app)/home/actions/admin/Employees.tsx
-import React, { useEffect, useState } from "react";
-import {
-    View,
-    Text,
-    StyleSheet,
-    FlatList,
-    ActivityIndicator,
-    TouchableOpacity,
-    Image,
-    Modal,
-    TextInput,
-    ScrollView,
-    KeyboardAvoidingView,
-    Platform
-} from "react-native";
+import { apiFetch, UnauthorizedError } from "@/api/client";
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
-import { apiFetch, UnauthorizedError } from "@/api/client";
-import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
+import { COLORS } from "@/constants/colors";
+import { ENDPOINTS } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
+import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
+import { EmployeeRole } from "@/types/auth.types";
+import React, { useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Image,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import Toast from "react-native-toast-message";
 
-interface EmployeeCardModalType {
-    item: Employee;
+const ROLES: EmployeeRole[] = ["SALES", "SERVICE", "MANAGER", "ADMIN"];
+
+type FormMode = "create" | "edit";
+interface PillOption<T> {
+    label: string;
+    value: T;
 }
-const EmployeeCardModal: React.FC<EmployeeCardModalType> = ({ item }) => (
-    <View style={styles.modalCardContainer}>
-        {/* Header Section: Identity & Status */}
-        <View style={styles.modalHeader}>
-            <View>
-                <Text style={styles.modalName}>{item.first_name} {item.last_name}</Text>
-                <Text style={styles.modalRole}>{item.role}</Text>
-            </View>
-            <View style={[
-                styles.statusBadge,
-                { backgroundColor: item.is_active ? '#E8F5E9' : '#FFEBEE' }
-            ]}>
-                <Text style={[
-                    styles.statusText,
-                    { color: item.is_active ? '#2E7D32' : '#C70202' }
-                ]}>
-                    {item.is_active ? 'Active' : 'Inactive'}
-                </Text>
-            </View>
-        </View>
 
-        <View style={styles.divider} />
+const ROLE_OPTIONS: PillOption<EmployeeRole>[] = ROLES.map((role) => ({
+    label: capitalize(role),
+    value: role,
+}));
 
-        {/* Contact Information */}
-        <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Contact Information</Text>
-            <View style={styles.row}>
-                <Text style={styles.label}>Email:</Text>
-                <Text style={styles.value}>{item.email}</Text>
-            </View>
-            <View style={styles.row}>
-                <Text style={styles.label}>Phone:</Text>
-                <Text style={styles.value}>{item.phone}</Text>
-            </View>
-        </View>
+const STATUS_OPTIONS: PillOption<boolean>[] = [
+    { label: "Active", value: true },
+    { label: "Inactive", value: false },
+];
 
-        <View style={styles.divider} />
+function capitalize(value: string): string {
+    if (!value) return value;
+    return value.charAt(0) + value.slice(1).toLowerCase();
+}
 
-        {/* Location Information */}
-        <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Address</Text>
-            <Text style={styles.value}>{item.address}</Text>
-            <Text style={styles.value}>{item.city}, {item.province} {item.postal_code}</Text>
-        </View>
+function showToast(type: "success" | "error", text: string) {
+    Toast.show({ type, text1: text, position: "bottom", visibilityTime: 1000 });
+}
 
-        <View style={styles.divider} />
+async function callApi<T>(endpoint: string, options: { method: string; body?: any }, logout: () => Promise<void>): Promise<T | null> {
+    try {
+        return await apiFetch<T>(endpoint, {
+            method: options.method,
+            body: options.body ? JSON.stringify(options.body) : undefined,
+        });
+    } catch (err) {
+        showToast("error", String(err));
+        if (err instanceof UnauthorizedError) {
+            await logout();
+        }
+        return null;
+    }
+}
 
-        {/* System Information */}
-        <View style={styles.section}>
-            <Text style={styles.sectionTitle}>System Details</Text>
-            <View style={styles.row}>
-                <Text style={styles.label}>Employee ID:</Text>
-                <Text style={styles.value}>{item.employee_id}</Text>
-            </View>
-            <View style={styles.row}>
-                <Text style={styles.label}>Store ID:</Text>
-                <Text style={styles.value}>{item.store_id}</Text>
-            </View>
-        </View>
+interface EmployeeFormValues {
+    first_name: string;
+    last_name: string;
+    email: string;
+    password: string;
+    role: EmployeeRole;
+    phone: string;
+    address: string;
+    city: string;
+    province: string;
+    postal_code: string;
+    store_id: string;
+    is_active: boolean;
+}
+
+const createEmptyFormValues = (): EmployeeFormValues => ({
+    first_name: "",
+    last_name: "",
+    email: "",
+    password: "",
+    role: "SALES",
+    phone: "",
+    address: "",
+    city: "",
+    province: "",
+    postal_code: "",
+    store_id: "",
+    is_active: true,
+});
+
+const employeeToFormValues = (employee: Employee): EmployeeFormValues => ({
+    first_name: employee.first_name,
+    last_name: employee.last_name,
+    email: employee.email,
+    password: "",
+    role: employee.role,
+    phone: employee.phone,
+    address: employee.address,
+    city: employee.city,
+    province: employee.province,
+    postal_code: employee.postal_code,
+    store_id: String(employee.store_id),
+    is_active: employee.is_active,
+});
+
+const formValuesToEmployee = (formValues: EmployeeFormValues, base: Employee): Employee => ({
+    ...base,
+    first_name: formValues.first_name,
+    last_name: formValues.last_name,
+    email: formValues.email,
+    role: formValues.role,
+    phone: formValues.phone,
+    address: formValues.address,
+    city: formValues.city,
+    province: formValues.province,
+    postal_code: formValues.postal_code,
+    store_id: parseInt(formValues.store_id, 10),
+    is_active: formValues.is_active,
+});
+
+const StatusBadge: React.FC<{ isActive: boolean }> = ({ isActive }) => (
+    <View style={[styles.statusBadge, { backgroundColor: isActive ? COLORS.activeBg : COLORS.inactiveBg }]}>
+        <Text style={[styles.statusText, { color: isActive ? COLORS.activeText : COLORS.inactiveText }]}>
+            {isActive ? "Active" : "Inactive"}
+        </Text>
     </View>
 );
 
-const ROLES = ["SALES", "SERVICE", "MANAGER", "ADMIN"];
-const IS_ACTIVE = ["TRUE", "FALSE"];
+const DetailRow: React.FC<{ label: string; value: string | number; layout?: "inline" | "row" }> = ({
+    label,
+    value,
+    layout = "row",
+}) => {
+    if (layout === "inline") {
+        return (
+            <Text style={styles.detailRow}>
+                <Text style={styles.label}>{label}</Text>
+                <Text style={styles.value}>{value}</Text>
+            </Text>
+        );
+    }
+    return (
+        <View style={styles.row}>
+            <Text style={styles.label}>{label}</Text>
+            <Text style={styles.value}>{value}</Text>
+        </View>
+    );
+};
 
-interface CreateEmployeeModalType {
-    visible: boolean;
-    onClose: () => void;
-    onSuccess: () => void;
+function PillGroup<T,>({
+    options,
+    value,
+    onChange,
+}: {
+    options: PillOption<T>[];
+    value: T;
+    onChange: (value: T) => void;
+}) {
+    return (
+        <View style={styles.rolesContainer}>
+            {options.map((option) => {
+                const isSelected = option.value === value;
+                return (
+                    <TouchableOpacity
+                        key={String(option.value)}
+                        style={[styles.rolePill, isSelected && styles.rolePillActive]}
+                        onPress={() => onChange(option.value)}
+                    >
+                        <Text style={[styles.rolePillText, isSelected && styles.rolePillTextActive]}>
+                            {option.label}
+                        </Text>
+                    </TouchableOpacity>
+                );
+            })}
+        </View>
+    );
 }
 
-const CreateEmployeeModal: React.FC<CreateEmployeeModalType> = ({ visible, onClose, onSuccess }) => {
+type ButtonKind = "neutral" | "primary" | "accent" | "danger";
+const BUTTON_KIND_STYLES: Record<ButtonKind, { container: object; text: object }> = {
+    neutral: { container: { backgroundColor: COLORS.neutralBg }, text: { color: COLORS.textPrimary } },
+    primary: { container: { backgroundColor: COLORS.primary }, text: { color: COLORS.primaryText } },
+    accent: { container: { backgroundColor: COLORS.accent }, text: { color: COLORS.accentText } },
+    danger: { container: { backgroundColor: COLORS.danger }, text: { color: COLORS.dangerText } },
+};
+
+interface ActionButtonConfig {
+    key: string;
+    label: string;
+    kind: ButtonKind;
+    onPress: () => void;
+    loading?: boolean;
+    disabled?: boolean;
+}
+
+const ActionButtonRow: React.FC<{ buttons: ActionButtonConfig[] }> = ({ buttons }) => (
+    <View style={styles.actionRow}>
+        {buttons.map((button) => {
+            const kindStyle = BUTTON_KIND_STYLES[button.kind];
+            return (
+                <TouchableOpacity
+                    key={button.key}
+                    style={[styles.actionButton, kindStyle.container]}
+                    onPress={button.onPress}
+                    disabled={button.disabled || button.loading}
+                >
+                    {button.loading ? (
+                        <ActivityIndicator color={kindStyle.text.color as string} />
+                    ) : (
+                        <Text style={[styles.actionButtonText, kindStyle.text]}>{button.label}</Text>
+                    )}
+                </TouchableOpacity>
+            );
+        })}
+    </View>
+);
+
+interface EmployeeDetailModalProps {
+    employee: Employee | null;
+    visible: boolean;
+    onClose: () => void;
+    onEdit: (employee: Employee) => void;
+    onTerminated: () => void;
+}
+
+const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({
+    employee,
+    visible,
+    onClose,
+    onEdit,
+    onTerminated,
+}) => {
     const { logout } = useAuth();
-    const [formData, setFormData] = useState({
-        first_name: '', last_name: '', email: '', password: '', role: 'SALES',
-        phone: '', address: '', city: '', province: '', postal_code: '', store_id: '', is_active: true,
-    });
-    const [isCreating, setIsCreating] = useState(false);
+    const [isTerminating, setIsTerminating] = useState(false);
 
-    useEffect(() => {
-        if (visible) {
-            setFormData({
-                first_name: '', last_name: '', email: '', password: '', role: 'SALES',
-                phone: '', address: '', city: '', province: '', postal_code: '', store_id: '', is_active: true
-            });
+    if (!employee) return null;
+
+    const confirmTerminate = async () => {
+        setIsTerminating(true);
+        const result = await callApi(
+            ENDPOINTS.ADMIN.EMPLOYEES.terminate,
+            { method: "POST", body: { employee_id: employee.employee_id } },
+            logout
+        );
+        setIsTerminating(false);
+
+        if (result !== null) {
+            showToast("success", "Employee terminated");
+            onTerminated();
+            onClose();
         }
-    }, [visible]);
-
-    const updateForm = (key: string, value: any) => {
-        setFormData(prev => ({ ...prev, [key]: value }));
     };
 
-    const handleCreateEmployee = async () => {
-        if (!formData.first_name || !formData.last_name || !formData.email || !formData.store_id) {
-            Toast.show({
-                type: "error",
-                text1: "Please fill in all required fields",
-                position: "bottom",
-                visibilityTime: 1000,
-            });
-            return;
+    const handleTerminatePress = () => {
+        Alert.alert(
+            "Terminate Employee",
+            `Are you sure you want to terminate ${employee.first_name} ${employee.last_name}? This action cannot be undone.`,
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Terminate", style: "destructive", onPress: confirmTerminate },
+            ]
+        );
+    };
+
+    return (
+        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+            <View style={styles.modalOverlay}>
+                <View style={styles.modalContentWrapper}>
+                    <View style={styles.modalCardContainer}>
+                        <View style={styles.modalHeader}>
+                            <View>
+                                <Text style={styles.modalName}>
+                                    {employee.first_name} {employee.last_name}
+                                </Text>
+                                <Text style={styles.modalRole}>{capitalize(employee.role)}</Text>
+                            </View>
+                            <StatusBadge isActive={employee.is_active} />
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Contact Information</Text>
+                            <DetailRow label="Email:" value={employee.email} />
+                            <DetailRow label="Phone:" value={employee.phone} />
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Address</Text>
+                            <Text style={styles.value}>{employee.address}</Text>
+                            <Text style={styles.value}>
+                                {employee.city}, {employee.province} {employee.postal_code}
+                            </Text>
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>System Details</Text>
+                            <DetailRow label="Employee ID:" value={employee.employee_id} />
+                            <DetailRow label="Store ID:" value={employee.store_id} />
+                        </View>
+                    </View>
+
+                    <ActionButtonRow
+                        buttons={[
+                            { key: "close", label: "Close", kind: "neutral", onPress: onClose, disabled: isTerminating },
+                            { key: "edit", label: "Edit", kind: "accent", onPress: () => onEdit(employee), disabled: isTerminating },
+                            {
+                                key: "terminate",
+                                label: "Terminate",
+                                kind: "danger",
+                                onPress: handleTerminatePress,
+                                loading: isTerminating,
+                            },
+                        ]}
+                    />
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
+interface EmployeeFormModalProps {
+    visible: boolean;
+    mode: FormMode;
+    employee?: Employee | null;
+    onBack: () => void;
+    onSuccess: (updatedEmployee?: Employee) => void;
+}
+
+const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, employee, onBack, onSuccess }) => {
+    const { logout } = useAuth();
+    const [formValues, setFormValues] = useState<EmployeeFormValues>(createEmptyFormValues());
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const isEditMode = mode === "edit";
+
+    useEffect(() => {
+        if (!visible) return;
+        setFormValues(isEditMode && employee ? employeeToFormValues(employee) : createEmptyFormValues());
+    }, [visible, isEditMode, employee]);
+
+    const updateField = <K extends keyof EmployeeFormValues>(key: K, value: EmployeeFormValues[K]) => {
+        setFormValues((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const isFormValid = (): boolean => {
+        const { first_name, last_name, email, store_id, password } = formValues;
+        const missingRequired = !first_name || !last_name || !email || !store_id || (!isEditMode && !password);
+
+        if (missingRequired) {
+            showToast("error", "Please fill in all required fields");
+            return false;
+        }
+        return true;
+    };
+
+    const handleSubmit = async () => {
+        if (!isFormValid()) return;
+
+        const payload: Record<string, any> = {
+            ...formValues,
+            store_id: parseInt(formValues.store_id, 10),
+        };
+
+        if (isEditMode && employee) {
+            payload.employee_id = employee.employee_id;
+            delete payload.password;
         }
 
-        try {
-            setIsCreating(true);
-            const payload = { ...formData, store_id: parseInt(formData.store_id, 10) };
+        setIsSubmitting(true);
+        const endpoint = isEditMode ? ENDPOINTS.ADMIN.EMPLOYEES.update : ENDPOINTS.ADMIN.EMPLOYEES.create;
+        const result = await callApi(endpoint, { method: "POST", body: payload }, logout);
+        setIsSubmitting(false);
 
-            await apiFetch<any>("/api/admin/create_employee", {
-                method: "POST",
-                body: JSON.stringify(payload),
-            });
-
-            Toast.show({ type: 'success', text1: 'Employee created successfully!', position: "bottom" });
-            onSuccess();
-            onClose();
-        } catch (err) {
-            Toast.show({
-                type: "error",
-                text1: String(err),
-                position: "bottom"
-            });
-            if (err instanceof UnauthorizedError) {
-                await logout();
-            }
-        } finally {
-            setIsCreating(false);
+        if (result !== null) {
+            showToast("success", isEditMode ? "Employee updated successfully!" : "Employee created successfully!");
+            onSuccess(isEditMode && employee ? formValuesToEmployee(formValues, employee) : undefined);
         }
     };
 
     return (
-        <Modal
-            visible={visible}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={onClose}
-        >
-            <KeyboardAvoidingView
-                style={styles.modalOverlay}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-            >
-                <View style={[styles.modalContentWrapper, { maxHeight: '85%' }]}>
-                    <View style={styles.createHeader}>
-                        <Text style={styles.modalName}>Create Employee</Text>
+        <Modal visible={visible} transparent animationType="fade" onRequestClose={onBack}>
+            <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+                <View style={[styles.modalContentWrapper, { maxHeight: "85%" }]}>
+                    <View style={[styles.formHeader, isEditMode && styles.formHeaderEdit]}>
+                        <Text style={styles.modalName}>{isEditMode ? "Edit Employee" : "Create Employee"}</Text>
                     </View>
 
-                    <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={true}>
+                    <ScrollView style={styles.formContainer} showsVerticalScrollIndicator>
                         <Text style={styles.inputLabel}>Name *</Text>
                         <View style={styles.inputRow}>
                             <TextInput
-                                style={[styles.input, { flex: 1, marginRight: 8 }]}
+                                style={[styles.input, styles.inputHalf]}
                                 placeholder="First Name"
-                                value={formData.first_name}
-                                onChangeText={(text) => updateForm('first_name', text)}
+                                value={formValues.first_name}
+                                onChangeText={(text) => updateField("first_name", text)}
                             />
                             <TextInput
                                 style={[styles.input, { flex: 1 }]}
                                 placeholder="Last Name"
-                                value={formData.last_name}
-                                onChangeText={(text) => updateForm('last_name', text)}
+                                value={formValues.last_name}
+                                onChangeText={(text) => updateField("last_name", text)}
                             />
                         </View>
 
@@ -192,107 +421,85 @@ const CreateEmployeeModal: React.FC<CreateEmployeeModalType> = ({ visible, onClo
                             placeholder="Email"
                             keyboardType="email-address"
                             autoCapitalize="none"
-                            value={formData.email}
-                            onChangeText={(text) => updateForm('email', text)}
+                            value={formValues.email}
+                            onChangeText={(text) => updateField("email", text)}
                         />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Temporary Password"
-                            secureTextEntry
-                            value={formData.password}
-                            onChangeText={(text) => updateForm('password', text)}
-                        />
+                        {!isEditMode && (
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Temporary Password"
+                                secureTextEntry
+                                value={formValues.password}
+                                onChangeText={(text) => updateField("password", text)}
+                            />
+                        )}
                         <TextInput
                             style={styles.input}
                             placeholder="Store ID"
                             keyboardType="numeric"
-                            value={formData.store_id}
-                            onChangeText={(text) => updateForm('store_id', text)}
+                            value={formValues.store_id}
+                            onChangeText={(text) => updateField("store_id", text)}
                         />
 
                         <Text style={styles.inputLabel}>Role *</Text>
-                        <View style={styles.rolesContainer}>
-                            {ROLES.map((role) => (
-                                <TouchableOpacity
-                                    key={role}
-                                    style={[styles.rolePill, formData.role === role && styles.rolePillActive]}
-                                    onPress={() => updateForm('role', role)}
-                                >
-                                    <Text style={[styles.rolePillText, formData.role === role && styles.rolePillTextActive]}>{role}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                        <PillGroup options={ROLE_OPTIONS} value={formValues.role} onChange={(v) => updateField("role", v)} />
 
                         <Text style={styles.inputLabel}>Status *</Text>
-                        <View style={styles.rolesContainer}>
-                            {IS_ACTIVE.map((active) => {
-                                const isActiveBool = active === "TRUE";
-                                return (
-                                    <TouchableOpacity
-                                        key={active}
-                                        style={[styles.rolePill, formData.is_active === isActiveBool && styles.rolePillActive]}
-                                        onPress={() => updateForm('is_active', isActiveBool)}
-                                    >
-                                        <Text style={[styles.rolePillText, formData.is_active === isActiveBool && styles.rolePillTextActive]}>{active}</Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
+                        <PillGroup options={STATUS_OPTIONS} value={formValues.is_active} onChange={(v) => updateField("is_active", v)} />
 
                         <Text style={styles.inputLabel}>Contact & Location</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="Phone"
                             keyboardType="phone-pad"
-                            value={formData.phone}
-                            onChangeText={(text) => updateForm('phone', text)}
+                            value={formValues.phone}
+                            onChangeText={(text) => updateField("phone", text)}
                         />
                         <TextInput
                             style={styles.input}
                             placeholder="Street Address"
-                            value={formData.address}
-                            onChangeText={(text) => updateForm('address', text)}
+                            value={formValues.address}
+                            onChangeText={(text) => updateField("address", text)}
                         />
                         <View style={styles.inputRow}>
                             <TextInput
                                 style={[styles.input, { flex: 2, marginRight: 8 }]}
                                 placeholder="City"
-                                value={formData.city}
-                                onChangeText={(text) => updateForm('city', text)}
+                                value={formValues.city}
+                                onChangeText={(text) => updateField("city", text)}
                             />
                             <TextInput
                                 style={[styles.input, { flex: 1, marginRight: 8 }]}
                                 placeholder="Prov"
-                                value={formData.province}
-                                onChangeText={(text) => updateForm('province', text)}
+                                value={formValues.province}
+                                onChangeText={(text) => updateField("province", text)}
                             />
                             <TextInput
                                 style={[styles.input, { flex: 1.5 }]}
                                 placeholder="Postal"
                                 autoCapitalize="characters"
-                                value={formData.postal_code}
-                                onChangeText={(text) => updateForm('postal_code', text)}
+                                value={formValues.postal_code}
+                                onChangeText={(text) => updateField("postal_code", text)}
                             />
                         </View>
                         <View style={{ height: 20 }} />
                     </ScrollView>
 
-                    <View style={styles.createActions}>
-                        <TouchableOpacity
-                            style={[styles.actionButton, styles.cancelButton]}
-                            onPress={onClose}
-                            disabled={isCreating}
-                        >
-                            <Text style={styles.cancelButtonText}>Cancel</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.actionButton, styles.submitButton]}
-                            onPress={handleCreateEmployee}
-                            disabled={isCreating}
-                        >
-                            {isCreating ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>Create</Text>}
-                        </TouchableOpacity>
-                    </View>
+                    <ActionButtonRow
+                        buttons={[{
+                            key: "back",
+                            label: isEditMode ? "Back" : "Cancel",
+                            kind: "neutral",
+                            onPress: onBack,
+                            disabled: isSubmitting,
+                        }, {
+                            key: "submit",
+                            label: isEditMode ? "Save" : "Create",
+                            kind: isEditMode ? "accent" : "primary",
+                            onPress: handleSubmit,
+                            loading: isSubmitting,
+                        }]}
+                    />
                 </View>
             </KeyboardAvoidingView>
         </Modal>
@@ -306,90 +513,81 @@ export default function Employees() {
     const [error, setError] = useState<string | null>(null);
 
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-    const [modalVisible, setModalVisible] = useState(false);
+    const [detailModalVisible, setDetailModalVisible] = useState(false);
 
-    const [createModalVisible, setCreateModalVisible] = useState(false);
+    const [formModalVisible, setFormModalVisible] = useState(false);
+    const [formMode, setFormMode] = useState<FormMode>("create");
 
     useEffect(() => {
         fetchEmployees();
     }, []);
 
     const fetchEmployees = async () => {
-        try {
-            setIsLoading(true);
-            setError(null);
+        setIsLoading(true);
+        setError(null);
 
-            const data = await apiFetch<GetAllEmployeeResponse>("/api/admin/get_all_employees")
-            Toast.show({
-                type: 'success',
-                text1: data.message,
-                visibilityTime: 1000,
-                autoHide: true,
-                position: "bottom",
-            })
+        const data = await callApi<GetAllEmployeeResponse>(ENDPOINTS.ADMIN.EMPLOYEES.getAll, { method: "GET" }, logout);
+
+        if (data) {
+            showToast("success", data.message);
             setEmployees(data.employees || []);
-        } catch (err) {
-            Toast.show({
-                type: "error",
-                text1: String(err),
-                visibilityTime: 1000,
-                autoHide: true,
-                position: "bottom",
-            });
-            if (err instanceof UnauthorizedError) {
-                await logout();
-            } else {
-                setError("Could not load employees. Please try again.");
-            }
-        } finally {
-            setIsLoading(false);
+        } else {
+            setError("Could not load employees. Please try again.");
         }
+        setIsLoading(false);
     };
 
-    const handleOpenModal = (employee: Employee) => {
+    const handleViewEmployee = (employee: Employee) => {
         setSelectedEmployee(employee);
-        setModalVisible(true);
+        setDetailModalVisible(true);
     };
 
-    const handleCloseModal = () => {
-        setModalVisible(false);
+    const handleCloseDetailModal = () => {
+        setDetailModalVisible(false);
         setSelectedEmployee(null);
     };
 
+    const handleOpenCreateForm = () => {
+        setFormMode("create");
+        setFormModalVisible(true);
+    };
+
+    const handleOpenEditForm = (employee: Employee) => {
+        setSelectedEmployee(employee);
+        setFormMode("edit");
+        setDetailModalVisible(false);
+        setFormModalVisible(true);
+    };
+
+    const handleFormBack = () => {
+        setFormModalVisible(false);
+        if (formMode === "edit") {
+            setDetailModalVisible(true);
+        }
+    };
+
+    const handleFormSuccess = (updatedEmployee?: Employee) => {
+        fetchEmployees();
+        setFormModalVisible(false);
+        if (formMode === "edit") {
+            if (updatedEmployee) setSelectedEmployee(updatedEmployee);
+            setDetailModalVisible(true);
+        }
+    };
+
     const renderEmployeeCard = ({ item }: { item: Employee }) => (
-        <TouchableOpacity
-            style={styles.card}
-            activeOpacity={0.7}
-            onPress={() => handleOpenModal(item)}
-        >
+        <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => handleViewEmployee(item)}>
             <View style={styles.cardHeader}>
-                <Text style={styles.name}>{item.first_name} {item.last_name}</Text>
-                <View style={[
-                    styles.statusBadge,
-                    { backgroundColor: item.is_active ? '#E8F5E9' : '#FFEBEE' }
-                ]}>
-                    <Text style={[
-                        styles.statusText,
-                        { color: item.is_active ? '#2E7D32' : '#C70202' }
-                    ]}>
-                        {item.is_active ? 'Active' : 'Inactive'}
-                    </Text>
-                </View>
+                <Text style={styles.name}>
+                    {item.first_name} {item.last_name}
+                </Text>
+                <StatusBadge isActive={item.is_active} />
             </View>
 
             <View style={styles.detailsContainer}>
-                <Text style={styles.detailRow}>
-                    <Text style={styles.label}>Role: </Text>
-                    <Text style={styles.value}>{item.role[0] + item.role.substring(1).toLowerCase()}</Text>
-                </Text>
-                <Text style={styles.detailRow}>
-                    <Text style={styles.label}>Email: </Text>
-                    <Text style={styles.value}>{item.email}</Text>
-                </Text>
-                <Text style={styles.detailRow}>
-                    <Text style={styles.label}>Store ID: </Text>
-                    <Text style={styles.value}>{item.store_id}</Text>
-                </Text>
+                <DetailRow layout="inline" label="Role: " value={capitalize(item.role)} />
+                <DetailRow layout="inline" label="Email: " value={item.email} />
+                <DetailRow layout="inline" label="Store ID: " value={item.store_id} />
             </View>
         </TouchableOpacity>
     );
@@ -398,26 +596,17 @@ export default function Employees() {
         <View style={styles.container}>
             <HeaderComponent
                 headerLeft={<BackButton />}
-                headerCenter={
-                    <View style={{ flexDirection: 'row' }}>
-                        <Text style={styles.headerTitle}>Employees</Text>
-                    </View>
+                headerCenter={<Text style={styles.headerTitle}>Employees</Text>}
+                headerRight={
+                    <TouchableOpacity onPress={handleOpenCreateForm}>
+                        <Image source={require("@/assets/images/plus.png")} style={styles.addIcon} />
+                    </TouchableOpacity>
                 }
-                headerRight={(
-                    <View style={{ flexDirection: 'row' }}>
-                        <TouchableOpacity onPress={() => setCreateModalVisible(true)}>
-                            <Image
-                                source={require("@/assets/images/plus.png")}
-                                style={{ width: 30, height: 30 }}
-                            />
-                        </TouchableOpacity>
-                    </View>
-                )}
             />
 
             <View style={styles.content}>
                 {isLoading ? (
-                    <ActivityIndicator size="large" color="#C70202" style={styles.centerElement} />
+                    <ActivityIndicator size="large" color={COLORS.primary} style={styles.centerElement} />
                 ) : error ? (
                     <Text style={styles.errorText}>{error}</Text>
                 ) : employees.length === 0 ? (
@@ -433,263 +622,174 @@ export default function Employees() {
                 )}
             </View>
 
-            {/* View Employee Details Modal */}
-            <Modal
-                visible={modalVisible}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={handleCloseModal}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContentWrapper}>
-                        {selectedEmployee && <EmployeeCardModal item={selectedEmployee} />}
+            <EmployeeDetailModal
+                employee={selectedEmployee}
+                visible={detailModalVisible}
+                onClose={handleCloseDetailModal}
+                onEdit={handleOpenEditForm}
+                onTerminated={fetchEmployees}
+            />
 
-                        <TouchableOpacity style={styles.closeButton} onPress={handleCloseModal}>
-                            <Text style={styles.closeButtonText}>Close</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* Create New Employee Modal */}
-            <CreateEmployeeModal
-                visible={createModalVisible}
-                onClose={() => setCreateModalVisible(false)}
-                onSuccess={fetchEmployees}
+            <EmployeeFormModal
+                visible={formModalVisible}
+                mode={formMode}
+                employee={formMode === "edit" ? selectedEmployee : null}
+                onBack={handleFormBack}
+                onSuccess={handleFormSuccess}
             />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F5F5F5',
-    },
-    headerTitle: {
-        fontWeight: 'bold',
-        fontSize: 20,
-    },
-    content: {
-        flex: 1,
-    },
-    centerElement: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    listContainer: {
-        padding: 16,
-        gap: 12,
-    },
+    container: { flex: 1, backgroundColor: COLORS.background },
+    headerTitle: { fontWeight: "bold", fontSize: 20 },
+    addIcon: { width: 30, height: 30 },
+    content: { flex: 1 },
+    centerElement: { flex: 1, justifyContent: "center", alignItems: "center" },
+    listContainer: { padding: 16, gap: 12 },
+
     card: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.surface,
         borderRadius: 12,
         padding: 16,
-        shadowColor: '#000',
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS.primary,
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 4,
         elevation: 2,
     },
     cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
         marginBottom: 12,
         paddingBottom: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#EEEEEE',
+        borderBottomColor: COLORS.border,
     },
-    name: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#333333',
-    },
-    statusBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    statusText: {
-        fontSize: 12,
-        fontWeight: '600',
-    },
-    detailsContainer: {
-        gap: 6,
-    },
-    detailRow: {
-        fontSize: 14,
-    },
-    label: {
-        color: '#757575',
-        fontWeight: '500',
-    },
-    value: {
-        color: '#333333',
-        fontWeight: '400',
-    },
+    name: { fontSize: 18, fontWeight: "700", color: COLORS.textPrimary },
+    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+    statusText: { fontSize: 12, fontWeight: "600" },
+    detailsContainer: { gap: 6 },
+    detailRow: { fontSize: 14 },
+    label: { color: COLORS.textSecondary, fontWeight: "500" },
+    value: { color: COLORS.textPrimary, fontWeight: "400" },
     errorText: {
-        color: '#C70202',
-        textAlign: 'center',
+        color: COLORS.primary,
+        textAlign: "center",
         marginTop: 40,
-        fontSize: 16,
+        fontSize: 16
     },
     emptyText: {
-        color: '#757575',
-        textAlign: 'center',
+        color: COLORS.textSecondary,
+        textAlign: "center",
         marginTop: 40,
-        fontSize: 16,
+        fontSize: 16
     },
+
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        justifyContent: "center",
+        alignItems: "center",
         padding: 20,
     },
     modalContentWrapper: {
-        width: '100%',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        overflow: 'hidden',
+        width: "100%",
+        backgroundColor: COLORS.surface,
+        borderRadius: 16,
+        overflow: "hidden",
     },
     modalCardContainer: {
         padding: 20,
-        width: '100%',
+        width: "100%"
     },
     modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 16,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 16
     },
     modalName: {
         fontSize: 22,
-        fontWeight: '700',
-        color: '#333333',
-        marginBottom: 4,
+        fontWeight: "700",
+        color: COLORS.textPrimary,
+        marginBottom: 4
     },
     modalRole: {
         fontSize: 16,
-        fontWeight: '500',
-        color: '#757575',
-        textTransform: 'capitalize',
+        fontWeight: "500",
+        color: COLORS.textSecondary,
+        textTransform: "capitalize"
     },
     divider: {
         height: 1,
-        backgroundColor: '#EEEEEE',
-        marginVertical: 12,
+        backgroundColor: COLORS.border,
+        marginVertical: 12
     },
-    section: {
-        gap: 8,
-    },
+    section: { gap: 8 },
     sectionTitle: {
         fontSize: 14,
-        fontWeight: '600',
-        color: '#9E9E9E',
-        textTransform: 'uppercase',
+        fontWeight: "600",
+        color: "#9E9E9E",
+        textTransform: "uppercase",
         marginBottom: 4,
     },
     row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center"
     },
-    closeButton: {
-        backgroundColor: '#F5F5F5',
-        paddingVertical: 14,
-        alignItems: 'center',
+    actionRow: {
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 16,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
         borderTopWidth: 1,
-        borderTopColor: '#EEEEEE',
+        borderTopColor: COLORS.border,
     },
-    closeButtonText: {
-        color: '#C70202',
-        fontWeight: '600',
-        fontSize: 16,
+    actionButton: {
+        flex: 0,
+        minWidth: 92,
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
     },
-    createHeader: {
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEEEEE',
-        backgroundColor: '#FAFAFA',
-    },
-    formContainer: {
-        padding: 20,
-    },
-    inputLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#757575',
-        marginBottom: 8,
-        marginTop: 12,
-    },
+    actionButtonText: { fontWeight: "600", fontSize: 14 },
+
+    formHeader: { padding: 20, borderBottomWidth: 1, borderBottomColor: COLORS.border, backgroundColor: "#FAFAFA" },
+    formHeaderEdit: { borderBottomColor: COLORS.accent, backgroundColor: "#EEF3F8" },
+    formContainer: { padding: 20 },
+    inputLabel: { fontSize: 14, fontWeight: "600", color: COLORS.textSecondary, marginBottom: 8, marginTop: 12 },
     input: {
-        backgroundColor: '#F9F9F9',
+        backgroundColor: COLORS.inputBg,
         borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderColor: COLORS.inputBorder,
         borderRadius: 8,
         paddingHorizontal: 14,
         paddingVertical: 12,
         fontSize: 15,
         marginBottom: 12,
-        color: '#333333',
+        color: COLORS.textPrimary,
     },
-    inputRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    rolesContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginBottom: 12,
-    },
+    inputRow: { flexDirection: "row", justifyContent: "space-between" },
+    inputHalf: { flex: 1, marginRight: 8 },
+    rolesContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
     rolePill: {
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 20,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: COLORS.background,
         borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderColor: COLORS.inputBorder,
     },
-    rolePillActive: {
-        backgroundColor: '#C70202',
-        borderColor: '#C70202',
-    },
-    rolePillText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#757575',
-    },
-    rolePillTextActive: {
-        color: '#FFFFFF',
-    },
-    createActions: {
-        flexDirection: 'row',
-        borderTopWidth: 1,
-        borderTopColor: '#EEEEEE',
-    },
-    actionButton: {
-        flex: 1,
-        paddingVertical: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    cancelButton: {
-        backgroundColor: '#F5F5F5',
-    },
-    submitButton: {
-        backgroundColor: '#C70202',
-    },
-    cancelButtonText: {
-        color: '#333333',
-        fontWeight: '600',
-        fontSize: 16,
-    },
-    submitButtonText: {
-        color: '#FFFFFF',
-        fontWeight: '600',
-        fontSize: 16,
-    },
+    rolePillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+    rolePillText: { fontSize: 13, fontWeight: "600", color: COLORS.textSecondary },
+    rolePillTextActive: { color: "#FFFFFF" },
 });

@@ -1,5 +1,6 @@
 //radius-frontend/src/components/common/Logout.tsx
 import { apiFetch, UnauthorizedError } from "@/api/client";
+import { ENDPOINTS } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
 import { LogoutResponse } from "@/types/auth.types";
 import { TouchableOpacity, Image, Alert } from "react-native"
@@ -10,7 +11,7 @@ const LogoutComponent = () => {
 
     async function submitLogout() {
         try {
-            const res = await apiFetch<LogoutResponse>("/api/logout", {
+            const res = await apiFetch<LogoutResponse>(ENDPOINTS.AUTHENTICATED.logout, {
                 method: "POST",
             });
             await logout();

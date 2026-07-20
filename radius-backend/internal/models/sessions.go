@@ -61,6 +61,6 @@ type GetAllSessions struct {
 	IsActive   bool         `json:"is_active"`
 }
 
-type DeleteSessionRespnose struct {
+type TerminateSessionResponse struct {
 	Message string `json:"message"`
 }

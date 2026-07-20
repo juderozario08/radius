@@ -28,6 +28,8 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { TerminatedBadge } from "@/components/common/TerminatedBadge";
+import Toast from "@/components/common/Toast";
 
 const ROLES: EmployeeRole[] = ["SALES", "SERVICE", "MANAGER", "ADMIN"];
 
@@ -45,6 +47,11 @@ const ROLE_OPTIONS: PillOption<EmployeeRole>[] = ROLES.map((role) => ({
 const STATUS_OPTIONS: PillOption<boolean>[] = [
     { label: "Active", value: true },
     { label: "Inactive", value: false },
+];
+
+const TERMINATED_OPTIONS: PillOption<boolean>[] = [
+    { label: "No", value: false },
+    { label: "Yes", value: true },
 ];
 
 async function callApi<T>(endpoint: string, options: { method: string; body?: any }, logout: () => Promise<void>): Promise<T | null> {
@@ -75,18 +82,29 @@ interface EmployeeFormValues {
     postal_code: string;
     store_id: string;
     is_active: boolean;
+    is_terminated: boolean;
 }
 
 const createEmptyFormValues = (): EmployeeFormValues => ({
     first_name: "", last_name: "", email: "", password: "", role: "SALES",
     phone: "", address: "", city: "", province: "", postal_code: "", store_id: "", is_active: true,
+    is_terminated: false,
 });
 
 const employeeToFormValues = (employee: Employee): EmployeeFormValues => ({
-    first_name: employee.first_name, last_name: employee.last_name, email: employee.email, password: "",
-    role: employee.role, phone: employee.phone, address: employee.address, city: employee.city,
-    province: employee.province, postal_code: employee.postal_code, store_id: String(employee.store_id),
-    is_active: employee.is_active,
+    first_name: employee.first_name,
+    last_name: employee.last_name,
+    email: employee.email,
+    password: "",
+    role: employee.role,
+    phone: employee.phone,
+    address: employee.address,
+    city: employee.city,
+    province: employee.province,
+    postal_code: employee.postal_code,
+    store_id: String(employee.store_id),
+    is_active: employee.is_active ?? true,
+    is_terminated: employee.is_terminated ?? false,
 });
 
 const formValuesToEmployee = (formValues: EmployeeFormValues, base: Employee): Employee => ({
@@ -94,7 +112,7 @@ const formValuesToEmployee = (formValues: EmployeeFormValues, base: Employee): E
     first_name: formValues.first_name, last_name: formValues.last_name, email: formValues.email,
     role: formValues.role, phone: formValues.phone, address: formValues.address, city: formValues.city,
     province: formValues.province, postal_code: formValues.postal_code, store_id: parseInt(formValues.store_id, 10),
-    is_active: formValues.is_active,
+    is_active: formValues.is_active, is_terminated: formValues.is_terminated ?? false
 });
 
 function PillGroup<T,>({ options, value, onChange }: { options: PillOption<T>[]; value: T; onChange: (value: T) => void; }) {
@@ -122,18 +140,20 @@ interface EmployeeDetailModalProps {
     onClose: () => void;
     onEdit: (employee: Employee) => void;
     onTerminated: () => void;
+    onActivated: () => void;
 }
 
-const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, visible, onClose, onEdit, onTerminated }) => {
+const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, visible, onClose, onEdit, onTerminated, onActivated }) => {
     const { logout } = useAuth();
     const [isTerminating, setIsTerminating] = useState(false);
+    const [isActivating, setIsActivating] = useState(false);
 
     if (!employee) return null;
 
     const confirmTerminate = async () => {
         setIsTerminating(true);
         const result = await callApi(
-            ENDPOINTS.ADMIN.EMPLOYEES.terminate,
+            ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.terminate,
             { method: "POST", body: { employee_id: employee.employee_id } },
             logout
         );
@@ -146,13 +166,40 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
         }
     };
 
+    const confirmActivate = async () => {
+        setIsActivating(true);
+        const result = await callApi(
+            ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.activate,
+            { method: "POST", body: { employee_id: employee.employee_id } },
+            logout
+        );
+        setIsActivating(false);
+
+        if (result !== null) {
+            showToast("success", "Employee activated");
+            onActivated();
+            onClose();
+        }
+    };
+
     const handleTerminatePress = () => {
         Alert.alert(
             "Terminate Employee",
-            `Are you sure you want to terminate ${employee.first_name} ${employee.last_name}? This action cannot be undone.`,
+            `Are you sure you want to terminate ${employee.first_name} ${employee.last_name}?`,
             [
                 { text: "Cancel", style: "cancel" },
                 { text: "Terminate", style: "destructive", onPress: confirmTerminate },
+            ]
+        );
+    };
+
+    const handleActivatePress = () => {
+        Alert.alert(
+            "Activate Employee",
+            `Are you sure you want to activate ${employee.first_name} ${employee.last_name}?`,
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Activate", style: "destructive", onPress: confirmActivate },
             ]
         );
     };
@@ -167,7 +214,10 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
                                 <Text style={globalStyles.modalName}>{employee.first_name} {employee.last_name}</Text>
                                 <Text style={globalStyles.modalRole}>{capitalize(employee.role)}</Text>
                             </View>
-                            <StatusBadge isActive={employee.is_active} />
+                            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                                <TerminatedBadge isTerminated={employee.is_terminated} />
+                                <StatusBadge isActive={employee.is_active} />
+                            </View>
                         </View>
 
                         <View style={globalStyles.divider} />
@@ -199,11 +249,14 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
                         buttons={[
                             { key: "close", label: "Close", kind: "neutral", onPress: onClose, disabled: isTerminating },
                             { key: "edit", label: "Edit", kind: "accent", onPress: () => onEdit(employee), disabled: isTerminating },
-                            { key: "terminate", label: "Terminate", kind: "danger", onPress: handleTerminatePress, loading: isTerminating },
+                            employee.is_terminated ?
+                                { key: "activate", label: "Activate", kind: "primary", onPress: handleActivatePress, loading: isActivating } :
+                                { key: "terminate", label: "Terminate", kind: "danger", onPress: handleTerminatePress, loading: isTerminating },
                         ]}
                     />
                 </View>
             </View>
+            <Toast />
         </Modal>
     );
 };
@@ -232,13 +285,19 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
     };
 
     const isFormValid = (): boolean => {
-        const { first_name, last_name, email, store_id, password } = formValues;
+        const { first_name, last_name, email, store_id, password, is_active, is_terminated } = formValues;
         const missingRequired = !first_name || !last_name || !email || !store_id || (!isEditMode && !password);
 
         if (missingRequired) {
             showToast("error", "Please fill in all required fields");
             return false;
         }
+
+        if (is_terminated && is_active) {
+            showToast("error", "An employee cannot be active while being terminated.");
+            return false;
+        }
+
         return true;
     };
 
@@ -256,13 +315,13 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
         }
 
         setIsSubmitting(true);
-        const endpoint = isEditMode ? ENDPOINTS.ADMIN.EMPLOYEES.update : ENDPOINTS.ADMIN.EMPLOYEES.create;
-        const result = await callApi(endpoint, { method: "POST", body: payload }, logout);
+        const endpoint = isEditMode ? ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.update : ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.create;
+        const result = await callApi(endpoint, { method: isEditMode ? "PUT" : "POST", body: payload }, logout);
         setIsSubmitting(false);
 
         if (result !== null) {
             showToast("success", isEditMode ? "Employee updated successfully!" : "Employee created successfully!");
-            onSuccess(isEditMode && employee ? formValuesToEmployee(formValues, employee) : undefined);
+            onSuccess((isEditMode && employee) ? formValuesToEmployee(formValues, employee) : undefined);
         }
     };
 
@@ -323,6 +382,9 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                         <Text style={styles.inputLabel}>Status *</Text>
                         <PillGroup options={STATUS_OPTIONS} value={formValues.is_active} onChange={(v) => updateField("is_active", v)} />
 
+                        <Text style={styles.inputLabel}>Terminated *</Text>
+                        <PillGroup options={TERMINATED_OPTIONS} value={formValues.is_terminated} onChange={(v) => updateField("is_terminated", v)} />
+
                         <Text style={styles.inputLabel}>Contact & Location</Text>
                         <TextInput
                             style={styles.input}
@@ -378,6 +440,7 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                     />
                 </View>
             </KeyboardAvoidingView>
+            <Toast />
         </Modal>
     );
 };
@@ -402,7 +465,7 @@ export default function Employees() {
         setIsLoading(true);
         setError(null);
 
-        const data = await callApi<GetAllEmployeeResponse>(ENDPOINTS.ADMIN.EMPLOYEES.getAll, { method: "GET" }, logout);
+        const data = await callApi<GetAllEmployeeResponse>(ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.getAll, { method: "GET" }, logout);
 
         if (data) {
             showToast("success", data.message);
@@ -457,7 +520,10 @@ export default function Employees() {
                 <Text style={styles.name}>
                     {item.first_name} {item.last_name}
                 </Text>
-                <StatusBadge isActive={item.is_active} />
+                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                    <TerminatedBadge isTerminated={item.is_terminated} />
+                    <StatusBadge isActive={item.is_active} />
+                </View>
             </View>
 
             <View style={styles.detailsContainer}>
@@ -504,6 +570,7 @@ export default function Employees() {
                 onClose={handleCloseDetailModal}
                 onEdit={handleOpenEditForm}
                 onTerminated={fetchEmployees}
+                onActivated={fetchEmployees}
             />
 
             <EmployeeFormModal

@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { COLORS } from "@/constants/colors";
+import { ENDPOINTS } from "@/constants/routes";
 
 function checkEmail(email: string): boolean {
     let atSeen = false;
@@ -51,7 +52,7 @@ export default function LoginScreen() {
     async function submitLogin(force: boolean) {
         setLoading(true);
         try {
-            const res = await apiFetch<LoginResponse>("/login", {
+            const res = await apiFetch<LoginResponse>(ENDPOINTS.UNAUTHENTICATED.login, {
                 method: "POST",
                 body: JSON.stringify({ email, password, force }),
             });

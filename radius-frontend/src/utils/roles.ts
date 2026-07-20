@@ -24,6 +24,7 @@ export type Permission =
 
 export const ROLE_PERMISSIONS: Record<EmployeeRole, Permission[]> = {
     SALES: [
+        'view_back_room',
         'view_sales_floor',
         'view_inventory',
         'view_orders',

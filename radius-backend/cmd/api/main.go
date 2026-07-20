@@ -60,8 +60,8 @@ func main() {
 	salesRepo := repository.NewSalesRepo(db.DB)
 
 	employeeService := service.NewEmployeeService(employeeRepo)
-	authService := service.NewAuthService(employeeRepo, sessionRepo, []byte(jwtSecretCode))
-	sessionService := service.NewSessionService(employeeRepo, sessionRepo, []byte(jwtSecretCode))
+	sessionService := service.NewSessionService(sessionRepo, []byte(jwtSecretCode))
+	authService := service.NewAuthService(employeeRepo, sessionService)
 	barcodeService := service.NewBarcodeService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
 	cycleCountService := service.NewCycleCountService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
 	fillReportService := service.NewFillReportService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)

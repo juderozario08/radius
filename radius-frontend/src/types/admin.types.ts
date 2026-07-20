@@ -1,16 +1,19 @@
+import { EmployeeRole } from "./auth.types";
+
 export interface Employee {
     employee_id: number;
     store_id: number;
     first_name: string;
     last_name: string;
     email: string;
-    role: string;
+    role: EmployeeRole;
     phone: string;
     address: string;
     city: string;
     province: string;
     postal_code: string;
     is_active: boolean;
+    is_terminated: boolean;
 }
 
 export interface GetAllEmployeeResponse {

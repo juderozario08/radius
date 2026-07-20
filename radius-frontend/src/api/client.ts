@@ -1,6 +1,5 @@
 //radius-frontend/src/api/client.ts
-import { useAuth } from "@/hooks/useAuth";
-import { deleteToken, getToken } from "@/utils/token";
+import { getToken } from "@/utils/token";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 

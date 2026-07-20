@@ -87,12 +87,14 @@ func NewRouter(cfg Config) *gin.Engine {
 				"message": "Admin route is working!",
 			})
 		})
-		admin.POST("/create_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.AuthHandler.Register)
-		admin.POST("/deactivate_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.AuthHandler.Register)
+		admin.POST("/create_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.CreateEmployee)
 		admin.GET("/get_all_employees", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.GetAllEmployees)
+		admin.POST("/terminate_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.TerminateEmployee)
+		admin.POST("/activate_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.ActivateEmployee)
+		admin.PUT("/update_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.UpdateEmployee)
+
 		admin.GET("/get_all_sessions", middleware.RequirePermission(middleware.PermManageSessions), cfg.Handlers.SessionHandler.GetAllSessions)
-		admin.GET("/delete_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.DeleteEmployee)
-		admin.GET("/delete_session", middleware.RequirePermission(middleware.PermManageSessions), cfg.Handlers.SessionHandler.DeleteSession)
+		admin.POST("/terminate_session", middleware.RequirePermission(middleware.PermManageSessions), cfg.Handlers.SessionHandler.TerminateSession)
 	}
 
 	manager := router.Group("/api/manager")

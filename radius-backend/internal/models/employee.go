@@ -11,17 +11,18 @@ const (
 )
 
 type EmployeeBase struct {
-	Email      string       `json:"email"        binding:"required,email"`
-	StoreId    int          `json:"store_id"     binding:"required"`
-	FirstName  string       `json:"first_name"   binding:"required"`
-	LastName   string       `json:"last_name"    binding:"required"`
-	Role       EmployeeRole `json:"role"         binding:"required"`
-	Phone      string       `json:"phone"        binding:"required"`
-	Address    string       `json:"address"      binding:"required"`
-	City       string       `json:"city"         binding:"required"`
-	Province   string       `json:"province"     binding:"required"`
-	PostalCode string       `json:"postal_code"  binding:"required"`
-	IsActive   *bool        `json:"is_active"    binding:"required"`
+	Email        string       `json:"email"         binding:"required,email"`
+	StoreId      int          `json:"store_id"      binding:"required"`
+	FirstName    string       `json:"first_name"    binding:"required"`
+	LastName     string       `json:"last_name"     binding:"required"`
+	Role         EmployeeRole `json:"role"          binding:"required"`
+	Phone        string       `json:"phone"         binding:"required"`
+	Address      string       `json:"address"       binding:"required"`
+	City         string       `json:"city"          binding:"required"`
+	Province     string       `json:"province"      binding:"required"`
+	PostalCode   string       `json:"postal_code"   binding:"required"`
+	IsActive     *bool        `json:"is_active"     binding:"required"`
+	IsTerminated *bool        `json:"is_terminated" binding:"required"`
 }
 
 type Employee struct {
@@ -61,6 +62,14 @@ type GetAllEmployeesResponse struct {
 	Message   string     `json:"message"`
 }
 
-type DeleteEmployeeRespnose struct {
+type TerminateEmployeeRespnose struct {
+	Message string `json:"message"`
+}
+
+type ActivateEmployeeRespnose struct {
+	Message string `json:"message"`
+}
+
+type UpdateEmployeeResponse struct {
 	Message string `json:"message"`
 }

@@ -4,7 +4,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"radius/internal/models"
 )
 
@@ -33,12 +32,6 @@ func (r *SessionRepo) GetSessionByHashedToken(ctx context.Context, tokenHash str
 	return &session, nil
 }
 
-func (r *SessionRepo) DeleteSessionByHash(ctx context.Context, tokenHash string) error {
-	query := `DELETE FROM sessions WHERE token_hash = $1`
-	_, err := r.db.ExecContext(ctx, query, tokenHash)
-	return err
-}
-
 func (r *SessionRepo) GetSessionById(ctx context.Context, id int) (*models.Session, error) {
 	var session models.Session
 	query := `
@@ -56,28 +49,16 @@ func (r *SessionRepo) GetSessionById(ctx context.Context, id int) (*models.Sessi
 	return &session, nil
 }
 
-func (r *SessionRepo) DeleteSessionById(ctx context.Context, id int) error {
+func (r *SessionRepo) TerminateSessionById(ctx context.Context, id int) error {
 	query := `DELETE FROM sessions WHERE session_id = $1;`
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
 }
 
-func (r *SessionRepo) DeleteSessionByHashedToken(ctx context.Context, tokenHash string) error {
+func (r *SessionRepo) TerminateSessionByHashedToken(ctx context.Context, tokenHash string) error {
 	query := `DELETE FROM sessions WHERE token_hash = $1;`
-	result, err := r.db.ExecContext(ctx, query, tokenHash)
-	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return errors.New("No session found with that token")
-	}
-
-	return nil
+	_, err := r.db.ExecContext(ctx, query, tokenHash)
+	return err
 }
 
 func (r *SessionRepo) CreateSession(ctx context.Context, model models.CreateSessionRequest) (*models.CreateSessionResponse, error) {
@@ -157,7 +138,7 @@ func (r *SessionRepo) GetAllSessions(ctx context.Context) ([]models.GetAllSessio
 	return sessions, nil
 }
 
-func (r *SessionRepo) DeleteExpiredSessions(ctx context.Context) (int64, error) {
+func (r *SessionRepo) TerminateExpiredSessions(ctx context.Context) (int64, error) {
 	query := `DELETE FROM sessions WHERE expires_at < NOW()`
 
 	result, err := r.db.ExecContext(ctx, query)

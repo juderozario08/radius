@@ -21,7 +21,7 @@ const SessionDetailModal: React.FC<{ session: Session | null; visible: boolean; 
 
     const confirmTerminate = async () => {
         setIsTerminating(true);
-        const result = await callApi(ENDPOINTS.ADMIN.SESSIONS.terminate, { method: "POST", body: { session_id: session.session_id } }, logout);
+        const result = await callApi(ENDPOINTS.AUTHENTICATED.ADMIN.SESSIONS.terminate, { method: "POST", body: { session_id: session.session_id } }, logout);
         setIsTerminating(false);
 
         if (result !== null) {
@@ -86,7 +86,7 @@ export default function Sessions() {
     const fetchSessions = async () => {
         setIsLoading(true);
         setError(null);
-        const data = await callApi<GetAllSessionsResponse>(ENDPOINTS.ADMIN.SESSIONS.getAll, { method: "GET" }, logout);
+        const data = await callApi<GetAllSessionsResponse>(ENDPOINTS.AUTHENTICATED.ADMIN.SESSIONS.getAll, { method: "GET" }, logout);
         if (data) setSessions(data.sessions || []);
         else setError("Could not load sessions. Please try again.");
         setIsLoading(false);

@@ -32,6 +32,7 @@ const (
 var rolePermissions = map[models.EmployeeRole][]Permission{
 	"SALES": {
 		PermViewSalesFloor,
+		PermViewBackRoom,
 		PermViewInventory,
 		PermViewOrders,
 		PermSubmitItemAdjustment,

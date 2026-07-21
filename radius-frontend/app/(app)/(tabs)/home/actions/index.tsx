@@ -3,6 +3,7 @@ import Gate from "@/components/common/Gate";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import LogoutComponent from "@/components/common/Logout";
 import NotificationIconComponent from "@/components/common/NotificationIcon";
+import { globalStyles } from "@/constants/styles";
 import { Permission } from "@/utils/roles";
 import { Href, router } from "expo-router";
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -35,6 +36,10 @@ const adminActionsMapping: ButtonConfig[] = [
     { title: 'Sessions', path: '/(app)/(tabs)/home/actions/admin/Sessions', imagePath: require('@/assets/images/sessions.png') },
 ]
 
+const serviceActionsMapping: ButtonConfig[] = [
+    { title: 'Print Orders', path: '/(app)/(tabs)/home/actions/service/Orders', imagePath: require('@/assets/images/print_orders.png') },
+]
+
 const Subsection = ({ title, mapping }: { title: string, mapping: ButtonConfig[] }) => {
     return (
         <View>
@@ -64,7 +69,13 @@ export default function Actions() {
                     </View>
                 )} />
             <ScrollView>
-                <View style={styles.container}>
+                <View style={[globalStyles.container, { paddingHorizontal: 10 }]}>
+                    {/* Only employees with the 'view_admin_actions' permission will see this */}
+                    <Gate permission="view_admin_actions">
+                        <Subsection title="Admin Actions" mapping={adminActionsMapping} />
+                        <View style={{ marginTop: 50 }} />
+                    </Gate>
+
                     {/* Only employees with the 'view_back_room' permission will see this */}
                     <Gate permission="view_back_room">
                         <Subsection title="Back Room" mapping={backRoomMapping} />
@@ -77,9 +88,9 @@ export default function Actions() {
                         <View style={{ marginTop: 50 }} />
                     </Gate>
 
-                    {/* Only employees with the 'view_admin_actions' permission will see this */}
-                    <Gate permission="view_admin_actions">
-                        <Subsection title="Admin Actions" mapping={adminActionsMapping} />
+                    {/* Only employees with the 'view_service_actions' permission will see this */}
+                    <Gate permission="view_service_actions">
+                        <Subsection title="Service Actions" mapping={serviceActionsMapping} />
                     </Gate>
                 </View>
             </ScrollView>
@@ -88,10 +99,6 @@ export default function Actions() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        paddingHorizontal: 10,
-    },
     sectionTitle: {
         fontSize: 22,
         fontWeight: 'bold',

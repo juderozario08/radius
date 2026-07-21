@@ -5,6 +5,7 @@ export type Permission =
     | 'view_sales_floor'
     | 'view_back_room'
     | 'view_admin_actions'
+    | 'view_service_actions'
 
     | 'view_inventory'
     | 'view_orders'
@@ -33,7 +34,9 @@ export const ROLE_PERMISSIONS: Record<EmployeeRole, Permission[]> = {
         'approve_po',
     ],
     SERVICE: [
+        'view_back_room',
         'view_sales_floor',
+        'view_service_actions',
         'view_inventory',
         'view_orders',
         'process_returns',
@@ -44,6 +47,7 @@ export const ROLE_PERMISSIONS: Record<EmployeeRole, Permission[]> = {
     MANAGER: [
         'view_sales_floor',
         'view_back_room',
+        'view_service_actions',
 
         'view_inventory',
         'view_orders',
@@ -62,6 +66,7 @@ export const ROLE_PERMISSIONS: Record<EmployeeRole, Permission[]> = {
         'view_sales_floor',
         'view_back_room',
         'view_admin_actions',
+        'view_service_actions',
 
         'view_inventory',
         'view_orders',

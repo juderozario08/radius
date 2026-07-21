@@ -15,6 +15,7 @@ const (
 	PermViewSalesFloor       Permission = "view_sales_floor"
 	PermViewBackRoom         Permission = "view_back_room"
 	PermViewAdminActions     Permission = "view_admin_actions"
+	PermViewService          Permission = "view_service_actions"
 	PermViewInventory        Permission = "view_inventory"
 	PermViewOrders           Permission = "view_orders"
 	PermViewEmployees        Permission = "view_employees"
@@ -40,6 +41,8 @@ var rolePermissions = map[models.EmployeeRole][]Permission{
 	},
 	"SERVICE": {
 		PermViewSalesFloor,
+		PermViewSalesFloor,
+		PermViewService,
 		PermViewInventory,
 		PermViewOrders,
 		PermProcessReturns,
@@ -49,6 +52,7 @@ var rolePermissions = map[models.EmployeeRole][]Permission{
 	"MANAGER": {
 		PermViewSalesFloor,
 		PermViewBackRoom,
+		PermViewService,
 		PermViewInventory,
 		PermViewOrders,
 		PermViewEmployees,
@@ -62,6 +66,7 @@ var rolePermissions = map[models.EmployeeRole][]Permission{
 	"ADMIN": {
 		PermViewSalesFloor,
 		PermViewBackRoom,
+		PermViewService,
 		PermViewAdminActions,
 		PermViewInventory,
 		PermViewOrders,

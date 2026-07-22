@@ -12,74 +12,35 @@ import (
 type Permission string
 
 const (
-	PermViewSalesFloor       Permission = "view_sales_floor"
-	PermViewBackRoom         Permission = "view_back_room"
+	PermViewSalesFloorAction Permission = "view_sales_floor"
+	PermViewBackRoomActions  Permission = "view_back_room"
+	PermViewServiceActions   Permission = "view_service_actions"
+	PermViewManagerActions   Permission = "view_manager_actions" // Fixed string value
 	PermViewAdminActions     Permission = "view_admin_actions"
-	PermViewService          Permission = "view_service_actions"
-	PermViewInventory        Permission = "view_inventory"
-	PermViewOrders           Permission = "view_orders"
-	PermViewEmployees        Permission = "view_employees"
-	PermManageEmployees      Permission = "manage_employees"
-	PermManageSessions       Permission = "manage_sessions"
-	PermViewTransfers        Permission = "view_transfers"
-	PermApprovePO            Permission = "approve_po"
-	PermSubmitItemAdjustment Permission = "submit_item_adjustment"
-	PermDeleteOwnAdjustment  Permission = "delete_own_item_adjustment"
-	PermAdjustInventory      Permission = "adjust_inventory"
-	PermPerformCycleCount    Permission = "perform_cycle_count"
-	PermProcessReturns       Permission = "process_returns"
 )
 
 var rolePermissions = map[models.EmployeeRole][]Permission{
 	"SALES": {
-		PermViewSalesFloor,
-		PermViewBackRoom,
-		PermViewInventory,
-		PermViewOrders,
-		PermSubmitItemAdjustment,
-		PermDeleteOwnAdjustment,
+		PermViewSalesFloorAction,
+		PermViewBackRoomActions,
 	},
 	"SERVICE": {
-		PermViewSalesFloor,
-		PermViewSalesFloor,
-		PermViewService,
-		PermViewInventory,
-		PermViewOrders,
-		PermProcessReturns,
-		PermSubmitItemAdjustment,
-		PermDeleteOwnAdjustment,
+		PermViewSalesFloorAction,
+		PermViewBackRoomActions,
+		PermViewServiceActions,
 	},
 	"MANAGER": {
-		PermViewSalesFloor,
-		PermViewBackRoom,
-		PermViewService,
-		PermViewInventory,
-		PermViewOrders,
-		PermViewEmployees,
-		PermViewTransfers,
-		PermSubmitItemAdjustment,
-		PermDeleteOwnAdjustment,
-		PermAdjustInventory,
-		PermPerformCycleCount,
-		PermProcessReturns,
+		PermViewSalesFloorAction,
+		PermViewBackRoomActions,
+		PermViewServiceActions,
+		PermViewManagerActions,
 	},
 	"ADMIN": {
-		PermViewSalesFloor,
-		PermViewBackRoom,
-		PermViewService,
+		PermViewSalesFloorAction,
+		PermViewBackRoomActions,
+		PermViewServiceActions,
+		PermViewManagerActions,
 		PermViewAdminActions,
-		PermViewInventory,
-		PermViewOrders,
-		PermViewEmployees,
-		PermManageEmployees,
-		PermManageSessions,
-		PermViewTransfers,
-		PermApprovePO,
-		PermSubmitItemAdjustment,
-		PermDeleteOwnAdjustment,
-		PermAdjustInventory,
-		PermPerformCycleCount,
-		PermProcessReturns,
 	},
 }
 

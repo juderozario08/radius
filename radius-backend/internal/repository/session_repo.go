@@ -15,15 +15,15 @@ func NewSessionRepo(db *sql.DB) *SessionRepo {
 	return &SessionRepo{db: db}
 }
 
-func (r *SessionRepo) GetSessionByHashedToken(ctx context.Context, tokenHash string) (*models.Session, error) {
-	var session models.Session
+func (r *SessionRepo) GetSessionByHashedToken(ctx context.Context, tokenHash string) (*models.GetSessionByHashedToken, error) {
+	var session models.GetSessionByHashedToken
 	query := `
-        SELECT session_id, employee_id, store_id, token_hash, expires_at
-        FROM sessions
-        WHERE token_hash = $1
+		SELECT s.session_id, e.employee_id, s.expires_at, e.store_id, e.is_active, e.is_terminated FROM sessions as s
+		JOIN employees as e ON e.employee_id = s.employee_id
+		WHERE token_hash = $1;
     `
 	err := r.db.QueryRowContext(ctx, query, tokenHash).Scan(
-		&session.SessionId, &session.EmployeeId, &session.StoreId, &session.TokenHash, &session.ExpiresAt,
+		&session.SessionId, &session.EmployeeId, &session.ExpiresAt, &session.StoreId, &session.IsActive, &session.IsTerminated,
 	)
 	if err != nil {
 		return nil, err

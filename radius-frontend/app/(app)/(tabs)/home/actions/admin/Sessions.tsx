@@ -115,7 +115,7 @@ export default function Sessions() {
     return (
         <TopSafeAreaView>
             <HeaderComponent headerLeft={<BackButton />} headerCenter={<Text style={globalStyles.headerTitle}>Active Sessions</Text>} />
-            <View style={globalStyles.content}>
+            <View style={globalStyles.container}>
                 {isLoading ? (
                     <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
                 ) : error ? (

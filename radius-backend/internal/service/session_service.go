@@ -54,6 +54,14 @@ func (s *SessionService) ValidateSession(ctx context.Context, tokenString string
 		_ = s.sessionRepo.TerminateSessionByHashedToken(ctx, hashedToken)
 		return errors.New("Session expired and has been removed")
 	}
+	if session.IsActive != nil && !(*session.IsActive) {
+		_ = s.sessionRepo.TerminateSessionByHashedToken(ctx, hashedToken)
+		return errors.New("Inactive account")
+	}
+	if session.IsTerminated != nil && !(*session.IsTerminated) {
+		_ = s.sessionRepo.TerminateSessionByHashedToken(ctx, hashedToken)
+		return errors.New("Terminated Account")
+	}
 	return nil
 }
 

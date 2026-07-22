@@ -8,9 +8,6 @@ export const globalStyles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.background,
     },
-    content: {
-        flex: 1,
-    },
     centerElement: {
         flex: 1,
         justifyContent: "center",

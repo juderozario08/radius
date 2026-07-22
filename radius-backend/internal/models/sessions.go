@@ -16,6 +16,15 @@ type Session struct {
 	TokenHash  string    `json:"-"`
 }
 
+type GetSessionByHashToken struct {
+	SessionId    int
+	EmployeeId   int
+	ExpiresAt    time.Time
+	StoreId      int
+	IsActive     *bool
+	IsTerminated *bool
+}
+
 type CreateSessionRequest struct {
 	EmployeeId int       `json:"employee_id"`
 	TokenHash  string    `json:"-"`

@@ -547,7 +547,7 @@ export default function Employees() {
                 }
             />
 
-            <View style={globalStyles.content}>
+            <View style={globalStyles.container}>
                 {isLoading ? (
                     <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
                 ) : error ? (

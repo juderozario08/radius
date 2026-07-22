@@ -6,81 +6,30 @@ export type Permission =
     | 'view_back_room'
     | 'view_admin_actions'
     | 'view_service_actions'
-
-    | 'view_inventory'
-    | 'view_orders'
-    | 'view_employees'
-    | 'create_employee'
-    | 'delete_employees'
-    | 'view_transfers'
-    | 'approve_po'
-
-    | 'submit_item_adjustment'
-    | 'delete_own_item_adjustment'
-    | 'adjust_inventory'
-
-    | 'perform_cycle_count'
-    | 'approve_cycle_count'
-    | 'process_returns'
+    | 'view_manager_actions'
 
 export const ROLE_PERMISSIONS: Record<EmployeeRole, Permission[]> = {
     SALES: [
         'view_back_room',
         'view_sales_floor',
-        'view_inventory',
-        'view_orders',
-        'submit_item_adjustment',
-        'delete_own_item_adjustment',
-        'approve_po',
     ],
     SERVICE: [
         'view_back_room',
         'view_sales_floor',
         'view_service_actions',
-        'view_inventory',
-        'view_orders',
-        'process_returns',
-        'submit_item_adjustment',
-        'approve_po',
-        'delete_own_item_adjustment',
     ],
     MANAGER: [
         'view_sales_floor',
         'view_back_room',
         'view_service_actions',
-
-        'view_inventory',
-        'view_orders',
-        'view_employees',
-        'view_transfers',
-
-        'submit_item_adjustment',
-        'delete_own_item_adjustment',
-        'adjust_inventory',
-        'perform_cycle_count',
-        'process_returns',
-        'approve_cycle_count',
-        'approve_po',
+        'view_manager_actions',
     ],
     ADMIN: [
         'view_sales_floor',
         'view_back_room',
         'view_admin_actions',
         'view_service_actions',
-
-        'view_inventory',
-        'view_orders',
-        'view_employees',
-        'create_employee',
-        'view_transfers',
-        'approve_po',
-
-        'submit_item_adjustment',
-        'delete_own_item_adjustment',
-        'adjust_inventory',
-        'perform_cycle_count',
-        'process_returns',
-        'delete_employees',
+        'view_manager_actions',
     ],
 };
 

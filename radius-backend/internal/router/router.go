@@ -79,33 +79,39 @@ func NewRouter(cfg Config) *gin.Engine {
 	}
 
 	admin := router.Group("/api/admin")
-	admin.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService))
-	admin.Use(middleware.RequirePermission(middleware.PermViewAdminActions))
+	admin.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewAdminActions))
 	{
 		admin.GET("/health", func(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, gin.H{
 				"message": "Admin route is working!",
 			})
 		})
-		admin.POST("/create_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.CreateEmployee)
-		admin.GET("/get_all_employees", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.GetAllEmployees)
-		admin.POST("/terminate_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.TerminateEmployee)
-		admin.POST("/activate_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.ActivateEmployee)
-		admin.PUT("/update_employee", middleware.RequirePermission(middleware.PermManageEmployees), cfg.Handlers.EmployeeHandler.UpdateEmployee)
 
-		admin.GET("/get_all_sessions", middleware.RequirePermission(middleware.PermManageSessions), cfg.Handlers.SessionHandler.GetAllSessions)
-		admin.POST("/terminate_session", middleware.RequirePermission(middleware.PermManageSessions), cfg.Handlers.SessionHandler.TerminateSession)
+		admin.POST("/create_employee", cfg.Handlers.EmployeeHandler.CreateEmployee)
+		admin.GET("/get_all_employees", cfg.Handlers.EmployeeHandler.GetAllEmployees)
+		admin.POST("/terminate_employee", cfg.Handlers.EmployeeHandler.TerminateEmployee)
+		admin.POST("/activate_employee", cfg.Handlers.EmployeeHandler.ActivateEmployee)
+		admin.PUT("/update_employee", cfg.Handlers.EmployeeHandler.UpdateEmployee)
+
+		admin.GET("/get_all_sessions", cfg.Handlers.SessionHandler.GetAllSessions)
+		admin.POST("/terminate_session", cfg.Handlers.SessionHandler.TerminateSession)
+
+		admin.GET("/get_all_stores", cfg.Handlers.StoreHandler.GetAllStores)
+		admin.PUT("/update_store", cfg.Handlers.StoreHandler.UpdateStore)
+		admin.POST("/create_store", cfg.Handlers.StoreHandler.CreateStore)
 	}
 
 	manager := router.Group("/api/manager")
-	manager.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService))
-	// manager.Use(middleware.RequirePermission())
+	manager.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewManagerActions))
 	{
 		manager.GET("/health", func(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, gin.H{
 				"message": "Manager route is working!",
 			})
 		})
+
+		manager.GET("/get_store", cfg.Handlers.StoreHandler.GetStore)
+		manager.POST("/manage_employees", cfg.Handlers.StoreHandler.ManageEmployees)
 	}
 
 	return router

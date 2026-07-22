@@ -98,8 +98,8 @@ export default function Sessions() {
     };
 
     const renderSessionCard = ({ item }: { item: Session }) => (
-        <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => { setSelectedSession(item); setDetailModalVisible(true); }}>
-            <View style={styles.cardHeader}>
+        <TouchableOpacity style={globalStyles.card} activeOpacity={0.7} onPress={() => { setSelectedSession(item); setDetailModalVisible(true); }}>
+            <View style={globalStyles.cardHeader}>
                 <Text style={styles.name}>{item.first_name} {item.last_name}</Text>
                 <StatusBadge isActive={item.is_active} />
             </View>
@@ -132,27 +132,6 @@ export default function Sessions() {
 }
 
 const styles = StyleSheet.create({
-    card: {
-        backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 16,
-        borderLeftWidth: 4,
-        borderLeftColor: COLORS.primary,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    cardHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 12,
-        paddingBottom: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
     name: { fontSize: 18, fontWeight: "700", color: COLORS.textPrimary },
     detailsContainer: { gap: 6 },
 });

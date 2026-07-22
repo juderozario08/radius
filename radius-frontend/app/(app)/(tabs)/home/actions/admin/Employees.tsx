@@ -149,7 +149,9 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
     const [isTerminating, setIsTerminating] = useState(false);
     const [isActivating, setIsActivating] = useState(false);
 
-    if (!employee) return null;
+    if (!employee) {
+        return null;
+    }
 
     const confirmTerminate = async () => {
         setIsTerminating(true);
@@ -516,8 +518,8 @@ export default function Employees() {
     };
 
     const renderEmployeeCard = ({ item }: { item: Employee }) => (
-        <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => handleViewEmployee(item)}>
-            <View style={styles.cardHeader}>
+        <TouchableOpacity style={globalStyles.card} activeOpacity={0.7} onPress={() => handleViewEmployee(item)}>
+            <View style={globalStyles.cardHeader}>
                 <Text style={styles.name}>
                     {item.first_name} {item.last_name}
                 </Text>
@@ -587,35 +589,38 @@ export default function Employees() {
 }
 
 const styles = StyleSheet.create({
-    addIcon: { width: 25, height: 25 },
-    card: {
-        backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 16,
-        borderLeftWidth: 4,
-        borderLeftColor: COLORS.primary,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
+    addIcon: {
+        width: 25,
+        height: 25
     },
-    cardHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 12,
-        paddingBottom: 12,
+    name: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: COLORS.textPrimary
+    },
+    detailsContainer: {
+        gap: 6
+    },
+    formHeader: {
+        padding: 20,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
+        backgroundColor: "#FAFAFA"
     },
-    name: { fontSize: 18, fontWeight: "700", color: COLORS.textPrimary },
-    detailsContainer: { gap: 6 },
-
-    formHeader: { padding: 20, borderBottomWidth: 1, borderBottomColor: COLORS.border, backgroundColor: "#FAFAFA" },
-    formHeaderEdit: { borderBottomColor: COLORS.accent, backgroundColor: "#EEF3F8" },
-    formContainer: { padding: 20 },
-    inputLabel: { fontSize: 14, fontWeight: "600", color: COLORS.textSecondary, marginBottom: 8, marginTop: 12 },
+    formHeaderEdit: {
+        borderBottomColor: COLORS.accent,
+        backgroundColor: "#EEF3F8"
+    },
+    formContainer: {
+        padding: 20
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: COLORS.textSecondary,
+        marginBottom: 8,
+        marginTop: 12
+    },
     input: {
         backgroundColor: COLORS.inputBg,
         borderWidth: 1,
@@ -627,9 +632,20 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         color: COLORS.textPrimary,
     },
-    inputRow: { flexDirection: "row", justifyContent: "space-between" },
-    inputHalf: { flex: 1, marginRight: 8 },
-    rolesContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+    inputRow: {
+        flexDirection: "row",
+        justifyContent: "space-between"
+    },
+    inputHalf: {
+        flex: 1,
+        marginRight: 8
+    },
+    rolesContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginBottom: 12
+    },
     rolePill: {
         paddingVertical: 8,
         paddingHorizontal: 16,
@@ -638,7 +654,16 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
     },
-    rolePillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-    rolePillText: { fontSize: 13, fontWeight: "600", color: COLORS.textSecondary },
-    rolePillTextActive: { color: "#FFFFFF" },
+    rolePillActive: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary
+    },
+    rolePillText: {
+        fontSize: 13,
+        fontWeight: "600",
+        color: COLORS.textSecondary
+    },
+    rolePillTextActive: {
+        color: "#FFFFFF"
+    },
 });

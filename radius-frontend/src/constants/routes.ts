@@ -1,5 +1,4 @@
 //radius-frontend/src/constants/routes.ts
-
 export const ENDPOINTS = {
     UNAUTHENTICATED: {
         login: "/login",
@@ -19,6 +18,13 @@ export const ENDPOINTS = {
                 getAll: "/api/admin/get_all_sessions",
                 terminate: "/api/admin/terminate_session",
             },
+            STORE: {
+                getAll: "/api/admin/get_all_stores",
+                update: "api/admin/update_store",
+                create: "api/admin/create_store",
+                activate: "api/admin/activate_store",
+                deactivate: "api/admin/deactivate_store"
+            }
         },
         MANAGER: {
         },

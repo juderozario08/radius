@@ -35,3 +35,27 @@ type LoginResult struct {
 	RequiresConfirmation bool                   `json:"requires_confirmation"`
 	Session              *EmployeeLoginResponse `json:"session,omitempty"`
 }
+
+type GetAllStoresResponse struct {
+	Stores      []Store `json:"stores"`
+	TotalLength int     `json:"total_length"`
+	Message     string  `json:"message"`
+}
+
+type UpdateStoreResponse struct {
+	Message string `json:"message"`
+}
+
+type CreateStoreResponse struct {
+	Store   Store  `json:"store"`
+	Message string `json:"message"`
+}
+
+type ManageEmployeesResponse struct {
+	Message string `json:"message"`
+}
+
+type GetStoreResponse struct {
+	Store   Store  `json:"store"`
+	Message string `json:"message"`
+}

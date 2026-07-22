@@ -109,5 +109,26 @@ export const globalStyles = StyleSheet.create({
     headerImageSize: {
         width: 25,
         height: 25,
-    }
+    },
+    card: {
+        backgroundColor: COLORS.surface,
+        borderRadius: 12,
+        padding: 16,
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS.primary,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    cardHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 12,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
 });

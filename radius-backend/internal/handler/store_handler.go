@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"radius/internal/service"
 
@@ -19,7 +20,18 @@ func NewStoreHandler(storeService *service.StoreService) *StoreHandler {
 }
 
 func (h *StoreHandler) GetAllStores(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{"message": "Retrieved all stores"})
+	response, err := h.storeService.GetAllStores(
+		ctx.Request.Context(),
+		ctx.DefaultQuery("page_size", "10"),
+		ctx.DefaultQuery("page_number", "1"),
+	)
+	if err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (h *StoreHandler) UpdateStore(ctx *gin.Context) {

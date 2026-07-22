@@ -42,3 +42,22 @@ export interface GetAllSessionsResponse {
     sessions: Session[];
     message: string;
 }
+
+export interface Store {
+    store_id: number;
+    name: string;
+    address: string;
+    city: string;
+    province: string;
+    postal_code: string;
+    phone: string;
+    timezone: string;
+    is_active: boolean;
+    created_at: string;
+}
+
+export interface GetAllStoresResponse {
+    stores: Store[];
+    total_length: number;
+    message: string;
+}

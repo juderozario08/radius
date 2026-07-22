@@ -12,7 +12,7 @@ export default function StoreScreen() {
     const isAdmin = hasPermission(user?.role, "view_admin_actions");
     const isManagerOrAdmin = hasPermission(user?.role, "view_employees") || isAdmin;
 
-    if (isManagerOrAdmin) {
+    if (!isManagerOrAdmin) {
         return (
             <View style={globalStyles.container}>
                 <HeaderComponent headerCenter={<Text style={globalStyles.headerTitle}>Access Denied</Text>} />
@@ -30,7 +30,7 @@ export default function StoreScreen() {
             <View style={[globalStyles.centerElement, { paddingHorizontal: 24 }]}>
                 {isAdmin ? (
                     // --- ADMIN VIEW: Company-Wide Store Management ---
-                    <View>
+                    <View style={[globalStyles.centerElement]}>
                         <Text style={styles.headerTitle}>Company Stores</Text>
                         <Text style={styles.subText}>Viewing all regional store locations and global metrics.</Text>
                         {/* Drop your Admin store selector / multi-store list component here */}
@@ -38,8 +38,10 @@ export default function StoreScreen() {
                 ) : (
                     // --- MANAGER VIEW: Single Assigned Store ---
                     <View>
-                        <Text style={styles.headerTitle}>Store #{user?.store_id} Overview</Text>
-                        <Text style={styles.subText}>Viewing operational metrics for your assigned location.</Text>
+                        <View style={[globalStyles.centerElement]}>
+                            <Text style={styles.headerTitle}>Store #{user?.store_id} Overview</Text>
+                            <Text style={styles.subText}>Viewing operational metrics for your assigned location.</Text>
+                        </View>
                         {/* Drop your single-store operational dashboard here */}
                     </View>
                 )}

@@ -16,7 +16,7 @@ type Session struct {
 	TokenHash  string    `json:"-"`
 }
 
-type GetSessionByHashToken struct {
+type GetSessionByHashedToken struct {
 	SessionId    int
 	EmployeeId   int
 	ExpiresAt    time.Time

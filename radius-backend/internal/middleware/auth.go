@@ -49,7 +49,7 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 
 		if err := authService.ValidateSession(ctx.Request.Context(), tokenString); err != nil {
 			log.Println("Session validation failed:", err.Error())
-			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Invalid or expired token"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 

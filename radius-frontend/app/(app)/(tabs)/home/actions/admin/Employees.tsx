@@ -334,7 +334,7 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                         <Text style={globalStyles.modalName}>{isEditMode ? "Edit Employee" : "Create Employee"}</Text>
                     </View>
 
-                    <ScrollView style={styles.formContainer} showsVerticalScrollIndicator>
+                    <ScrollView style={[styles.formContainer, { backgroundColor: COLORS.background }]} showsVerticalScrollIndicator>
                         <Text style={styles.inputLabel}>Name *</Text>
                         <View style={styles.inputRow}>
                             <TextInput
@@ -558,6 +558,7 @@ export default function Employees() {
                     <FlatList
                         data={employees}
                         keyExtractor={(item) => item.employee_id.toString()}
+                        style={{ backgroundColor: COLORS.background }}
                         renderItem={renderEmployeeCard}
                         contentContainerStyle={globalStyles.listContainer}
                         showsVerticalScrollIndicator={false}

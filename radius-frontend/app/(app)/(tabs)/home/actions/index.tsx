@@ -4,6 +4,7 @@ import HeaderComponent from "@/components/common/HeaderComponent";
 import LogoutComponent from "@/components/common/Logout";
 import NotificationIconComponent from "@/components/common/NotificationIcon";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
+import { COLORS } from "@/constants/colors";
 import { globalStyles } from "@/constants/styles";
 import { Permission } from "@/utils/roles";
 import { Href, router } from "expo-router";
@@ -63,7 +64,7 @@ export default function Actions() {
     return (
         <TopSafeAreaView>
             <HeaderComponent headerRight={[<NotificationIconComponent />, <LogoutComponent />]} />
-            <ScrollView>
+            <ScrollView style={{ backgroundColor: COLORS.background }}>
                 <View style={[globalStyles.container, { paddingHorizontal: 10, gap: 50 }]}>
                     {/* Only employees with the 'view_admin_actions' permission will see this */}
                     <Gate permission="view_admin_actions">

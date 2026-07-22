@@ -1,6 +1,7 @@
 //radius-frontend/src/components/common/Logout.tsx
 import { apiFetch, UnauthorizedError } from "@/api/client";
 import { ENDPOINTS } from "@/constants/routes";
+import { globalStyles } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { LogoutResponse } from "@/types/auth.types";
 import { TouchableOpacity, Image, Alert } from "react-native"
@@ -35,11 +36,7 @@ const LogoutComponent = () => {
         <TouchableOpacity onPress={submitLogout}>
             <Image
                 source={require("@/assets/images/logout.png")}
-                style={{
-                    width: 30,
-                    height: 30,
-                    marginLeft: 10
-                }}
+                style={globalStyles.headerImageSize}
             />
         </TouchableOpacity>
     )

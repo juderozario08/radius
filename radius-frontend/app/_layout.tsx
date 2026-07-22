@@ -5,7 +5,7 @@ import { StoreProvider } from "@/context/StoreContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Slot, useRouter } from "expo-router";
 import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, StatusBar, View } from "react-native";
 
 
 function LoadingLayout() {
@@ -39,6 +39,12 @@ export default function RootLayout() {
             <StoreProvider>
                 <LoadingLayout />
                 <CustomToast />
+                <StatusBar
+                    animated
+                    translucent
+                    backgroundColor={'transparent'}
+                    barStyle={'dark-content'}
+                />
             </StoreProvider>
         </AuthProvider>
     );

@@ -3,6 +3,7 @@ import Gate from "@/components/common/Gate";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import LogoutComponent from "@/components/common/Logout";
 import NotificationIconComponent from "@/components/common/NotificationIcon";
+import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import { globalStyles } from "@/constants/styles";
 import { Permission } from "@/utils/roles";
 import { Href, router } from "expo-router";
@@ -48,7 +49,7 @@ const Subsection = ({ title, mapping }: { title: string, mapping: ButtonConfig[]
                 {mapping.map((config, key) => (
                     <View key={key}>
                         <TouchableOpacity style={styles.button} onPress={() => router.navigate(config.path)}>
-                            <Image source={config.imagePath} style={{ width: 30, height: 30 }} />
+                            <Image source={config.imagePath} style={globalStyles.headerImageSize} />
                         </TouchableOpacity>
                         <Text style={styles.buttonText}>{config.title}</Text>
                     </View>
@@ -60,32 +61,23 @@ const Subsection = ({ title, mapping }: { title: string, mapping: ButtonConfig[]
 
 export default function Actions() {
     return (
-        <View style={{ flex: 1 }}>
-            <HeaderComponent
-                headerRight={(
-                    <View style={{ flexDirection: 'row' }}>
-                        <NotificationIconComponent />
-                        <LogoutComponent />
-                    </View>
-                )} />
+        <TopSafeAreaView>
+            <HeaderComponent headerRight={[<NotificationIconComponent />, <LogoutComponent />]} />
             <ScrollView>
-                <View style={[globalStyles.container, { paddingHorizontal: 10 }]}>
+                <View style={[globalStyles.container, { paddingHorizontal: 10, gap: 50 }]}>
                     {/* Only employees with the 'view_admin_actions' permission will see this */}
                     <Gate permission="view_admin_actions">
                         <Subsection title="Admin Actions" mapping={adminActionsMapping} />
-                        <View style={{ marginTop: 50 }} />
                     </Gate>
 
                     {/* Only employees with the 'view_back_room' permission will see this */}
                     <Gate permission="view_back_room">
                         <Subsection title="Back Room" mapping={backRoomMapping} />
-                        <View style={{ marginTop: 50 }} />
                     </Gate>
 
                     {/* Only employees with the 'view_sales_floor' permission will see this */}
                     <Gate permission="view_sales_floor">
                         <Subsection title="Sales Floor" mapping={salesFloorMapping} />
-                        <View style={{ marginTop: 50 }} />
                     </Gate>
 
                     {/* Only employees with the 'view_service_actions' permission will see this */}
@@ -94,13 +86,13 @@ export default function Actions() {
                     </Gate>
                 </View>
             </ScrollView>
-        </View>
+        </TopSafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     sectionTitle: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: 'bold',
         marginTop: 10,
         marginBottom: 10,
@@ -125,7 +117,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
-        width: 83,
+        width: 75,
         marginBottom: 5
     },
     buttonText: {

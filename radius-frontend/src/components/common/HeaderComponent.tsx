@@ -1,27 +1,27 @@
 //radius-frontend/src/components/common/HeaderComponent.tsx
+import { COLORS } from "@/constants/colors";
 import { View } from "react-native";
 
 interface HeaderComponentType {
-    headerRight?: React.ReactNode;
-    headerLeft?: React.ReactNode;
-    headerCenter?: React.ReactNode;
+    headerRight?: React.ReactNode | React.ReactNode[];
+    headerLeft?: React.ReactNode | React.ReactNode[];
+    headerCenter?: React.ReactNode | React.ReactNode[];
 }
 
 const HeaderComponent = ({ headerRight, headerLeft, headerCenter }: HeaderComponentType) => {
     return (
         <View style={{
-            height: 100,
             flexDirection: 'row',
             alignItems: 'center',
             paddingHorizontal: 10,
-            backgroundColor: '#fff',
+            backgroundColor: COLORS.headerBackground,
             borderBottomWidth: 1,
             borderBottomColor: '#eee',
-            paddingTop: 50,
+            paddingVertical: 10,
             zIndex: 1,
         }}>
             <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'center', flexDirection: 'row', zIndex: 1 }}>
-                {headerLeft}
+                {headerLeft && Array.isArray(headerLeft) ? headerLeft.map((e, idx) => <View key={idx}>{e}</View>) : headerLeft}
             </View>
             <View style={{
                 position: 'absolute',
@@ -33,10 +33,10 @@ const HeaderComponent = ({ headerRight, headerLeft, headerCenter }: HeaderCompon
                 alignItems: 'center',
                 zIndex: 0,
             }}>
-                {headerCenter}
+                {headerCenter && Array.isArray(headerCenter) ? headerCenter.map((e, idx) => <View key={idx}>{e}</View>) : headerCenter}
             </View>
-            <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', flexDirection: 'row', zIndex: 1 }}>
-                {headerRight}
+            <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', flexDirection: 'row', zIndex: 1, gap: 10 }}>
+                {headerRight && Array.isArray(headerRight) ? headerRight.map((e, idx) => <View key={idx}>{e}</View>) : headerRight}
             </View>
         </View>
     )

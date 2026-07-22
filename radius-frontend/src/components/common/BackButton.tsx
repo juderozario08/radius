@@ -1,11 +1,12 @@
 //radius-frontend/src/components/common/BackButton.tsx
+import { globalStyles } from "@/constants/styles";
 import { router } from "expo-router";
 import { TouchableOpacity, Image } from "react-native"
 
 const BackButton = () => {
     return (
         <TouchableOpacity onPress={router.back}>
-            <Image style={{ width: 30, height: 30 }} source={require("@/assets/images/back.png")} />
+            <Image style={globalStyles.headerImageSize} source={require("@/assets/images/back.png")} />
         </TouchableOpacity>
     )
 }

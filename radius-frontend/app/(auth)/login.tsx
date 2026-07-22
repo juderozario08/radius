@@ -12,10 +12,10 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { COLORS } from "@/constants/colors";
 import { ENDPOINTS } from "@/constants/routes";
+import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 
 function checkEmail(email: string): boolean {
     let atSeen = false;
@@ -81,7 +81,7 @@ export default function LoginScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <TopSafeAreaView style={styles.container}>
             <Text style={styles.title}>Radius</Text>
             <KeyboardAvoidingView>
                 <TextInput
@@ -140,7 +140,7 @@ export default function LoginScreen() {
                     {loading ? "Logging in..." : "Log In"}
                 </Text>
             </TouchableOpacity>
-        </SafeAreaView>
+        </TopSafeAreaView>
     );
 }
 

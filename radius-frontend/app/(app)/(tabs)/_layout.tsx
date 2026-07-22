@@ -1,5 +1,6 @@
 //radius-frontend/app/(app)/(tabs)/_layout.tsx
 import { COLORS } from "@/constants/colors";
+import { globalStyles } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { hasPermission } from "@/utils/roles";
 import { Redirect, Tabs } from "expo-router";
@@ -11,8 +12,7 @@ function getIcon(focused: boolean, activeSource: any, inactiveSource: any) {
         <Image
             resizeMethod="scale"
             source={focused ? activeSource : inactiveSource}
-            style={{ width: 30, height: 30 }}
-            resizeMode="contain"
+            style={globalStyles.headerImageSize}
         />
     );
 }

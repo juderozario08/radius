@@ -23,5 +23,6 @@ export const COLORS = {
     inputBorder: "#E0E0E0",
     surface: "#FFFFFF",
     background: "#F5F5F5",
+    headerBackground: "#FFFFFF",
     neutralBg: "#F0F0F0",
 };

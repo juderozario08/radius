@@ -12,6 +12,7 @@ import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 
 const SessionDetailModal: React.FC<{ session: Session | null; visible: boolean; onClose: () => void; onTerminated: () => void }> = ({ session, visible, onClose, onTerminated }) => {
     const { logout } = useAuth();
@@ -87,8 +88,12 @@ export default function Sessions() {
         setIsLoading(true);
         setError(null);
         const data = await callApi<GetAllSessionsResponse>(ENDPOINTS.AUTHENTICATED.ADMIN.SESSIONS.getAll, { method: "GET" }, logout);
-        if (data) setSessions(data.sessions || []);
-        else setError("Could not load sessions. Please try again.");
+        if (data) {
+            setSessions(data.sessions || []);
+            showToast("success", data.message);
+        } else {
+            setError("Could not load sessions. Please try again.");
+        }
         setIsLoading(false);
     };
 
@@ -108,7 +113,7 @@ export default function Sessions() {
     );
 
     return (
-        <View style={globalStyles.container}>
+        <TopSafeAreaView>
             <HeaderComponent headerLeft={<BackButton />} headerCenter={<Text style={globalStyles.headerTitle}>Active Sessions</Text>} />
             <View style={globalStyles.content}>
                 {isLoading ? (
@@ -122,7 +127,7 @@ export default function Sessions() {
                 )}
             </View>
             <SessionDetailModal session={selectedSession} visible={detailModalVisible} onClose={() => setDetailModalVisible(false)} onTerminated={fetchSessions} />
-        </View>
+        </TopSafeAreaView>
     );
 }
 

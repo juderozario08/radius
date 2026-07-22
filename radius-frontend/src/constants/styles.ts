@@ -105,4 +105,12 @@ export const globalStyles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
     },
+    safeAreaContainer: {
+        flex: 1,
+        backgroundColor: COLORS.headerBackground,
+    },
+    headerImageSize: {
+        width: 25,
+        height: 25,
+    }
 });

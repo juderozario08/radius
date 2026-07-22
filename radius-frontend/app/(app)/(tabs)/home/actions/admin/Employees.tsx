@@ -29,7 +29,8 @@ import {
     View,
 } from "react-native";
 import { TerminatedBadge } from "@/components/common/TerminatedBadge";
-import Toast from "@/components/common/Toast";
+import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
+import CustomToast from "@/components/common/Toast";
 
 const ROLES: EmployeeRole[] = ["SALES", "SERVICE", "MANAGER", "ADMIN"];
 
@@ -256,7 +257,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
                     />
                 </View>
             </View>
-            <Toast />
+            <CustomToast />
         </Modal>
     );
 };
@@ -440,7 +441,7 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                     />
                 </View>
             </KeyboardAvoidingView>
-            <Toast />
+            <CustomToast />
         </Modal>
     );
 };
@@ -535,13 +536,13 @@ export default function Employees() {
     );
 
     return (
-        <View style={globalStyles.container}>
+        <TopSafeAreaView>
             <HeaderComponent
                 headerLeft={<BackButton />}
                 headerCenter={<Text style={globalStyles.headerTitle}>Employees</Text>}
                 headerRight={
                     <TouchableOpacity onPress={handleOpenCreateForm}>
-                        <Image source={require("@/assets/images/plus.png")} style={styles.addIcon} />
+                        <Image source={require("@/assets/images/plus.png")} style={globalStyles.headerImageSize} />
                     </TouchableOpacity>
                 }
             />
@@ -580,12 +581,12 @@ export default function Employees() {
                 onBack={handleFormBack}
                 onSuccess={handleFormSuccess}
             />
-        </View>
+        </TopSafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    addIcon: { width: 30, height: 30 },
+    addIcon: { width: 25, height: 25 },
     card: {
         backgroundColor: COLORS.surface,
         borderRadius: 12,

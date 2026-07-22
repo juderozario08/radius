@@ -1,6 +1,7 @@
 //radius-frontend/app/(app)/(tabs)/_layout.tsx
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
+import { hasPermission } from "@/utils/roles";
 import { Redirect, Tabs } from "expo-router";
 import React from "react";
 import { Image } from "react-native";
@@ -17,9 +18,10 @@ function getIcon(focused: boolean, activeSource: any, inactiveSource: any) {
 }
 
 export default function AppLayout() {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
 
     if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
+    const canViewStoreTab = hasPermission(user?.role, "view_employees");
 
     return (
         <Tabs
@@ -74,6 +76,7 @@ export default function AppLayout() {
                 options={{
                     headerTitleAlign: "center",
                     title: "Store",
+                    href: canViewStoreTab ? undefined : null,
                     tabBarIcon: ({ focused }) =>
                         getIcon(
                             focused,

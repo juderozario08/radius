@@ -1,12 +1,10 @@
 // radius-frontend/app/(app)/store/index.tsx
-import { apiFetch, UnauthorizedError } from "@/api/client";
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
-import { COLORS } from "@/constants/colors";
 import { ENDPOINTS } from "@/constants/routes";
 import { globalStyles } from "@/constants/styles";
+import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
-import { showToast } from "@/utils/helpers";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
@@ -24,13 +22,15 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import CustomToast from "@/components/common/Toast";
-import { Store, GetAllStoresResponse } from "@/types/admin.types";
+import { callApi, showToast } from "@/utils/helpers";
+import { GetAllStoresResponse, Store } from "@/types/admin.types";
 
 type FormMode = "create" | "edit";
+
 interface PillOption<T> {
     label: string;
     value: T;
@@ -40,21 +40,6 @@ const STATUS_OPTIONS: PillOption<boolean>[] = [
     { label: "Active", value: true },
     { label: "Inactive", value: false },
 ];
-
-async function callApi<T>(endpoint: string, options: { method: string; body?: any }, logout: () => Promise<void>): Promise<T | null> {
-    try {
-        return await apiFetch<T>(endpoint, {
-            method: options.method,
-            body: options.body ? JSON.stringify(options.body) : undefined,
-        });
-    } catch (err) {
-        showToast("error", String(err));
-        if (err instanceof UnauthorizedError) {
-            await logout();
-        }
-        return null;
-    }
-}
 
 interface StoreFormValues {
     name: string;
@@ -82,18 +67,6 @@ const storeToFormValues = (store: Store): StoreFormValues => ({
     is_active: store.is_active ?? true,
 });
 
-const formValuesToStore = (formValues: StoreFormValues, base: Store): Store => ({
-    ...base,
-    name: formValues.name,
-    address: formValues.address,
-    city: formValues.city,
-    province: formValues.province,
-    postal_code: formValues.postal_code,
-    phone: formValues.phone,
-    timezone: formValues.timezone,
-    is_active: formValues.is_active,
-});
-
 function PillGroup<T,>({ options, value, onChange }: { options: PillOption<T>[]; value: T; onChange: (value: T) => void; }) {
     return (
         <View style={styles.rolesContainer}>
@@ -113,15 +86,13 @@ function PillGroup<T,>({ options, value, onChange }: { options: PillOption<T>[];
     );
 }
 
-interface StoreDetailModalProps {
+const StoreDetailModal: React.FC<{
     store: Store | null;
     visible: boolean;
     onClose: () => void;
     onEdit: (store: Store) => void;
     onStatusChange: () => void;
-}
-
-const StoreDetailModal: React.FC<StoreDetailModalProps> = ({ store, visible, onClose, onEdit, onStatusChange }) => {
+}> = ({ store, visible, onClose, onEdit, onStatusChange }) => {
     const { logout } = useAuth();
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
@@ -135,12 +106,12 @@ const StoreDetailModal: React.FC<StoreDetailModalProps> = ({ store, visible, onC
 
         const result = await callApi(
             endpoint,
-            { method: "POST", body: { store_id: store.store_id } },
+            { method: "POST", body: JSON.stringify({ store_id: store.store_id }) },
             logout
         );
         setIsUpdatingStatus(false);
 
-        if (result !== null) {
+        if (result) {
             showToast("success", `Store ${store.is_active ? 'deactivated' : 'activated'}`);
             onStatusChange();
             onClose();
@@ -165,41 +136,33 @@ const StoreDetailModal: React.FC<StoreDetailModalProps> = ({ store, visible, onC
                 <View style={globalStyles.modalContentWrapper}>
                     <View style={globalStyles.modalCardContainer}>
                         <View style={globalStyles.modalHeader}>
-                            <View>
+                            <View style={{ flex: 1, marginRight: 8 }}>
                                 <Text style={globalStyles.modalName}>{store.name}</Text>
-                                <Text style={globalStyles.modalRole}>ID: {store.store_id}</Text>
+                                <Text style={globalStyles.modalRole}>Store ID: {store.store_id}</Text>
                             </View>
-                            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                                <StatusBadge isActive={store.is_active} />
-                            </View>
+                            <StatusBadge isActive={store.is_active} />
                         </View>
-
                         <View style={globalStyles.divider} />
-
                         <View style={globalStyles.section}>
-                            <Text style={globalStyles.sectionTitle}>Contact & Location</Text>
-                            <DetailRow label="Phone:" value={store.phone} />
-                            <Text style={[globalStyles.emptyText, { marginTop: 8 }]}>{store.address}</Text>
-                            <Text style={globalStyles.emptyText}>{store.city}, {store.province} {store.postal_code}</Text>
-                        </View>
-
-                        <View style={globalStyles.divider} />
-
-                        <View style={globalStyles.section}>
-                            <Text style={globalStyles.sectionTitle}>System Details</Text>
+                            <Text style={globalStyles.sectionTitle}>Location Details</Text>
+                            <DetailRow label="Address:" value={`${store.address}, ${store.city}, ${store.province}`} />
+                            <DetailRow label="Postal Code:" value={store.postal_code} />
                             <DetailRow label="Timezone:" value={store.timezone} />
                         </View>
+                        <View style={globalStyles.divider} />
+                        <View style={globalStyles.section}>
+                            <Text style={globalStyles.sectionTitle}>Contact & Info</Text>
+                            <DetailRow label="Phone:" value={store.phone} />
+                            <DetailRow label="Created At:" value={new Date(store.created_at).toLocaleDateString()} />
+                        </View>
                     </View>
-
-                    <ActionButtonRow
-                        buttons={[
-                            { key: "close", label: "Close", kind: "neutral", onPress: onClose, disabled: isUpdatingStatus },
-                            { key: "edit", label: "Edit", kind: "accent", onPress: () => onEdit(store), disabled: isUpdatingStatus },
-                            store.is_active ?
-                                { key: "deactivate", label: "Deactivate", kind: "danger", onPress: handleToggleStatusPress, loading: isUpdatingStatus } :
-                                { key: "activate", label: "Activate", kind: "primary", onPress: handleToggleStatusPress, loading: isUpdatingStatus },
-                        ]}
-                    />
+                    <ActionButtonRow buttons={[
+                        { key: "close", label: "Close", kind: "neutral", onPress: onClose, disabled: isUpdatingStatus },
+                        { key: "edit", label: "Edit", kind: "accent", onPress: () => onEdit(store), disabled: isUpdatingStatus },
+                        store.is_active ?
+                            { key: "deactivate", label: "Deactivate", kind: "danger", onPress: handleToggleStatusPress, loading: isUpdatingStatus } :
+                            { key: "activate", label: "Activate", kind: "primary", onPress: handleToggleStatusPress, loading: isUpdatingStatus },
+                    ]} />
                 </View>
             </View>
             <CustomToast />
@@ -212,7 +175,7 @@ interface StoreFormModalProps {
     mode: FormMode;
     store?: Store | null;
     onBack: () => void;
-    onSuccess: (updatedStore?: Store) => void;
+    onSuccess: () => void;
 }
 
 const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, onBack, onSuccess }) => {
@@ -238,7 +201,6 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
             showToast("error", "Please fill in all required fields");
             return false;
         }
-
         return true;
     };
 
@@ -246,19 +208,18 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
         if (!isFormValid()) return;
 
         const payload: Record<string, any> = { ...formValues };
-
         if (isEditMode && store) {
             payload.store_id = store.store_id;
         }
 
         setIsSubmitting(true);
         const endpoint = isEditMode ? ENDPOINTS.AUTHENTICATED.ADMIN.STORE.update : ENDPOINTS.AUTHENTICATED.ADMIN.STORE.create;
-        const result = await callApi(endpoint, { method: isEditMode ? "PUT" : "POST", body: payload }, logout);
+        const result = await callApi(endpoint, { method: isEditMode ? "PUT" : "POST", body: JSON.stringify(payload) }, logout);
         setIsSubmitting(false);
 
         if (result !== null) {
             showToast("success", isEditMode ? "Store updated successfully!" : "Store created successfully!");
-            onSuccess((isEditMode && store) ? formValuesToStore(formValues, store) : undefined);
+            onSuccess();
         }
     };
 
@@ -271,7 +232,6 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                     </View>
 
                     <ScrollView style={[styles.formContainer, { backgroundColor: COLORS.background }]} showsVerticalScrollIndicator>
-
                         <Text style={styles.inputLabel}>Store Details *</Text>
                         <TextInput
                             style={styles.input}
@@ -328,7 +288,6 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
 
                         <Text style={styles.inputLabel}>Status *</Text>
                         <PillGroup options={STATUS_OPTIONS} value={formValues.is_active} onChange={(v) => updateField("is_active", v)} />
-
                         <View style={{ height: 20 }} />
                     </ScrollView>
 
@@ -360,6 +319,11 @@ export default function Stores() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Pagination State
+    const [pageNumber, setPageNumber] = useState(1);
+    const [totalLength, setTotalLength] = useState(0);
+    const pageSize = 10;
+
     const [selectedStore, setSelectedStore] = useState<Store | null>(null);
     const [detailModalVisible, setDetailModalVisible] = useState(false);
 
@@ -367,32 +331,23 @@ export default function Stores() {
     const [formMode, setFormMode] = useState<FormMode>("create");
 
     useEffect(() => {
-        fetchStores();
-    }, []);
+        fetchStores(pageNumber);
+    }, [pageNumber]);
 
-    const fetchStores = async () => {
+    const fetchStores = async (page: number) => {
         setIsLoading(true);
         setError(null);
 
-        const data = await callApi<GetAllStoresResponse>(ENDPOINTS.AUTHENTICATED.ADMIN.STORE.getAll, { method: "GET" }, logout);
+        const endpoint = `${ENDPOINTS.AUTHENTICATED.ADMIN.STORE.getAll}?page_size=${pageSize}&page_number=${page}`;
+        const data = await callApi<GetAllStoresResponse>(endpoint, { method: "GET" }, logout);
 
         if (data) {
-            showToast("success", data.message || "Stores loaded");
             setStores(data.stores || []);
+            setTotalLength(data.total_length || 0);
         } else {
             setError("Could not load stores. Please try again.");
         }
         setIsLoading(false);
-    };
-
-    const handleViewStore = (store: Store) => {
-        setSelectedStore(store);
-        setDetailModalVisible(true);
-    };
-
-    const handleCloseDetailModal = () => {
-        setDetailModalVisible(false);
-        setSelectedStore(null);
     };
 
     const handleOpenCreateForm = () => {
@@ -414,70 +369,149 @@ export default function Stores() {
         }
     };
 
-    const handleFormSuccess = (updatedStore?: Store) => {
-        fetchStores();
+    const handleFormSuccess = () => {
+        fetchStores(pageNumber);
         setFormModalVisible(false);
-        if (formMode === "edit") {
-            if (updatedStore) setSelectedStore(updatedStore);
-            setDetailModalVisible(true);
-        }
+        setDetailModalVisible(false);
     };
 
     const renderStoreCard = ({ item }: { item: Store }) => (
-        <TouchableOpacity style={globalStyles.card} activeOpacity={0.7} onPress={() => handleViewStore(item)}>
+        <TouchableOpacity style={globalStyles.card} activeOpacity={0.7} onPress={() => { setSelectedStore(item); setDetailModalVisible(true); }}>
             <View style={globalStyles.cardHeader}>
-                <Text style={styles.name}>
-                    {item.name}
-                </Text>
-                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                    <StatusBadge isActive={item.is_active} />
-                </View>
+                <Text style={styles.name}>{item.name}</Text>
+                <StatusBadge isActive={item.is_active} />
             </View>
-
             <View style={styles.detailsContainer}>
                 <DetailRow layout="inline" label="City: " value={`${item.city}, ${item.province}`} />
                 <DetailRow layout="inline" label="Phone: " value={item.phone} />
+                <DetailRow layout="inline" label="Timezone: " value={item.timezone} />
             </View>
         </TouchableOpacity>
     );
+
+    // --- Pagination Logic ---
+    const totalPages = Math.ceil(totalLength / pageSize);
+
+    const getPaginationItems = (): (number | string)[] => {
+        if (totalPages <= 4) {
+            return Array.from({ length: totalPages }, (_, i) => i + 1);
+        }
+
+        if (pageNumber <= 2) {
+            return [1, 2, 3, "...", totalPages];
+        }
+
+        if (pageNumber >= totalPages - 1) {
+            return [1, "...", totalPages - 2, totalPages - 1, totalPages];
+        }
+
+        return [1, "...", pageNumber, "...", totalPages];
+    };
+
+    const paginationItems = getPaginationItems();
+
+    const renderPagination = () => {
+        if (totalPages <= 1) return null;
+
+        const isPrevDisabled = pageNumber === 1 || isLoading;
+        const isNextDisabled = pageNumber === totalPages || isLoading;
+
+        return (
+            <View style={styles.paginationContainer}>
+                <TouchableOpacity
+                    style={[styles.pageButton, isPrevDisabled && styles.pageButtonDisabled]}
+                    disabled={isPrevDisabled}
+                    onPress={() => setPageNumber(prev => Math.max(1, prev - 1))}
+                >
+                    <Text style={[styles.pageButtonText, isPrevDisabled && styles.pageButtonTextDisabled]}>Prev</Text>
+                </TouchableOpacity>
+
+                <View style={styles.pageNumbersWrapper}>
+                    {paginationItems.map((item, index) => {
+                        if (item === "...") {
+                            return (
+                                <View key={`ellipsis-${index}`} style={styles.ellipsisContainer}>
+                                    <Text style={styles.ellipsisText}>...</Text>
+                                </View>
+                            );
+                        }
+
+                        const page = item as number;
+                        const isActive = page === pageNumber;
+                        const isDisabled = isLoading || isActive;
+
+                        return (
+                            <TouchableOpacity
+                                key={`page-${page}`}
+                                style={[
+                                    styles.pageNumberButton,
+                                    isActive && styles.pageNumberButtonActive,
+                                    (isLoading && !isActive) && styles.pageNumberButtonDisabled
+                                ]}
+                                disabled={isDisabled}
+                                onPress={() => setPageNumber(page)}
+                            >
+                                <Text style={[
+                                    styles.pageNumberText,
+                                    isActive && styles.pageNumberTextActive,
+                                    (isLoading && !isActive) && styles.pageButtonTextDisabled
+                                ]}>
+                                    {page}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+
+                <TouchableOpacity
+                    style={[styles.pageButton, isNextDisabled && styles.pageButtonDisabled]}
+                    disabled={isNextDisabled}
+                    onPress={() => setPageNumber(prev => Math.min(totalPages, prev + 1))}
+                >
+                    <Text style={[styles.pageButtonText, isNextDisabled && styles.pageButtonTextDisabled]}>Next</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    };
 
     return (
         <TopSafeAreaView>
             <HeaderComponent
                 headerLeft={<BackButton />}
-                headerCenter={<Text style={globalStyles.headerTitle}>Stores</Text>}
+                headerCenter={<Text style={globalStyles.headerTitle}>Company Stores</Text>}
                 headerRight={
                     <TouchableOpacity onPress={handleOpenCreateForm}>
                         <Image source={require("@/assets/images/plus.png")} style={globalStyles.headerImageSize} />
                     </TouchableOpacity>
                 }
             />
-
-            <View style={globalStyles.container}>
-                {isLoading ? (
+            <View style={[globalStyles.container, styles.listWrapper]}>
+                {isLoading && stores.length === 0 ? (
                     <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
                 ) : error ? (
                     <Text style={globalStyles.errorText}>{error}</Text>
                 ) : stores.length === 0 ? (
                     <Text style={globalStyles.emptyText}>No stores found.</Text>
                 ) : (
-                    <FlatList
-                        data={stores}
-                        keyExtractor={(item) => item.store_id.toString()}
-                        style={{ backgroundColor: COLORS.background }}
-                        renderItem={renderStoreCard}
-                        contentContainerStyle={globalStyles.listContainer}
-                        showsVerticalScrollIndicator={false}
-                    />
+                    <>
+                        <FlatList
+                            data={stores}
+                            keyExtractor={(item) => item.store_id.toString()}
+                            renderItem={renderStoreCard}
+                            contentContainerStyle={globalStyles.listContainer}
+                            showsVerticalScrollIndicator={false}
+                        />
+                        {renderPagination()}
+                    </>
                 )}
             </View>
 
             <StoreDetailModal
                 store={selectedStore}
                 visible={detailModalVisible}
-                onClose={handleCloseDetailModal}
+                onClose={() => setDetailModalVisible(false)}
                 onEdit={handleOpenEditForm}
-                onStatusChange={fetchStores}
+                onStatusChange={() => fetchStores(pageNumber)}
             />
 
             <StoreFormModal
@@ -487,19 +521,98 @@ export default function Stores() {
                 onBack={handleFormBack}
                 onSuccess={handleFormSuccess}
             />
+
+            <CustomToast />
         </TopSafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    listWrapper: {
+        flex: 1,
+        paddingBottom: 0,
+    },
     name: {
         fontSize: 18,
         fontWeight: "700",
-        color: COLORS.textPrimary
+        color: COLORS.textPrimary,
+        flex: 1,
+        marginRight: 8
     },
     detailsContainer: {
         gap: 6
     },
+    paginationContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        backgroundColor: COLORS.surface,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
+    },
+    pageNumbersWrapper: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+    },
+    pageButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 6,
+        backgroundColor: "#f5f5f5",
+    },
+    pageButtonDisabled: {
+        backgroundColor: "transparent",
+        opacity: 0.5,
+    },
+    pageButtonText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: COLORS.textPrimary,
+    },
+    pageButtonTextDisabled: {
+        color: "#ccc",
+    },
+    pageNumberButton: {
+        width: 34,
+        height: 34,
+        borderRadius: 6,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "transparent",
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    pageNumberButtonActive: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    pageNumberButtonDisabled: {
+        borderColor: "#eaeaea",
+    },
+    pageNumberText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: COLORS.textPrimary,
+    },
+    pageNumberTextActive: {
+        color: "#FFFFFF",
+    },
+    ellipsisContainer: {
+        width: 24,
+        height: 34,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    ellipsisText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#888",
+        letterSpacing: 1,
+    },
+    // Form specific styles
     formHeader: {
         padding: 20,
         borderBottomWidth: 1,

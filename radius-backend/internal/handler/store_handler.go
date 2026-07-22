@@ -49,3 +49,11 @@ func (h *StoreHandler) ManageEmployees(ctx *gin.Context) {
 func (h *StoreHandler) GetStore(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Retrieved store"})
 }
+
+func (h *StoreHandler) ActivateStore(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{"message": "Activated Store"})
+}
+
+func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{"message": "Deactivated Store"})
+}

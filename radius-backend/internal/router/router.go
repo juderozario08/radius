@@ -99,6 +99,8 @@ func NewRouter(cfg Config) *gin.Engine {
 		admin.GET("/get_all_stores", cfg.Handlers.StoreHandler.GetAllStores)
 		admin.PUT("/update_store", cfg.Handlers.StoreHandler.UpdateStore)
 		admin.POST("/create_store", cfg.Handlers.StoreHandler.CreateStore)
+		admin.POST("/activate_store", cfg.Handlers.StoreHandler.ActivateStore)
+		admin.POST("/deactivate_store", cfg.Handlers.StoreHandler.DeactivateStore)
 	}
 
 	manager := router.Group("/api/manager")

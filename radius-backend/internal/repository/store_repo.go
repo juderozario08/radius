@@ -4,6 +4,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"radius/internal/models"
 )
 
@@ -74,4 +75,68 @@ func (r *StoreRepo) GetAllStores(ctx context.Context, pageSize int, pageNumber i
 	}
 
 	return stores, totalCount, nil
+}
+
+func (r *StoreRepo) UpdateStore(ctx context.Context, body models.Store) error {
+	query := `
+        UPDATE stores SET
+            name = $1,
+            address = $2,
+            city = $3,
+            province = $4,
+            postal_code = $5,
+            phone = $6,
+            timezone = $7,
+            is_active = $8,
+            created_at = $9,
+        WHERE store_id = $10
+	`
+	res, err := r.db.ExecContext(
+		ctx, query,
+		body.Name, body.Address, body.City, body.Province,
+		body.PostalCode, body.Phone, body.Timezone, body.IsActive,
+		body.CreatedAt,
+	)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("No store found with the provided ID")
+	}
+
+	return nil
+}
+
+func (r *StoreRepo) CreateStore(ctx context.Context, body models.CreateStoreRequest) error {
+	query := `
+		INSERT INTO stores (name, address, city, province, postal_code, phone, timezone, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+	`
+	err := r.db.QueryRowContext(
+		ctx, query, body.Name, body.Address, body.City,
+		body.Province, body.PostalCode, body.Phone, body.Timezone, body.IsActive,
+	).Scan()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *StoreRepo) ActivateStore(ctx context.Context, storeId int) error {
+	query := `UPDATE stores SET is_active = TRUE WHERE store_id = $1;`
+	_, err := r.db.ExecContext(ctx, query, storeId)
+	return err
+}
+
+func (r *StoreRepo) DeactivateStore(ctx context.Context, storeId int) error {
+	query := `UPDATE stores SET is_active = FALSE WHERE store_id = $1;`
+	_, err := r.db.ExecContext(ctx, query, storeId)
+	return err
 }

@@ -3,17 +3,25 @@ package models
 
 import "time"
 
+type StoreBase struct {
+	Name       string `json:"name"`
+	Address    string `json:"address"`
+	City       string `json:"city"`
+	Province   string `json:"province"`
+	PostalCode string `json:"postal_code"`
+	Phone      string `json:"phone"`
+	Timezone   string `json:"timezone"`
+	IsActive   *bool  `json:"is_active"`
+}
+
 type Store struct {
-	StoreId    int       `json:"store_id"`
-	Name       string    `json:"name"`
-	Address    string    `json:"address"`
-	City       string    `json:"city"`
-	Province   string    `json:"province"`
-	PostalCode string    `json:"postal_code"`
-	Phone      string    `json:"phone"`
-	Timezone   string    `json:"timezone"`
-	IsActive   bool      `json:"is_active"`
-	CreatedAt  time.Time `json:"created_at"`
+	StoreId   int       `json:"store_id"`
+	CreatedAt time.Time `json:"created_at"`
+	StoreBase
+}
+
+type CreateStoreRequest struct {
+	StoreBase
 }
 
 type EmployeeLoginRequest struct {
@@ -57,5 +65,13 @@ type ManageEmployeesResponse struct {
 
 type GetStoreResponse struct {
 	Store   Store  `json:"store"`
+	Message string `json:"message"`
+}
+
+type ActivateStoreResponse struct {
+	Message string `json:"message"`
+}
+
+type DeactivateStoreResponse struct {
 	Message string `json:"message"`
 }

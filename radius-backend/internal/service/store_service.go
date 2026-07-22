@@ -3,6 +3,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"log"
 	"radius/internal/models"
 	"radius/internal/repository"
@@ -65,12 +66,47 @@ func (s *StoreService) GetAllStores(ctx context.Context, pageSize string, pageNu
 	}, nil
 }
 
-func (s *StoreService) UpdateStore(ctx context.Context) (*models.UpdateStoreResponse, error) {
-	return nil, nil
+func (s *StoreService) UpdateStore(ctx context.Context, body models.Store) (*models.UpdateStoreResponse, error) {
+	err := s.storeRepo.UpdateStore(ctx, body)
+	if err != nil {
+		log.Println("Error: " + err.Error())
+		return nil, errors.New("error updating this store")
+	}
+
+	return &models.UpdateStoreResponse{
+		Message: "Updated store successfully!",
+	}, nil
 }
 
-func (s *StoreService) CreateStore(ctx context.Context) (*models.CreateStoreResponse, error) {
-	return nil, nil
+func (s *StoreService) CreateStore(ctx context.Context, body models.CreateStoreRequest) (*models.CreateStoreResponse, error) {
+	err := s.storeRepo.CreateStore(ctx, body)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.CreateStoreResponse{
+		Message: "Store created successfully",
+	}, nil
+}
+
+func (s *StoreService) ActivateStore(ctx context.Context, storeId int) (*models.ActivateStoreResponse, error) {
+	err := s.storeRepo.ActivateStore(ctx, storeId)
+	if err != nil {
+		return nil, err
+	}
+	return &models.ActivateStoreResponse{
+		Message: "Store " + strconv.Itoa(storeId) + " activated",
+	}, nil
+}
+
+func (s *StoreService) DeactivateStore(ctx context.Context, storeId int) (*models.DeactivateStoreResponse, error) {
+	err := s.storeRepo.DeactivateStore(ctx, storeId)
+	if err != nil {
+		return nil, err
+	}
+	return &models.DeactivateStoreResponse{
+		Message: "Store " + strconv.Itoa(storeId) + " deactivated",
+	}, nil
 }
 
 func (s *StoreService) ManageEmployees(ctx context.Context) (*models.ManageEmployeesResponse, error) {

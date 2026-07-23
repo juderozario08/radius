@@ -11,7 +11,7 @@ type StoreBase struct {
 	PostalCode string `json:"postal_code" binding:"required"`
 	Phone      string `json:"phone"       binding:"required"`
 	Timezone   string `json:"timezone"    binding:"required"`
-	IsActive   *bool  `json:"is_active    binding:"required"`
+	IsActive   *bool  `json:"is_active"   binding:"required"`
 }
 
 type Store struct {

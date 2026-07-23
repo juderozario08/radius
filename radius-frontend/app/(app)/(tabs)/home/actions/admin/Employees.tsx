@@ -8,7 +8,7 @@ import { globalStyles } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { EmployeeRole } from "@/types/auth.types";
-import { capitalize, showToast } from "@/utils/helpers";
+import { callApi, capitalize, showToast } from "@/utils/helpers";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
@@ -31,15 +31,11 @@ import {
 import { TerminatedBadge } from "@/components/common/TerminatedBadge";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import CustomToast from "@/components/common/Toast";
+import PillGroup, { PillOption } from "@/components/common/PillGroup";
 
 const ROLES: EmployeeRole[] = ["SALES", "SERVICE", "MANAGER", "ADMIN"];
 
 type FormMode = "create" | "edit";
-interface PillOption<T> {
-    label: string;
-    value: T;
-}
-
 const ROLE_OPTIONS: PillOption<EmployeeRole>[] = ROLES.map((role) => ({
     label: capitalize(role),
     value: role,
@@ -54,21 +50,6 @@ const TERMINATED_OPTIONS: PillOption<boolean>[] = [
     { label: "No", value: false },
     { label: "Yes", value: true },
 ];
-
-async function callApi<T>(endpoint: string, options: { method: string; body?: any }, logout: () => Promise<void>): Promise<T | null> {
-    try {
-        return await apiFetch<T>(endpoint, {
-            method: options.method,
-            body: options.body ? JSON.stringify(options.body) : undefined,
-        });
-    } catch (err) {
-        showToast("error", String(err));
-        if (err instanceof UnauthorizedError) {
-            await logout();
-        }
-        return null;
-    }
-}
 
 interface EmployeeFormValues {
     first_name: string;
@@ -115,25 +96,6 @@ const formValuesToEmployee = (formValues: EmployeeFormValues, base: Employee): E
     province: formValues.province, postal_code: formValues.postal_code, store_id: parseInt(formValues.store_id, 10),
     is_active: formValues.is_active, is_terminated: formValues.is_terminated ?? false
 });
-
-function PillGroup<T,>({ options, value, onChange }: { options: PillOption<T>[]; value: T; onChange: (value: T) => void; }) {
-    return (
-        <View style={styles.rolesContainer}>
-            {options.map((option) => {
-                const isSelected = option.value === value;
-                return (
-                    <TouchableOpacity
-                        key={String(option.value)}
-                        style={[styles.rolePill, isSelected && styles.rolePillActive]}
-                        onPress={() => onChange(option.value)}
-                    >
-                        <Text style={[styles.rolePillText, isSelected && styles.rolePillTextActive]}>{option.label}</Text>
-                    </TouchableOpacity>
-                );
-            })}
-        </View>
-    );
-}
 
 interface EmployeeDetailModalProps {
     employee: Employee | null;

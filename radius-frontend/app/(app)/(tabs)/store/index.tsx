@@ -28,13 +28,9 @@ import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import CustomToast from "@/components/common/Toast";
 import { callApi, showToast } from "@/utils/helpers";
 import { GetAllStoresResponse, Store } from "@/types/admin.types";
+import PillGroup, { PillOption } from "@/components/common/PillGroup";
 
 type FormMode = "create" | "edit";
-
-interface PillOption<T> {
-    label: string;
-    value: T;
-}
 
 const STATUS_OPTIONS: PillOption<boolean>[] = [
     { label: "Active", value: true },
@@ -67,25 +63,6 @@ const storeToFormValues = (store: Store): StoreFormValues => ({
     is_active: store.is_active ?? true,
 });
 
-function PillGroup<T,>({ options, value, onChange }: { options: PillOption<T>[]; value: T; onChange: (value: T) => void; }) {
-    return (
-        <View style={styles.rolesContainer}>
-            {options.map((option) => {
-                const isSelected = option.value === value;
-                return (
-                    <TouchableOpacity
-                        key={String(option.value)}
-                        style={[styles.rolePill, isSelected && styles.rolePillActive]}
-                        onPress={() => onChange(option.value)}
-                    >
-                        <Text style={[styles.rolePillText, isSelected && styles.rolePillTextActive]}>{option.label}</Text>
-                    </TouchableOpacity>
-                );
-            })}
-        </View>
-    );
-}
-
 const StoreDetailModal: React.FC<{
     store: Store | null;
     visible: boolean;
@@ -106,7 +83,7 @@ const StoreDetailModal: React.FC<{
 
         const result = await callApi(
             endpoint,
-            { method: "POST", body: JSON.stringify({ store_id: store.store_id }) },
+            { method: "POST", body: { store_id: store.store_id } },
             logout
         );
         setIsUpdatingStatus(false);
@@ -214,7 +191,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
 
         setIsSubmitting(true);
         const endpoint = isEditMode ? ENDPOINTS.AUTHENTICATED.ADMIN.STORE.update : ENDPOINTS.AUTHENTICATED.ADMIN.STORE.create;
-        const result = await callApi(endpoint, { method: isEditMode ? "PUT" : "POST", body: JSON.stringify(payload) }, logout);
+        const result = await callApi(endpoint, { method: isEditMode ? "PUT" : "POST", body: payload }, logout);
         setIsSubmitting(false);
 
         if (result !== null) {
@@ -647,31 +624,5 @@ const styles = StyleSheet.create({
     inputRow: {
         flexDirection: "row",
         justifyContent: "space-between"
-    },
-    rolesContainer: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 8,
-        marginBottom: 12
-    },
-    rolePill: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 20,
-        backgroundColor: COLORS.background,
-        borderWidth: 1,
-        borderColor: COLORS.inputBorder,
-    },
-    rolePillActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary
-    },
-    rolePillText: {
-        fontSize: 13,
-        fontWeight: "600",
-        color: COLORS.textSecondary
-    },
-    rolePillTextActive: {
-        color: "#FFFFFF"
     },
 });

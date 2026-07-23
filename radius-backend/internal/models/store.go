@@ -4,14 +4,14 @@ package models
 import "time"
 
 type StoreBase struct {
-	Name       string `json:"name"`
-	Address    string `json:"address"`
-	City       string `json:"city"`
-	Province   string `json:"province"`
-	PostalCode string `json:"postal_code"`
-	Phone      string `json:"phone"`
-	Timezone   string `json:"timezone"`
-	IsActive   *bool  `json:"is_active"`
+	Name       string `json:"name"        binding:"required"`
+	Address    string `json:"address"     binding:"required"`
+	City       string `json:"city"        binding:"required"`
+	Province   string `json:"province"    binding:"required"`
+	PostalCode string `json:"postal_code" binding:"required"`
+	Phone      string `json:"phone"       binding:"required"`
+	Timezone   string `json:"timezone"    binding:"required"`
+	IsActive   *bool  `json:"is_active    binding:"required"`
 }
 
 type Store struct {
@@ -50,16 +50,16 @@ type GetAllStoresResponse struct {
 	Message     string  `json:"message"`
 }
 
+type UpdateStoreRequest struct {
+	StoreBase
+}
+
 type UpdateStoreResponse struct {
 	Message string `json:"message"`
 }
 
 type CreateStoreResponse struct {
 	Store   Store  `json:"store"`
-	Message string `json:"message"`
-}
-
-type ManageEmployeesResponse struct {
 	Message string `json:"message"`
 }
 
@@ -74,4 +74,12 @@ type ActivateStoreResponse struct {
 
 type DeactivateStoreResponse struct {
 	Message string `json:"message"`
+}
+
+type ActivateStoreRequest struct {
+	StoreId int `json:"store_id"`
+}
+
+type DeactivateStoreRequest struct {
+	StoreId int `json:"store_id"`
 }

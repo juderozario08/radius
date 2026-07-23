@@ -20,15 +20,17 @@ export const ENDPOINTS = {
             },
             STORE: {
                 getAll: "/api/admin/get_all_stores",
-                update: "api/admin/update_store",
-                create: "api/admin/create_store",
-                activate: "api/admin/activate_store",
-                deactivate: "api/admin/deactivate_store"
+                update: "/api/admin/update_store",
+                create: "/api/admin/create_store",
+                activate: "/api/admin/activate_store",
+                deactivate: "/api/admin/deactivate_store"
             }
         },
         MANAGER: {
         },
         SALES: {
+        },
+        SERVICE: {
         },
     }
 };

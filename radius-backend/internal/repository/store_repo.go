@@ -77,7 +77,7 @@ func (r *StoreRepo) GetAllStores(ctx context.Context, pageSize int, pageNumber i
 	return stores, totalCount, nil
 }
 
-func (r *StoreRepo) UpdateStore(ctx context.Context, body models.Store) error {
+func (r *StoreRepo) UpdateStore(ctx context.Context, body models.UpdateStoreRequest) error {
 	query := `
         UPDATE stores SET
             name = $1,
@@ -88,14 +88,12 @@ func (r *StoreRepo) UpdateStore(ctx context.Context, body models.Store) error {
             phone = $6,
             timezone = $7,
             is_active = $8,
-            created_at = $9,
-        WHERE store_id = $10
+        WHERE store_id = $9
 	`
 	res, err := r.db.ExecContext(
 		ctx, query,
 		body.Name, body.Address, body.City, body.Province,
 		body.PostalCode, body.Phone, body.Timezone, body.IsActive,
-		body.CreatedAt,
 	)
 	if err != nil {
 		return err
@@ -109,7 +107,6 @@ func (r *StoreRepo) UpdateStore(ctx context.Context, body models.Store) error {
 	if rowsAffected == 0 {
 		return errors.New("No store found with the provided ID")
 	}
-
 	return nil
 }
 
@@ -139,4 +136,18 @@ func (r *StoreRepo) DeactivateStore(ctx context.Context, storeId int) error {
 	query := `UPDATE stores SET is_active = FALSE WHERE store_id = $1;`
 	_, err := r.db.ExecContext(ctx, query, storeId)
 	return err
+}
+
+func (r *StoreRepo) GetStore(ctx context.Context, storeId int) (*models.Store, error) {
+	query := `SELECT * FROM stores WHERE store_id = $1`
+	var store models.Store
+	err := r.db.QueryRowContext(ctx, query, storeId).Scan(
+		&store.StoreId, &store.Name, &store.Address, &store.City,
+		&store.IsActive, &store.Phone, &store.PostalCode, &store.Province,
+		&store.CreatedAt, &store.Timezone,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &store, nil
 }

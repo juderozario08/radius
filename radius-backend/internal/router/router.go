@@ -113,7 +113,6 @@ func NewRouter(cfg Config) *gin.Engine {
 		})
 
 		manager.GET("/get_store", cfg.Handlers.StoreHandler.GetStore)
-		manager.POST("/manage_employees", cfg.Handlers.StoreHandler.ManageEmployees)
 	}
 
 	return router

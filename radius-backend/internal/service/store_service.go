@@ -66,7 +66,7 @@ func (s *StoreService) GetAllStores(ctx context.Context, pageSize string, pageNu
 	}, nil
 }
 
-func (s *StoreService) UpdateStore(ctx context.Context, body models.Store) (*models.UpdateStoreResponse, error) {
+func (s *StoreService) UpdateStore(ctx context.Context, body models.UpdateStoreRequest) (*models.UpdateStoreResponse, error) {
 	err := s.storeRepo.UpdateStore(ctx, body)
 	if err != nil {
 		log.Println("Error: " + err.Error())
@@ -109,10 +109,18 @@ func (s *StoreService) DeactivateStore(ctx context.Context, storeId int) (*model
 	}, nil
 }
 
-func (s *StoreService) ManageEmployees(ctx context.Context) (*models.ManageEmployeesResponse, error) {
-	return nil, nil
-}
+func (s *StoreService) GetStore(ctx context.Context, storeId string) (*models.GetStoreResponse, error) {
+	id, err := strconv.Atoi(storeId)
+	if err != nil {
+		return nil, errors.New("Not a valid storeId")
+	}
 
-func (s *StoreService) GetStore(ctx context.Context) (*models.GetStoreResponse, error) {
-	return nil, nil
+	store, err := s.storeRepo.GetStore(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &models.GetStoreResponse{
+		Store:   *store,
+		Message: "Successfully retrieved store",
+	}, nil
 }

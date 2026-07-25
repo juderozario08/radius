@@ -30,6 +30,7 @@ export default function AppLayout() {
                 tabBarActiveTintColor: COLORS.activeTint,
                 tabBarInactiveTintColor: COLORS.inactiveTint,
             }}
+            initialRouteName="store"
         >
             <Tabs.Screen
                 name="home"

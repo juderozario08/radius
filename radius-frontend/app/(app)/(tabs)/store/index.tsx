@@ -29,6 +29,7 @@ import CustomToast from "@/components/common/Toast";
 import { callApi, showToast } from "@/utils/helpers";
 import { GetAllStoresResponse, Store } from "@/types/admin.types";
 import PillGroup, { PillOption } from "@/components/common/PillGroup";
+import Pagination from "@/components/common/Pagination";
 
 type FormMode = "create" | "edit";
 
@@ -298,8 +299,8 @@ export default function Stores() {
 
     // Pagination State
     const [pageNumber, setPageNumber] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
     const [totalLength, setTotalLength] = useState(0);
-    const pageSize = 10;
 
     const [selectedStore, setSelectedStore] = useState<Store | null>(null);
     const [detailModalVisible, setDetailModalVisible] = useState(false);
@@ -308,14 +309,14 @@ export default function Stores() {
     const [formMode, setFormMode] = useState<FormMode>("create");
 
     useEffect(() => {
-        fetchStores(pageNumber);
-    }, [pageNumber]);
+        fetchStores(pageNumber, pageSize);
+    }, [pageNumber, pageSize]);
 
-    const fetchStores = async (page: number) => {
+    const fetchStores = async (page: number, limit: number) => {
         setIsLoading(true);
         setError(null);
 
-        const endpoint = `${ENDPOINTS.AUTHENTICATED.ADMIN.STORE.getAll}?page_size=${pageSize}&page_number=${page}`;
+        const endpoint = `${ENDPOINTS.AUTHENTICATED.ADMIN.STORE.getAll}?page_size=${limit}&page_number=${page}`;
         const data = await callApi<GetAllStoresResponse>(endpoint, { method: "GET" }, logout);
 
         if (data) {
@@ -325,6 +326,11 @@ export default function Stores() {
             setError("Could not load stores. Please try again.");
         }
         setIsLoading(false);
+    };
+
+    const handlePageSizeChange = (newSize: number) => {
+        setPageSize(newSize);
+        setPageNumber(1); // Reset to page 1 whenever page size changes
     };
 
     const handleOpenCreateForm = () => {
@@ -347,7 +353,7 @@ export default function Stores() {
     };
 
     const handleFormSuccess = () => {
-        fetchStores(pageNumber);
+        fetchStores(pageNumber, pageSize);
         setFormModalVisible(false);
         setDetailModalVisible(false);
     };
@@ -359,6 +365,8 @@ export default function Stores() {
                 <StatusBadge isActive={item.is_active} />
             </View>
             <View style={styles.detailsContainer}>
+                {/* Store ID Added here */}
+                <DetailRow layout="inline" label="Store ID: " value={item.store_id} />
                 <DetailRow layout="inline" label="City: " value={`${item.city}, ${item.province}`} />
                 <DetailRow layout="inline" label="Phone: " value={item.phone} />
                 <DetailRow layout="inline" label="Timezone: " value={item.timezone} />
@@ -366,90 +374,7 @@ export default function Stores() {
         </TouchableOpacity>
     );
 
-    // --- Pagination Logic ---
-    const totalPages = Math.ceil(totalLength / pageSize);
-
-    const getPaginationItems = (): (number | string)[] => {
-        if (totalPages <= 4) {
-            return Array.from({ length: totalPages }, (_, i) => i + 1);
-        }
-
-        if (pageNumber <= 2) {
-            return [1, 2, 3, "...", totalPages];
-        }
-
-        if (pageNumber >= totalPages - 1) {
-            return [1, "...", totalPages - 2, totalPages - 1, totalPages];
-        }
-
-        return [1, "...", pageNumber, "...", totalPages];
-    };
-
-    const paginationItems = getPaginationItems();
-
-    const renderPagination = () => {
-        if (totalPages <= 1) return null;
-
-        const isPrevDisabled = pageNumber === 1 || isLoading;
-        const isNextDisabled = pageNumber === totalPages || isLoading;
-
-        return (
-            <View style={styles.paginationContainer}>
-                <TouchableOpacity
-                    style={[styles.pageButton, isPrevDisabled && styles.pageButtonDisabled]}
-                    disabled={isPrevDisabled}
-                    onPress={() => setPageNumber(prev => Math.max(1, prev - 1))}
-                >
-                    <Text style={[styles.pageButtonText, isPrevDisabled && styles.pageButtonTextDisabled]}>Prev</Text>
-                </TouchableOpacity>
-
-                <View style={styles.pageNumbersWrapper}>
-                    {paginationItems.map((item, index) => {
-                        if (item === "...") {
-                            return (
-                                <View key={`ellipsis-${index}`} style={styles.ellipsisContainer}>
-                                    <Text style={styles.ellipsisText}>...</Text>
-                                </View>
-                            );
-                        }
-
-                        const page = item as number;
-                        const isActive = page === pageNumber;
-                        const isDisabled = isLoading || isActive;
-
-                        return (
-                            <TouchableOpacity
-                                key={`page-${page}`}
-                                style={[
-                                    styles.pageNumberButton,
-                                    isActive && styles.pageNumberButtonActive,
-                                    (isLoading && !isActive) && styles.pageNumberButtonDisabled
-                                ]}
-                                disabled={isDisabled}
-                                onPress={() => setPageNumber(page)}
-                            >
-                                <Text style={[
-                                    styles.pageNumberText,
-                                    isActive && styles.pageNumberTextActive,
-                                    (isLoading && !isActive) && styles.pageButtonTextDisabled
-                                ]}>
-                                    {page}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-
-                <TouchableOpacity
-                    style={[styles.pageButton, isNextDisabled && styles.pageButtonDisabled]}
-                    disabled={isNextDisabled}
-                    onPress={() => setPageNumber(prev => Math.min(totalPages, prev + 1))}
-                >
-                    <Text style={[styles.pageButtonText, isNextDisabled && styles.pageButtonTextDisabled]}>Next</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    };
+    const totalPages = Math.max(1, Math.ceil(totalLength / pageSize));
 
     return (
         <TopSafeAreaView>
@@ -462,23 +387,42 @@ export default function Stores() {
                     </TouchableOpacity>
                 }
             />
+
             <View style={[globalStyles.container, styles.listWrapper]}>
                 {isLoading && stores.length === 0 ? (
                     <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
                 ) : error ? (
                     <Text style={globalStyles.errorText}>{error}</Text>
-                ) : stores.length === 0 ? (
-                    <Text style={globalStyles.emptyText}>No stores found.</Text>
                 ) : (
                     <>
-                        <FlatList
-                            data={stores}
-                            keyExtractor={(item) => item.store_id.toString()}
-                            renderItem={renderStoreCard}
-                            contentContainerStyle={globalStyles.listContainer}
-                            showsVerticalScrollIndicator={false}
+                        {/*
+                          By rendering the FlatList vs the empty text side-by-side but leaving
+                          the Pagination OUTSIDE of the emptiness check, the pagination controls
+                          will always stay glued to the bottom so users can back out of empty pages.
+                        */}
+                        {stores.length === 0 ? (
+                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                                <Text style={globalStyles.emptyText}>No stores found.</Text>
+                            </View>
+                        ) : (
+                            <FlatList
+                                data={stores}
+                                keyExtractor={(item) => item.store_id.toString()}
+                                renderItem={renderStoreCard}
+                                contentContainerStyle={globalStyles.listContainer}
+                                showsVerticalScrollIndicator={false}
+                            />
+                        )}
+
+                        <Pagination
+                            currentPage={pageNumber}
+                            totalPages={totalPages}
+                            onPageChange={setPageNumber}
+                            isLoading={isLoading}
+                            pageSize={pageSize}
+                            pageSizeOptions={[5, 10, 20, 50]}
+                            onPageSizeChange={handlePageSizeChange}
                         />
-                        {renderPagination()}
                     </>
                 )}
             </View>
@@ -488,7 +432,7 @@ export default function Stores() {
                 visible={detailModalVisible}
                 onClose={() => setDetailModalVisible(false)}
                 onEdit={handleOpenEditForm}
-                onStatusChange={() => fetchStores(pageNumber)}
+                onStatusChange={() => fetchStores(pageNumber, pageSize)}
             />
 
             <StoreFormModal
@@ -518,76 +462,6 @@ const styles = StyleSheet.create({
     },
     detailsContainer: {
         gap: 6
-    },
-    paginationContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        backgroundColor: COLORS.surface,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-    },
-    pageNumbersWrapper: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-    },
-    pageButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 6,
-        backgroundColor: "#f5f5f5",
-    },
-    pageButtonDisabled: {
-        backgroundColor: "transparent",
-        opacity: 0.5,
-    },
-    pageButtonText: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    pageButtonTextDisabled: {
-        color: "#ccc",
-    },
-    pageNumberButton: {
-        width: 34,
-        height: 34,
-        borderRadius: 6,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "transparent",
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    pageNumberButtonActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    pageNumberButtonDisabled: {
-        borderColor: "#eaeaea",
-    },
-    pageNumberText: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    pageNumberTextActive: {
-        color: "#FFFFFF",
-    },
-    ellipsisContainer: {
-        width: 24,
-        height: 34,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    ellipsisText: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: "#888",
-        letterSpacing: 1,
     },
     // Form specific styles
     formHeader: {

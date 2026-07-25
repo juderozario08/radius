@@ -115,10 +115,10 @@ func (r *StoreRepo) CreateStore(ctx context.Context, body models.CreateStoreRequ
 		INSERT INTO stores (name, address, city, province, postal_code, phone, timezone, is_active)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 	`
-	err := r.db.QueryRowContext(
+	_, err := r.db.ExecContext(
 		ctx, query, body.Name, body.Address, body.City,
 		body.Province, body.PostalCode, body.Phone, body.Timezone, body.IsActive,
-	).Scan()
+	)
 	if err != nil {
 		return err
 	}

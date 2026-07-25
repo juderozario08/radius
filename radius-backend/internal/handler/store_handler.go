@@ -21,6 +21,9 @@ func NewStoreHandler(storeService *service.StoreService) *StoreHandler {
 }
 
 func (h *StoreHandler) GetAllStores(ctx *gin.Context) {
+
+	log.Println("page_size: " + ctx.DefaultQuery("page_size", "10"))
+	log.Println("page_number: " + ctx.DefaultQuery("page_number", "1"))
 	response, err := h.storeService.GetAllStores(
 		ctx.Request.Context(),
 		ctx.DefaultQuery("page_size", "10"),

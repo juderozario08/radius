@@ -1,0 +1,7 @@
+package utils
+
+const (
+	DEFAULT_PAGING_SIZE = 10
+	PAGING_SIZE_MINIMUM = 5
+	PAGING_SIZE_MAXIMUM = 50
+)

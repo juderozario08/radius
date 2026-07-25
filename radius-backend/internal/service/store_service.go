@@ -7,6 +7,7 @@ import (
 	"log"
 	"radius/internal/models"
 	"radius/internal/repository"
+	"radius/internal/utils"
 	"strconv"
 )
 
@@ -46,8 +47,8 @@ func (s *StoreService) GetAllStores(ctx context.Context, pageSize string, pageNu
 		pageNumberInt = num - 1
 	}
 
-	if pageSizeInt < 10 {
-		pageSizeInt = 10
+	if pageSizeInt < utils.PAGING_SIZE_MINIMUM || pageSizeInt > utils.PAGING_SIZE_MAXIMUM {
+		pageSizeInt = utils.DEFAULT_PAGING_SIZE // This is just to set a default paging size
 	}
 
 	if pageNumberInt < 0 {

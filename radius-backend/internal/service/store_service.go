@@ -29,6 +29,17 @@ func NewStoreService(
 	}
 }
 
+func sanitizeStoreLocation(province string, postalCode string) (string, string, error) {
+	normalizedPostal, err := utils.NormalizeCanadianPostalCode(postalCode)
+	if err != nil {
+		return "", "", err
+	}
+	if err := utils.ValidateCanadianProvince(province); err != nil {
+		return "", "", err
+	}
+	return province, normalizedPostal, nil
+}
+
 func (s *StoreService) GetAllStores(ctx context.Context, pageSize string, pageNumber string) (*models.GetAllStoresResponse, error) {
 	pageSizeInt := 10
 	pageNumberInt := 0
@@ -68,7 +79,14 @@ func (s *StoreService) GetAllStores(ctx context.Context, pageSize string, pageNu
 }
 
 func (s *StoreService) UpdateStore(ctx context.Context, body models.UpdateStoreRequest) (*models.UpdateStoreResponse, error) {
-	err := s.storeRepo.UpdateStore(ctx, body)
+	province, postalCode, err := sanitizeStoreLocation(body.Province, body.PostalCode)
+	if err != nil {
+		return nil, err
+	}
+	body.Province = province
+	body.PostalCode = postalCode
+
+	err = s.storeRepo.UpdateStore(ctx, body)
 	if err != nil {
 		log.Println("Error: " + err.Error())
 		return nil, errors.New("error updating this store")
@@ -80,12 +98,20 @@ func (s *StoreService) UpdateStore(ctx context.Context, body models.UpdateStoreR
 }
 
 func (s *StoreService) CreateStore(ctx context.Context, body models.CreateStoreRequest) (*models.CreateStoreResponse, error) {
-	err := s.storeRepo.CreateStore(ctx, body)
+	province, postalCode, err := sanitizeStoreLocation(body.Province, body.PostalCode)
+	if err != nil {
+		return nil, err
+	}
+	body.Province = province
+	body.PostalCode = postalCode
+
+	store, err := s.storeRepo.CreateStore(ctx, body)
 	if err != nil {
 		return nil, err
 	}
 
 	return &models.CreateStoreResponse{
+		Store:   *store,
 		Message: "Store created successfully",
 	}, nil
 }

@@ -61,7 +61,16 @@ func (e *EmployeeService) UpdateEmployee(ctx context.Context, body models.Employ
 		}
 	}
 
-	err := e.employeeRepo.UpdateEmployee(ctx, body)
+	if err := utils.ValidateCanadianProvince(body.Province); err != nil {
+		return nil, err
+	}
+	normalizedPostal, err := utils.NormalizeCanadianPostalCode(body.PostalCode)
+	if err != nil {
+		return nil, err
+	}
+	body.PostalCode = normalizedPostal
+
+	err = e.employeeRepo.UpdateEmployee(ctx, body)
 	if err != nil {
 		log.Println("Error: " + err.Error())
 		return nil, errors.New("error updating this employee")
@@ -73,6 +82,15 @@ func (e *EmployeeService) UpdateEmployee(ctx context.Context, body models.Employ
 }
 
 func (e *EmployeeService) CreateEmployee(ctx context.Context, model models.CreateEmployeeRequest) (*models.CreateEmployeeResponse, error) {
+	if err := utils.ValidateCanadianProvince(model.Province); err != nil {
+		return nil, err
+	}
+	normalizedPostal, err := utils.NormalizeCanadianPostalCode(model.PostalCode)
+	if err != nil {
+		return nil, err
+	}
+	model.PostalCode = normalizedPostal
+
 	hash, err := utils.HashPassword(model.Password)
 	if err != nil {
 		return nil, err
@@ -81,17 +99,18 @@ func (e *EmployeeService) CreateEmployee(ctx context.Context, model models.Creat
 	employee, err := e.employeeRepo.CreateEmployee(ctx, models.CreateEmployeeRow{
 		PasswordHash: hash,
 		EmployeeBase: models.EmployeeBase{
-			Email:      strings.ToLower(model.Email),
-			StoreId:    model.StoreId,
-			FirstName:  model.FirstName,
-			LastName:   model.LastName,
-			Role:       model.Role,
-			Phone:      model.Phone,
-			Address:    model.Address,
-			City:       model.City,
-			Province:   model.Province,
-			PostalCode: model.PostalCode,
-			IsActive:   model.IsActive,
+			Email:        strings.ToLower(model.Email),
+			StoreId:      model.StoreId,
+			FirstName:    model.FirstName,
+			LastName:     model.LastName,
+			Role:         model.Role,
+			Phone:        model.Phone,
+			Address:      model.Address,
+			City:         model.City,
+			Province:     model.Province,
+			PostalCode:   model.PostalCode,
+			IsActive:     model.IsActive,
+			IsTerminated: model.IsTerminated,
 		},
 	})
 	if err != nil {

@@ -71,7 +71,7 @@ func (h *StoreHandler) CreateStore(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusCreated, res)
 }
 
 func (h *StoreHandler) GetStore(ctx *gin.Context) {
@@ -79,6 +79,7 @@ func (h *StoreHandler) GetStore(ctx *gin.Context) {
 	if storeId == "" {
 		log.Println("Query parameter store_id not found")
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
+		return
 	}
 	res, err := h.storeService.GetStore(ctx, storeId)
 	if err != nil {

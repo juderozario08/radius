@@ -18,7 +18,7 @@ func NewStoreRepo(db *sql.DB) *StoreRepo {
 
 func (r *StoreRepo) GetAllStores(ctx context.Context, pageSize int, pageNumber int) ([]models.Store, int, error) {
 	var totalCount int
-	countQuery := `SELECT RELTUPLES::BIGINT FROM pg_class WHERE relname = 'stores';`
+	countQuery := `SELECT COUNT(*) FROM stores;`
 
 	err := r.db.QueryRowContext(ctx, countQuery).Scan(&totalCount)
 	if err != nil {
@@ -87,13 +87,14 @@ func (r *StoreRepo) UpdateStore(ctx context.Context, body models.UpdateStoreRequ
             postal_code = $5,
             phone = $6,
             timezone = $7,
-            is_active = $8,
+            is_active = $8
         WHERE store_id = $9
 	`
 	res, err := r.db.ExecContext(
 		ctx, query,
 		body.Name, body.Address, body.City, body.Province,
 		body.PostalCode, body.Phone, body.Timezone, body.IsActive,
+		body.StoreId,
 	)
 	if err != nil {
 		return err
@@ -110,20 +111,33 @@ func (r *StoreRepo) UpdateStore(ctx context.Context, body models.UpdateStoreRequ
 	return nil
 }
 
-func (r *StoreRepo) CreateStore(ctx context.Context, body models.CreateStoreRequest) error {
+func (r *StoreRepo) CreateStore(ctx context.Context, body models.CreateStoreRequest) (*models.Store, error) {
 	query := `
 		INSERT INTO stores (name, address, city, province, postal_code, phone, timezone, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING store_id, name, address, city, province, postal_code, phone, timezone, is_active, created_at;
 	`
-	_, err := r.db.ExecContext(
+	var store models.Store
+	err := r.db.QueryRowContext(
 		ctx, query, body.Name, body.Address, body.City,
 		body.Province, body.PostalCode, body.Phone, body.Timezone, body.IsActive,
+	).Scan(
+		&store.StoreId,
+		&store.Name,
+		&store.Address,
+		&store.City,
+		&store.Province,
+		&store.PostalCode,
+		&store.Phone,
+		&store.Timezone,
+		&store.IsActive,
+		&store.CreatedAt,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &store, nil
 }
 
 func (r *StoreRepo) ActivateStore(ctx context.Context, storeId int) error {
@@ -139,12 +153,33 @@ func (r *StoreRepo) DeactivateStore(ctx context.Context, storeId int) error {
 }
 
 func (r *StoreRepo) GetStore(ctx context.Context, storeId int) (*models.Store, error) {
-	query := `SELECT * FROM stores WHERE store_id = $1`
+	query := `
+		SELECT
+			store_id,
+			name,
+			address,
+			city,
+			province,
+			postal_code,
+			phone,
+			timezone,
+			is_active,
+			created_at
+		FROM stores
+		WHERE store_id = $1
+	`
 	var store models.Store
 	err := r.db.QueryRowContext(ctx, query, storeId).Scan(
-		&store.StoreId, &store.Name, &store.Address, &store.City,
-		&store.IsActive, &store.Phone, &store.PostalCode, &store.Province,
-		&store.CreatedAt, &store.Timezone,
+		&store.StoreId,
+		&store.Name,
+		&store.Address,
+		&store.City,
+		&store.Province,
+		&store.PostalCode,
+		&store.Phone,
+		&store.Timezone,
+		&store.IsActive,
+		&store.CreatedAt,
 	)
 	if err != nil {
 		return nil, err

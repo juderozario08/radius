@@ -61,3 +61,17 @@ export interface GetAllStoresResponse {
     total_length: number;
     message: string;
 }
+
+export interface GetStoreResponse {
+    store: Store;
+    message: string;
+}
+
+export interface CreateStoreResponse {
+    store: Store;
+    message: string;
+}
+
+export interface MessageResponse {
+    message: string;
+}

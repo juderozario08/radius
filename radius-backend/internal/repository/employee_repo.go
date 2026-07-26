@@ -155,7 +155,7 @@ func (r *EmployeeRepo) TerminateEmployeeById(ctx context.Context, id int) error 
 }
 
 func (r *EmployeeRepo) ActivateEmployeeById(ctx context.Context, id int) error {
-	query := `UPDATE employees SET is_terminated = FALSE WHERE employee_id = $1;`
+	query := `UPDATE employees SET is_terminated = FALSE, is_active = TRUE WHERE employee_id = $1;`
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
 }

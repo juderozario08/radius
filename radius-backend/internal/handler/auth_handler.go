@@ -29,7 +29,7 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 	result, err := h.authService.Login(ctx.Request.Context(), body, ctx.ClientIP())
 	if err != nil {
 		log.Println("Error: " + err.Error())
-		ctx.JSON(http.StatusNotAcceptable, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -53,9 +53,9 @@ func (h *AuthHandler) Logout(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusAccepted, gin.H{"message": "Successfully logged out"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
 func (h *AuthHandler) VerifyToken(ctx *gin.Context) {
-	ctx.JSON(http.StatusAccepted, gin.H{"message": "Session verified"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "Session verified"})
 }

@@ -51,6 +51,7 @@ type GetAllStoresResponse struct {
 }
 
 type UpdateStoreRequest struct {
+	StoreId int `json:"store_id" binding:"required"`
 	StoreBase
 }
 
@@ -77,9 +78,9 @@ type DeactivateStoreResponse struct {
 }
 
 type ActivateStoreRequest struct {
-	StoreId int `json:"store_id"`
+	StoreId int `json:"store_id" binding:"required"`
 }
 
 type DeactivateStoreRequest struct {
-	StoreId int `json:"store_id"`
+	StoreId int `json:"store_id" binding:"required"`
 }

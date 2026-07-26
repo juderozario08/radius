@@ -30,6 +30,7 @@ import { callApi, showToast } from "@/utils/helpers";
 import { GetAllStoresResponse, Store } from "@/types/admin.types";
 import PillGroup, { PillOption } from "@/components/common/PillGroup";
 import Pagination from "@/components/common/Pagination";
+import { CANADIAN_PROVINCES, isCanadianProvince, normalizeCanadianPostalCode } from "@/constants/canada";
 
 type FormMode = "create" | "edit";
 
@@ -172,20 +173,34 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
     };
 
     const isFormValid = (): boolean => {
-        const { name, phone, address, city, province, postal_code } = formValues;
-        const missingRequired = !name || !phone || !address || !city || !province || !postal_code;
+        const { name, phone, address, city, province, postal_code, timezone } = formValues;
+        const missingRequired = !name || !phone || !address || !city || !province || !postal_code || !timezone;
 
         if (missingRequired) {
             showToast("error", "Please fill in all required fields");
             return false;
         }
+
+        if (!isCanadianProvince(province)) {
+            showToast("error", "Please select a valid Canadian province");
+            return false;
+        }
+
+        if (!normalizeCanadianPostalCode(postal_code)) {
+            showToast("error", "Postal code must be in A1A 1A1 format");
+            return false;
+        }
+
         return true;
     };
 
     const handleSubmit = async () => {
         if (!isFormValid()) return;
 
-        const payload: Record<string, any> = { ...formValues };
+        const payload: Record<string, any> = {
+            ...formValues,
+            postal_code: normalizeCanadianPostalCode(formValues.postal_code),
+        };
         if (isEditMode && store) {
             payload.store_id = store.store_id;
         }
@@ -232,28 +247,25 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             value={formValues.address}
                             onChangeText={(text) => updateField("address", text)}
                         />
-                        <View style={styles.inputRow}>
-                            <TextInput
-                                style={[styles.input, { flex: 2, marginRight: 8 }]}
-                                placeholder="City"
-                                value={formValues.city}
-                                onChangeText={(text) => updateField("city", text)}
-                            />
-                            <TextInput
-                                style={[styles.input, { flex: 1, marginRight: 8 }]}
-                                placeholder="Prov"
-                                autoCapitalize="characters"
-                                value={formValues.province}
-                                onChangeText={(text) => updateField("province", text)}
-                            />
-                            <TextInput
-                                style={[styles.input, { flex: 1 }]}
-                                placeholder="Postal"
-                                autoCapitalize="characters"
-                                value={formValues.postal_code}
-                                onChangeText={(text) => updateField("postal_code", text)}
-                            />
-                        </View>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="City"
+                            value={formValues.city}
+                            onChangeText={(text) => updateField("city", text)}
+                        />
+                        <Text style={styles.inputLabel}>Province *</Text>
+                        <PillGroup
+                            options={CANADIAN_PROVINCES.map((province) => ({ label: province, value: province }))}
+                            value={formValues.province}
+                            onChange={(v) => updateField("province", v)}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Postal (A1A 1A1)"
+                            autoCapitalize="characters"
+                            value={formValues.postal_code}
+                            onChangeText={(text) => updateField("postal_code", text)}
+                        />
 
                         <Text style={styles.inputLabel}>System Configuration</Text>
                         <TextInput

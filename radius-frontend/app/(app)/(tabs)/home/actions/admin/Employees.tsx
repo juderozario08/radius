@@ -32,6 +32,7 @@ import { TerminatedBadge } from "@/components/common/TerminatedBadge";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import CustomToast from "@/components/common/Toast";
 import PillGroup, { PillOption } from "@/components/common/PillGroup";
+import { CANADIAN_PROVINCES, isCanadianProvince, normalizeCanadianPostalCode } from "@/constants/canada";
 
 const ROLES: EmployeeRole[] = ["SALES", "SERVICE", "MANAGER", "ADMIN"];
 
@@ -250,11 +251,31 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
     };
 
     const isFormValid = (): boolean => {
-        const { first_name, last_name, email, store_id, password, is_active, is_terminated } = formValues;
-        const missingRequired = !first_name || !last_name || !email || !store_id || (!isEditMode && !password);
+        const {
+            first_name, last_name, email, store_id, password, is_active, is_terminated,
+            phone, address, city, province, postal_code,
+        } = formValues;
+        const missingRequired = !first_name || !last_name || !email || !store_id
+            || !phone || !address || !city || !province || !postal_code
+            || (!isEditMode && !password);
 
         if (missingRequired) {
             showToast("error", "Please fill in all required fields");
+            return false;
+        }
+
+        if (!isEditMode && password.length < 8) {
+            showToast("error", "Password must be at least 8 characters");
+            return false;
+        }
+
+        if (!isCanadianProvince(province)) {
+            showToast("error", "Please select a valid Canadian province");
+            return false;
+        }
+
+        if (!normalizeCanadianPostalCode(postal_code)) {
+            showToast("error", "Postal code must be in A1A 1A1 format");
             return false;
         }
 
@@ -272,6 +293,7 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
         const payload: Record<string, any> = {
             ...formValues,
             store_id: parseInt(formValues.store_id, 10),
+            postal_code: normalizeCanadianPostalCode(formValues.postal_code),
         };
 
         if (isEditMode && employee) {
@@ -350,7 +372,7 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                         <Text style={styles.inputLabel}>Terminated *</Text>
                         <PillGroup options={TERMINATED_OPTIONS} value={formValues.is_terminated} onChange={(v) => updateField("is_terminated", v)} />
 
-                        <Text style={styles.inputLabel}>Contact & Location</Text>
+                        <Text style={styles.inputLabel}>Contact & Location *</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="Phone"
@@ -364,27 +386,25 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                             value={formValues.address}
                             onChangeText={(text) => updateField("address", text)}
                         />
-                        <View style={styles.inputRow}>
-                            <TextInput
-                                style={[styles.input, { flex: 2, marginRight: 8 }]}
-                                placeholder="City"
-                                value={formValues.city}
-                                onChangeText={(text) => updateField("city", text)}
-                            />
-                            <TextInput
-                                style={[styles.input, { flex: 1, marginRight: 8 }]}
-                                placeholder="Prov"
-                                value={formValues.province}
-                                onChangeText={(text) => updateField("province", text)}
-                            />
-                            <TextInput
-                                style={[styles.input, { flex: 1 }]}
-                                placeholder="Postal"
-                                autoCapitalize="characters"
-                                value={formValues.postal_code}
-                                onChangeText={(text) => updateField("postal_code", text)}
-                            />
-                        </View>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="City"
+                            value={formValues.city}
+                            onChangeText={(text) => updateField("city", text)}
+                        />
+                        <Text style={styles.inputLabel}>Province *</Text>
+                        <PillGroup
+                            options={CANADIAN_PROVINCES.map((province) => ({ label: province, value: province }))}
+                            value={formValues.province}
+                            onChange={(v) => updateField("province", v)}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Postal (A1A 1A1)"
+                            autoCapitalize="characters"
+                            value={formValues.postal_code}
+                            onChangeText={(text) => updateField("postal_code", text)}
+                        />
                         <View style={{ height: 20 }} />
                     </ScrollView>
 

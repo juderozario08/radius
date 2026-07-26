@@ -27,6 +27,9 @@ export const ENDPOINTS = {
             }
         },
         MANAGER: {
+            STORE: {
+                get: "/api/manager/get_store",
+            },
         },
         SALES: {
         },

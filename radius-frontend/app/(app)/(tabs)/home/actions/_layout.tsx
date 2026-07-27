@@ -14,6 +14,7 @@ export default function ActionsLayout() {
             <Stack.Screen name="sales_floor/ItemAdjust" />
             <Stack.Screen name="sales_floor/Activities" />
             <Stack.Screen name="sales_floor/Orders" />
+            <Stack.Screen name="sales_floor/Transactions" />
             <Stack.Screen name="admin/Employees" />
             <Stack.Screen name="admin/Sessions" />
             <Stack.Screen name="service/Orders" />

@@ -21,7 +21,7 @@ export default function AppLayout() {
     const { isAuthenticated, user } = useAuth();
 
     if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
-    const canViewStoreTab = hasPermission(user?.role, "view_manager_actions");
+    const canViewStoreTab = hasPermission(user?.role, "view_admin_actions");
 
     return (
         <Tabs

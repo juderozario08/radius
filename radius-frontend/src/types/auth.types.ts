@@ -13,3 +13,7 @@ export interface LoginResponse {
 export interface LogoutResponse {
     message: string;
 };
+
+export interface VerifyTokenResponse {
+    message: string;
+};

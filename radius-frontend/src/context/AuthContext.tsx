@@ -4,7 +4,7 @@ import { deleteToken, getToken, saveToken } from "@/utils/token";
 import { createContext, ReactNode, useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 import * as SecureStore from "expo-secure-store";
-import { LoginResponse, LogoutResponse } from "@/types/auth.types";
+import { LoginResponse, LogoutResponse, VerifyTokenResponse } from "@/types/auth.types";
 import { ENDPOINTS } from "@/constants/routes";
 
 export type UserInfo = Omit<LoginResponse, 'token'>;
@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setIsLoading(false);
                     return;
                 }
-                const res = await apiFetch<LogoutResponse>(ENDPOINTS.AUTHENTICATED.verify_token, {
+                const res = await apiFetch<VerifyTokenResponse>(ENDPOINTS.AUTHENTICATED.verify_token, {
                     method: "POST",
                 });
 
@@ -77,6 +77,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     async function logout() {
+        try {
+            await apiFetch<LogoutResponse>(ENDPOINTS.AUTHENTICATED.logout, {
+                method: "POST",
+            });
+        } catch {
+            // Best-effort: if the backend call fails (e.g. token already expired),
+            // we still clear local state to let the user re-authenticate.
+        }
         await deleteToken();
         await SecureStore.deleteItemAsync("user_info");
         setToken(null);

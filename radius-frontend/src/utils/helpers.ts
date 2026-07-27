@@ -4,7 +4,7 @@ import Toast from "react-native-toast-message";
 
 export function capitalize(value: string): string {
     if (!value) return value;
-    return value.charAt(0) + value.slice(1).toLowerCase();
+    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
 export function showToast(type: "success" | "error", text: string) {

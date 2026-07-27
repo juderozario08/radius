@@ -15,18 +15,18 @@ func NewInventoryRepo(db *sql.DB) *InventoryRepo {
 	return &InventoryRepo{DB: db}
 }
 
-func (db *InventoryRepo) GetProductBySku(ctx context.Context, sku int) (*models.Employee, error) {
+func (db *InventoryRepo) GetProductBySku(ctx context.Context, sku int) (*models.Product, error) {
 	return nil, nil
 }
 
-func (db *InventoryRepo) GetProductByUpc(ctx context.Context, upc string) (*models.Employee, error) {
+func (db *InventoryRepo) GetProductByUpc(ctx context.Context, upc string) (*models.Product, error) {
 	return nil, nil
 }
 
-func (db *InventoryRepo) CreateInventoryItem(ctx context.Context, model models.Inventory) (*models.Employee, error) {
+func (db *InventoryRepo) CreateInventoryItem(ctx context.Context, model models.Inventory) (*models.Inventory, error) {
 	return nil, nil
 }
 
-func (db *InventoryRepo) DeleteProductBySku(ctx context.Context, sku int) (*models.Employee, error) {
+func (db *InventoryRepo) DeleteProductBySku(ctx context.Context, sku int) (*models.Product, error) {
 	return nil, nil
 }

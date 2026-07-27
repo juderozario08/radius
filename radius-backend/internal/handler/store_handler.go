@@ -81,7 +81,7 @@ func (h *StoreHandler) GetStore(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
 		return
 	}
-	res, err := h.storeService.GetStore(ctx, storeId)
+	res, err := h.storeService.GetStore(ctx.Request.Context(), storeId)
 	if err != nil {
 		log.Println("Error: ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

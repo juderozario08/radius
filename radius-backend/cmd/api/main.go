@@ -104,6 +104,6 @@ func main() {
 		AuthService: authService,
 	})
 
-	fmt.Printf("Listening on PORT %s http:://0.0.0.0:%s\n", port, port)
-	router.Run()
+	fmt.Printf("Listening on PORT %s http://0.0.0.0:%s\n", port, port)
+	router.Run(":" + port)
 }

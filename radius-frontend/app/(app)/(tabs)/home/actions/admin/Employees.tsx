@@ -12,7 +12,7 @@ import { callApi, capitalize, showToast } from "@/utils/helpers";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -241,6 +241,15 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
     const [isSubmitting, setIsSubmitting] = useState(false);
     const isEditMode = mode === "edit";
 
+    const lastNameRef = useRef<TextInput>(null);
+    const emailRef = useRef<TextInput>(null);
+    const passwordRef = useRef<TextInput>(null);
+    const storeIdRef = useRef<TextInput>(null);
+    const phoneRef = useRef<TextInput>(null);
+    const addressRef = useRef<TextInput>(null);
+    const cityRef = useRef<TextInput>(null);
+    const postalCodeRef = useRef<TextInput>(null);
+
     useEffect(() => {
         if (!visible) return;
         setFormValues(isEditMode && employee ? employeeToFormValues(employee) : createEmptyFormValues());
@@ -328,12 +337,19 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                                 placeholder="First Name"
                                 value={formValues.first_name}
                                 onChangeText={(text) => updateField("first_name", text)}
+                                returnKeyType="next"
+                                submitBehavior="submit"
+                                onSubmitEditing={() => lastNameRef.current?.focus()}
                             />
                             <TextInput
                                 style={[styles.input, { flex: 1 }]}
                                 placeholder="Last Name"
                                 value={formValues.last_name}
                                 onChangeText={(text) => updateField("last_name", text)}
+                                ref={lastNameRef}
+                                returnKeyType="next"
+                                submitBehavior="submit"
+                                onSubmitEditing={() => emailRef.current?.focus()}
                             />
                         </View>
 
@@ -345,6 +361,16 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                             autoCapitalize="none"
                             value={formValues.email}
                             onChangeText={(text) => updateField("email", text)}
+                            ref={emailRef}
+                            returnKeyType="next"
+                            submitBehavior="submit"
+                            onSubmitEditing={() => {
+                                if (!isEditMode) {
+                                    passwordRef.current?.focus();
+                                } else {
+                                    storeIdRef.current?.focus();
+                                }
+                            }}
                         />
                         {!isEditMode && (
                             <TextInput
@@ -353,6 +379,10 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                                 secureTextEntry
                                 value={formValues.password}
                                 onChangeText={(text) => updateField("password", text)}
+                                ref={passwordRef}
+                                returnKeyType="next"
+                                submitBehavior="submit"
+                                onSubmitEditing={() => storeIdRef.current?.focus()}
                             />
                         )}
                         <TextInput
@@ -361,6 +391,10 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                             keyboardType="numeric"
                             value={formValues.store_id}
                             onChangeText={(text) => updateField("store_id", text)}
+                            ref={storeIdRef}
+                            returnKeyType="next"
+                            submitBehavior="submit"
+                            onSubmitEditing={() => phoneRef.current?.focus()}
                         />
 
                         <Text style={styles.inputLabel}>Role *</Text>
@@ -379,18 +413,30 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                             keyboardType="phone-pad"
                             value={formValues.phone}
                             onChangeText={(text) => updateField("phone", text)}
+                            ref={phoneRef}
+                            returnKeyType="next"
+                            submitBehavior="submit"
+                            onSubmitEditing={() => addressRef.current?.focus()}
                         />
                         <TextInput
                             style={styles.input}
                             placeholder="Street Address"
                             value={formValues.address}
                             onChangeText={(text) => updateField("address", text)}
+                            ref={addressRef}
+                            returnKeyType="next"
+                            submitBehavior="submit"
+                            onSubmitEditing={() => cityRef.current?.focus()}
                         />
                         <TextInput
                             style={styles.input}
                             placeholder="City"
                             value={formValues.city}
                             onChangeText={(text) => updateField("city", text)}
+                            ref={cityRef}
+                            returnKeyType="next"
+                            submitBehavior="submit"
+                            onSubmitEditing={() => postalCodeRef.current?.focus()}
                         />
                         <Text style={styles.inputLabel}>Province *</Text>
                         <PillGroup
@@ -404,6 +450,9 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                             autoCapitalize="characters"
                             value={formValues.postal_code}
                             onChangeText={(text) => updateField("postal_code", text)}
+                            ref={postalCodeRef}
+                            returnKeyType="done"
+                            onSubmitEditing={handleSubmit}
                         />
                         <View style={{ height: 20 }} />
                     </ScrollView>

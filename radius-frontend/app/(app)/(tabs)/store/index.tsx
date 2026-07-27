@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -163,6 +163,12 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
     const [isSubmitting, setIsSubmitting] = useState(false);
     const isEditMode = mode === "edit";
 
+    const phoneRef = useRef<TextInput>(null);
+    const addressRef = useRef<TextInput>(null);
+    const cityRef = useRef<TextInput>(null);
+    const postalCodeRef = useRef<TextInput>(null);
+    const timezoneRef = useRef<TextInput>(null);
+
     useEffect(() => {
         if (!visible) return;
         setFormValues(isEditMode && store ? storeToFormValues(store) : createEmptyFormValues());
@@ -231,6 +237,9 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             placeholder="Store Name"
                             value={formValues.name}
                             onChangeText={(text) => updateField("name", text)}
+                            returnKeyType="next"
+                            submitBehavior="submit"
+                            onSubmitEditing={() => phoneRef.current?.focus()}
                         />
                         <TextInput
                             style={styles.input}
@@ -238,6 +247,10 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             keyboardType="phone-pad"
                             value={formValues.phone}
                             onChangeText={(text) => updateField("phone", text)}
+                            ref={phoneRef}
+                            returnKeyType="next"
+                            submitBehavior="submit"
+                            onSubmitEditing={() => addressRef.current?.focus()}
                         />
 
                         <Text style={styles.inputLabel}>Location *</Text>
@@ -246,12 +259,20 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             placeholder="Street Address"
                             value={formValues.address}
                             onChangeText={(text) => updateField("address", text)}
+                            ref={addressRef}
+                            returnKeyType="next"
+                            submitBehavior="submit"
+                            onSubmitEditing={() => cityRef.current?.focus()}
                         />
                         <TextInput
                             style={styles.input}
                             placeholder="City"
                             value={formValues.city}
                             onChangeText={(text) => updateField("city", text)}
+                            ref={cityRef}
+                            returnKeyType="next"
+                            submitBehavior="submit"
+                            onSubmitEditing={() => postalCodeRef.current?.focus()}
                         />
                         <Text style={styles.inputLabel}>Province *</Text>
                         <PillGroup
@@ -265,6 +286,10 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             autoCapitalize="characters"
                             value={formValues.postal_code}
                             onChangeText={(text) => updateField("postal_code", text)}
+                            ref={postalCodeRef}
+                            returnKeyType="next"
+                            submitBehavior="submit"
+                            onSubmitEditing={() => timezoneRef.current?.focus()}
                         />
 
                         <Text style={styles.inputLabel}>System Configuration</Text>
@@ -274,6 +299,9 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             value={formValues.timezone}
                             autoCapitalize="none"
                             onChangeText={(text) => updateField("timezone", text)}
+                            ref={timezoneRef}
+                            returnKeyType="done"
+                            onSubmitEditing={handleSubmit}
                         />
 
                         <Text style={styles.inputLabel}>Status *</Text>

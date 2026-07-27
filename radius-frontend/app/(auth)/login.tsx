@@ -2,7 +2,8 @@
 import { apiFetch, ConflictError } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LoginResponse } from "@/types/auth.types";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Platform } from "react-native";
 import {
     Alert,
     KeyboardAvoidingView,
@@ -48,6 +49,7 @@ export default function LoginScreen() {
     const [loading, setLoading] = useState(false);
     const [hiding, setHiding] = useState(true);
     const [validEmail, setValidEmail] = useState<boolean>(false);
+    const passwordRef = useRef<TextInput>(null);
 
     async function submitLogin(force: boolean) {
         setLoading(true);
@@ -81,9 +83,9 @@ export default function LoginScreen() {
     }
 
     return (
-        <TopSafeAreaView style={styles.container}>
-            <Text style={styles.title}>Radius</Text>
-            <KeyboardAvoidingView>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+            <TopSafeAreaView style={styles.container}>
+                <Text style={styles.title}>Radius</Text>
                 <TextInput
                     style={[styles.input, { marginBottom: 25 }]}
                     placeholder="Email"
@@ -95,6 +97,9 @@ export default function LoginScreen() {
                     }}
                     autoCapitalize="none"
                     keyboardType="email-address"
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => passwordRef.current?.focus()}
                 />
                 {!validEmail && email && (
                     <Text
@@ -113,6 +118,9 @@ export default function LoginScreen() {
                             setPassword(t);
                         }}
                         secureTextEntry={hiding}
+                        ref={passwordRef}
+                        returnKeyType="done"
+                        onSubmitEditing={() => submitLogin(false)}
                     />
                     <TouchableOpacity
                         onPress={() => setHiding(!hiding)}
@@ -125,22 +133,22 @@ export default function LoginScreen() {
                         )}
                     </TouchableOpacity>
                 </View>
-            </KeyboardAvoidingView>
-            <TouchableOpacity
-                style={[
-                    styles.button,
-                    (loading || !email || !password) && { opacity: 0.7 },
-                ]}
-                onPress={() => {
-                    submitLogin(false);
-                }}
-                disabled={loading || !email || !password}
-            >
-                <Text style={styles.buttonText}>
-                    {loading ? "Logging in..." : "Log In"}
-                </Text>
-            </TouchableOpacity>
-        </TopSafeAreaView>
+                <TouchableOpacity
+                    style={[
+                        styles.button,
+                        (loading || !email || !password) && { opacity: 0.7 },
+                    ]}
+                    onPress={() => {
+                        submitLogin(false);
+                    }}
+                    disabled={loading || !email || !password}
+                >
+                    <Text style={styles.buttonText}>
+                        {loading ? "Logging in..." : "Log In"}
+                    </Text>
+                </TouchableOpacity>
+            </TopSafeAreaView>
+        </KeyboardAvoidingView>
     );
 }
 

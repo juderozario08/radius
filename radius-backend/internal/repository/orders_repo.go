@@ -1,12 +1,12 @@
-//radius-backend/internal/repository/orders_repo.go
+// radius-backend/internal/repository/orders_repo.go
 package repository
 
 import "database/sql"
 
 type OrdersRepo struct {
-	DB *sql.DB
+	db *sql.DB
 }
 
 func NewOrdersRepo(db *sql.DB) *OrdersRepo {
-	return &OrdersRepo{DB: db}
+	return &OrdersRepo{db: db}
 }

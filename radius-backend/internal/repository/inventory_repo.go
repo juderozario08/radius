@@ -1,4 +1,4 @@
-//radius-backend/internal/repository/inventory_repo.go
+// radius-backend/internal/repository/inventory_repo.go
 package repository
 
 import (
@@ -8,25 +8,25 @@ import (
 )
 
 type InventoryRepo struct {
-	DB *sql.DB
+	db *sql.DB
 }
 
 func NewInventoryRepo(db *sql.DB) *InventoryRepo {
-	return &InventoryRepo{DB: db}
+	return &InventoryRepo{db: db}
 }
 
-func (db *InventoryRepo) GetProductBySku(ctx context.Context, sku int) (*models.Product, error) {
+func (r *InventoryRepo) GetProductBySku(ctx context.Context, sku int) (*models.Product, error) {
 	return nil, nil
 }
 
-func (db *InventoryRepo) GetProductByUpc(ctx context.Context, upc string) (*models.Product, error) {
+func (r *InventoryRepo) GetProductByUpc(ctx context.Context, upc string) (*models.Product, error) {
 	return nil, nil
 }
 
-func (db *InventoryRepo) CreateInventoryItem(ctx context.Context, model models.Inventory) (*models.Inventory, error) {
+func (r *InventoryRepo) CreateInventoryItem(ctx context.Context, model models.Inventory) (*models.Inventory, error) {
 	return nil, nil
 }
 
-func (db *InventoryRepo) DeleteProductBySku(ctx context.Context, sku int) (*models.Product, error) {
+func (r *InventoryRepo) DeleteProductBySku(ctx context.Context, sku int) (*models.Product, error) {
 	return nil, nil
 }

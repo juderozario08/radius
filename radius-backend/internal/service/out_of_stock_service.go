@@ -1,4 +1,4 @@
-//radius-backend/internal/service/out_of_stock_service.go
+// radius-backend/internal/service/out_of_stock_service.go
 package service
 
 import "radius/internal/repository"

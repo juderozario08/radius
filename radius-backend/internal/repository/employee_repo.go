@@ -22,7 +22,7 @@ func (r *EmployeeRepo) GetEmployeeByEmail(ctx context.Context, email string) (*m
 		SELECT
 			e.employee_id, e.email, e.password_hash, e.store_id,
 			e.first_name, e.last_name, e.role, e.phone, e.address,
-			e.city, e.province, e.postal_code, e.is_active
+			e.city, e.province, e.postal_code, e.is_active, e.is_terminated
 		FROM employees as e
 		WHERE e.email = $1;
 	`
@@ -30,7 +30,7 @@ func (r *EmployeeRepo) GetEmployeeByEmail(ctx context.Context, email string) (*m
 		&employee.EmployeeId, &employee.Email, &employee.PasswordHash,
 		&employee.StoreId, &employee.FirstName, &employee.LastName, &employee.Role,
 		&employee.Phone, &employee.Address, &employee.City,
-		&employee.Province, &employee.PostalCode, &employee.IsActive,
+		&employee.Province, &employee.PostalCode, &employee.IsActive, &employee.IsTerminated,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil

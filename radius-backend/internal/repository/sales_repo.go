@@ -1,21 +1,24 @@
-//radius-backend/internal/repository/sales_repo.go
+// radius-backend/internal/repository/sales_repo.go
 package repository
 
-import "database/sql"
+import (
+	"context"
+	"database/sql"
+)
 
 type SalesRepo struct {
-	DB *sql.DB
+	db *sql.DB
 }
 
 func NewSalesRepo(db *sql.DB) *SalesRepo {
-	return &SalesRepo{DB: db}
+	return &SalesRepo{db: db}
 }
 
-func CreateTransaction(db *sql.DB) {
+func (r *SalesRepo) CreateTransaction(ctx context.Context) {
 }
 
-func GetTransactionByID(db *sql.DB, id int) {
+func (r *SalesRepo) GetTransactionByID(ctx context.Context, id int) {
 }
 
-func GetProductTransactions(db *sql.DB, sku int) {
+func (r *SalesRepo) GetProductTransactions(ctx context.Context, sku int) {
 }

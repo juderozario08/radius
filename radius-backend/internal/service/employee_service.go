@@ -13,7 +13,6 @@ import (
 
 type EmployeeService struct {
 	employeeRepo *repository.EmployeeRepo
-	jwtSecret    []byte
 }
 
 func NewEmployeeService(employeeRepo *repository.EmployeeRepo) *EmployeeService {
@@ -34,22 +33,22 @@ func (e *EmployeeService) GetAllEmployees(ctx context.Context) (*models.GetAllEm
 	}, nil
 }
 
-func (e *EmployeeService) TerminateEmployee(ctx context.Context, employeeId int) (*models.TerminateEmployeeRespnose, error) {
+func (e *EmployeeService) TerminateEmployee(ctx context.Context, employeeId int) (*models.TerminateEmployeeResponse, error) {
 	err := e.employeeRepo.TerminateEmployeeById(ctx, employeeId)
 	if err != nil {
 		return nil, err
 	}
-	return &models.TerminateEmployeeRespnose{
+	return &models.TerminateEmployeeResponse{
 		Message: "Employee Terminated Successfully",
 	}, nil
 }
 
-func (e *EmployeeService) ActivateEmployee(ctx context.Context, employeeId int) (*models.ActivateEmployeeRespnose, error) {
+func (e *EmployeeService) ActivateEmployee(ctx context.Context, employeeId int) (*models.ActivateEmployeeResponse, error) {
 	err := e.employeeRepo.ActivateEmployeeById(ctx, employeeId)
 	if err != nil {
 		return nil, err
 	}
-	return &models.ActivateEmployeeRespnose{
+	return &models.ActivateEmployeeResponse{
 		Message: "Employee Activated Successfully",
 	}, nil
 }

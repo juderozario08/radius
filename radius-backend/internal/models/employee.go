@@ -62,11 +62,11 @@ type GetAllEmployeesResponse struct {
 	Message   string     `json:"message"`
 }
 
-type TerminateEmployeeRespnose struct {
+type TerminateEmployeeResponse struct {
 	Message string `json:"message"`
 }
 
-type ActivateEmployeeRespnose struct {
+type ActivateEmployeeResponse struct {
 	Message string `json:"message"`
 }
 

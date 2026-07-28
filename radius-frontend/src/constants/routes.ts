@@ -2,6 +2,7 @@
 export const ENDPOINTS = {
     UNAUTHENTICATED: {
         login: "/login",
+        refresh_token: "/api/refresh_token",
     },
     AUTHENTICATED: {
         logout: "/api/logout",

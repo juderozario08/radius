@@ -3,6 +3,7 @@ export type EmployeeRole = "SALES" | "SERVICE" | "MANAGER" | "ADMIN";
 
 export interface LoginResponse {
     token: string;
+    refresh_token: string;
     session_id: number;
     employee_id: number;
     last_name: string;
@@ -16,4 +17,8 @@ export interface LogoutResponse {
 
 export interface VerifyTokenResponse {
     message: string;
+};
+
+export interface RefreshTokenResponse {
+    token: string;
 };

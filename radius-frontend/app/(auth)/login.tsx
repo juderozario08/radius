@@ -103,7 +103,7 @@ export default function LoginScreen() {
                 />
                 {!validEmail && email && (
                     <Text
-                        style={{ position: "absolute", color: "red", top: 55, left: 4 }}
+                        style={{ position: "absolute", color: "red", top: 466, left: 30 }}
                     >
                         Please enter a valid email address.
                     </Text>

@@ -8,13 +8,29 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(id int, email string, role models.EmployeeRole, jwtSecret []byte) (string, error) {
+const (
+	AccessTokenExpiry        = 15 * time.Minute
+	SessionInactivityTimeout = 24 * time.Hour     // sliding window — DB expires_at
+	MaxSessionLifetime       = 7 * 24 * time.Hour // hard ceiling — JWT exp
+)
+
+func generateToken(id int, email string, role models.EmployeeRole, tokenType string, expiry time.Duration, jwtSecret []byte) (string, error) {
 	claims := jwt.MapClaims{
 		"employee_id": id,
 		"email":       email,
 		"role":        role,
-		"exp":         time.Now().Add(time.Hour * 24).Unix(),
+		"token_type":  tokenType,
+		"iat":         time.Now().Unix(),
+		"exp":         time.Now().Add(expiry).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtSecret)
+}
+
+func GenerateAccessToken(id int, email string, role models.EmployeeRole, jwtSecret []byte) (string, error) {
+	return generateToken(id, email, role, "access", AccessTokenExpiry, jwtSecret)
+}
+
+func GenerateRefreshToken(id int, email string, role models.EmployeeRole, jwtSecret []byte) (string, error) {
+	return generateToken(id, email, role, "refresh", MaxSessionLifetime, jwtSecret)
 }

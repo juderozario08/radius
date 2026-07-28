@@ -47,15 +47,23 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 			return
 		}
 
-		if err := authService.ValidateSession(ctx.Request.Context(), tokenString); err != nil {
-			log.Println("Session validation failed:", err.Error())
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			log.Println("Could not extract claims from token")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			log.Println("Could not extract claims from token")
+		// Reject refresh tokens used as access tokens
+		tokenType, exists := claims["token_type"]
+		if !exists || tokenType != "access" {
+			log.Println("Rejected non-access token used in Authorization header")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			return
+		}
+
+		if err := authService.ValidateSession(ctx.Request.Context(), tokenString); err != nil {
+			log.Println("Session validation failed:", err.Error())
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}

@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"radius/internal/models"
+	"time"
 )
 
 type SessionRepo struct {
@@ -15,14 +16,31 @@ func NewSessionRepo(db *sql.DB) *SessionRepo {
 	return &SessionRepo{db: db}
 }
 
-func (r *SessionRepo) GetSessionByHashedToken(ctx context.Context, tokenHash string) (*models.GetSessionByHashedToken, error) {
+func (r *SessionRepo) GetSessionByAccessTokenHash(ctx context.Context, accessTokenHash string) (*models.GetSessionByHashedToken, error) {
 	var session models.GetSessionByHashedToken
 	query := `
 		SELECT s.session_id, e.employee_id, s.expires_at, e.store_id, e.is_active, e.is_terminated FROM sessions as s
 		JOIN employees as e ON e.employee_id = s.employee_id
-		WHERE token_hash = $1;
+		WHERE access_token_hash = $1;
     `
-	err := r.db.QueryRowContext(ctx, query, tokenHash).Scan(
+	err := r.db.QueryRowContext(ctx, query, accessTokenHash).Scan(
+		&session.SessionId, &session.EmployeeId, &session.ExpiresAt, &session.StoreId, &session.IsActive, &session.IsTerminated,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &session, nil
+}
+
+func (r *SessionRepo) GetSessionByRefreshTokenHash(ctx context.Context, refreshTokenHash string) (*models.GetSessionByHashedToken, error) {
+	var session models.GetSessionByHashedToken
+	query := `
+		SELECT s.session_id, e.employee_id, s.expires_at, e.store_id, e.is_active, e.is_terminated FROM sessions as s
+		JOIN employees as e ON e.employee_id = s.employee_id
+		WHERE refresh_token_hash = $1;
+    `
+	err := r.db.QueryRowContext(ctx, query, refreshTokenHash).Scan(
 		&session.SessionId, &session.EmployeeId, &session.ExpiresAt, &session.StoreId, &session.IsActive, &session.IsTerminated,
 	)
 	if err != nil {
@@ -35,12 +53,12 @@ func (r *SessionRepo) GetSessionByHashedToken(ctx context.Context, tokenHash str
 func (r *SessionRepo) GetSessionById(ctx context.Context, id int) (*models.Session, error) {
 	var session models.Session
 	query := `
-		SELECT session_id, employee_id, store_id, token_hash
+		SELECT session_id, employee_id, store_id, access_token_hash
 		FROM sessions
 		WHERE session_id = $1
 	`
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&session.SessionId, &session.EmployeeId, &session.StoreId, &session.TokenHash,
+		&session.SessionId, &session.EmployeeId, &session.StoreId, &session.AccessTokenHash,
 	)
 	if err != nil {
 		return nil, err
@@ -55,21 +73,33 @@ func (r *SessionRepo) TerminateSessionById(ctx context.Context, id int) error {
 	return err
 }
 
-func (r *SessionRepo) TerminateSessionByHashedToken(ctx context.Context, tokenHash string) error {
-	query := `DELETE FROM sessions WHERE token_hash = $1;`
-	_, err := r.db.ExecContext(ctx, query, tokenHash)
+func (r *SessionRepo) TerminateSessionByAccessTokenHash(ctx context.Context, accessTokenHash string) error {
+	query := `DELETE FROM sessions WHERE access_token_hash = $1;`
+	_, err := r.db.ExecContext(ctx, query, accessTokenHash)
+	return err
+}
+
+func (r *SessionRepo) UpdateAccessTokenHash(ctx context.Context, sessionId int, newAccessTokenHash string) error {
+	query := `UPDATE sessions SET access_token_hash = $1 WHERE session_id = $2;`
+	_, err := r.db.ExecContext(ctx, query, newAccessTokenHash, sessionId)
+	return err
+}
+
+func (r *SessionRepo) UpdateSessionExpiry(ctx context.Context, sessionId int, newExpiresAt time.Time) error {
+	query := `UPDATE sessions SET expires_at = $1 WHERE session_id = $2;`
+	_, err := r.db.ExecContext(ctx, query, newExpiresAt, sessionId)
 	return err
 }
 
 func (r *SessionRepo) CreateSession(ctx context.Context, model models.CreateSessionRequest) (*models.CreateSessionResponse, error) {
 	var session models.CreateSessionResponse
 	query := `
-		INSERT INTO sessions (employee_id, token_hash, ip_address, expires_at, store_id)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO sessions (employee_id, access_token_hash, refresh_token_hash, ip_address, expires_at, store_id)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING session_id, employee_id, store_id;
 	`
 	err := r.db.QueryRowContext(
-		ctx, query, model.EmployeeId, model.TokenHash,
+		ctx, query, model.EmployeeId, model.AccessTokenHash, model.RefreshTokenHash,
 		model.IpAddress.String(), model.ExpiresAt, model.StoreId,
 	).Scan(&session.SessionId, &session.EmployeeId, &session.StoreId)
 	if err != nil {

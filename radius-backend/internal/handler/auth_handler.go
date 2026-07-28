@@ -59,3 +59,21 @@ func (h *AuthHandler) Logout(ctx *gin.Context) {
 func (h *AuthHandler) VerifyToken(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Session verified"})
 }
+
+func (h *AuthHandler) RefreshToken(ctx *gin.Context) {
+	var body models.RefreshTokenRequest
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		log.Println("Error binding refresh token request: " + err.Error())
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "refresh_token is required"})
+		return
+	}
+
+	result, err := h.authService.RefreshToken(ctx.Request.Context(), body.RefreshToken)
+	if err != nil {
+		log.Println("Error refreshing token: " + err.Error())
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, result)
+}

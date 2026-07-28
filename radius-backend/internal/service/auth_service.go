@@ -53,7 +53,7 @@ func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginReque
 		}
 	}
 
-	token, sessionId, err := s.sessionService.CreateSession(ctx, employee.EmployeeId, employee.Role, email, ipAddress, employee.StoreId)
+	accessToken, refreshToken, sessionId, err := s.sessionService.CreateSession(ctx, employee.EmployeeId, employee.Role, email, ipAddress, employee.StoreId)
 	if err != nil {
 		return nil, err
 	}
@@ -61,14 +61,23 @@ func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginReque
 	return &models.LoginResult{
 		RequiresConfirmation: false,
 		Session: &models.EmployeeLoginResponse{
-			Token:      token,
-			SessionId:  sessionId,
-			EmployeeId: employee.EmployeeId,
-			LastName:   employee.LastName,
-			Role:       employee.Role,
-			StoreId:    employee.StoreId,
+			Token:        accessToken,
+			RefreshToken: refreshToken,
+			SessionId:    sessionId,
+			EmployeeId:   employee.EmployeeId,
+			LastName:     employee.LastName,
+			Role:         employee.Role,
+			StoreId:      employee.StoreId,
 		},
 	}, nil
+}
+
+func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenString string) (*models.RefreshTokenResponse, error) {
+	newAccessToken, err := s.sessionService.RefreshAccessToken(ctx, refreshTokenString)
+	if err != nil {
+		return nil, err
+	}
+	return &models.RefreshTokenResponse{Token: newAccessToken}, nil
 }
 
 func (s *AuthService) Logout(ctx context.Context, tokenString string) error {

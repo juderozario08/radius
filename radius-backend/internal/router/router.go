@@ -69,6 +69,7 @@ func NewRouter(cfg Config) *gin.Engine {
 		})
 
 		public.POST("/login", cfg.Handlers.AuthHandler.Login)
+		public.POST("/api/refresh_token", cfg.Handlers.AuthHandler.RefreshToken)
 	}
 
 	api := router.Group("/api")

@@ -1,4 +1,4 @@
--- TRUNCATE suppliers RESTART IDENTITY CASCADE;
+TRUNCATE suppliers RESTART IDENTITY CASCADE;
 
 -- Insert core suppliers
 INSERT INTO suppliers (name, contact_email, phone, lead_time_days) VALUES

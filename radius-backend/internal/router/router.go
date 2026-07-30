@@ -116,5 +116,22 @@ func NewRouter(cfg Config) *gin.Engine {
 		manager.GET("/get_store", cfg.Handlers.StoreHandler.GetStore)
 	}
 
+	salesFloor := router.Group("/api/sales_floor")
+	salesFloor.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewSalesFloorAction))
+	{
+		salesFloor.GET("/get_all_transactions", func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, gin.H{"transactions": []interface{}{}, "total_length": 0})
+		})
+		salesFloor.GET("/get_transaction", func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, gin.H{"transaction": nil, "items": []interface{}{}})
+		})
+		salesFloor.GET("/get_all_online_orders", func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, gin.H{"online_orders": []interface{}{}, "total_length": 0})
+		})
+		salesFloor.GET("/get_online_order", func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, gin.H{"online_order": nil, "items": []interface{}{}})
+		})
+	}
+
 	return router
 }

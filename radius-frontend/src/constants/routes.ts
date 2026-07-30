@@ -33,8 +33,16 @@ export const ENDPOINTS = {
             },
         },
         SALES: {
+            TRANSACTIONS: {
+                getAll: "/api/sales_floor/get_all_transactions",
+                get: "/api/sales_floor/get_transaction",
+            }
         },
         SERVICE: {
+            ONLINE_ORDERS: {
+                getAll: "/api/sales_floor/get_all_online_orders",
+                get: "/api/sales_floor/get_online_order",
+            }
         },
     }
 };

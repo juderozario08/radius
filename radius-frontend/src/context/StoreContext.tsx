@@ -4,7 +4,7 @@ import { ENDPOINTS } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
 import { GetStoreResponse, Store } from "@/types/admin.types";
 import { hasPermission } from "@/utils/roles";
-import { createContext, ReactNode, useCallback, useEffect, useState, useMemo } from "react";
+import { createContext, ReactNode, useCallback, useEffect, useState } from "react";
 
 type StoreContextType = {
     store: Store | null;
@@ -59,15 +59,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         refreshStore();
     }, [authLoading, canFetchStore, refreshStore]);
 
-    const contextValue = useMemo(() => ({
-        store,
-        isLoading,
-        error,
-        refreshStore
-    }), [store, isLoading, error, refreshStore]);
-
     return (
-        <StoreContext.Provider value={contextValue}>
+        <StoreContext.Provider value={{ store, isLoading, error, refreshStore }}>
             {children}
         </StoreContext.Provider>
     );

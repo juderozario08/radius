@@ -10,7 +10,7 @@ import { callApi, capitalize, showToast } from "@/utils/helpers";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 
@@ -97,7 +97,7 @@ export default function Sessions() {
         setIsLoading(false);
     };
 
-    const renderSessionCard = ({ item }: { item: Session }) => (
+    const renderSessionCard = useCallback(({ item }: { item: Session }) => (
         <TouchableOpacity style={globalStyles.card} activeOpacity={0.7} onPress={() => { setSelectedSession(item); setDetailModalVisible(true); }}>
             <View style={globalStyles.cardHeader}>
                 <Text style={styles.name}>{item.first_name} {item.last_name}</Text>
@@ -110,7 +110,7 @@ export default function Sessions() {
                 <DetailRow layout="inline" label="Store ID: " value={item.store_id} />
             </View>
         </TouchableOpacity>
-    );
+    ), []);
 
     return (
         <TopSafeAreaView>
@@ -123,7 +123,7 @@ export default function Sessions() {
                 ) : sessions.length === 0 ? (
                     <Text style={globalStyles.emptyText}>No sessions found.</Text>
                 ) : (
-                    <FlatList data={sessions} keyExtractor={(item) => item.session_id.toString()} renderItem={renderSessionCard} contentContainerStyle={globalStyles.listContainer} showsVerticalScrollIndicator={false} />
+                    <FlatList data={sessions} keyExtractor={(item) => item.session_id.toString()} renderItem={renderSessionCard} contentContainerStyle={globalStyles.listContainer} showsVerticalScrollIndicator={false} initialNumToRender={10} windowSize={5} maxToRenderPerBatch={10} />
                 )}
             </View>
             <SessionDetailModal session={selectedSession} visible={detailModalVisible} onClose={() => setDetailModalVisible(false)} onTerminated={fetchSessions} />

@@ -12,7 +12,7 @@ import { callApi, capitalize, showToast } from "@/utils/helpers";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -548,7 +548,7 @@ export default function Employees() {
         }
     };
 
-    const renderEmployeeCard = ({ item }: { item: Employee }) => (
+    const renderEmployeeCard = useCallback(({ item }: { item: Employee }) => (
         <TouchableOpacity style={globalStyles.card} activeOpacity={0.7} onPress={() => handleViewEmployee(item)}>
             <View style={globalStyles.cardHeader}>
                 <Text style={styles.name}>
@@ -566,7 +566,7 @@ export default function Employees() {
                 <DetailRow layout="inline" label="Store ID: " value={item.store_id} />
             </View>
         </TouchableOpacity>
-    );
+    ), []);
 
     return (
         <TopSafeAreaView>
@@ -595,6 +595,9 @@ export default function Employees() {
                         renderItem={renderEmployeeCard}
                         contentContainerStyle={globalStyles.listContainer}
                         showsVerticalScrollIndicator={false}
+                        initialNumToRender={10}
+                        windowSize={5}
+                        maxToRenderPerBatch={10}
                     />
                 )}
             </View>

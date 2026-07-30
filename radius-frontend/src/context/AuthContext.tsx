@@ -1,7 +1,7 @@
 //radius-frontend/src/context/AuthContext.tsx
 import { apiFetch } from "@/api/client";
 import { deleteToken, getToken, saveToken, saveRefreshToken, deleteRefreshToken } from "@/utils/token";
-import { createContext, ReactNode, useEffect, useState } from "react";
+import { createContext, ReactNode, useEffect, useState, useMemo } from "react";
 import Toast from "react-native-toast-message";
 import * as SecureStore from "expo-secure-store";
 import { LoginResponse, LogoutResponse, VerifyTokenResponse } from "@/types/auth.types";
@@ -99,17 +99,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     }
 
+    const contextValue = useMemo(() => ({
+        token,
+        user,
+        isAuthenticated: !!token,
+        isLoading,
+        login,
+        logout,
+    }), [token, user, isLoading]);
+
     return (
-        <AuthContext.Provider
-            value={{
-                token,
-                user,
-                isAuthenticated: !!token,
-                isLoading,
-                login,
-                logout,
-            }}
-        >
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     );

@@ -3,10 +3,11 @@ import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { globalStyles } from "@/constants/styles";
 import { View, Text } from "react-native";
+import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 
 export default function Orders() {
     return (
-        <View style={{ flex: 1 }}>
+        <TopSafeAreaView>
             <HeaderComponent
                 headerLeft={(<BackButton />)}
                 headerCenter={(
@@ -17,6 +18,6 @@ export default function Orders() {
             <View style={globalStyles.centerElement}>
                 <Text>Print Orders</Text>
             </View>
-        </View>
+        </TopSafeAreaView>
     )
 }

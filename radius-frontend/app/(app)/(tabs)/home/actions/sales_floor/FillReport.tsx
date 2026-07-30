@@ -2,10 +2,11 @@
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { View, Text, StyleSheet } from "react-native";
+import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 
 export default function FillReport() {
     return (
-        <View style={{ flex: 1 }}>
+        <TopSafeAreaView>
             <HeaderComponent
                 headerLeft={(<BackButton />)}
                 headerCenter={(
@@ -16,7 +17,7 @@ export default function FillReport() {
             <View style={styles.container}>
                 <Text>FillReport</Text>
             </View>
-        </View>
+        </TopSafeAreaView>
     )
 }
 

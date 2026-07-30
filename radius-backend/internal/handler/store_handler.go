@@ -31,7 +31,7 @@ func (h *StoreHandler) GetAllStores(ctx *gin.Context) {
 	)
 	if err != nil {
 		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -50,7 +50,7 @@ func (h *StoreHandler) UpdateStore(ctx *gin.Context) {
 	res, err := h.storeService.UpdateStore(ctx.Request.Context(), body)
 	if err != nil {
 		log.Println("Error: ", err.Error())
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, res)
@@ -68,7 +68,7 @@ func (h *StoreHandler) CreateStore(ctx *gin.Context) {
 	res, err := h.storeService.CreateStore(ctx.Request.Context(), body)
 	if err != nil {
 		log.Println("Error: ", err.Error())
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusCreated, res)
@@ -84,7 +84,7 @@ func (h *StoreHandler) GetStore(ctx *gin.Context) {
 	res, err := h.storeService.GetStore(ctx.Request.Context(), storeId)
 	if err != nil {
 		log.Println("Error: ", err.Error())
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, res)
@@ -102,7 +102,7 @@ func (h *StoreHandler) ActivateStore(ctx *gin.Context) {
 	res, err := h.storeService.ActivateStore(ctx.Request.Context(), body.StoreId)
 	if err != nil {
 		log.Println("Error: ", err.Error())
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, res)
@@ -120,7 +120,7 @@ func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
 	res, err := h.storeService.DeactivateStore(ctx.Request.Context(), body.StoreId)
 	if err != nil {
 		log.Println("Error: ", err.Error())
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, res)

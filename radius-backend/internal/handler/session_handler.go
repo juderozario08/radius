@@ -22,7 +22,7 @@ func NewSessionHandler(sessionService *service.SessionService) *SessionHandler {
 func (h *SessionHandler) GetAllSessions(ctx *gin.Context) {
 	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context())
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -40,7 +40,7 @@ func (h *SessionHandler) TerminateSession(ctx *gin.Context) {
 	}
 	sessionResponse, err := h.sessionService.TerminateSessionById(ctx.Request.Context(), body.SessionId)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

@@ -49,7 +49,7 @@ func (h *AuthHandler) Logout(ctx *gin.Context) {
 	err := h.authService.Logout(ctx.Request.Context(), tokenString)
 	if err != nil {
 		log.Println("Error logging out: " + err.Error())
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

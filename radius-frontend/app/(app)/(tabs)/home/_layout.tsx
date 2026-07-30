@@ -4,7 +4,7 @@ import {
     MaterialTopTabNavigationOptions,
     MaterialTopTabNavigationEventMap,
 } from "@react-navigation/material-top-tabs";
-import { withLayoutContext } from "expo-router";
+import { withLayoutContext, useSegments } from "expo-router";
 import { ParamListBase, TabNavigationState } from "@react-navigation/native";
 import { StyleSheet, View } from "react-native";
 import { COLORS } from "@/constants/colors";
@@ -18,7 +18,9 @@ export const MaterialTopTabs = withLayoutContext<
     MaterialTopTabNavigationEventMap
 >(Navigator);
 
-function DotIndicator({ state }: { state: TabNavigationState<ParamListBase> }) {
+function DotIndicator({ state, isVisible = true }: { state: TabNavigationState<ParamListBase>; isVisible?: boolean }) {
+    if (!isVisible) return null;
+
     return (
         <View style={styles.dotContainer} pointerEvents="none">
             {state.routes.map((route, index) => (
@@ -35,13 +37,16 @@ function DotIndicator({ state }: { state: TabNavigationState<ParamListBase> }) {
 }
 
 export default function HomeLayout() {
+    const segments = useSegments();
+    const isSwipeEnabled = segments.length <= 4;
+
     return (
         <View style={{ flex: 1 }}>
             <MaterialTopTabs
                 tabBarPosition="bottom"
-                tabBar={({ state }) => <DotIndicator state={state} />}
+                tabBar={({ state }) => <DotIndicator state={state} isVisible={isSwipeEnabled} />}
                 screenOptions={{
-                    swipeEnabled: true,
+                    swipeEnabled: isSwipeEnabled,
                 }}
             >
                 <MaterialTopTabs.Screen name="dashboard" />

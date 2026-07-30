@@ -59,11 +59,11 @@ export default function TransactionsList() {
 
     const renderTransactionCard = useCallback(({ item }: { item: Transaction }) => {
         const date = new Date(item.created_at).toLocaleString();
-        
+
         return (
-            <TouchableOpacity 
-                style={styles.card} 
-                activeOpacity={0.7} 
+            <TouchableOpacity
+                style={styles.card}
+                activeOpacity={0.7}
                 onPress={() => router.push(`/(app)/(tabs)/home/actions/sales_floor/Transactions/${item.transaction_id}` as any)}
             >
                 <View style={globalStyles.cardHeader}>

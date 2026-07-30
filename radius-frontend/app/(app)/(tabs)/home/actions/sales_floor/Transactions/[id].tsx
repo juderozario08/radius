@@ -23,10 +23,10 @@ import { useLocalSearchParams } from "expo-router";
 export default function TransactionDetail() {
     const { id } = useLocalSearchParams();
     const { logout } = useAuth();
-    
+
     const [transaction, setTransaction] = useState<Transaction | null>(null);
     const [items, setItems] = useState<TransactionItem[]>([]);
-    
+
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -78,7 +78,7 @@ export default function TransactionDetail() {
         <TopSafeAreaView>
             <HeaderComponent
                 headerLeft={<BackButton />}
-                headerCenter={<Text style={globalStyles.headerTitle}>TXN #{transaction.transaction_id}</Text>}
+                headerCenter={<Text style={globalStyles.headerTitle}>Transaction #{transaction.transaction_id}</Text>}
             />
 
             <ScrollView style={globalStyles.container} showsVerticalScrollIndicator={false}>
@@ -120,13 +120,13 @@ export default function TransactionDetail() {
                                 {item.scanned_barcode && <Text style={styles.itemSubText}>Barcode: {item.scanned_barcode}</Text>}
                             </View>
                             <Text style={styles.itemTotal}>
-                                ${ ((item.quantity * item.unit_price) - item.discount_amount).toFixed(2) }
+                                ${((item.quantity * item.unit_price) - item.discount_amount).toFixed(2)}
                             </Text>
                         </View>
                     ))}
                     {items.length === 0 && <Text style={globalStyles.emptyText}>No items found.</Text>}
                 </View>
-                
+
                 <View style={{ height: 40 }} />
             </ScrollView>
             <CustomToast />

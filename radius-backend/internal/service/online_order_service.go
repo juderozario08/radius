@@ -1,7 +1,11 @@
 //radius-backend/internal/service/online_order_service.go
 package service
 
-import "radius/internal/repository"
+import (
+	"context"
+	"radius/internal/models"
+	"radius/internal/repository"
+)
 
 type OnlineOrderService struct {
 	ordersRepo    *repository.OrdersRepo
@@ -9,6 +13,7 @@ type OnlineOrderService struct {
 	inventoryRepo *repository.InventoryRepo
 	sessionRepo   *repository.SessionRepo
 	storeRepo     *repository.StoreRepo
+	employeeRepo  *repository.EmployeeRepo
 }
 
 func NewOnlineOrderService(
@@ -17,6 +22,7 @@ func NewOnlineOrderService(
 	inventoryRepo *repository.InventoryRepo,
 	sessionRepo *repository.SessionRepo,
 	storeRepo *repository.StoreRepo,
+	employeeRepo *repository.EmployeeRepo,
 ) *OnlineOrderService {
 	return &OnlineOrderService{
 		ordersRepo:    ordersRepo,
@@ -24,5 +30,33 @@ func NewOnlineOrderService(
 		inventoryRepo: inventoryRepo,
 		sessionRepo:   sessionRepo,
 		storeRepo:     storeRepo,
+		employeeRepo:  employeeRepo,
 	}
+}
+
+func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, email string, role models.EmployeeRole, page, limit int) ([]models.OnlineOrder, int, error) {
+	var storeID *int
+	if role != models.RoleAdmin {
+		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
+		if err != nil {
+			return nil, 0, err
+		}
+		storeID = &emp.StoreId
+	}
+
+	offset := (page - 1) * limit
+	return s.ordersRepo.GetAllOnlineOrders(ctx, limit, offset, storeID)
+}
+
+func (s *OnlineOrderService) GetOnlineOrderByID(ctx context.Context, email string, role models.EmployeeRole, id int) (*models.OnlineOrder, []models.OnlineOrderItem, error) {
+	var storeID *int
+	if role != models.RoleAdmin {
+		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
+		if err != nil {
+			return nil, nil, err
+		}
+		storeID = &emp.StoreId
+	}
+
+	return s.ordersRepo.GetOnlineOrderByID(ctx, id, storeID)
 }

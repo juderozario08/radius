@@ -1,7 +1,14 @@
 //radius-backend/internal/handler/online_order_handler.go
 package handler
 
-import "radius/internal/service"
+import (
+	"net/http"
+	"radius/internal/models"
+	"radius/internal/service"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
 
 type OnlineOrderHandler struct {
 	onlineOrderService *service.OnlineOrderService
@@ -11,4 +18,50 @@ func NewOnlineOrderHandler(onlineOrderService *service.OnlineOrderService) *Onli
 	return &OnlineOrderHandler{
 		onlineOrderService: onlineOrderService,
 	}
+}
+
+func (h *OnlineOrderHandler) GetAllOnlineOrders(ctx *gin.Context) {
+	email := ctx.GetString("email")
+	role := models.EmployeeRole(ctx.GetString("role"))
+
+	pageNumber, _ := strconv.Atoi(ctx.DefaultQuery("page_number", "1"))
+	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("page_size", "10"))
+
+	orders, totalLength, err := h.onlineOrderService.GetAllOnlineOrders(ctx.Request.Context(), email, role, pageNumber, pageSize)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"online_orders": orders,
+		"total_length": totalLength,
+	})
+}
+
+func (h *OnlineOrderHandler) GetOnlineOrderByID(ctx *gin.Context) {
+	email := ctx.GetString("email")
+	role := models.EmployeeRole(ctx.GetString("role"))
+
+	idStr := ctx.Query("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
+		return
+	}
+
+	order, items, err := h.onlineOrderService.GetOnlineOrderByID(ctx.Request.Context(), email, role, id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if order == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"online_order": order,
+		"items":       items,
+	})
 }

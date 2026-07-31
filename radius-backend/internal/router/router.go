@@ -51,6 +51,10 @@ func NewRouter(cfg Config) *gin.Engine {
 
 	router := gin.Default()
 
+	// Rate limiter: 5 requests per second, burst of 20
+	limiter := middleware.NewIPRateLimiter(5, 20)
+	router.Use(middleware.RateLimitMiddleware(limiter))
+
 	router.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},

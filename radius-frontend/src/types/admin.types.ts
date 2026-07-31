@@ -18,6 +18,7 @@ export interface Employee {
 
 export interface GetAllEmployeeResponse {
     message: string;
+    total_length: number;
     employees: Employee[];
 }
 
@@ -40,6 +41,7 @@ export interface Session {
 
 export interface GetAllSessionsResponse {
     sessions: Session[];
+    total_length: number;
     message: string;
 }
 

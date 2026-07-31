@@ -13,6 +13,7 @@ import { ActionButtonRow } from "@/components/common/ActionButtonRow";
 import React, { useEffect, useState, useCallback } from "react";
 import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
+import Pagination from "@/components/common/Pagination";
 
 const SessionDetailModal: React.FC<{ session: Session | null; visible: boolean; onClose: () => void; onTerminated: () => void }> = ({ session, visible, onClose, onTerminated }) => {
     const { logout } = useAuth();
@@ -82,19 +83,29 @@ export default function Sessions() {
     const [selectedSession, setSelectedSession] = useState<Session | null>(null);
     const [detailModalVisible, setDetailModalVisible] = useState(false);
 
-    useEffect(() => { fetchSessions(); }, []);
+    const [pageNumber, setPageNumber] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalLength, setTotalLength] = useState(0);
 
-    const fetchSessions = async () => {
+    useEffect(() => { fetchSessions(pageNumber, pageSize); }, [pageNumber, pageSize]);
+
+    const fetchSessions = async (page: number, limit: number) => {
         setIsLoading(true);
         setError(null);
-        const data = await callApi<GetAllSessionsResponse>(ENDPOINTS.AUTHENTICATED.ADMIN.SESSIONS.getAll, { method: "GET" }, logout);
+        const data = await callApi<GetAllSessionsResponse>(`${ENDPOINTS.AUTHENTICATED.ADMIN.SESSIONS.getAll}?page_number=${page}&page_size=${limit}`, { method: "GET" }, logout);
         if (data) {
             setSessions(data.sessions || []);
+            setTotalLength(data.total_length || 0);
             showToast("success", data.message);
         } else {
             setError("Could not load sessions. Please try again.");
         }
         setIsLoading(false);
+    };
+
+    const handlePageSizeChange = (newSize: number) => {
+        setPageSize(newSize);
+        setPageNumber(1);
     };
 
     const renderSessionCard = useCallback(({ item }: { item: Session }) => (
@@ -112,26 +123,49 @@ export default function Sessions() {
         </TouchableOpacity>
     ), []);
 
+    const totalPages = Math.max(1, Math.ceil(totalLength / pageSize));
+
     return (
         <TopSafeAreaView>
             <HeaderComponent headerLeft={<BackButton />} headerCenter={<Text style={globalStyles.headerTitle}>Active Sessions</Text>} />
-            <View style={globalStyles.container}>
-                {isLoading ? (
+            <View style={[globalStyles.container, styles.listWrapper]}>
+                {isLoading && sessions.length === 0 ? (
                     <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
                 ) : error ? (
                     <Text style={globalStyles.errorText}>{error}</Text>
                 ) : sessions.length === 0 ? (
                     <Text style={globalStyles.emptyText}>No sessions found.</Text>
                 ) : (
-                    <FlatList data={sessions} keyExtractor={(item) => item.session_id.toString()} renderItem={renderSessionCard} contentContainerStyle={globalStyles.listContainer} showsVerticalScrollIndicator={false} initialNumToRender={10} windowSize={5} maxToRenderPerBatch={10} />
+                    <>
+                        {sessions.length === 0 ? (
+                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                                <Text style={globalStyles.emptyText}>No sessions found.</Text>
+                            </View>
+                        ) : (
+                            <FlatList data={sessions} keyExtractor={(item) => item.session_id.toString()} renderItem={renderSessionCard} contentContainerStyle={globalStyles.listContainer} showsVerticalScrollIndicator={false} initialNumToRender={10} windowSize={5} maxToRenderPerBatch={10} />
+                        )}
+                        <Pagination
+                            currentPage={pageNumber}
+                            totalPages={totalPages}
+                            onPageChange={setPageNumber}
+                            isLoading={isLoading}
+                            pageSize={pageSize}
+                            pageSizeOptions={[10, 20, 50]}
+                            onPageSizeChange={handlePageSizeChange}
+                        />
+                    </>
                 )}
             </View>
-            <SessionDetailModal session={selectedSession} visible={detailModalVisible} onClose={() => setDetailModalVisible(false)} onTerminated={fetchSessions} />
+            <SessionDetailModal session={selectedSession} visible={detailModalVisible} onClose={() => setDetailModalVisible(false)} onTerminated={() => fetchSessions(pageNumber, pageSize)} />
         </TopSafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    listWrapper: {
+        flex: 1,
+        paddingBottom: 0,
+    },
     name: { fontSize: 18, fontWeight: "700", color: COLORS.textPrimary },
     detailsContainer: { gap: 6 },
 });

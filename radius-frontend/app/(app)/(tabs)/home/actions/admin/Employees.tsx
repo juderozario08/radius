@@ -33,6 +33,7 @@ import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import CustomToast from "@/components/common/Toast";
 import PillGroup, { PillOption } from "@/components/common/PillGroup";
 import { CANADIAN_PROVINCES, isCanadianProvince, normalizeCanadianPostalCode } from "@/constants/canada";
+import Pagination from "@/components/common/Pagination";
 
 const ROLES: EmployeeRole[] = ["SALES", "SERVICE", "MANAGER", "ADMIN"];
 
@@ -491,23 +492,33 @@ export default function Employees() {
     const [formModalVisible, setFormModalVisible] = useState(false);
     const [formMode, setFormMode] = useState<FormMode>("create");
 
-    useEffect(() => {
-        fetchEmployees();
-    }, []);
+    const [pageNumber, setPageNumber] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalLength, setTotalLength] = useState(0);
 
-    const fetchEmployees = async () => {
+    useEffect(() => {
+        fetchEmployees(pageNumber, pageSize);
+    }, [pageNumber, pageSize]);
+
+    const fetchEmployees = async (page: number, limit: number) => {
         setIsLoading(true);
         setError(null);
 
-        const data = await callApi<GetAllEmployeeResponse>(ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.getAll, { method: "GET" }, logout);
+        const data = await callApi<GetAllEmployeeResponse>(`${ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.getAll}?page_number=${page}&page_size=${limit}`, { method: "GET" }, logout);
 
         if (data) {
             showToast("success", data.message);
             setEmployees(data.employees || []);
+            setTotalLength(data.total_length || 0);
         } else {
             setError("Could not load employees. Please try again.");
         }
         setIsLoading(false);
+    };
+
+    const handlePageSizeChange = (newSize: number) => {
+        setPageSize(newSize);
+        setPageNumber(1);
     };
 
     const handleViewEmployee = (employee: Employee) => {
@@ -540,7 +551,7 @@ export default function Employees() {
     };
 
     const handleFormSuccess = (updatedEmployee?: Employee) => {
-        fetchEmployees();
+        fetchEmployees(pageNumber, pageSize);
         setFormModalVisible(false);
         if (formMode === "edit") {
             if (updatedEmployee) setSelectedEmployee(updatedEmployee);
@@ -568,6 +579,8 @@ export default function Employees() {
         </TouchableOpacity>
     ), []);
 
+    const totalPages = Math.max(1, Math.ceil(totalLength / pageSize));
+
     return (
         <TopSafeAreaView>
             <HeaderComponent
@@ -580,25 +593,40 @@ export default function Employees() {
                 }
             />
 
-            <View style={globalStyles.container}>
-                {isLoading ? (
+            <View style={[globalStyles.container, styles.listWrapper]}>
+                {isLoading && employees.length === 0 ? (
                     <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
                 ) : error ? (
                     <Text style={globalStyles.errorText}>{error}</Text>
-                ) : employees.length === 0 ? (
-                    <Text style={globalStyles.emptyText}>No employees found.</Text>
                 ) : (
-                    <FlatList
-                        data={employees}
-                        keyExtractor={(item) => item.employee_id.toString()}
-                        style={{ backgroundColor: COLORS.background }}
-                        renderItem={renderEmployeeCard}
-                        contentContainerStyle={globalStyles.listContainer}
-                        showsVerticalScrollIndicator={false}
-                        initialNumToRender={10}
-                        windowSize={5}
-                        maxToRenderPerBatch={10}
-                    />
+                    <>
+                        {employees.length === 0 ? (
+                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                                <Text style={globalStyles.emptyText}>No employees found.</Text>
+                            </View>
+                        ) : (
+                            <FlatList
+                                data={employees}
+                                keyExtractor={(item) => item.employee_id.toString()}
+                                style={{ backgroundColor: COLORS.background }}
+                                renderItem={renderEmployeeCard}
+                                contentContainerStyle={globalStyles.listContainer}
+                                showsVerticalScrollIndicator={false}
+                                initialNumToRender={10}
+                                windowSize={5}
+                                maxToRenderPerBatch={10}
+                            />
+                        )}
+                        <Pagination
+                            currentPage={pageNumber}
+                            totalPages={totalPages}
+                            onPageChange={setPageNumber}
+                            isLoading={isLoading}
+                            pageSize={pageSize}
+                            pageSizeOptions={[10, 20, 50]}
+                            onPageSizeChange={handlePageSizeChange}
+                        />
+                    </>
                 )}
             </View>
 
@@ -607,8 +635,8 @@ export default function Employees() {
                 visible={detailModalVisible}
                 onClose={handleCloseDetailModal}
                 onEdit={handleOpenEditForm}
-                onTerminated={fetchEmployees}
-                onActivated={fetchEmployees}
+                onTerminated={() => fetchEmployees(pageNumber, pageSize)}
+                onActivated={() => fetchEmployees(pageNumber, pageSize)}
             />
 
             <EmployeeFormModal
@@ -623,6 +651,10 @@ export default function Employees() {
 }
 
 const styles = StyleSheet.create({
+    listWrapper: {
+        flex: 1,
+        paddingBottom: 0,
+    },
     addIcon: {
         width: 25,
         height: 25

@@ -34,7 +34,7 @@ export const globalStyles = StyleSheet.create({
         marginBottom: 4,
     },
     pageTitle: {
-        fontSize: 25,
+        fontSize: 22,
         fontWeight: "bold",
         marginLeft: 15,
         marginTop: 15,

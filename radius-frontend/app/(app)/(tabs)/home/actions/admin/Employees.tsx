@@ -572,6 +572,7 @@ export default function Employees() {
             </View>
 
             <View style={styles.detailsContainer}>
+                <DetailRow layout="inline" label="Employee ID: " value={item.employee_id} />
                 <DetailRow layout="inline" label="Role: " value={capitalize(item.role)} />
                 <DetailRow layout="inline" label="Email: " value={item.email} />
                 <DetailRow layout="inline" label="Store ID: " value={item.store_id} />

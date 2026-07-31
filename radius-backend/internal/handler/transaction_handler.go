@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -29,6 +30,7 @@ func (h *TransactionHandler) GetAllTransactions(ctx *gin.Context) {
 
 	transactions, totalLength, err := h.transactionService.GetAllTransactions(ctx.Request.Context(), email, role, pageNumber, pageSize)
 	if err != nil {
+		log.Printf("[ERROR] TransactionHandler.GetAllTransactions (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -46,16 +48,19 @@ func (h *TransactionHandler) GetTransactionByID(ctx *gin.Context) {
 	idStr := ctx.Query("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
+		log.Printf("[ERROR] TransactionHandler.GetTransactionByID (Atoi): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction ID"})
 		return
 	}
 
 	transaction, items, err := h.transactionService.GetTransactionByID(ctx.Request.Context(), email, role, id)
 	if err != nil {
+		log.Printf("[ERROR] TransactionHandler.GetTransactionByID (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	if transaction == nil {
+		log.Printf("[ERROR] TransactionHandler.GetTransactionByID: Transaction not found")
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
 		return
 	}

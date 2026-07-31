@@ -23,14 +23,14 @@ func NewEmployeeHandler(employeeService *service.EmployeeService) *EmployeeHandl
 func (e *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 	var body models.CreateEmployeeRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Println("Error binding JSON: " + err.Error())
+		log.Printf("[ERROR] EmployeeHandler.CreateEmployee (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	createEmployeeResponse, err := e.employeeService.CreateEmployee(ctx.Request.Context(), body)
 	if err != nil {
-		log.Println("Error registering employee: " + err.Error())
+		log.Printf("[ERROR] EmployeeHandler.CreateEmployee (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -41,6 +41,7 @@ func (e *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 func (e *EmployeeHandler) GetAllEmployees(ctx *gin.Context) {
 	employeeResponse, err := e.employeeService.GetAllEmployees(ctx.Request.Context())
 	if err != nil {
+		log.Printf("[ERROR] EmployeeHandler.GetAllEmployees (Service): %v", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -51,14 +52,14 @@ func (e *EmployeeHandler) GetAllEmployees(ctx *gin.Context) {
 func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 	var body models.Employee
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Println("Error binding JSON: " + err.Error())
+		log.Printf("[ERROR] EmployeeHandler.UpdateEmployee (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	updateEmployeeResponse, err := e.employeeService.UpdateEmployee(ctx.Request.Context(), body)
 	if err != nil {
-		log.Println("Error updating employee: " + err.Error())
+		log.Printf("[ERROR] EmployeeHandler.UpdateEmployee (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -71,13 +72,14 @@ func (e *EmployeeHandler) TerminateEmployee(ctx *gin.Context) {
 		EmployeeId int `json:"employee_id" binding:"required"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Println("Error binding JSON: " + err.Error())
+		log.Printf("[ERROR] EmployeeHandler.TerminateEmployee (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	employeeResponse, err := e.employeeService.TerminateEmployee(ctx.Request.Context(), body.EmployeeId)
 	if err != nil {
+		log.Printf("[ERROR] EmployeeHandler.TerminateEmployee (Service): %v", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -89,13 +91,14 @@ func (e *EmployeeHandler) ActivateEmployee(ctx *gin.Context) {
 		EmployeeId int `json:"employee_id" binding:"required"`
 	}
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Println("Error binding JSON: " + err.Error())
+		log.Printf("[ERROR] EmployeeHandler.ActivateEmployee (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	response, err := e.employeeService.ActivateEmployee(ctx.Request.Context(), body.EmployeeId)
 	if err != nil {
+		log.Printf("[ERROR] EmployeeHandler.ActivateEmployee (Service): %v", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

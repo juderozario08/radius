@@ -16,14 +16,14 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
-			log.Println("User missing authorization header")
+			log.Printf("[UNAUTHORIZED] RequireAuth: User missing authorization header")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "An error occured while authorizing the user."})
 			return
 		}
 
 		split := strings.Split(authHeader, " ")
 		if len(split) != 2 || split[0] != "Bearer" {
-			log.Println("Invalid auth header format")
+			log.Printf("[UNAUTHORIZED] RequireAuth: Invalid auth header format")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token format, expected 'Bearer <TOKEN>'"})
 			return
 		}
@@ -37,19 +37,19 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 			return secret, nil
 		})
 		if err != nil {
-			log.Println("JWT parsing error:", err.Error())
+			log.Printf("[UNAUTHORIZED] RequireAuth: JWT parsing error: %v", err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 		if !token.Valid {
-			log.Println("Token is invalid")
+			log.Printf("[UNAUTHORIZED] RequireAuth: Token is invalid")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			log.Println("Could not extract claims from token")
+			log.Printf("[UNAUTHORIZED] RequireAuth: Could not extract claims from token")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
@@ -57,20 +57,20 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 		// Reject refresh tokens used as access tokens
 		tokenType, exists := claims["token_type"]
 		if !exists || tokenType != "access" {
-			log.Println("Rejected non-access token used in Authorization header")
+			log.Printf("[UNAUTHORIZED] RequireAuth: Rejected non-access token used in Authorization header")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 
 		if err := authService.ValidateSession(ctx.Request.Context(), tokenString); err != nil {
-			log.Println("Session validation failed:", err.Error())
+			log.Printf("[UNAUTHORIZED] RequireAuth: Session validation failed: %v", err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 
 		employeeId, ok := claims["employee_id"]
 		if !ok {
-			log.Println("employee_id claim missing or wrong type")
+			log.Printf("[UNAUTHORIZED] RequireAuth: employee_id claim missing or wrong type")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}

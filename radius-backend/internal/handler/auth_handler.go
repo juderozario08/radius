@@ -21,14 +21,14 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 func (h *AuthHandler) Login(ctx *gin.Context) {
 	var body models.EmployeeLoginRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Println("Error: " + err.Error())
+		log.Printf("[ERROR] AuthHandler.Login (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	result, err := h.authService.Login(ctx.Request.Context(), body, ctx.ClientIP())
 	if err != nil {
-		log.Println("Error: " + err.Error())
+		log.Printf("[ERROR] AuthHandler.Login (Service): %v", err)
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
@@ -48,7 +48,7 @@ func (h *AuthHandler) Logout(ctx *gin.Context) {
 	tokenString := ctx.MustGet("token_string").(string)
 	err := h.authService.Logout(ctx.Request.Context(), tokenString)
 	if err != nil {
-		log.Println("Error logging out: " + err.Error())
+		log.Printf("[ERROR] AuthHandler.Logout (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -63,14 +63,14 @@ func (h *AuthHandler) VerifyToken(ctx *gin.Context) {
 func (h *AuthHandler) RefreshToken(ctx *gin.Context) {
 	var body models.RefreshTokenRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Println("Error binding refresh token request: " + err.Error())
+		log.Printf("[ERROR] AuthHandler.RefreshToken (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "refresh_token is required"})
 		return
 	}
 
 	result, err := h.authService.RefreshToken(ctx.Request.Context(), body.RefreshToken)
 	if err != nil {
-		log.Println("Error refreshing token: " + err.Error())
+		log.Printf("[ERROR] AuthHandler.RefreshToken (Service): %v", err)
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}

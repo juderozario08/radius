@@ -22,15 +22,14 @@ func NewStoreHandler(storeService *service.StoreService) *StoreHandler {
 
 func (h *StoreHandler) GetAllStores(ctx *gin.Context) {
 
-	log.Println("page_size: " + ctx.DefaultQuery("page_size", "10"))
-	log.Println("page_number: " + ctx.DefaultQuery("page_number", "1"))
+
 	response, err := h.storeService.GetAllStores(
 		ctx.Request.Context(),
 		ctx.DefaultQuery("page_size", "10"),
 		ctx.DefaultQuery("page_number", "1"),
 	)
 	if err != nil {
-		log.Println(err)
+		log.Printf("[ERROR] StoreHandler.GetAllStores (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -42,14 +41,14 @@ func (h *StoreHandler) UpdateStore(ctx *gin.Context) {
 	var body models.UpdateStoreRequest
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
-		log.Println("Error binding JSON: ", err.Error())
+		log.Printf("[ERROR] StoreHandler.UpdateStore (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	res, err := h.storeService.UpdateStore(ctx.Request.Context(), body)
 	if err != nil {
-		log.Println("Error: ", err.Error())
+		log.Printf("[ERROR] StoreHandler.UpdateStore (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -60,14 +59,14 @@ func (h *StoreHandler) CreateStore(ctx *gin.Context) {
 	var body models.CreateStoreRequest
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
-		log.Println("Error binding JSON: ", err.Error())
+		log.Printf("[ERROR] StoreHandler.CreateStore (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	res, err := h.storeService.CreateStore(ctx.Request.Context(), body)
 	if err != nil {
-		log.Println("Error: ", err.Error())
+		log.Printf("[ERROR] StoreHandler.CreateStore (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -77,13 +76,13 @@ func (h *StoreHandler) CreateStore(ctx *gin.Context) {
 func (h *StoreHandler) GetStore(ctx *gin.Context) {
 	storeId := ctx.Query("store_id")
 	if storeId == "" {
-		log.Println("Query parameter store_id not found")
+		log.Printf("[ERROR] StoreHandler.GetStore: Query parameter store_id not found")
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
 		return
 	}
 	res, err := h.storeService.GetStore(ctx.Request.Context(), storeId)
 	if err != nil {
-		log.Println("Error: ", err.Error())
+		log.Printf("[ERROR] StoreHandler.GetStore (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -94,14 +93,14 @@ func (h *StoreHandler) ActivateStore(ctx *gin.Context) {
 	var body models.ActivateStoreRequest
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
-		log.Println("Error binding JSON: ", err.Error())
+		log.Printf("[ERROR] StoreHandler.ActivateStore (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	res, err := h.storeService.ActivateStore(ctx.Request.Context(), body.StoreId)
 	if err != nil {
-		log.Println("Error: ", err.Error())
+		log.Printf("[ERROR] StoreHandler.ActivateStore (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -112,14 +111,14 @@ func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
 	var body models.DeactivateStoreRequest
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
-		log.Println("Error binding JSON: ", err.Error())
+		log.Printf("[ERROR] StoreHandler.DeactivateStore (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	res, err := h.storeService.DeactivateStore(ctx.Request.Context(), body.StoreId)
 	if err != nil {
-		log.Println("Error: ", err.Error())
+		log.Printf("[ERROR] StoreHandler.DeactivateStore (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -29,6 +30,7 @@ func (h *OnlineOrderHandler) GetAllOnlineOrders(ctx *gin.Context) {
 
 	orders, totalLength, err := h.onlineOrderService.GetAllOnlineOrders(ctx.Request.Context(), email, role, pageNumber, pageSize)
 	if err != nil {
+		log.Printf("[ERROR] OnlineOrderHandler.GetAllOnlineOrders (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -46,16 +48,19 @@ func (h *OnlineOrderHandler) GetOnlineOrderByID(ctx *gin.Context) {
 	idStr := ctx.Query("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
+		log.Printf("[ERROR] OnlineOrderHandler.GetOnlineOrderByID (Atoi): %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
 		return
 	}
 
 	order, items, err := h.onlineOrderService.GetOnlineOrderByID(ctx.Request.Context(), email, role, id)
 	if err != nil {
+		log.Printf("[ERROR] OnlineOrderHandler.GetOnlineOrderByID (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	if order == nil {
+		log.Printf("[ERROR] OnlineOrderHandler.GetOnlineOrderByID: Order not found")
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
 		return
 	}

@@ -71,7 +71,14 @@ func (r *EmployeeRepo) GetEmployeeByEmailWithSession(ctx context.Context, email 
 	return &employee, nil
 }
 
-func (r *EmployeeRepo) GetAllEmployees(ctx context.Context) ([]models.Employee, error) {
+func (r *EmployeeRepo) GetAllEmployees(ctx context.Context, limit, offset int) ([]models.Employee, int, error) {
+	var totalLength int
+	countQuery := `SELECT COUNT(*) FROM employees;`
+	err := r.db.QueryRowContext(ctx, countQuery).Scan(&totalLength)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	query := `
 		SELECT
 			employee_id,
@@ -88,11 +95,12 @@ func (r *EmployeeRepo) GetAllEmployees(ctx context.Context) ([]models.Employee, 
 			is_active,
 			is_terminated
 		FROM employees
-		ORDER BY employee_id ASC;
+		ORDER BY employee_id ASC
+		LIMIT $1 OFFSET $2;
     `
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -115,16 +123,16 @@ func (r *EmployeeRepo) GetAllEmployees(ctx context.Context) ([]models.Employee, 
 			&e.IsTerminated,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		employees = append(employees, e)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return employees, nil
+	return employees, totalLength, nil
 }
 
 func (r *EmployeeRepo) CreateEmployee(ctx context.Context, model models.CreateEmployeeRow) (*models.CreateEmployeeResponse, error) {

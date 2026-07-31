@@ -21,15 +21,19 @@ func NewEmployeeService(employeeRepo *repository.EmployeeRepo) *EmployeeService 
 	}
 }
 
-func (e *EmployeeService) GetAllEmployees(ctx context.Context) (*models.GetAllEmployeesResponse, error) {
-	employees, err := e.employeeRepo.GetAllEmployees(ctx)
+func (e *EmployeeService) GetAllEmployees(ctx context.Context, pageNumber int, pageSize int) (*models.GetAllEmployeesResponse, error) {
+	limit := pageSize
+	offset := (pageNumber - 1) * pageSize
+
+	employees, totalLength, err := e.employeeRepo.GetAllEmployees(ctx, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 
 	return &models.GetAllEmployeesResponse{
-		Employees: employees,
-		Message:   "Retrieved all existing employees",
+		Employees:   employees,
+		TotalLength: totalLength,
+		Message:     "Retrieved all existing employees",
 	}, nil
 }
 

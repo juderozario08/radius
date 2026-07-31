@@ -4,6 +4,7 @@ package handler
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"radius/internal/models"
 	"radius/internal/service"
 
@@ -39,7 +40,19 @@ func (e *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 }
 
 func (e *EmployeeHandler) GetAllEmployees(ctx *gin.Context) {
-	employeeResponse, err := e.employeeService.GetAllEmployees(ctx.Request.Context())
+	pageNumberStr := ctx.DefaultQuery("page_number", "1")
+	pageSizeStr := ctx.DefaultQuery("page_size", "10")
+
+	pageNumber, err := strconv.Atoi(pageNumberStr)
+	if err != nil || pageNumber < 1 {
+		pageNumber = 1
+	}
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil || pageSize < 1 {
+		pageSize = 10
+	}
+
+	employeeResponse, err := e.employeeService.GetAllEmployees(ctx.Request.Context(), pageNumber, pageSize)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.GetAllEmployees (Service): %v", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

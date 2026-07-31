@@ -162,12 +162,19 @@ func (s *SessionService) TerminateSessionById(ctx context.Context, sessionId int
 	return &models.TerminateSessionResponse{Message: "Session deleted successfully"}, nil
 }
 
-func (s *SessionService) GetAllSessions(ctx context.Context) (*models.GetAllSessionsResponse, error) {
-	sessions, err := s.sessionRepo.GetAllSessions(ctx)
+func (s *SessionService) GetAllSessions(ctx context.Context, pageNumber int, pageSize int) (*models.GetAllSessionsResponse, error) {
+	limit := pageSize
+	offset := (pageNumber - 1) * pageSize
+
+	sessions, totalLength, err := s.sessionRepo.GetAllSessions(ctx, limit, offset)
 	if err != nil {
 		return nil, err
 	}
-	return &models.GetAllSessionsResponse{Sessions: sessions, Message: "Retrieved all existing sessions"}, nil
+	return &models.GetAllSessionsResponse{
+		Sessions:    sessions,
+		TotalLength: totalLength,
+		Message:     "Retrieved all existing sessions",
+	}, nil
 }
 
 func (s *SessionService) StartSessionCleanupWorker(ctx context.Context, interval time.Duration) {

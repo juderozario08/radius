@@ -58,8 +58,9 @@ type GetEmployeeByEmailWithSession struct {
 }
 
 type GetAllEmployeesResponse struct {
-	Employees []Employee `json:"employees"`
-	Message   string     `json:"message"`
+	Employees   []Employee `json:"employees"`
+	TotalLength int        `json:"total_length"`
+	Message     string     `json:"message"`
 }
 
 type TerminateEmployeeResponse struct {

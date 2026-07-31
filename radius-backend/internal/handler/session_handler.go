@@ -4,6 +4,7 @@ package handler
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"radius/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,19 @@ func NewSessionHandler(sessionService *service.SessionService) *SessionHandler {
 }
 
 func (h *SessionHandler) GetAllSessions(ctx *gin.Context) {
-	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context())
+	pageNumberStr := ctx.DefaultQuery("page_number", "1")
+	pageSizeStr := ctx.DefaultQuery("page_size", "10")
+
+	pageNumber, err := strconv.Atoi(pageNumberStr)
+	if err != nil || pageNumber < 1 {
+		pageNumber = 1
+	}
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil || pageSize < 1 {
+		pageSize = 10
+	}
+
+	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context(), pageNumber, pageSize)
 	if err != nil {
 		log.Printf("[ERROR] SessionHandler.GetAllSessions (Service): %v", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

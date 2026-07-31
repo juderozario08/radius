@@ -51,8 +51,9 @@ type SessionsResponse struct {
 }
 
 type GetAllSessionsResponse struct {
-	Message  string           `json:"message"`
-	Sessions []GetAllSessions `json:"sessions"`
+	Message     string           `json:"message"`
+	TotalLength int              `json:"total_length"`
+	Sessions    []GetAllSessions `json:"sessions"`
 }
 
 type GetAllSessions struct {

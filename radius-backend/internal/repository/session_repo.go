@@ -109,7 +109,19 @@ func (r *SessionRepo) CreateSession(ctx context.Context, model models.CreateSess
 	return &session, nil
 }
 
-func (r *SessionRepo) GetAllSessions(ctx context.Context) ([]models.GetAllSessions, error) {
+func (r *SessionRepo) GetAllSessions(ctx context.Context, limit, offset int) ([]models.GetAllSessions, int, error) {
+	var totalLength int
+	countQuery := `
+		SELECT COUNT(*)
+		FROM sessions
+		INNER JOIN employees
+			ON employees.employee_id = sessions.employee_id;
+	`
+	err := r.db.QueryRowContext(ctx, countQuery).Scan(&totalLength)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	query := `
 		SELECT
 			sessions.session_id,
@@ -128,11 +140,12 @@ func (r *SessionRepo) GetAllSessions(ctx context.Context) ([]models.GetAllSessio
 			employees.is_active
 		FROM sessions
 		INNER JOIN employees
-			ON employees.employee_id = sessions.employee_id;
+			ON employees.employee_id = sessions.employee_id
+		LIMIT $1 OFFSET $2;
     `
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -156,16 +169,16 @@ func (r *SessionRepo) GetAllSessions(ctx context.Context) ([]models.GetAllSessio
 			&s.IsActive,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		sessions = append(sessions, s)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return sessions, nil
+	return sessions, totalLength, nil
 }
 
 func (r *SessionRepo) TerminateExpiredSessions(ctx context.Context) (int64, error) {

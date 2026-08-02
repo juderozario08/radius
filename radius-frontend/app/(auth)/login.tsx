@@ -87,7 +87,7 @@ export default function LoginScreen() {
             <TopSafeAreaView style={styles.container}>
                 <Text style={styles.title}>Radius</Text>
                 <TextInput
-                    style={[styles.input, { marginBottom: 25 }]}
+                    style={[styles.input, { marginBottom: 5 }]}
                     placeholder="Email"
                     placeholderTextColor={COLORS.placeholder}
                     value={email}
@@ -101,16 +101,14 @@ export default function LoginScreen() {
                     submitBehavior="submit"
                     onSubmitEditing={() => passwordRef.current?.focus()}
                 />
-                {!validEmail && email && (
-                    <Text
-                        style={{ position: "absolute", color: "red", top: 466, left: 30 }}
-                    >
-                        Please enter a valid email address.
-                    </Text>
-                )}
-                <View>
+                <View style={{ height: 20 }}>
+                    {!validEmail && email && (
+                        <Text style={{ color: "red" }}>{" Please enter a valid email address."}</Text>
+                    )}
+                </View>
+                <View style={{ marginTop: 5, marginBottom: 12, justifyContent: "center" }}>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, { marginTop: 0, marginBottom: 0, paddingRight: 60 }]}
                         placeholder="Password"
                         placeholderTextColor={COLORS.placeholder}
                         value={password}
@@ -126,11 +124,7 @@ export default function LoginScreen() {
                         onPress={() => setHiding(!hiding)}
                         style={styles.hidingContainer}
                     >
-                        {hiding ? (
-                            <Text style={styles.hidingText}>Show</Text>
-                        ) : (
-                            <Text style={styles.hidingText}>Hide</Text>
-                        )}
+                        <Text style={styles.hidingText}>{hiding ? "Show" : "Hide"}</Text>
                     </TouchableOpacity>
                 </View>
                 <TouchableOpacity
@@ -181,7 +175,12 @@ const styles = StyleSheet.create({
     },
     buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
     hidingText: { color: "#666" },
-    hidingContainer: { position: "absolute", right: 10, top: 18 },
+    hidingContainer: {
+        position: "absolute",
+        right: 15,
+        height: "100%",
+        justifyContent: "center",
+    },
     errorContainer: {
         minHeight: 80,
         position: "absolute",

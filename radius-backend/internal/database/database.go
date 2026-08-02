@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database"
@@ -34,6 +35,11 @@ func ConnectDB() (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Connection pool settings
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
 	log.Println("Successfully connected to Postgres Database")
 	return &DB{db}, nil

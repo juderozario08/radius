@@ -4,6 +4,7 @@ package router
 import (
 	"net/http"
 	"os"
+	"strings"
 	"radius/internal/handler"
 	"radius/internal/middleware"
 	"radius/internal/service"
@@ -55,14 +56,28 @@ func NewRouter(cfg Config) *gin.Engine {
 	limiter := middleware.NewIPRateLimiter(5, 20)
 	router.Use(middleware.RateLimitMiddleware(limiter))
 
-	router.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
+	var allowOrigins []string
+	if ginMode == "release" {
+		if allowed := os.Getenv("ALLOWED_ORIGINS"); allowed != "" {
+			allowOrigins = strings.Split(allowed, ",")
+		}
+	}
+
+	corsConfig := cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
-	}))
+	}
+
+	if len(allowOrigins) > 0 {
+		corsConfig.AllowOrigins = allowOrigins
+	} else {
+		corsConfig.AllowAllOrigins = true
+	}
+
+	router.Use(cors.New(corsConfig))
 
 	public := router.Group("/")
 	{

@@ -37,25 +37,31 @@ const (
 )
 
 type Transaction struct {
-	TransactionId   int                      `json:"transaction_id"`
-	StoreId         int                       `json:"store_id"`
-	RegisterId      string                    `json:"register_id"`
-	EmployeeId      *int                      `json:"employee_id"`
-	TransactionType TransactionType           `json:"transaction_type"`
-	Subtotal        float32                   `json:"subtotal"`
-	TaxAmount       float32                   `json:"tax_amount"`
-	TotalAmount     float32                   `json:"total_amount"`
-	PaymentMethod   *TransactionPaymentMethod `json:"payment_method"`
-	Status          TransactionStatus         `json:"status"`
-	CreatedAt       time.Time                 `json:"created_at"`
+	TransactionId     int                       `json:"transaction_id"`
+	StoreId           int                       `json:"store_id"`
+	RegisterId        string                    `json:"register_id"`
+	EmployeeId        *int                      `json:"employee_id"`
+	TransactionType   TransactionType           `json:"transaction_type"`
+	Subtotal          float32                   `json:"subtotal"`
+	TaxAmount         float32                   `json:"tax_amount"`
+	DiscountTotal     float32                   `json:"discount_total"`
+	CostTotal         float32                   `json:"cost_total"`
+	TotalAmount       float32                   `json:"total_amount"`
+	PaymentMethod     *TransactionPaymentMethod `json:"payment_method"`
+	Status            TransactionStatus         `json:"status"`
+	PreferredMemberId *int                      `json:"preferred_member_id"`
+	PaymentReference  *string                   `json:"payment_reference"`
+	CreatedAt         time.Time                 `json:"created_at"`
 }
 
 type TransactionItem struct {
-	TransactionItemId int    `json:"transaction_item_id"`
-	TransactionId     int    `json:"transaction_id"`
+	TransactionItemId int     `json:"transaction_item_id"`
+	TransactionId     int     `json:"transaction_id"`
 	ProductId         int     `json:"product_id"`
 	Quantity          int     `json:"quantity"`
 	UnitPrice         float32 `json:"unit_price"`
+	UnitCost          float32 `json:"unit_cost"`
 	DiscountAmount    float32 `json:"discount_amount"`
+	ReturnReason      *string `json:"return_reason"`
 	ScannedBarcode    *string `json:"scanned_barcode"`
 }

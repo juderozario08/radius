@@ -21,11 +21,11 @@ func NewEmployeeService(employeeRepo *repository.EmployeeRepo) *EmployeeService 
 	}
 }
 
-func (e *EmployeeService) GetAllEmployees(ctx context.Context, pageNumber int, pageSize int) (*models.GetAllEmployeesResponse, error) {
+func (e *EmployeeService) GetAllEmployees(ctx context.Context, pageNumber int, pageSize int, storeId *int) (*models.GetAllEmployeesResponse, error) {
 	limit := pageSize
 	offset := (pageNumber - 1) * pageSize
 
-	employees, totalLength, err := e.employeeRepo.GetAllEmployees(ctx, limit, offset)
+	employees, totalLength, err := e.employeeRepo.GetAllEmployees(ctx, limit, offset, storeId)
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +34,30 @@ func (e *EmployeeService) GetAllEmployees(ctx context.Context, pageNumber int, p
 		Employees:   employees,
 		TotalLength: totalLength,
 		Message:     "Retrieved all existing employees",
+	}, nil
+}
+
+func (e *EmployeeService) GetManagerEmployees(ctx context.Context, email string, pageNumber int, pageSize int) (*models.GetAllEmployeesResponse, error) {
+	employee, err := e.employeeRepo.GetEmployeeByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	if employee == nil {
+		return nil, errors.New("manager not found")
+	}
+
+	limit := pageSize
+	offset := (pageNumber - 1) * pageSize
+
+	employees, totalLength, err := e.employeeRepo.GetAllEmployees(ctx, limit, offset, &employee.StoreId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.GetAllEmployeesResponse{
+		Employees:   employees,
+		TotalLength: totalLength,
+		Message:     "Retrieved store employees",
 	}, nil
 }
 

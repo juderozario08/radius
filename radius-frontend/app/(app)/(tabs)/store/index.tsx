@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
 import React, { useEffect, useState, useRef } from "react";
+import { router, Redirect } from "expo-router";
 import {
     ActivityIndicator,
     Alert,
@@ -71,7 +72,8 @@ const StoreDetailModal: React.FC<{
     onClose: () => void;
     onEdit: (store: Store) => void;
     onStatusChange: () => void;
-}> = ({ store, visible, onClose, onEdit, onStatusChange }) => {
+    onViewEmployees: (storeId: number) => void;
+}> = ({ store, visible, onClose, onEdit, onStatusChange, onViewEmployees }) => {
     const { logout } = useAuth();
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
@@ -138,6 +140,7 @@ const StoreDetailModal: React.FC<{
                     <ActionButtonRow buttons={[
                         { key: "close", label: "Close", kind: "neutral", onPress: onClose, disabled: isUpdatingStatus },
                         { key: "edit", label: "Edit", kind: "accent", onPress: () => onEdit(store), disabled: isUpdatingStatus },
+                        { key: "employees", label: "Employees", kind: "primary", onPress: () => onViewEmployees(store.store_id), disabled: isUpdatingStatus },
                         store.is_active ?
                             { key: "deactivate", label: "Deactivate", kind: "danger", onPress: handleToggleStatusPress, loading: isUpdatingStatus } :
                             { key: "activate", label: "Activate", kind: "primary", onPress: handleToggleStatusPress, loading: isUpdatingStatus },
@@ -332,7 +335,12 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
 };
 
 export default function Stores() {
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
+    
+    if (user?.role === "MANAGER") {
+        return <Redirect href="/(app)/(tabs)/store/employees" />;
+    }
+
     const [stores, setStores] = useState<Store[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -473,6 +481,10 @@ export default function Stores() {
                 onClose={() => setDetailModalVisible(false)}
                 onEdit={handleOpenEditForm}
                 onStatusChange={() => fetchStores(pageNumber, pageSize)}
+                onViewEmployees={(storeId) => {
+                    setDetailModalVisible(false);
+                    router.push({ pathname: "/home/actions/admin/Employees", params: { store_id: storeId } });
+                }}
             />
 
             <StoreFormModal

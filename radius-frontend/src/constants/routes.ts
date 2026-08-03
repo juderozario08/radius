@@ -31,6 +31,9 @@ export const ENDPOINTS = {
             STORE: {
                 get: "/api/manager/get_store",
             },
+            EMPLOYEES: {
+                getAll: "/api/manager/get_employees",
+            }
         },
         SALES: {
             TRANSACTIONS: {

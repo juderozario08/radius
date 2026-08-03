@@ -10,6 +10,7 @@ import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { EmployeeRole } from "@/types/auth.types";
 import { callApi, capitalize, showToast } from "@/utils/helpers";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { RoleBadge } from "@/components/common/RoleBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
 import React, { useEffect, useState, useRef, useCallback } from "react";
@@ -480,7 +481,10 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
     );
 };
 
+import { useLocalSearchParams } from "expo-router";
+
 export default function Employees() {
+    const { store_id } = useLocalSearchParams<{ store_id: string }>();
     const { logout } = useAuth();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -504,7 +508,12 @@ export default function Employees() {
         setIsLoading(true);
         setError(null);
 
-        const data = await callApi<GetAllEmployeeResponse>(`${ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.getAll}?page_number=${page}&page_size=${limit}`, { method: "GET" }, logout);
+        let url = `${ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.getAll}?page_number=${page}&page_size=${limit}`;
+        if (store_id) {
+            url += `&store_id=${store_id}`;
+        }
+
+        const data = await callApi<GetAllEmployeeResponse>(url, { method: "GET" }, logout);
 
         if (data) {
             showToast("success", data.message);
@@ -566,6 +575,7 @@ export default function Employees() {
                     {item.first_name} {item.last_name}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                    <RoleBadge role={item.role} />
                     <TerminatedBadge isTerminated={item.is_terminated} />
                     <StatusBadge isActive={item.is_active} />
                 </View>

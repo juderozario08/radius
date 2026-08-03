@@ -21,8 +21,8 @@ export default function AppLayout() {
     const { isAuthenticated, user } = useAuth();
 
     if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
-    // TODO: STORE SPECIFIC INFORMATION SHOULD BE AVAILABLE FOR MANAGERS
-    const canViewStoreTab = hasPermission(user?.role, "view_admin_actions");
+    // Store tab is accessible to ADMIN and MANAGER
+    const canViewStoreTab = hasPermission(user?.role, "view_admin_actions") || hasPermission(user?.role, "view_manager_actions");
 
     return (
         <Tabs

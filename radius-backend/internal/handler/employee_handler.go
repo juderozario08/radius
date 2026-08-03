@@ -52,9 +52,45 @@ func (e *EmployeeHandler) GetAllEmployees(ctx *gin.Context) {
 		pageSize = 10
 	}
 
-	employeeResponse, err := e.employeeService.GetAllEmployees(ctx.Request.Context(), pageNumber, pageSize)
+	var storeId *int
+	if storeIdStr := ctx.Query("store_id"); storeIdStr != "" {
+		if parsedStoreId, err := strconv.Atoi(storeIdStr); err == nil {
+			storeId = &parsedStoreId
+		}
+	}
+
+	employeeResponse, err := e.employeeService.GetAllEmployees(ctx.Request.Context(), pageNumber, pageSize, storeId)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.GetAllEmployees (Service): %v", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, employeeResponse)
+}
+
+func (e *EmployeeHandler) GetManagerEmployees(ctx *gin.Context) {
+	pageNumberStr := ctx.DefaultQuery("page_number", "1")
+	pageSizeStr := ctx.DefaultQuery("page_size", "10")
+
+	pageNumber, err := strconv.Atoi(pageNumberStr)
+	if err != nil || pageNumber < 1 {
+		pageNumber = 1
+	}
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil || pageSize < 1 {
+		pageSize = 10
+	}
+
+	email, exists := ctx.Get("email")
+	if !exists {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	employeeResponse, err := e.employeeService.GetManagerEmployees(ctx.Request.Context(), email.(string), pageNumber, pageSize)
+	if err != nil {
+		log.Printf("[ERROR] EmployeeHandler.GetManagerEmployees (Service): %v", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

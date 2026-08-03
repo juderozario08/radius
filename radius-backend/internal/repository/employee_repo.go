@@ -71,12 +71,21 @@ func (r *EmployeeRepo) GetEmployeeByEmailWithSession(ctx context.Context, email 
 	return &employee, nil
 }
 
-func (r *EmployeeRepo) GetAllEmployees(ctx context.Context, limit, offset int) ([]models.Employee, int, error) {
+func (r *EmployeeRepo) GetAllEmployees(ctx context.Context, limit, offset int, storeId *int) ([]models.Employee, int, error) {
 	var totalLength int
+	
 	countQuery := `SELECT COUNT(*) FROM employees;`
-	err := r.db.QueryRowContext(ctx, countQuery).Scan(&totalLength)
-	if err != nil {
-		return nil, 0, err
+	if storeId != nil {
+		countQuery = `SELECT COUNT(*) FROM employees WHERE store_id = $1;`
+		err := r.db.QueryRowContext(ctx, countQuery, *storeId).Scan(&totalLength)
+		if err != nil {
+			return nil, 0, err
+		}
+	} else {
+		err := r.db.QueryRowContext(ctx, countQuery).Scan(&totalLength)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	query := `
@@ -95,10 +104,26 @@ func (r *EmployeeRepo) GetAllEmployees(ctx context.Context, limit, offset int) (
 			is_active,
 			is_terminated
 		FROM employees
+	`
+	if storeId != nil {
+		query += `
+		WHERE store_id = $1
+		ORDER BY employee_id ASC
+		LIMIT $2 OFFSET $3;
+		`
+	} else {
+		query += `
 		ORDER BY employee_id ASC
 		LIMIT $1 OFFSET $2;
-    `
-	rows, err := r.db.QueryContext(ctx, query, limit, offset)
+		`
+	}
+	var rows *sql.Rows
+	var err error
+	if storeId != nil {
+		rows, err = r.db.QueryContext(ctx, query, *storeId, limit, offset)
+	} else {
+		rows, err = r.db.QueryContext(ctx, query, limit, offset)
+	}
 	if err != nil {
 		return nil, 0, err
 	}

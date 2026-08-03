@@ -133,6 +133,7 @@ func NewRouter(cfg Config) *gin.Engine {
 		})
 
 		manager.GET("/get_store", cfg.Handlers.StoreHandler.GetStore)
+		manager.GET("/get_employees", cfg.Handlers.EmployeeHandler.GetManagerEmployees)
 	}
 
 	salesFloor := router.Group("/api/sales_floor")

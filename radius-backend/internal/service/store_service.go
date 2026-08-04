@@ -78,7 +78,7 @@ func (s *StoreService) GetAllStores(ctx context.Context, pageSize string, pageNu
 	}, nil
 }
 
-func (s *StoreService) UpdateStore(ctx context.Context, body models.UpdateStoreRequest) (*models.UpdateStoreResponse, error) {
+func (s *StoreService) UpdateStore(ctx context.Context, body models.UpdateStoreRequest) (*models.APIMessage, error) {
 	province, postalCode, err := sanitizeStoreLocation(body.Province, body.PostalCode)
 	if err != nil {
 		return nil, err
@@ -92,12 +92,12 @@ func (s *StoreService) UpdateStore(ctx context.Context, body models.UpdateStoreR
 		return nil, errors.New("error updating this store")
 	}
 
-	return &models.UpdateStoreResponse{
+	return &models.APIMessage{
 		Message: "Updated store successfully!",
 	}, nil
 }
 
-func (s *StoreService) CreateStore(ctx context.Context, body models.CreateStoreRequest) (*models.CreateStoreResponse, error) {
+func (s *StoreService) CreateStore(ctx context.Context, body models.CreateStoreRequest) (*models.StoreResponse, error) {
 	province, postalCode, err := sanitizeStoreLocation(body.Province, body.PostalCode)
 	if err != nil {
 		return nil, err
@@ -110,33 +110,33 @@ func (s *StoreService) CreateStore(ctx context.Context, body models.CreateStoreR
 		return nil, err
 	}
 
-	return &models.CreateStoreResponse{
+	return &models.StoreResponse{
 		Store:   *store,
 		Message: "Store created successfully",
 	}, nil
 }
 
-func (s *StoreService) ActivateStore(ctx context.Context, storeId int) (*models.ActivateStoreResponse, error) {
+func (s *StoreService) ActivateStore(ctx context.Context, storeId int) (*models.APIMessage, error) {
 	err := s.storeRepo.ActivateStore(ctx, storeId)
 	if err != nil {
 		return nil, err
 	}
-	return &models.ActivateStoreResponse{
+	return &models.APIMessage{
 		Message: "Store " + strconv.Itoa(storeId) + " activated",
 	}, nil
 }
 
-func (s *StoreService) DeactivateStore(ctx context.Context, storeId int) (*models.DeactivateStoreResponse, error) {
+func (s *StoreService) DeactivateStore(ctx context.Context, storeId int) (*models.APIMessage, error) {
 	err := s.storeRepo.DeactivateStore(ctx, storeId)
 	if err != nil {
 		return nil, err
 	}
-	return &models.DeactivateStoreResponse{
+	return &models.APIMessage{
 		Message: "Store " + strconv.Itoa(storeId) + " deactivated",
 	}, nil
 }
 
-func (s *StoreService) GetStore(ctx context.Context, storeId string) (*models.GetStoreResponse, error) {
+func (s *StoreService) GetStore(ctx context.Context, storeId string) (*models.StoreResponse, error) {
 	id, err := strconv.Atoi(storeId)
 	if err != nil {
 		return nil, errors.New("Not a valid storeId")
@@ -146,7 +146,7 @@ func (s *StoreService) GetStore(ctx context.Context, storeId string) (*models.Ge
 	if err != nil {
 		return nil, err
 	}
-	return &models.GetStoreResponse{
+	return &models.StoreResponse{
 		Store:   *store,
 		Message: "Successfully retrieved store",
 	}, nil

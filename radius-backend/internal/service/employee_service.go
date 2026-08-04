@@ -61,27 +61,27 @@ func (e *EmployeeService) GetManagerEmployees(ctx context.Context, email string,
 	}, nil
 }
 
-func (e *EmployeeService) TerminateEmployee(ctx context.Context, employeeId int) (*models.TerminateEmployeeResponse, error) {
+func (e *EmployeeService) TerminateEmployee(ctx context.Context, employeeId int) (*models.APIMessage, error) {
 	err := e.employeeRepo.TerminateEmployeeById(ctx, employeeId)
 	if err != nil {
 		return nil, err
 	}
-	return &models.TerminateEmployeeResponse{
+	return &models.APIMessage{
 		Message: "Employee Terminated Successfully",
 	}, nil
 }
 
-func (e *EmployeeService) ActivateEmployee(ctx context.Context, employeeId int) (*models.ActivateEmployeeResponse, error) {
+func (e *EmployeeService) ActivateEmployee(ctx context.Context, employeeId int) (*models.APIMessage, error) {
 	err := e.employeeRepo.ActivateEmployeeById(ctx, employeeId)
 	if err != nil {
 		return nil, err
 	}
-	return &models.ActivateEmployeeResponse{
+	return &models.APIMessage{
 		Message: "Employee Activated Successfully",
 	}, nil
 }
 
-func (e *EmployeeService) UpdateEmployee(ctx context.Context, body models.Employee) (*models.UpdateEmployeeResponse, error) {
+func (e *EmployeeService) UpdateEmployee(ctx context.Context, body models.Employee) (*models.APIMessage, error) {
 	if body.IsTerminated != nil && body.IsActive != nil {
 		if *body.IsTerminated && *body.IsActive {
 			return nil, errors.New("An employee cannot be active while being terminated")
@@ -103,7 +103,7 @@ func (e *EmployeeService) UpdateEmployee(ctx context.Context, body models.Employ
 		return nil, errors.New("error updating this employee")
 	}
 
-	return &models.UpdateEmployeeResponse{
+	return &models.APIMessage{
 		Message: "Updated employee successfully!",
 	}, nil
 }

@@ -155,11 +155,11 @@ func (s *SessionService) Logout(ctx context.Context, tokenString string) error {
 	return s.sessionRepo.TerminateSessionByAccessTokenHash(ctx, hashedToken)
 }
 
-func (s *SessionService) TerminateSessionById(ctx context.Context, sessionId int) (*models.TerminateSessionResponse, error) {
+func (s *SessionService) TerminateSessionById(ctx context.Context, sessionId int) (*models.APIMessage, error) {
 	if err := s.sessionRepo.TerminateSessionById(ctx, sessionId); err != nil {
 		return nil, err
 	}
-	return &models.TerminateSessionResponse{Message: "Session deleted successfully"}, nil
+	return &models.APIMessage{Message: "Session deleted successfully"}, nil
 }
 
 func (s *SessionService) GetAllSessions(ctx context.Context, pageNumber int, pageSize int) (*models.GetAllSessionsResponse, error) {

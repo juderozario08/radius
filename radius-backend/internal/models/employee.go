@@ -63,14 +63,6 @@ type GetAllEmployeesResponse struct {
 	Message     string     `json:"message"`
 }
 
-type TerminateEmployeeResponse struct {
-	Message string `json:"message"`
-}
-
-type ActivateEmployeeResponse struct {
-	Message string `json:"message"`
-}
-
-type UpdateEmployeeResponse struct {
-	Message string `json:"message"`
+type EmployeeIdRequest struct {
+	EmployeeId int `json:"employee_id" binding:"required"`
 }

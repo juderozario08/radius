@@ -76,3 +76,13 @@ type OnlineOrderItem struct {
 	UnitPrice   float32 `json:"unit_price"`
 	PickedQty   int     `json:"picked_qty"`
 }
+
+type GetAllOnlineOrdersResponse struct {
+	OnlineOrders any `json:"online_orders"`
+	TotalLength  int `json:"total_length"`
+}
+
+type GetOnlineOrderResponse struct {
+	OnlineOrder any `json:"online_order"`
+	Items       any `json:"items"`
+}

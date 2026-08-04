@@ -29,3 +29,8 @@ type RefreshTokenRequest struct {
 type RefreshTokenResponse struct {
 	Token string `json:"token"`
 }
+
+type LoginConflictResponse struct {
+	RequiresConfirmation bool   `json:"requires_confirmation"`
+	Error                string `json:"error"`
+}

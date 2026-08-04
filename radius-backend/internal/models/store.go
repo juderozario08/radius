@@ -36,32 +36,11 @@ type UpdateStoreRequest struct {
 	StoreBase
 }
 
-type UpdateStoreResponse struct {
-	Message string `json:"message"`
-}
-
-type CreateStoreResponse struct {
+type StoreResponse struct {
 	Store   Store  `json:"store"`
 	Message string `json:"message"`
 }
 
-type GetStoreResponse struct {
-	Store   Store  `json:"store"`
-	Message string `json:"message"`
-}
-
-type ActivateStoreResponse struct {
-	Message string `json:"message"`
-}
-
-type DeactivateStoreResponse struct {
-	Message string `json:"message"`
-}
-
-type ActivateStoreRequest struct {
-	StoreId int `json:"store_id" binding:"required"`
-}
-
-type DeactivateStoreRequest struct {
+type StoreIdRequest struct {
 	StoreId int `json:"store_id" binding:"required"`
 }

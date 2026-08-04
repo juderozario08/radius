@@ -65,3 +65,13 @@ type TransactionItem struct {
 	ReturnReason      *string `json:"return_reason"`
 	ScannedBarcode    *string `json:"scanned_barcode"`
 }
+
+type GetAllTransactionsResponse struct {
+	Transactions any `json:"transactions"`
+	TotalLength  int `json:"total_length"`
+}
+
+type GetTransactionResponse struct {
+	Transaction any `json:"transaction"`
+	Items       any `json:"items"`
+}

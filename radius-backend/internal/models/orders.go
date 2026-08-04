@@ -1,4 +1,4 @@
-//radius-backend/internal/models/orders.go
+// radius-backend/internal/models/orders.go
 package models
 
 import "time"
@@ -72,9 +72,10 @@ type OnlineOrderItem struct {
 	OrderItemId int     `json:"order_item_id"`
 	OrderId     int     `json:"order_id"`
 	ProductId   int     `json:"product_id"`
+	ProductSku  *string `json:"product_sku"`
 	Quantity    int     `json:"quantity"`
 	UnitPrice   float32 `json:"unit_price"`
-	PickedQty   int     `json:"picked_qty"`
+	PickedQty   *int    `json:"picked_qty"`
 }
 
 type GetAllOnlineOrdersResponse struct {

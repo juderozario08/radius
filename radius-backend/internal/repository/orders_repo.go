@@ -78,7 +78,7 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 	if err := rows.Err(); err != nil {
 		return nil, 0, err
 	}
-	
+
 	if orders == nil {
 		orders = []models.OnlineOrder{}
 	}
@@ -120,9 +120,10 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 	}
 
 	itemQuery := `
-		SELECT order_item_id, order_id, product_id, quantity, unit_price, picked_qty 
-		FROM online_order_items 
-		WHERE order_id = $1
+		SELECT ooi.order_item_id, ooi.order_id, ooi.product_id, p.sku as product_sku, ooi.quantity, ooi.unit_price, ooi.picked_qty 
+		FROM online_order_items ooi
+		LEFT JOIN products p ON ooi.product_id = p.product_id
+		WHERE ooi.order_id = $1
 	`
 	rows, err := r.db.QueryContext(ctx, itemQuery, id)
 	if err != nil {
@@ -134,7 +135,7 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 	for rows.Next() {
 		var i models.OnlineOrderItem
 		if err := rows.Scan(
-			&i.OrderItemId, &i.OrderId, &i.ProductId, &i.Quantity, &i.UnitPrice, &i.PickedQty,
+			&i.OrderItemId, &i.OrderId, &i.ProductId, &i.ProductSku, &i.Quantity, &i.UnitPrice, &i.PickedQty,
 		); err != nil {
 			return nil, nil, err
 		}
@@ -144,7 +145,7 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 	if err := rows.Err(); err != nil {
 		return nil, nil, err
 	}
-	
+
 	if items == nil {
 		items = []models.OnlineOrderItem{}
 	}

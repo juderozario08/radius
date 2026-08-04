@@ -48,6 +48,8 @@ type Transaction struct {
 	CostTotal         float32                   `json:"cost_total"`
 	TotalAmount       float32                   `json:"total_amount"`
 	PaymentMethod     *TransactionPaymentMethod `json:"payment_method"`
+	CardType          *string                   `json:"card_type"`
+	CardNumber        *string                   `json:"card_number"`
 	Status            TransactionStatus         `json:"status"`
 	PreferredMemberId *int                      `json:"preferred_member_id"`
 	PaymentReference  *string                   `json:"payment_reference"`
@@ -58,6 +60,7 @@ type TransactionItem struct {
 	TransactionItemId int     `json:"transaction_item_id"`
 	TransactionId     int     `json:"transaction_id"`
 	ProductId         int     `json:"product_id"`
+	ProductSku        *string `json:"product_sku"`
 	Quantity          int     `json:"quantity"`
 	UnitPrice         float32 `json:"unit_price"`
 	UnitCost          float32 `json:"unit_cost"`

@@ -45,7 +45,7 @@ func (r *SalesRepo) GetAllTransactions(ctx context.Context, limit, offset int, s
 			FROM transactions
 		`
 		query = `
-			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, discount_total, cost_total, total_amount, payment_method, status, preferred_member_id, payment_reference, created_at
+			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, discount_total, cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at
 			FROM transactions
 			ORDER BY transaction_id ASC
 			LIMIT $1 OFFSET $2
@@ -70,7 +70,7 @@ func (r *SalesRepo) GetAllTransactions(ctx context.Context, limit, offset int, s
 		var t models.Transaction
 		if err := rows.Scan(
 			&t.TransactionId, &t.StoreId, &t.RegisterId, &t.EmployeeId, &t.TransactionType,
-			&t.Subtotal, &t.TaxAmount, &t.DiscountTotal, &t.CostTotal, &t.TotalAmount, &t.PaymentMethod, &t.Status, &t.PreferredMemberId, &t.PaymentReference, &t.CreatedAt,
+			&t.Subtotal, &t.TaxAmount, &t.DiscountTotal, &t.CostTotal, &t.TotalAmount, &t.PaymentMethod, &t.CardType, &t.CardNumber, &t.Status, &t.PreferredMemberId, &t.PaymentReference, &t.CreatedAt,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -94,13 +94,13 @@ func (r *SalesRepo) GetTransactionByID(ctx context.Context, id int, storeID *int
 
 	if storeID != nil {
 		query = `
-			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, discount_total, cost_total, total_amount, payment_method, status, preferred_member_id, payment_reference, created_at
+			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, discount_total, cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at
 			FROM transactions WHERE transaction_id = $1 AND store_id = $2
 		`
 		args = []any{id, *storeID}
 	} else {
 		query = `
-			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, discount_total, cost_total, total_amount, payment_method, status, preferred_member_id, payment_reference, created_at FROM transactions WHERE transaction_id = $1
+			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, discount_total, cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at FROM transactions WHERE transaction_id = $1
 		`
 		args = []any{id}
 	}
@@ -108,7 +108,7 @@ func (r *SalesRepo) GetTransactionByID(ctx context.Context, id int, storeID *int
 	var t models.Transaction
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(
 		&t.TransactionId, &t.StoreId, &t.RegisterId, &t.EmployeeId, &t.TransactionType,
-		&t.Subtotal, &t.TaxAmount, &t.DiscountTotal, &t.CostTotal, &t.TotalAmount, &t.PaymentMethod, &t.Status, &t.PreferredMemberId, &t.PaymentReference, &t.CreatedAt,
+		&t.Subtotal, &t.TaxAmount, &t.DiscountTotal, &t.CostTotal, &t.TotalAmount, &t.PaymentMethod, &t.CardType, &t.CardNumber, &t.Status, &t.PreferredMemberId, &t.PaymentReference, &t.CreatedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -118,9 +118,10 @@ func (r *SalesRepo) GetTransactionByID(ctx context.Context, id int, storeID *int
 	}
 
 	itemQuery := `
-		SELECT transaction_item_id, transaction_id, product_id, quantity, unit_price, unit_cost, discount_amount, return_reason, scanned_barcode
-		FROM transaction_items
-		WHERE transaction_id = $1
+		SELECT ti.transaction_item_id, ti.transaction_id, ti.product_id, p.sku as product_sku, ti.quantity, ti.unit_price, ti.unit_cost, ti.discount_amount, ti.return_reason, ti.scanned_barcode
+		FROM transaction_items ti
+		LEFT JOIN products p ON ti.product_id = p.product_id
+		WHERE ti.transaction_id = $1
 	`
 	rows, err := r.db.QueryContext(ctx, itemQuery, id)
 	if err != nil {
@@ -132,7 +133,7 @@ func (r *SalesRepo) GetTransactionByID(ctx context.Context, id int, storeID *int
 	for rows.Next() {
 		var i models.TransactionItem
 		if err := rows.Scan(
-			&i.TransactionItemId, &i.TransactionId, &i.ProductId, &i.Quantity,
+			&i.TransactionItemId, &i.TransactionId, &i.ProductId, &i.ProductSku, &i.Quantity,
 			&i.UnitPrice, &i.UnitCost, &i.DiscountAmount, &i.ReturnReason, &i.ScannedBarcode,
 		); err != nil {
 			return nil, nil, err

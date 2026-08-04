@@ -45,7 +45,7 @@ type InventoryRepository interface {
 }
 
 type ProductRepository interface {
-	// Add product repository methods here when implemented
+	GetProductByID(ctx context.Context, id int) (*models.Product, error)
 }
 
 type MerchandisingRepository interface {

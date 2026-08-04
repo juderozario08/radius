@@ -14,6 +14,8 @@ export interface Transaction {
     cost_total: number;
     total_amount: number;
     payment_method: TransactionPaymentMethod | null;
+    card_type?: string;
+    card_number?: string;
     status: TransactionStatus;
     preferred_member_id: number | null;
     payment_reference: string | null;
@@ -24,6 +26,7 @@ export interface TransactionItem {
     transaction_item_id: number;
     transaction_id: number;
     product_id: number;
+    product_sku?: string;
     quantity: number;
     unit_price: number;
     unit_cost: number;

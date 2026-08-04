@@ -7,6 +7,10 @@ export const ENDPOINTS = {
     AUTHENTICATED: {
         logout: "/api/logout",
         verify_token: "/api/verify_token",
+        PRODUCTS: {
+            get: "/api/sales_floor/get_product",
+            getAll: "/api/sales_floor/get_all_products",
+        },
         ADMIN: {
             EMPLOYEES: {
                 getAll: "/api/admin/get_all_employees",

@@ -142,6 +142,7 @@ func NewRouter(cfg Config) *gin.Engine {
 	{
 		salesFloor.GET("/get_all_transactions", cfg.Handlers.TransactionHandler.GetAllTransactions)
 		salesFloor.GET("/get_transaction", cfg.Handlers.TransactionHandler.GetTransactionByID)
+		salesFloor.GET("/get_product", cfg.Handlers.ProductHandler.GetProductByID)
 
 		salesFloor.GET("/get_all_online_orders", cfg.Handlers.OnlineOrderHandler.GetAllOnlineOrders)
 		salesFloor.GET("/get_online_order", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)

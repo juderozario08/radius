@@ -1,20 +1,18 @@
-//radius-backend/internal/service/pricing_service.go
+// radius-backend/internal/service/pricing_service.go
 package service
 
-import "radius/internal/repository"
-
 type PricingService struct {
-	storeRepo     *repository.StoreRepo
-	employeeRepo  *repository.EmployeeRepo
-	sessionRepo   *repository.SessionRepo
-	inventoryRepo *repository.InventoryRepo
+	storeRepo     StoreRepository
+	employeeRepo  EmployeeRepository
+	sessionRepo   SessionRepository
+	inventoryRepo InventoryRepository
 }
 
 func NewPricingService(
-	storeRepo *repository.StoreRepo,
-	employeeRepo *repository.EmployeeRepo,
-	sessionRepo *repository.SessionRepo,
-	inventoryRepo *repository.InventoryRepo,
+	storeRepo StoreRepository,
+	employeeRepo EmployeeRepository,
+	sessionRepo SessionRepository,
+	inventoryRepo InventoryRepository,
 ) *PricingService {
 	return &PricingService{
 		storeRepo:     storeRepo,

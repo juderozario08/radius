@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"radius/internal/config"
 	"radius/internal/database"
 	"radius/internal/handler"
 	"radius/internal/repository"
@@ -15,40 +16,27 @@ import (
 	"radius/internal/service"
 	"syscall"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	if os.Getenv("GIN_MODE") != "release" {
-		err := godotenv.Load()
-		if err != nil {
-			log.Printf("Error loading .env file: %v", err)
-		} else {
-			log.Println("Loaded local .env file successfully")
-		}
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	jwtSecretCode := os.Getenv("JWT_SECRET_KEY")
-	if jwtSecretCode == "" {
+	if len(cfg.JWTSecretKey) == 0 {
 		log.Printf("Could not find JWT_SECRET_KEY\n")
 		return
 	}
-	jwtSecret := []byte(jwtSecretCode)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	db, err := database.ConnectDB()
+	db, err := database.ConnectDB(cfg.DatabaseURL)
 	if err != nil {
 		log.Printf("Error connecting to database: %v\n", err)
 		return
 	}
 	defer db.Close()
 
-	if os.Getenv("GIN_MODE") != "release" {
+	if !cfg.IsRelease {
 		err = db.RunMigrations("migrations")
 		if err != nil {
 			log.Printf("Could not run migrations: %v\n", err)
@@ -67,7 +55,7 @@ func main() {
 	salesRepo := repository.NewSalesRepo(db.DB)
 
 	employeeService := service.NewEmployeeService(employeeRepo)
-	sessionService := service.NewSessionService(sessionRepo, []byte(jwtSecretCode))
+	sessionService := service.NewSessionService(sessionRepo, cfg.JWTSecretKey)
 	authService := service.NewAuthService(employeeRepo, sessionService)
 	barcodeService := service.NewBarcodeService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
 	cycleCountService := service.NewCycleCountService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
@@ -107,16 +95,17 @@ func main() {
 
 	router := router.NewRouter(router.Config{
 		Handlers:    appHandlers,
-		JWTSecret:   jwtSecret,
+		JWTSecret:   cfg.JWTSecretKey,
 		AuthService: authService,
+		AppConfig:   cfg,
 	})
 
-	if os.Getenv("GIN_MODE") != "release" {
-		fmt.Printf("Listening on PORT %s http://0.0.0.0:%s\n", port, port)
+	if !cfg.IsRelease {
+		fmt.Printf("Listening on PORT %s http://0.0.0.0:%s\n", cfg.Port, cfg.Port)
 	}
 
 	srv := &http.Server{
-		Addr:    ":" + port,
+		Addr:    ":" + cfg.Port,
 		Handler: router,
 	}
 

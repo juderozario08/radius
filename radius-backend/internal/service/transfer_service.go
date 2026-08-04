@@ -1,20 +1,18 @@
-//radius-backend/internal/service/transfer_service.go
+// radius-backend/internal/service/transfer_service.go
 package service
 
-import "radius/internal/repository"
-
 type TransferService struct {
-	storeRepo     *repository.StoreRepo
-	inventoryRepo *repository.InventoryRepo
-	employeeRepo  *repository.EmployeeRepo
-	sessionRepo   *repository.SessionRepo
+	storeRepo     StoreRepository
+	inventoryRepo InventoryRepository
+	employeeRepo  EmployeeRepository
+	sessionRepo   SessionRepository
 }
 
 func NewTransferService(
-	storeRepo *repository.StoreRepo,
-	inventoryRepo *repository.InventoryRepo,
-	employeeRepo *repository.EmployeeRepo,
-	sessionRepo *repository.SessionRepo,
+	storeRepo StoreRepository,
+	inventoryRepo InventoryRepository,
+	employeeRepo EmployeeRepository,
+	sessionRepo SessionRepository,
 ) *TransferService {
 	return &TransferService{
 		storeRepo:     storeRepo,

@@ -1,22 +1,20 @@
-//radius-backend/internal/service/fill_report_service.go
+// radius-backend/internal/service/fill_report_service.go
 package service
 
-import "radius/internal/repository"
-
 type FillReportService struct {
-	storeRepo     *repository.StoreRepo
-	employeeRepo  *repository.EmployeeRepo
-	sessionRepo   *repository.SessionRepo
-	inventoryRepo *repository.InventoryRepo
-	productsRepo  *repository.ProductRepo
+	storeRepo     StoreRepository
+	employeeRepo  EmployeeRepository
+	sessionRepo   SessionRepository
+	inventoryRepo InventoryRepository
+	productsRepo  ProductRepository
 }
 
 func NewFillReportService(
-	storeRepo *repository.StoreRepo,
-	employeeRepo *repository.EmployeeRepo,
-	sessionRepo *repository.SessionRepo,
-	inventoryRepo *repository.InventoryRepo,
-	productsRepo *repository.ProductRepo,
+	storeRepo StoreRepository,
+	employeeRepo EmployeeRepository,
+	sessionRepo SessionRepository,
+	inventoryRepo InventoryRepository,
+	productsRepo ProductRepository,
 ) *FillReportService {
 	return &FillReportService{
 		storeRepo:     storeRepo,

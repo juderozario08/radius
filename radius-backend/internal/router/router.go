@@ -3,8 +3,8 @@ package router
 
 import (
 	"net/http"
-	"os"
 	"strings"
+	"radius/internal/config"
 	"radius/internal/handler"
 	"radius/internal/middleware"
 	"radius/internal/models"
@@ -19,6 +19,7 @@ type Config struct {
 	Handlers    Handlers
 	JWTSecret   []byte
 	AuthService *service.AuthService
+	AppConfig   *config.Config
 }
 
 type Handlers struct {
@@ -41,8 +42,7 @@ type Handlers struct {
 }
 
 func NewRouter(cfg Config) *gin.Engine {
-	ginMode := os.Getenv("GIN_MODE")
-	switch ginMode {
+	switch cfg.AppConfig.GinMode {
 	case "", "debug":
 		gin.SetMode(gin.DebugMode)
 	case "test":
@@ -58,8 +58,8 @@ func NewRouter(cfg Config) *gin.Engine {
 	router.Use(middleware.RateLimitMiddleware(limiter))
 
 	var allowOrigins []string
-	if ginMode == "release" {
-		if allowed := os.Getenv("ALLOWED_ORIGINS"); allowed != "" {
+	if cfg.AppConfig.GinMode == "release" {
+		if allowed := cfg.AppConfig.AllowedOrigins; allowed != "" {
 			allowOrigins = strings.Split(allowed, ",")
 		}
 	}

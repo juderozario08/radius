@@ -1,28 +1,27 @@
-//radius-backend/internal/service/online_order_service.go
+// radius-backend/internal/service/online_order_service.go
 package service
 
 import (
 	"context"
 	"radius/internal/models"
-	"radius/internal/repository"
 )
 
 type OnlineOrderService struct {
-	ordersRepo    *repository.OrdersRepo
-	productsRepo  *repository.ProductRepo
-	inventoryRepo *repository.InventoryRepo
-	sessionRepo   *repository.SessionRepo
-	storeRepo     *repository.StoreRepo
-	employeeRepo  *repository.EmployeeRepo
+	ordersRepo    OrdersRepository
+	productsRepo  ProductRepository
+	inventoryRepo InventoryRepository
+	sessionRepo   SessionRepository
+	storeRepo     StoreRepository
+	employeeRepo  EmployeeRepository
 }
 
 func NewOnlineOrderService(
-	ordersRepo *repository.OrdersRepo,
-	productsRepo *repository.ProductRepo,
-	inventoryRepo *repository.InventoryRepo,
-	sessionRepo *repository.SessionRepo,
-	storeRepo *repository.StoreRepo,
-	employeeRepo *repository.EmployeeRepo,
+	ordersRepo OrdersRepository,
+	productsRepo ProductRepository,
+	inventoryRepo InventoryRepository,
+	sessionRepo SessionRepository,
+	storeRepo StoreRepository,
+	employeeRepo EmployeeRepository,
 ) *OnlineOrderService {
 	return &OnlineOrderService{
 		ordersRepo:    ordersRepo,

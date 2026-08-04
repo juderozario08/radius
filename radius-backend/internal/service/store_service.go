@@ -6,38 +6,26 @@ import (
 	"errors"
 	"log"
 	"radius/internal/models"
-	"radius/internal/repository"
 	"radius/internal/utils"
 	"strconv"
 )
 
 type StoreService struct {
-	storeRepo    *repository.StoreRepo
-	employeeRepo *repository.EmployeeRepo
-	productsRepo *repository.ProductRepo
+	storeRepo    StoreRepository
+	employeeRepo EmployeeRepository
+	productsRepo ProductRepository
 }
 
 func NewStoreService(
-	storeRepo *repository.StoreRepo,
-	employeeRepo *repository.EmployeeRepo,
-	productsRepo *repository.ProductRepo,
+	storeRepo StoreRepository,
+	employeeRepo EmployeeRepository,
+	productsRepo ProductRepository,
 ) *StoreService {
 	return &StoreService{
 		storeRepo:    storeRepo,
 		employeeRepo: employeeRepo,
 		productsRepo: productsRepo,
 	}
-}
-
-func sanitizeStoreLocation(province string, postalCode string) (string, string, error) {
-	normalizedPostal, err := utils.NormalizeCanadianPostalCode(postalCode)
-	if err != nil {
-		return "", "", err
-	}
-	if err := utils.ValidateCanadianProvince(province); err != nil {
-		return "", "", err
-	}
-	return province, normalizedPostal, nil
 }
 
 func (s *StoreService) GetAllStores(ctx context.Context, pageSize string, pageNumber string) (*models.GetAllStoresResponse, error) {
@@ -79,7 +67,7 @@ func (s *StoreService) GetAllStores(ctx context.Context, pageSize string, pageNu
 }
 
 func (s *StoreService) UpdateStore(ctx context.Context, body models.UpdateStoreRequest) (*models.APIMessage, error) {
-	province, postalCode, err := sanitizeStoreLocation(body.Province, body.PostalCode)
+	province, postalCode, err := utils.SanitizeLocation(body.Province, body.PostalCode)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +86,7 @@ func (s *StoreService) UpdateStore(ctx context.Context, body models.UpdateStoreR
 }
 
 func (s *StoreService) CreateStore(ctx context.Context, body models.CreateStoreRequest) (*models.StoreResponse, error) {
-	province, postalCode, err := sanitizeStoreLocation(body.Province, body.PostalCode)
+	province, postalCode, err := utils.SanitizeLocation(body.Province, body.PostalCode)
 	if err != nil {
 		return nil, err
 	}

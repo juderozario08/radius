@@ -1,22 +1,20 @@
-//radius-backend/internal/service/inventory_service.go
+// radius-backend/internal/service/inventory_service.go
 package service
 
-import "radius/internal/repository"
-
 type InventoryService struct {
-	storeRepo     *repository.StoreRepo
-	employeeRepo  *repository.EmployeeRepo
-	sessionRepo   *repository.SessionRepo
-	inventoryRepo *repository.InventoryRepo
-	productsRepo  *repository.ProductRepo
+	storeRepo     StoreRepository
+	employeeRepo  EmployeeRepository
+	sessionRepo   SessionRepository
+	inventoryRepo InventoryRepository
+	productsRepo  ProductRepository
 }
 
 func NewInventoryService(
-	storeRepo *repository.StoreRepo,
-	employeeRepo *repository.EmployeeRepo,
-	sessionRepo *repository.SessionRepo,
-	inventoryRepo *repository.InventoryRepo,
-	productsRepo *repository.ProductRepo,
+	storeRepo StoreRepository,
+	employeeRepo EmployeeRepository,
+	sessionRepo SessionRepository,
+	inventoryRepo InventoryRepository,
+	productsRepo ProductRepository,
 ) *InventoryService {
 	return &InventoryService{
 		storeRepo:     storeRepo,

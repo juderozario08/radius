@@ -1,22 +1,20 @@
-//radius-backend/internal/service/cycle_count_service.go
+// radius-backend/internal/service/cycle_count_service.go
 package service
 
-import "radius/internal/repository"
-
 type CycleCountService struct {
-	storeRepo     *repository.StoreRepo
-	employeeRepo  *repository.EmployeeRepo
-	sessionRepo   *repository.SessionRepo
-	inventoryRepo *repository.InventoryRepo
-	productsRepo  *repository.ProductRepo
+	storeRepo     StoreRepository
+	employeeRepo  EmployeeRepository
+	sessionRepo   SessionRepository
+	inventoryRepo InventoryRepository
+	productsRepo  ProductRepository
 }
 
 func NewCycleCountService(
-	storeRepo *repository.StoreRepo,
-	employeeRepo *repository.EmployeeRepo,
-	sessionRepo *repository.SessionRepo,
-	inventoryRepo *repository.InventoryRepo,
-	productsRepo *repository.ProductRepo,
+	storeRepo StoreRepository,
+	employeeRepo EmployeeRepository,
+	sessionRepo SessionRepository,
+	inventoryRepo InventoryRepository,
+	productsRepo ProductRepository,
 ) *CycleCountService {
 	return &CycleCountService{
 		storeRepo:     storeRepo,

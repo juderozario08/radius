@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -20,8 +19,7 @@ type DB struct {
 	*sql.DB
 }
 
-func ConnectDB() (*DB, error) {
-	connectionString := os.Getenv("DATABASE_URL")
+func ConnectDB(connectionString string) (*DB, error) {
 	if connectionString == "" {
 		return nil, fmt.Errorf("DATABASE_URL environment variable not set\n")
 	}

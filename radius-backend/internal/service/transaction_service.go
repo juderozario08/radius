@@ -4,19 +4,18 @@ package service
 import (
 	"context"
 	"radius/internal/models"
-	"radius/internal/repository"
 )
 
 type TransactionService struct {
-	salesRepo    *repository.SalesRepo
-	employeeRepo *repository.EmployeeRepo
-	sessionRepo  *repository.SessionRepo
+	salesRepo    SalesRepository
+	employeeRepo EmployeeRepository
+	sessionRepo  SessionRepository
 }
 
 func NewTransactionService(
-	salesRepo *repository.SalesRepo,
-	employeeRepo *repository.EmployeeRepo,
-	sessionRepo *repository.SessionRepo,
+	salesRepo SalesRepository,
+	employeeRepo EmployeeRepository,
+	sessionRepo SessionRepository,
 ) *TransactionService {
 	return &TransactionService{
 		salesRepo:    salesRepo,

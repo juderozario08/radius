@@ -1,22 +1,20 @@
 // radius-backend/internal/service/out_of_stock_service.go
 package service
 
-import "radius/internal/repository"
-
 type OutOfStockService struct {
-	productsRepo  *repository.ProductRepo
-	inventoryRepo *repository.InventoryRepo
-	sessionRepo   *repository.SessionRepo
-	employeeRepo  *repository.EmployeeRepo
-	storeRepo     *repository.StoreRepo
+	productsRepo  ProductRepository
+	inventoryRepo InventoryRepository
+	sessionRepo   SessionRepository
+	employeeRepo  EmployeeRepository
+	storeRepo     StoreRepository
 }
 
 func NewOutOfStockService(
-	productsRepo *repository.ProductRepo,
-	inventoryRepo *repository.InventoryRepo,
-	sessionRepo *repository.SessionRepo,
-	employeeRepo *repository.EmployeeRepo,
-	storeRepo *repository.StoreRepo,
+	productsRepo ProductRepository,
+	inventoryRepo InventoryRepository,
+	sessionRepo SessionRepository,
+	employeeRepo EmployeeRepository,
+	storeRepo StoreRepository,
 ) *OutOfStockService {
 	return &OutOfStockService{
 		productsRepo:  productsRepo,

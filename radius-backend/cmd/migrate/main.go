@@ -2,18 +2,17 @@ package main
 
 import (
 	"log"
-	"os"
+	"radius/internal/config"
 	"radius/internal/database"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	if os.Getenv("GIN_MODE") != "release" {
-		godotenv.Load()
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	db, err := database.ConnectDB()
+	db, err := database.ConnectDB(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v\n", err)
 	}

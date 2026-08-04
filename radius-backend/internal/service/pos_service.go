@@ -1,20 +1,18 @@
-//radius-backend/internal/service/pos_service.go
+// radius-backend/internal/service/pos_service.go
 package service
 
-import "radius/internal/repository"
-
 type POSService struct {
-	salesRepo    *repository.SalesRepo
-	employeeRepo *repository.EmployeeRepo
-	sessionRepo  *repository.SessionRepo
-	storeRepo    *repository.StoreRepo
+	salesRepo    SalesRepository
+	employeeRepo EmployeeRepository
+	sessionRepo  SessionRepository
+	storeRepo    StoreRepository
 }
 
 func NewPOSService(
-	salesRepo *repository.SalesRepo,
-	employeeRepo *repository.EmployeeRepo,
-	sessionRepo *repository.SessionRepo,
-	storeRepo *repository.StoreRepo,
+	salesRepo SalesRepository,
+	employeeRepo EmployeeRepository,
+	sessionRepo SessionRepository,
+	storeRepo StoreRepository,
 ) *POSService {
 	return &POSService{
 		salesRepo:    salesRepo,

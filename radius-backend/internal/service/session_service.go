@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"radius/internal/models"
-	"radius/internal/repository"
 	"radius/internal/utils"
 	"time"
 
@@ -15,11 +14,11 @@ import (
 )
 
 type SessionService struct {
-	sessionRepo *repository.SessionRepo
+	sessionRepo SessionRepository
 	jwtSecret   []byte
 }
 
-func NewSessionService(sessionRepo *repository.SessionRepo, jwtSecret []byte) *SessionService {
+func NewSessionService(sessionRepo SessionRepository, jwtSecret []byte) *SessionService {
 	return &SessionService{
 		sessionRepo: sessionRepo,
 		jwtSecret:   jwtSecret,

@@ -1,22 +1,20 @@
-//radius-backend/internal/service/barcode_service.go
+// radius-backend/internal/service/barcode_service.go
 package service
 
-import "radius/internal/repository"
-
 type BarcodeService struct {
-	storeRepo     *repository.StoreRepo
-	employeeRepo  *repository.EmployeeRepo
-	sessionRepo   *repository.SessionRepo
-	inventoryRepo *repository.InventoryRepo
-	productsRepo  *repository.ProductRepo
+	storeRepo     StoreRepository
+	employeeRepo  EmployeeRepository
+	sessionRepo   SessionRepository
+	inventoryRepo InventoryRepository
+	productsRepo  ProductRepository
 }
 
 func NewBarcodeService(
-	storeRepo *repository.StoreRepo,
-	employeeRepo *repository.EmployeeRepo,
-	sessionRepo *repository.SessionRepo,
-	inventoryRepo *repository.InventoryRepo,
-	productsRepo *repository.ProductRepo,
+	storeRepo StoreRepository,
+	employeeRepo EmployeeRepository,
+	sessionRepo SessionRepository,
+	inventoryRepo InventoryRepository,
+	productsRepo ProductRepository,
 ) *BarcodeService {
 	return &BarcodeService{
 		storeRepo:     storeRepo,

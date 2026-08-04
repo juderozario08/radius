@@ -1,20 +1,18 @@
-//radius-backend/internal/service/planogram_service.go
+// radius-backend/internal/service/planogram_service.go
 package service
 
-import "radius/internal/repository"
-
 type PlanogramService struct {
-	merchandisingRepo *repository.MerchandisingRepo
-	employeeRepo      *repository.EmployeeRepo
-	storeRepo         *repository.StoreRepo
-	sessionRepo       *repository.SessionRepo
+	merchandisingRepo MerchandisingRepository
+	employeeRepo      EmployeeRepository
+	storeRepo         StoreRepository
+	sessionRepo       SessionRepository
 }
 
 func NewPlanogramService(
-	merchandisingRepo *repository.MerchandisingRepo,
-	employeeRepo *repository.EmployeeRepo,
-	storeRepo *repository.StoreRepo,
-	sessionRepo *repository.SessionRepo,
+	merchandisingRepo MerchandisingRepository,
+	employeeRepo EmployeeRepository,
+	storeRepo StoreRepository,
+	sessionRepo SessionRepository,
 ) *PlanogramService {
 	return &PlanogramService{
 		merchandisingRepo: merchandisingRepo,

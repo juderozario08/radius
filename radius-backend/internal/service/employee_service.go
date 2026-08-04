@@ -6,16 +6,15 @@ import (
 	"errors"
 	"log"
 	"radius/internal/models"
-	"radius/internal/repository"
 	"radius/internal/utils"
 	"strings"
 )
 
 type EmployeeService struct {
-	employeeRepo *repository.EmployeeRepo
+	employeeRepo EmployeeRepository
 }
 
-func NewEmployeeService(employeeRepo *repository.EmployeeRepo) *EmployeeService {
+func NewEmployeeService(employeeRepo EmployeeRepository) *EmployeeService {
 	return &EmployeeService{
 		employeeRepo: employeeRepo,
 	}
@@ -88,14 +87,12 @@ func (e *EmployeeService) UpdateEmployee(ctx context.Context, body models.Employ
 		}
 	}
 
-	if err := utils.ValidateCanadianProvince(body.Province); err != nil {
-		return nil, err
-	}
-	normalizedPostal, err := utils.NormalizeCanadianPostalCode(body.PostalCode)
+	province, postalCode, err := utils.SanitizeLocation(body.Province, body.PostalCode)
 	if err != nil {
 		return nil, err
 	}
-	body.PostalCode = normalizedPostal
+	body.Province = province
+	body.PostalCode = postalCode
 
 	err = e.employeeRepo.UpdateEmployee(ctx, body)
 	if err != nil {
@@ -109,14 +106,12 @@ func (e *EmployeeService) UpdateEmployee(ctx context.Context, body models.Employ
 }
 
 func (e *EmployeeService) CreateEmployee(ctx context.Context, model models.CreateEmployeeRequest) (*models.CreateEmployeeResponse, error) {
-	if err := utils.ValidateCanadianProvince(model.Province); err != nil {
-		return nil, err
-	}
-	normalizedPostal, err := utils.NormalizeCanadianPostalCode(model.PostalCode)
+	normalizedProvince, normalizedPostal, err := utils.SanitizeLocation(model.Province, model.PostalCode)
 	if err != nil {
 		return nil, err
 	}
 	model.PostalCode = normalizedPostal
+	model.Province = normalizedProvince
 
 	hash, err := utils.HashPassword(model.Password)
 	if err != nil {

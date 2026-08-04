@@ -4,17 +4,16 @@ import (
 	"context"
 	"errors"
 	"radius/internal/models"
-	"radius/internal/repository"
 	"radius/internal/utils"
 	"strings"
 )
 
 type AuthService struct {
-	employeeRepo   *repository.EmployeeRepo
+	employeeRepo   EmployeeRepository
 	sessionService *SessionService
 }
 
-func NewAuthService(employeeRepo *repository.EmployeeRepo, sessionService *SessionService) *AuthService {
+func NewAuthService(employeeRepo EmployeeRepository, sessionService *SessionService) *AuthService {
 	return &AuthService{
 		employeeRepo:   employeeRepo,
 		sessionService: sessionService,

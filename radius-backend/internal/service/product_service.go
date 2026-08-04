@@ -1,20 +1,18 @@
-//radius-backend/internal/service/product_service.go
+// radius-backend/internal/service/product_service.go
 package service
 
-import "radius/internal/repository"
-
 type ProductService struct {
-	productsRepo *repository.ProductRepo
-	storeRepo    *repository.StoreRepo
-	employeeRepo *repository.EmployeeRepo
-	sessionRepo  *repository.SessionRepo
+	productsRepo ProductRepository
+	storeRepo    StoreRepository
+	employeeRepo EmployeeRepository
+	sessionRepo  SessionRepository
 }
 
 func NewProductService(
-	productsRepo *repository.ProductRepo,
-	storeRepo *repository.StoreRepo,
-	employeeRepo *repository.EmployeeRepo,
-	sessionRepo *repository.SessionRepo,
+	productsRepo ProductRepository,
+	storeRepo StoreRepository,
+	employeeRepo EmployeeRepository,
+	sessionRepo SessionRepository,
 ) *ProductService {
 	return &ProductService{
 		productsRepo: productsRepo,

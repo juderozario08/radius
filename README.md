@@ -47,7 +47,7 @@
 
 ## 🏗️ Architecture & Modules
 
-The backend is structured using a clean, layered architecture separating **Handlers**, **Services**, and **Repositories** to ensure scalability and testability. 
+The backend is structured using a clean, layered architecture separating **Handlers**, **Services**, and **Repositories** to ensure scalability and testability.
 
 Key Modules include:
 - `Auth`: Login, JWT token generation, and verification.
@@ -106,6 +106,6 @@ Key Modules include:
 
 ## 🗺️ Roadmap & Current Focus
 
-I am actively developing the application. **My current focus is implementing a Barcode Scanner feature for inventory scanning.** 
+I am actively developing the application. **My current focus is implementing a Barcode Scanner feature for inventory scanning.**
 
 This feature will leverage the mobile device's camera to read standard UPC/EAN barcodes, instantly querying the Go backend to display product details, current stock levels, and enabling quick cycle counts directly from the sales floor.

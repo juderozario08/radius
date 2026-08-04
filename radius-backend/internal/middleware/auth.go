@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"radius/internal/models"
 	"radius/internal/service"
 	"strings"
 
@@ -17,14 +18,14 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
 			log.Printf("[UNAUTHORIZED] RequireAuth: User missing authorization header")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "An error occured while authorizing the user."})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "An error occured while authorizing the user."})
 			return
 		}
 
 		split := strings.Split(authHeader, " ")
 		if len(split) != 2 || split[0] != "Bearer" {
 			log.Printf("[UNAUTHORIZED] RequireAuth: Invalid auth header format")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token format, expected 'Bearer <TOKEN>'"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "invalid token format, expected 'Bearer <TOKEN>'"})
 			return
 		}
 		tokenString := split[1]
@@ -38,19 +39,19 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 		})
 		if err != nil {
 			log.Printf("[UNAUTHORIZED] RequireAuth: JWT parsing error: %v", err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
 			return
 		}
 		if !token.Valid {
 			log.Printf("[UNAUTHORIZED] RequireAuth: Token is invalid")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			log.Printf("[UNAUTHORIZED] RequireAuth: Could not extract claims from token")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
 			return
 		}
 
@@ -58,20 +59,20 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 		tokenType, exists := claims["token_type"]
 		if !exists || tokenType != "access" {
 			log.Printf("[UNAUTHORIZED] RequireAuth: Rejected non-access token used in Authorization header")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
 			return
 		}
 
 		if err := authService.ValidateSession(ctx.Request.Context(), tokenString); err != nil {
 			log.Printf("[UNAUTHORIZED] RequireAuth: Session validation failed: %v", err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
 			return
 		}
 
 		employeeId, ok := claims["employee_id"]
 		if !ok {
 			log.Printf("[UNAUTHORIZED] RequireAuth: employee_id claim missing or wrong type")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
 			return
 		}
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"radius/internal/handler"
 	"radius/internal/middleware"
+	"radius/internal/models"
 	"radius/internal/service"
 	"time"
 
@@ -82,8 +83,8 @@ func NewRouter(cfg Config) *gin.Engine {
 	public := router.Group("/")
 	{
 		public.GET("/health", func(ctx *gin.Context) {
-			ctx.JSON(http.StatusOK, gin.H{
-				"message": "Server is working!",
+			ctx.JSON(http.StatusOK, models.APIMessage{
+				Message: "Server is working!",
 			})
 		})
 
@@ -102,8 +103,8 @@ func NewRouter(cfg Config) *gin.Engine {
 	admin.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewAdminActions))
 	{
 		admin.GET("/health", func(ctx *gin.Context) {
-			ctx.JSON(http.StatusOK, gin.H{
-				"message": "Admin route is working!",
+			ctx.JSON(http.StatusOK, models.APIMessage{
+				Message: "Admin route is working!",
 			})
 		})
 
@@ -127,8 +128,8 @@ func NewRouter(cfg Config) *gin.Engine {
 	manager.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewManagerActions))
 	{
 		manager.GET("/health", func(ctx *gin.Context) {
-			ctx.JSON(http.StatusOK, gin.H{
-				"message": "Manager route is working!",
+			ctx.JSON(http.StatusOK, models.APIMessage{
+				Message: "Manager route is working!",
 			})
 		})
 

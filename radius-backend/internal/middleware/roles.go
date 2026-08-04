@@ -57,14 +57,14 @@ func RequirePermission(requiredPerm Permission) gin.HandlerFunc {
 		userRole, exists := ctx.Get("role")
 
 		if !exists {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Role not found in context"})
+			ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "Role not found in context"})
 			return
 		}
 
 		role := models.EmployeeRole(userRole.(string))
 
 		if !hasPermission(role, requiredPerm) {
-			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions to perform this action"})
+			ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "Insufficient permissions to perform this action"})
 			return
 		}
 

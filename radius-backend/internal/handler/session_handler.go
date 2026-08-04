@@ -4,8 +4,9 @@ package handler
 import (
 	"log"
 	"net/http"
-	"strconv"
+	"radius/internal/models"
 	"radius/internal/service"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,7 +37,7 @@ func (h *SessionHandler) GetAllSessions(ctx *gin.Context) {
 	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context(), pageNumber, pageSize)
 	if err != nil {
 		log.Printf("[ERROR] SessionHandler.GetAllSessions (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		return
 	}
 
@@ -44,18 +45,16 @@ func (h *SessionHandler) GetAllSessions(ctx *gin.Context) {
 }
 
 func (h *SessionHandler) TerminateSession(ctx *gin.Context) {
-	var body struct {
-		SessionId int `json:"session_id" binding:"required"`
-	}
+	var body models.TerminateSessionRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		log.Printf("[ERROR] SessionHandler.TerminateSession (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 		return
 	}
 	sessionResponse, err := h.sessionService.TerminateSessionById(ctx.Request.Context(), body.SessionId)
 	if err != nil {
 		log.Printf("[ERROR] SessionHandler.TerminateSession (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		return
 	}
 

@@ -22,21 +22,21 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 	var body models.EmployeeLoginRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		log.Printf("[ERROR] AuthHandler.Login (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 		return
 	}
 
 	result, err := h.authService.Login(ctx.Request.Context(), body, ctx.ClientIP())
 	if err != nil {
 		log.Printf("[ERROR] AuthHandler.Login (Service): %v", err)
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusUnauthorized, models.APIError{Error: err.Error()})
 		return
 	}
 
 	if result.RequiresConfirmation {
-		ctx.JSON(http.StatusConflict, gin.H{
-			"requires_confirmation": true,
-			"error":                 "Already logged in on another device. Would you like to continue logging out of the previous session?",
+		ctx.JSON(http.StatusConflict, models.LoginConflictResponse{
+			RequiresConfirmation: true,
+			Error:                "Already logged in on another device. Would you like to continue logging out of the previous session?",
 		})
 		return
 	}
@@ -49,29 +49,29 @@ func (h *AuthHandler) Logout(ctx *gin.Context) {
 	err := h.authService.Logout(ctx.Request.Context(), tokenString)
 	if err != nil {
 		log.Printf("[ERROR] AuthHandler.Logout (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
+	ctx.JSON(http.StatusOK, models.APIMessage{Message: "Successfully logged out"})
 }
 
 func (h *AuthHandler) VerifyToken(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{"message": "Session verified"})
+	ctx.JSON(http.StatusOK, models.APIMessage{Message: "Session verified"})
 }
 
 func (h *AuthHandler) RefreshToken(ctx *gin.Context) {
 	var body models.RefreshTokenRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		log.Printf("[ERROR] AuthHandler.RefreshToken (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "refresh_token is required"})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "refresh_token is required"})
 		return
 	}
 
 	result, err := h.authService.RefreshToken(ctx.Request.Context(), body.RefreshToken)
 	if err != nil {
 		log.Printf("[ERROR] AuthHandler.RefreshToken (Service): %v", err)
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusUnauthorized, models.APIError{Error: err.Error()})
 		return
 	}
 

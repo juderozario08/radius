@@ -25,14 +25,14 @@ func (e *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 	var body models.CreateEmployeeRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		log.Printf("[ERROR] EmployeeHandler.CreateEmployee (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 		return
 	}
 
 	createEmployeeResponse, err := e.employeeService.CreateEmployee(ctx.Request.Context(), body)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.CreateEmployee (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		return
 	}
 
@@ -62,7 +62,7 @@ func (e *EmployeeHandler) GetAllEmployees(ctx *gin.Context) {
 	employeeResponse, err := e.employeeService.GetAllEmployees(ctx.Request.Context(), pageNumber, pageSize, storeId)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.GetAllEmployees (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		return
 	}
 
@@ -84,14 +84,14 @@ func (e *EmployeeHandler) GetManagerEmployees(ctx *gin.Context) {
 
 	email, exists := ctx.Get("email")
 	if !exists {
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Unauthorized"})
 		return
 	}
 
 	employeeResponse, err := e.employeeService.GetManagerEmployees(ctx.Request.Context(), email.(string), pageNumber, pageSize)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.GetManagerEmployees (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		return
 	}
 
@@ -102,14 +102,14 @@ func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 	var body models.Employee
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		log.Printf("[ERROR] EmployeeHandler.UpdateEmployee (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 		return
 	}
 
 	updateEmployeeResponse, err := e.employeeService.UpdateEmployee(ctx.Request.Context(), body)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.UpdateEmployee (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		return
 	}
 
@@ -117,38 +117,34 @@ func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 }
 
 func (e *EmployeeHandler) TerminateEmployee(ctx *gin.Context) {
-	var body struct {
-		EmployeeId int `json:"employee_id" binding:"required"`
-	}
+	var body models.EmployeeIdRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		log.Printf("[ERROR] EmployeeHandler.TerminateEmployee (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 		return
 	}
 
 	employeeResponse, err := e.employeeService.TerminateEmployee(ctx.Request.Context(), body.EmployeeId)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.TerminateEmployee (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, employeeResponse)
 }
 
 func (e *EmployeeHandler) ActivateEmployee(ctx *gin.Context) {
-	var body struct {
-		EmployeeId int `json:"employee_id" binding:"required"`
-	}
+	var body models.EmployeeIdRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		log.Printf("[ERROR] EmployeeHandler.ActivateEmployee (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 		return
 	}
 
 	response, err := e.employeeService.ActivateEmployee(ctx.Request.Context(), body.EmployeeId)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.ActivateEmployee (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, response)

@@ -1,4 +1,4 @@
-//radius-backend/internal/handler/transaction_handler.go
+// radius-backend/internal/handler/transaction_handler.go
 package handler
 
 import (
@@ -31,13 +31,13 @@ func (h *TransactionHandler) GetAllTransactions(ctx *gin.Context) {
 	transactions, totalLength, err := h.transactionService.GetAllTransactions(ctx.Request.Context(), email, role, pageNumber, pageSize)
 	if err != nil {
 		log.Printf("[ERROR] TransactionHandler.GetAllTransactions (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"transactions": transactions,
-		"total_length": totalLength,
+	ctx.JSON(http.StatusOK, models.GetAllTransactionsResponse{
+		Transactions: transactions,
+		TotalLength:  totalLength,
 	})
 }
 
@@ -49,24 +49,24 @@ func (h *TransactionHandler) GetTransactionByID(ctx *gin.Context) {
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		log.Printf("[ERROR] TransactionHandler.GetTransactionByID (Atoi): %v", err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transaction ID"})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid transaction ID"})
 		return
 	}
 
 	transaction, items, err := h.transactionService.GetTransactionByID(ctx.Request.Context(), email, role, id)
 	if err != nil {
 		log.Printf("[ERROR] TransactionHandler.GetTransactionByID (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		return
 	}
 	if transaction == nil {
 		log.Printf("[ERROR] TransactionHandler.GetTransactionByID: Transaction not found")
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+		ctx.JSON(http.StatusNotFound, models.APIError{Error: "Transaction not found"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"transaction": transaction,
-		"items":       items,
+	ctx.JSON(http.StatusOK, models.GetTransactionResponse{
+		Transaction: transaction,
+		Items:       items,
 	})
 }

@@ -4,6 +4,7 @@ package middleware
 import (
 	"log"
 	"net/http"
+	"radius/internal/models"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -45,8 +46,8 @@ func RateLimitMiddleware(limiter *IPRateLimiter) gin.HandlerFunc {
 
 		if !limiter.GetLimiter(clientIP).Allow() {
 			log.Printf("[RATE LIMIT] Request blocked from IP: %s", clientIP)
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
-				"error": "Too many requests. Please try again later.",
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, models.APIError{
+				Error: "Too many requests. Please try again later.",
 			})
 			return
 		}

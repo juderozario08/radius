@@ -13,15 +13,17 @@ import {
     StyleSheet,
     Text,
     View,
+    TouchableOpacity,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import CustomToast from "@/components/common/Toast";
 import { callApi } from "@/utils/helpers";
 import { GetTransactionByIDResponse, Transaction, TransactionItem } from "@/types/sales.types";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 export default function TransactionDetail() {
     const { id } = useLocalSearchParams();
+    const router = useRouter();
     const { logout } = useAuth();
 
     const [transaction, setTransaction] = useState<Transaction | null>(null);
@@ -93,6 +95,12 @@ export default function TransactionDetail() {
                     <DetailRow label="Store ID:" value={transaction.store_id} />
                     <DetailRow label="Date:" value={new Date(transaction.created_at).toLocaleString()} />
                     <DetailRow label="Payment Method:" value={transaction.payment_method || 'N/A'} />
+                    {transaction.payment_method === 'CARD' && transaction.card_type && (
+                        <DetailRow label="Card Type:" value={transaction.card_type} />
+                    )}
+                    {transaction.payment_method === 'CARD' && transaction.card_number && (
+                        <DetailRow label="Card Number:" value={`**** **** **** ${transaction.card_number}`} />
+                    )}
                     {transaction.payment_reference && (
                         <DetailRow label="Payment Ref:" value={transaction.payment_reference} />
                     )}
@@ -113,16 +121,21 @@ export default function TransactionDetail() {
                 <View style={styles.card}>
                     <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Items ({items.length})</Text>
                     {items.map((item) => (
-                        <View key={item.transaction_item_id} style={styles.itemRow}>
+                        <TouchableOpacity 
+                            key={item.transaction_item_id} 
+                            style={styles.itemRow}
+                            onPress={() => router.push(`/(app)/(tabs)/inventory/${item.product_id}` as any)}
+                        >
                             <View style={styles.itemInfo}>
-                                <Text style={styles.itemText}>Product ID: {item.product_id}</Text>
+                                <Text style={styles.itemText}>Product SKU: {item.product_sku || 'N/A'}</Text>
+                                <Text style={styles.itemSubText}>Product ID: {item.product_id}</Text>
                                 <Text style={styles.itemSubText}>Qty: {item.quantity} x ${item.unit_price.toFixed(2)}</Text>
                                 {item.scanned_barcode && <Text style={styles.itemSubText}>Barcode: {item.scanned_barcode}</Text>}
                             </View>
                             <Text style={styles.itemTotal}>
                                 ${((item.quantity * item.unit_price) - item.discount_amount).toFixed(2)}
                             </Text>
-                        </View>
+                        </TouchableOpacity>
                     ))}
                     {items.length === 0 && <Text style={globalStyles.emptyText}>No items found.</Text>}
                 </View>

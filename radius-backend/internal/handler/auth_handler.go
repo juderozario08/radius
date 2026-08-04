@@ -45,11 +45,16 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 }
 
 func (h *AuthHandler) Logout(ctx *gin.Context) {
-	tokenString := ctx.MustGet("token_string").(string)
-	err := h.authService.Logout(ctx.Request.Context(), tokenString)
+	tokenString, exists := ctx.Get("token_string")
+	if !exists {
+		log.Printf("[ERROR] AuthHandler.Logout: token_string not found in context")
+		ctx.JSON(http.StatusUnauthorized, models.APIError{Error: "Unauthorized"})
+		return
+	}
+	err := h.authService.Logout(ctx.Request.Context(), tokenString.(string))
 	if err != nil {
 		log.Printf("[ERROR] AuthHandler.Logout (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to logout"})
 		return
 	}
 

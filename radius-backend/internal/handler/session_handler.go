@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
-	"strconv"
+	"radius/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,22 +22,12 @@ func NewSessionHandler(sessionService *service.SessionService) *SessionHandler {
 }
 
 func (h *SessionHandler) GetAllSessions(ctx *gin.Context) {
-	pageNumberStr := ctx.DefaultQuery("page_number", "1")
-	pageSizeStr := ctx.DefaultQuery("page_size", "10")
-
-	pageNumber, err := strconv.Atoi(pageNumberStr)
-	if err != nil || pageNumber < 1 {
-		pageNumber = 1
-	}
-	pageSize, err := strconv.Atoi(pageSizeStr)
-	if err != nil || pageSize < 1 {
-		pageSize = 10
-	}
+	pageNumber, pageSize := utils.ParsePagination(ctx)
 
 	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context(), pageNumber, pageSize)
 	if err != nil {
 		log.Printf("[ERROR] SessionHandler.GetAllSessions (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 
@@ -54,7 +44,7 @@ func (h *SessionHandler) TerminateSession(ctx *gin.Context) {
 	sessionResponse, err := h.sessionService.TerminateSessionById(ctx.Request.Context(), body.SessionId)
 	if err != nil {
 		log.Printf("[ERROR] SessionHandler.TerminateSession (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 

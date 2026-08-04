@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
+	"radius/internal/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -25,13 +26,12 @@ func (h *TransactionHandler) GetAllTransactions(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
-	pageNumber, _ := strconv.Atoi(ctx.DefaultQuery("page_number", "1"))
-	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("page_size", "10"))
+	pageNumber, pageSize := utils.ParsePagination(ctx)
 
 	transactions, totalLength, err := h.transactionService.GetAllTransactions(ctx.Request.Context(), email, role, pageNumber, pageSize)
 	if err != nil {
 		log.Printf("[ERROR] TransactionHandler.GetAllTransactions (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 
@@ -56,7 +56,7 @@ func (h *TransactionHandler) GetTransactionByID(ctx *gin.Context) {
 	transaction, items, err := h.transactionService.GetTransactionByID(ctx.Request.Context(), email, role, id)
 	if err != nil {
 		log.Printf("[ERROR] TransactionHandler.GetTransactionByID (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	if transaction == nil {

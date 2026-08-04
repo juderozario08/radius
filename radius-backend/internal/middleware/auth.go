@@ -69,16 +69,36 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 			return
 		}
 
-		employeeId, ok := claims["employee_id"]
+		employeeIdRaw, ok := claims["employee_id"]
 		if !ok {
-			log.Printf("[UNAUTHORIZED] RequireAuth: employee_id claim missing or wrong type")
+			log.Printf("[UNAUTHORIZED] RequireAuth: employee_id claim missing")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
+			return
+		}
+		employeeIdFloat, ok := employeeIdRaw.(float64)
+		if !ok {
+			log.Printf("[UNAUTHORIZED] RequireAuth: employee_id claim is not a number")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
 			return
 		}
 
-		ctx.Set("employee_id", int(employeeId.(float64))) // the float conversion is because JSON converts numbers into float by default
-		ctx.Set("email", claims["email"])
-		ctx.Set("role", claims["role"])
+		emailClaim, ok := claims["email"].(string)
+		if !ok {
+			log.Printf("[UNAUTHORIZED] RequireAuth: email claim missing or wrong type")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
+			return
+		}
+
+		roleClaim, ok := claims["role"].(string)
+		if !ok {
+			log.Printf("[UNAUTHORIZED] RequireAuth: role claim missing or wrong type")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
+			return
+		}
+
+		ctx.Set("employee_id", int(employeeIdFloat))
+		ctx.Set("email", emailClaim)
+		ctx.Set("role", roleClaim)
 		ctx.Set("token_string", tokenString)
 		ctx.Next()
 	}

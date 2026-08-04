@@ -4,9 +4,10 @@ package handler
 import (
 	"log"
 	"net/http"
-	"strconv"
 	"radius/internal/models"
 	"radius/internal/service"
+	"radius/internal/utils"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,7 +33,7 @@ func (e *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 	createEmployeeResponse, err := e.employeeService.CreateEmployee(ctx.Request.Context(), body)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.CreateEmployee (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 
@@ -40,17 +41,7 @@ func (e *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 }
 
 func (e *EmployeeHandler) GetAllEmployees(ctx *gin.Context) {
-	pageNumberStr := ctx.DefaultQuery("page_number", "1")
-	pageSizeStr := ctx.DefaultQuery("page_size", "10")
-
-	pageNumber, err := strconv.Atoi(pageNumberStr)
-	if err != nil || pageNumber < 1 {
-		pageNumber = 1
-	}
-	pageSize, err := strconv.Atoi(pageSizeStr)
-	if err != nil || pageSize < 1 {
-		pageSize = 10
-	}
+	pageNumber, pageSize := utils.ParsePagination(ctx)
 
 	var storeId *int
 	if storeIdStr := ctx.Query("store_id"); storeIdStr != "" {
@@ -62,7 +53,7 @@ func (e *EmployeeHandler) GetAllEmployees(ctx *gin.Context) {
 	employeeResponse, err := e.employeeService.GetAllEmployees(ctx.Request.Context(), pageNumber, pageSize, storeId)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.GetAllEmployees (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 
@@ -70,17 +61,7 @@ func (e *EmployeeHandler) GetAllEmployees(ctx *gin.Context) {
 }
 
 func (e *EmployeeHandler) GetManagerEmployees(ctx *gin.Context) {
-	pageNumberStr := ctx.DefaultQuery("page_number", "1")
-	pageSizeStr := ctx.DefaultQuery("page_size", "10")
-
-	pageNumber, err := strconv.Atoi(pageNumberStr)
-	if err != nil || pageNumber < 1 {
-		pageNumber = 1
-	}
-	pageSize, err := strconv.Atoi(pageSizeStr)
-	if err != nil || pageSize < 1 {
-		pageSize = 10
-	}
+	pageNumber, pageSize := utils.ParsePagination(ctx)
 
 	email, exists := ctx.Get("email")
 	if !exists {
@@ -91,7 +72,7 @@ func (e *EmployeeHandler) GetManagerEmployees(ctx *gin.Context) {
 	employeeResponse, err := e.employeeService.GetManagerEmployees(ctx.Request.Context(), email.(string), pageNumber, pageSize)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.GetManagerEmployees (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 
@@ -109,7 +90,7 @@ func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 	updateEmployeeResponse, err := e.employeeService.UpdateEmployee(ctx.Request.Context(), body)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.UpdateEmployee (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 
@@ -127,7 +108,7 @@ func (e *EmployeeHandler) TerminateEmployee(ctx *gin.Context) {
 	employeeResponse, err := e.employeeService.TerminateEmployee(ctx.Request.Context(), body.EmployeeId)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.TerminateEmployee (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	ctx.JSON(http.StatusOK, employeeResponse)
@@ -144,7 +125,7 @@ func (e *EmployeeHandler) ActivateEmployee(ctx *gin.Context) {
 	response, err := e.employeeService.ActivateEmployee(ctx.Request.Context(), body.EmployeeId)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.ActivateEmployee (Service): %v", err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	ctx.JSON(http.StatusOK, response)

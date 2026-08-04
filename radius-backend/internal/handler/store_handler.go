@@ -30,7 +30,7 @@ func (h *StoreHandler) GetAllStores(ctx *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.GetAllStores (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 
@@ -49,7 +49,7 @@ func (h *StoreHandler) UpdateStore(ctx *gin.Context) {
 	res, err := h.storeService.UpdateStore(ctx.Request.Context(), body)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.UpdateStore (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	ctx.JSON(http.StatusOK, res)
@@ -67,7 +67,7 @@ func (h *StoreHandler) CreateStore(ctx *gin.Context) {
 	res, err := h.storeService.CreateStore(ctx.Request.Context(), body)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.CreateStore (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	ctx.JSON(http.StatusCreated, res)
@@ -83,7 +83,7 @@ func (h *StoreHandler) GetStore(ctx *gin.Context) {
 	res, err := h.storeService.GetStore(ctx.Request.Context(), storeId)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.GetStore (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	ctx.JSON(http.StatusOK, res)
@@ -101,7 +101,7 @@ func (h *StoreHandler) ActivateStore(ctx *gin.Context) {
 	res, err := h.storeService.ActivateStore(ctx.Request.Context(), body.StoreId)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.ActivateStore (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	ctx.JSON(http.StatusOK, res)
@@ -119,7 +119,7 @@ func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
 	res, err := h.storeService.DeactivateStore(ctx.Request.Context(), body.StoreId)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.DeactivateStore (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	ctx.JSON(http.StatusOK, res)

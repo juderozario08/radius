@@ -52,8 +52,8 @@ func TestStoreService_UpdateStore_Success(t *testing.T) {
 	res, err := svc.UpdateStore(context.Background(), models.UpdateStoreRequest{
 		StoreId: 1,
 		StoreBase: models.StoreBase{
-			Name: "New Name",
-			Province: "Ontario",
+			Name:       "New Name",
+			Province:   "Ontario",
 			PostalCode: "M5V 2H1",
 		},
 	})

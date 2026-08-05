@@ -484,6 +484,11 @@ type MockProductRepository struct {
 	isgomock struct{}
 }
 
+// GetProductByID implements [service.ProductRepository].
+func (m *MockProductRepository) GetProductByID(ctx context.Context, id int) (*models.Product, error) {
+	panic("unimplemented")
+}
+
 // MockProductRepositoryMockRecorder is the mock recorder for MockProductRepository.
 type MockProductRepositoryMockRecorder struct {
 	mock *MockProductRepository

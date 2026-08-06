@@ -137,14 +137,16 @@ const StoreDetailModal: React.FC<{
                             <DetailRow label="Created At:" value={new Date(store.created_at).toLocaleDateString()} />
                         </View>
                     </View>
-                    <ActionButtonRow buttons={[
-                        { key: "close", label: "Close", kind: "neutral", onPress: onClose, disabled: isUpdatingStatus },
-                        { key: "edit", label: "Edit", kind: "accent", onPress: () => onEdit(store), disabled: isUpdatingStatus },
-                        { key: "employees", label: "Employees", kind: "primary", onPress: () => onViewEmployees(store.store_id), disabled: isUpdatingStatus },
-                        store.is_active ?
-                            { key: "deactivate", label: "Deactivate", kind: "danger", onPress: handleToggleStatusPress, loading: isUpdatingStatus } :
-                            { key: "activate", label: "Activate", kind: "primary", onPress: handleToggleStatusPress, loading: isUpdatingStatus },
-                    ]} />
+                    <ScrollView horizontal scrollEnabled showsHorizontalScrollIndicator>
+                        <ActionButtonRow buttons={[
+                            { key: "close", label: "Close", kind: "neutral", onPress: onClose, disabled: isUpdatingStatus },
+                            { key: "edit", label: "Edit", kind: "accent", onPress: () => onEdit(store), disabled: isUpdatingStatus },
+                            { key: "employees", label: "Employees", kind: "primary", onPress: () => onViewEmployees(store.store_id), disabled: isUpdatingStatus },
+                            store.is_active ?
+                                { key: "deactivate", label: "Deactivate", kind: "danger", onPress: handleToggleStatusPress, loading: isUpdatingStatus } :
+                                { key: "activate", label: "Activate", kind: "primary", onPress: handleToggleStatusPress, loading: isUpdatingStatus },
+                        ]} />
+                    </ScrollView>
                 </View>
             </View>
             <CustomToast />
@@ -336,7 +338,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
 
 export default function Stores() {
     const { logout, user } = useAuth();
-    
+
     if (user?.role === "MANAGER") {
         return <Redirect href="/(app)/(tabs)/store/employees" />;
     }

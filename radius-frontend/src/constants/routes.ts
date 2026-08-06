@@ -51,5 +51,11 @@ export const ENDPOINTS = {
                 get: "/api/sales_floor/get_online_order",
             }
         },
+        MIMS: {
+            scanProduct: "/api/sales_floor/inventory/product",
+            getLocationProducts: "/api/sales_floor/inventory/location",
+            binItem: "/api/sales_floor/inventory/bin",
+            updateQuantity: "/api/sales_floor/inventory/quantity",
+        },
     }
 };

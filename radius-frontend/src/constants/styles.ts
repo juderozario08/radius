@@ -21,7 +21,6 @@ export const globalStyles = StyleSheet.create({
         paddingHorizontal: 10,
     },
 
-    // --- Typography ---
     headerTitle: {
         fontWeight: "bold",
         fontSize: 20,

@@ -146,6 +146,14 @@ func NewRouter(cfg Config) *gin.Engine {
 
 		salesFloor.GET("/get_all_online_orders", cfg.Handlers.OnlineOrderHandler.GetAllOnlineOrders)
 		salesFloor.GET("/get_online_order", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)
+
+		mims := salesFloor.Group("/inventory")
+		{
+			mims.GET("/product", cfg.Handlers.InventoryHandler.ScanProduct)
+			mims.GET("/location", cfg.Handlers.InventoryHandler.GetLocationProducts)
+			mims.POST("/bin", cfg.Handlers.InventoryHandler.BinItem)
+			mims.POST("/quantity", cfg.Handlers.InventoryHandler.UpdateQuantity)
+		}
 	}
 
 	return router

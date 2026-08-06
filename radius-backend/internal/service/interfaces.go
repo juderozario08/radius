@@ -38,10 +38,14 @@ type OrdersRepository interface {
 }
 
 type InventoryRepository interface {
-	GetProductBySku(ctx context.Context, sku int) (*models.Product, error)
-	GetProductByUpc(ctx context.Context, upc string) (*models.Product, error)
-	CreateInventoryItem(ctx context.Context, model models.Inventory) (*models.Inventory, error)
-	DeleteProductBySku(ctx context.Context, sku int) (*models.Product, error)
+	GetInventoryByBarcode(ctx context.Context, storeID int, barcode string) (*models.MimsProductInventory, error)
+	GetProductsByLocation(ctx context.Context, storeID int, locationID string) ([]models.MimsProductInventory, error)
+	LogScan(ctx context.Context, log models.MimsScanLog) error
+	CheckLocationExists(ctx context.Context, storeID int, locationID string) (bool, error)
+	CheckProductInLocation(ctx context.Context, storeID int, locationID string, productID int) (bool, error)
+	LinkProductToLocation(ctx context.Context, storeID int, locationID string, productID int) error
+	IncrementInventoryQuantity(ctx context.Context, storeID int, productID int, delta int) error
+	UpdateInventoryQuantity(ctx context.Context, storeID int, productID int, quantity int) error
 }
 
 type ProductRepository interface {

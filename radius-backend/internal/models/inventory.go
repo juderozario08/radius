@@ -17,6 +17,59 @@ type Inventory struct {
 	AvailableQty  int        `json:"available_qty"`
 }
 
+type MimsScanLog struct {
+	ScanId          int       `json:"scan_id"`
+	StoreId         int       `json:"store_id"`
+	EmployeeId      int       `json:"employee_id"`
+	ProductId       *int      `json:"product_id"`
+	ScannedBarcode  string    `json:"scanned_barcode"`
+	MimsLocationId  *string   `json:"mims_location_id"`
+	ScanType        string    `json:"scan_type"`
+	ScannedAt       time.Time `json:"scanned_at"`
+}
+
+type MimsProductInventory struct {
+	ProductId     int        `json:"product_id"`
+	Sku           string     `json:"sku"`
+	Upc           string     `json:"upc"`
+	Name          string     `json:"name"`
+	Brand         string     `json:"brand"`
+	Description   *string    `json:"description"`
+	UnitOfMeasure string     `json:"unit_of_measure"`
+	UnitsPerCase  int        `json:"units_per_case"`
+	Weight        float32    `json:"weight"`
+	IsActive      bool       `json:"is_active"`
+	OnHandQty     int        `json:"on_hand_qty"`
+	ReservedQty   int        `json:"reserved_qty"`
+	AvailableQty  int        `json:"available_qty"`
+	ReorderQty    int        `json:"reorder_qty"`
+	Aisle         *string    `json:"aisle"`
+	MimsLocation  *string    `json:"mims_location"`
+	LastCountedAt *time.Time `json:"last_counted_at"`
+}
+
+type BinItemRequest struct {
+	Barcode    string `json:"barcode" binding:"required"`
+	LocationId string `json:"location_id" binding:"required"`
+	Action     string `json:"action" binding:"required,oneof=IN OUT"`
+}
+
+type UpdateQuantityRequest struct {
+	ProductId int `json:"product_id" binding:"required"`
+	Quantity  int `json:"quantity"`
+}
+
+type ScanProductResponse struct {
+	Product   *MimsProductInventory `json:"product"`
+	Message   string                `json:"message"`
+}
+
+type LocationProductsResponse struct {
+	LocationId string                  `json:"location_id"`
+	Products   []MimsProductInventory  `json:"products"`
+	Message    string                  `json:"message"`
+}
+
 type TransferStatus string
 
 const (

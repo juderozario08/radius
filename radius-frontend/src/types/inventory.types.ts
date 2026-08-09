@@ -36,3 +36,21 @@ export interface LocationProductsResponse {
     products: MimsProductInventory[];
     message: string;
 }
+
+export interface SearchProductsResponse {
+    products: Product[];
+    total: number;
+}
+
+export interface Category {
+    category_id: number;
+    parent_id: number | null;
+    name: string;
+}
+
+export interface SearchFilters {
+    category_id?: number;
+    brand?: string;
+    is_active?: boolean;
+    unit_of_measure?: string;
+}

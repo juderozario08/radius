@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Dimensions, Image } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { COLORS } from "@/constants/colors";
@@ -308,7 +308,17 @@ export default function MimsScreen() {
 
     return (
         <TopSafeAreaView style={[globalStyles.container, { backgroundColor: COLORS.headerBackground }]}>
-            <HeaderComponent headerCenter={<Text style={globalStyles.headerTitle}>MIMS</Text>} />
+            <HeaderComponent
+                headerCenter={<Text style={globalStyles.headerTitle}>MIMS</Text>}
+                headerRight={
+                    <TouchableOpacity onPress={() => router.push("/(app)/product-search" as any)}>
+                        <Image
+                            source={require("@/assets/images/search.png")}
+                            style={globalStyles.headerImageSize}
+                        />
+                    </TouchableOpacity>
+                }
+            />
             <Tab.Navigator
                 tabBar={(props) => {
                     const isMims = props.state.index === 0;

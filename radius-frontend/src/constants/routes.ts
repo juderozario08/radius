@@ -9,7 +9,9 @@ export const ENDPOINTS = {
         verify_token: "/api/verify_token",
         PRODUCTS: {
             get: "/api/sales_floor/get_product",
-            getAll: "/api/sales_floor/get_all_products",
+            search: "/api/sales_floor/search_products",
+            categories: "/api/sales_floor/get_all_categories",
+            brands: "/api/sales_floor/get_distinct_brands",
         },
         ADMIN: {
             EMPLOYEES: {

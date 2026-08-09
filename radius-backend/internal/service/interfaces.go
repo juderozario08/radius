@@ -50,6 +50,12 @@ type InventoryRepository interface {
 
 type ProductRepository interface {
 	GetProductByID(ctx context.Context, id int) (*models.Product, error)
+	SearchProducts(ctx context.Context, query string, categoryID *int, brand *string, isActive *bool, unitOfMeasure *string, limit, offset int) ([]models.Product, int, error)
+}
+
+type CategoryRepository interface {
+	GetAllCategories(ctx context.Context) ([]models.Category, error)
+	GetDistinctBrands(ctx context.Context) ([]string, error)
 }
 
 type MerchandisingRepository interface {

@@ -52,6 +52,7 @@ func main() {
 	merchandisingRepo := repository.NewMerchandisingRepo(db.DB)
 	ordersRepo := repository.NewOrdersRepo(db.DB)
 	productsRepo := repository.NewProductRepo(db.DB)
+	categoryRepo := repository.NewCategoryRepo(db.DB)
 	salesRepo := repository.NewSalesRepo(db.DB)
 
 	employeeService := service.NewEmployeeService(employeeRepo)
@@ -67,6 +68,7 @@ func main() {
 	posService := service.NewPOSService(salesRepo, employeeRepo, sessionRepo, storeRepo)
 	pricingService := service.NewPricingService(storeRepo, employeeRepo, sessionRepo, inventoryRepo)
 	productService := service.NewProductService(productsRepo, storeRepo, employeeRepo, sessionRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
 	storeService := service.NewStoreService(storeRepo, employeeRepo, productsRepo)
 	transactionService := service.NewTransactionService(salesRepo, employeeRepo, sessionRepo)
 	transferService := service.NewTransferService(storeRepo, inventoryRepo, employeeRepo, sessionRepo)
@@ -74,6 +76,7 @@ func main() {
 	appHandlers := router.Handlers{
 		AuthHandler:        handler.NewAuthHandler(authService),
 		BarcodeHandler:     handler.NewBarcodeHandler(barcodeService),
+		CategoryHandler:    handler.NewCategoryHandler(categoryService),
 		CycleCountHandler:  handler.NewCycleCountHandler(cycleCountService),
 		FillReportHandler:  handler.NewFillReportHandler(fillReportService),
 		InventoryHandler:   handler.NewInventoryHandler(inventoryService),

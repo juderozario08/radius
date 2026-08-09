@@ -26,6 +26,7 @@ type Handlers struct {
 	AuthHandler        *handler.AuthHandler
 	EmployeeHandler    *handler.EmployeeHandler
 	BarcodeHandler     *handler.BarcodeHandler
+	CategoryHandler    *handler.CategoryHandler
 	CycleCountHandler  *handler.CycleCountHandler
 	FillReportHandler  *handler.FillReportHandler
 	InventoryHandler   *handler.InventoryHandler
@@ -143,6 +144,10 @@ func NewRouter(cfg Config) *gin.Engine {
 		salesFloor.GET("/get_all_transactions", cfg.Handlers.TransactionHandler.GetAllTransactions)
 		salesFloor.GET("/get_transaction", cfg.Handlers.TransactionHandler.GetTransactionByID)
 		salesFloor.GET("/get_product", cfg.Handlers.ProductHandler.GetProductByID)
+		salesFloor.GET("/search_products", cfg.Handlers.ProductHandler.SearchProducts)
+
+		salesFloor.GET("/get_all_categories", cfg.Handlers.CategoryHandler.GetAllCategories)
+		salesFloor.GET("/get_distinct_brands", cfg.Handlers.CategoryHandler.GetDistinctBrands)
 
 		salesFloor.GET("/get_all_online_orders", cfg.Handlers.OnlineOrderHandler.GetAllOnlineOrders)
 		salesFloor.GET("/get_online_order", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)

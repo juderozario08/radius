@@ -30,3 +30,15 @@ func NewProductService(
 func (s *ProductService) GetProductByID(ctx context.Context, id int) (*models.Product, error) {
 	return s.productsRepo.GetProductByID(ctx, id)
 }
+
+func (s *ProductService) SearchProducts(
+	ctx context.Context,
+	query string,
+	categoryID *int,
+	brand *string,
+	isActive *bool,
+	unitOfMeasure *string,
+	limit, offset int,
+) ([]models.Product, int, error) {
+	return s.productsRepo.SearchProducts(ctx, query, categoryID, brand, isActive, unitOfMeasure, limit, offset)
+}

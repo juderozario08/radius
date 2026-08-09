@@ -489,6 +489,11 @@ func (m *MockProductRepository) GetProductByID(ctx context.Context, id int) (*mo
 	panic("unimplemented")
 }
 
+// SearchProducts implements [service.ProductRepository].
+func (m *MockProductRepository) SearchProducts(ctx context.Context, query string, categoryID *int, brand *string, isActive *bool, unitOfMeasure *string, limit, offset int) ([]models.Product, int, error) {
+	panic("unimplemented")
+}
+
 // MockProductRepositoryMockRecorder is the mock recorder for MockProductRepository.
 type MockProductRepositoryMockRecorder struct {
 	mock *MockProductRepository

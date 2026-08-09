@@ -124,7 +124,7 @@ export default function TransactionDetail() {
                         <TouchableOpacity 
                             key={item.transaction_item_id} 
                             style={styles.itemRow}
-                            onPress={() => router.push(`/(app)/(tabs)/inventory/${item.product_id}` as any)}
+                            onPress={() => router.push(`/(app)/product/${item.product_id}` as any)}
                         >
                             <View style={styles.itemInfo}>
                                 <Text style={styles.itemText}>Product SKU: {item.product_sku || 'N/A'}</Text>

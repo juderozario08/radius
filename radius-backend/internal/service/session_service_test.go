@@ -7,7 +7,20 @@ import (
 	"radius/internal/utils"
 	"testing"
 	"time"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 )
+
+func setupSessionTestRedis() *redis.Client {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	return redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+}
 
 // MockSessionRepo is a manual mock implementing SessionRepository for testing.
 type MockSessionRepo struct {
@@ -88,7 +101,9 @@ func TestValidateSession_Success(t *testing.T) {
 	mockRepo := &MockSessionRepo{}
 
 	secret := []byte("testsecret")
-	sessionService := NewSessionService(mockRepo, secret)
+	db := setupSessionTestRedis()
+	
+	sessionService := NewSessionService(mockRepo, secret, db)
 
 	// Create a valid token
 	token, _ := utils.GenerateAccessToken(1, "test@test.com", models.RoleAdmin, secret)
@@ -115,7 +130,8 @@ func TestValidateSession_Success(t *testing.T) {
 func TestValidateSession_Expired(t *testing.T) {
 	mockRepo := &MockSessionRepo{}
 	secret := []byte("testsecret")
-	sessionService := NewSessionService(mockRepo, secret)
+	db := setupSessionTestRedis()
+	sessionService := NewSessionService(mockRepo, secret, db)
 	token, _ := utils.GenerateAccessToken(1, "test@test.com", models.RoleAdmin, secret)
 
 	isActive := true
@@ -150,7 +166,8 @@ func TestValidateSession_Expired(t *testing.T) {
 func TestValidateSession_NotFound(t *testing.T) {
 	mockRepo := &MockSessionRepo{}
 	secret := []byte("testsecret")
-	sessionService := NewSessionService(mockRepo, secret)
+	db := setupSessionTestRedis()
+	sessionService := NewSessionService(mockRepo, secret, db)
 	token, _ := utils.GenerateAccessToken(1, "test@test.com", models.RoleAdmin, secret)
 
 	// Mock repo simulating session not found

@@ -11,17 +11,20 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 type SessionService struct {
 	sessionRepo SessionRepository
 	jwtSecret   []byte
+	redisClient *redis.Client
 }
 
-func NewSessionService(sessionRepo SessionRepository, jwtSecret []byte) *SessionService {
+func NewSessionService(sessionRepo SessionRepository, jwtSecret []byte, redisClient *redis.Client) *SessionService {
 	return &SessionService{
 		sessionRepo: sessionRepo,
 		jwtSecret:   jwtSecret,
+		redisClient: redisClient,
 	}
 }
 
@@ -50,11 +53,27 @@ func (s *SessionService) CreateSession(ctx context.Context, employeeId int, role
 	if err != nil {
 		return "", "", -1, err
 	}
+
+	// Cache session in Redis
+	err = s.redisClient.Set(ctx, "session:"+accessTokenHash, session.SessionId, utils.SessionInactivityTimeout).Err()
+	if err != nil {
+		log.Printf("Failed to cache session in Redis: %v", err)
+	}
+
 	return accessToken, refreshToken, session.SessionId, nil
 }
 
 func (s *SessionService) ValidateSession(ctx context.Context, tokenString string) error {
 	hashedToken := utils.HashTokenForDB(tokenString)
+	
+	// Check Redis first
+	_, err := s.redisClient.Get(ctx, "session:"+hashedToken).Result()
+	if err == nil {
+		// Found in Redis, valid and hasn't expired
+		return nil
+	}
+
+	// Fallback to DB
 	session, err := s.sessionRepo.GetSessionByAccessTokenHash(ctx, hashedToken)
 	if err != nil {
 		return errors.New("Session not found or logged out")
@@ -71,6 +90,9 @@ func (s *SessionService) ValidateSession(ctx context.Context, tokenString string
 		_ = s.sessionRepo.TerminateSessionByAccessTokenHash(ctx, hashedToken)
 		return errors.New("Terminated Account")
 	}
+
+	// Session is valid in DB, repopulate Redis
+	s.redisClient.Set(ctx, "session:"+hashedToken, session.SessionId, time.Until(session.ExpiresAt))
 	return nil
 }
 
@@ -140,6 +162,9 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 		return "", errors.New("failed to update session")
 	}
 
+	// Cache new session in Redis
+	s.redisClient.Set(ctx, "session:"+newAccessTokenHash, session.SessionId, utils.SessionInactivityTimeout)
+
 	// Sliding window: extend session expiry so active users are never kicked out
 	newExpiry := time.Now().Add(utils.SessionInactivityTimeout)
 	if err := s.sessionRepo.UpdateSessionExpiry(ctx, session.SessionId, newExpiry); err != nil {
@@ -151,6 +176,7 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 
 func (s *SessionService) Logout(ctx context.Context, tokenString string) error {
 	hashedToken := utils.HashTokenForDB(tokenString)
+	s.redisClient.Del(ctx, "session:"+hashedToken)
 	return s.sessionRepo.TerminateSessionByAccessTokenHash(ctx, hashedToken)
 }
 
@@ -176,35 +202,4 @@ func (s *SessionService) GetAllSessions(ctx context.Context, pageNumber int, pag
 	}, nil
 }
 
-func (s *SessionService) StartSessionCleanupWorker(ctx context.Context, interval time.Duration) {
-	cleanup := func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("[Worker] panic recovered: %v", r)
-			}
-		}()
-		cctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-		rowsDeleted, err := s.sessionRepo.TerminateExpiredSessions(cctx)
-		if err != nil {
-			log.Printf("[Worker] Error cleaning up expired sessions: %v", err)
-		} else if rowsDeleted > 0 {
-			log.Printf("[Worker] cleaned up %d sessions", rowsDeleted)
-		}
-	}
-	go func() {
-		log.Println("[Worker] Running initial session cleanup...")
-		cleanup()
-		ticker := time.NewTicker(interval)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				cleanup()
-			case <-ctx.Done():
-				log.Println("[Worker] Stopping session cleanup worker")
-				return
-			}
-		}
-	}()
-}
+

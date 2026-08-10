@@ -8,8 +8,20 @@ import (
 	"radius/internal/utils"
 	"testing"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/mock/gomock"
 )
+
+func setupAuthTestRedis() *redis.Client {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	return redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+}
 
 func TestAuthService_Login_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -21,13 +33,15 @@ func TestAuthService_Login_Success(t *testing.T) {
 	// We need a real SessionService because AuthService depends on it directly
 	// instead of an interface (though ideally it should use an interface too).
 	jwtSecret := []byte("testsecret")
-	sessionService := service.NewSessionService(mockSessionRepo, jwtSecret)
+	db := setupAuthTestRedis()
+	
+	sessionService := service.NewSessionService(mockSessionRepo, jwtSecret, db)
 
 	authService := service.NewAuthService(mockEmployeeRepo, sessionService)
 
 	password := "password123"
 	hashedPassword, _ := utils.HashPassword(password)
-	
+
 	isActive := true
 	isTerminated := false
 
@@ -80,13 +94,14 @@ func TestAuthService_Login_InvalidPassword(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
-	
+
 	// sessionRepo is not used because it fails before creating a session
-	sessionService := service.NewSessionService(nil, []byte("testsecret"))
+	db := setupAuthTestRedis()
+	sessionService := service.NewSessionService(nil, []byte("testsecret"), db)
 	authService := service.NewAuthService(mockEmployeeRepo, sessionService)
 
 	hashedPassword, _ := utils.HashPassword("correctpassword")
-	
+
 	mockEmployeeRepo.EXPECT().
 		GetEmployeeByEmailWithSession(gomock.Any(), "test@test.com").
 		Return(&models.GetEmployeeByEmailWithSession{
@@ -115,11 +130,14 @@ func TestAuthService_Login_RequiresConfirmation(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
-	sessionService := service.NewSessionService(nil, []byte("testsecret"))
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	db := setupAuthTestRedis()
+	
+	sessionService := service.NewSessionService(mockSessionRepo, []byte("testsecret"), db)
 	authService := service.NewAuthService(mockEmployeeRepo, sessionService)
 
 	hashedPassword, _ := utils.HashPassword("password123")
-	
+
 	isActive := true
 	isTerminated := false
 	sessionId := 42 // Active session exists

@@ -13,6 +13,7 @@ type Config struct {
 	JWTSecretKey   []byte
 	Port           string
 	DatabaseURL    string
+	RedisURL       string
 	AllowedOrigins string
 }
 
@@ -35,6 +36,7 @@ func LoadConfig() (*Config, error) {
 		JWTSecretKey:   []byte(os.Getenv("JWT_SECRET_KEY")),
 		Port:           os.Getenv("PORT"),
 		DatabaseURL:    os.Getenv("DATABASE_URL"),
+		RedisURL:       os.Getenv("REDIS_URL"),
 		AllowedOrigins: os.Getenv("ALLOWED_ORIGINS"),
 	}
 

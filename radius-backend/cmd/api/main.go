@@ -36,6 +36,13 @@ func main() {
 	}
 	defer db.Close()
 
+	redisClient, err := database.ConnectRedis(cfg.RedisURL)
+	if err != nil {
+		log.Printf("Error connecting to Redis: %v\n", err)
+		return
+	}
+	defer redisClient.Close()
+
 	if !cfg.IsRelease {
 		err = db.RunMigrations("migrations")
 		if err != nil {
@@ -56,7 +63,7 @@ func main() {
 	salesRepo := repository.NewSalesRepo(db.DB)
 
 	employeeService := service.NewEmployeeService(employeeRepo)
-	sessionService := service.NewSessionService(sessionRepo, cfg.JWTSecretKey)
+	sessionService := service.NewSessionService(sessionRepo, cfg.JWTSecretKey, redisClient)
 	authService := service.NewAuthService(employeeRepo, sessionService)
 	barcodeService := service.NewBarcodeService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
 	cycleCountService := service.NewCycleCountService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
@@ -65,10 +72,9 @@ func main() {
 	onlineOrderService := service.NewOnlineOrderService(ordersRepo, productsRepo, inventoryRepo, sessionRepo, storeRepo, employeeRepo)
 	outOfStockService := service.NewOutOfStockService(productsRepo, inventoryRepo, sessionRepo, employeeRepo, storeRepo)
 	planogramService := service.NewPlanogramService(merchandisingRepo, employeeRepo, storeRepo, sessionRepo)
-	posService := service.NewPOSService(salesRepo, employeeRepo, sessionRepo, storeRepo)
 	pricingService := service.NewPricingService(storeRepo, employeeRepo, sessionRepo, inventoryRepo)
-	productService := service.NewProductService(productsRepo, storeRepo, employeeRepo, sessionRepo)
-	categoryService := service.NewCategoryService(categoryRepo)
+	productService := service.NewProductService(productsRepo, storeRepo, employeeRepo, sessionRepo, redisClient)
+	categoryService := service.NewCategoryService(categoryRepo, redisClient)
 	storeService := service.NewStoreService(storeRepo, employeeRepo, productsRepo)
 	transactionService := service.NewTransactionService(salesRepo, employeeRepo, sessionRepo)
 	transferService := service.NewTransferService(storeRepo, inventoryRepo, employeeRepo, sessionRepo)
@@ -83,7 +89,6 @@ func main() {
 		OnlineOrderHandler: handler.NewOnlineOrderHandler(onlineOrderService),
 		OutOfStockHandler:  handler.NewOutOfStockHandler(outOfStockService),
 		PlanogramHandler:   handler.NewPlanogramHandler(planogramService),
-		POSHandler:         handler.NewPOSHandler(posService),
 		PricingHandler:     handler.NewPricingHandler(pricingService),
 		ProductHandler:     handler.NewProductHandler(productService),
 		StoreHandler:       handler.NewStoreHandler(storeService),
@@ -93,8 +98,7 @@ func main() {
 		EmployeeHandler:    handler.NewEmployeeHandler(employeeService),
 	}
 
-	bgCtx := context.Background()
-	sessionService.StartSessionCleanupWorker(bgCtx, 24*time.Hour)
+
 
 	router := router.NewRouter(router.Config{
 		Handlers:    appHandlers,

@@ -1,0 +1,7 @@
+ALTER TABLE online_order_items
+    ADD COLUMN tax_amount DECIMAL(10, 2) DEFAULT 0,
+    ADD COLUMN total_price DECIMAL(10, 2) DEFAULT 0,
+    ADD COLUMN fulfillment_status VARCHAR(50) DEFAULT 'PENDING',
+    ADD COLUMN is_substituted BOOLEAN DEFAULT FALSE,
+    ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW(),
+    ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();

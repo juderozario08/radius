@@ -18,8 +18,9 @@ export async function callApi<T>(endpoint: string, options: { method: string; bo
             body: options.body ? JSON.stringify(options.body) : undefined,
         });
     } catch (err) {
-        console.error(`API Call Failed [${options.method} ${endpoint}]:`, err);
-        showToast("error", err instanceof Error ? err.message : String(err));
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.log(`API Call Failed [${options.method} ${endpoint}]: ${errorMessage}`);
+        showToast("error", errorMessage);
         if (err instanceof UnauthorizedError) {
             await logout();
         }

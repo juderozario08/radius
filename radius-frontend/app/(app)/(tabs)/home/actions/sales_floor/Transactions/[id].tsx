@@ -127,8 +127,7 @@ export default function TransactionDetail() {
                             onPress={() => router.push(`/(app)/product/${item.product_id}` as any)}
                         >
                             <View style={styles.itemInfo}>
-                                <Text style={styles.itemText}>Product SKU: {item.product_sku || 'N/A'}</Text>
-                                <Text style={styles.itemSubText}>Product ID: {item.product_id}</Text>
+                                <Text style={styles.itemText}>SKU: {item.product_sku || 'N/A'}</Text>
                                 <Text style={styles.itemSubText}>Qty: {item.quantity} x ${item.unit_price.toFixed(2)}</Text>
                                 {item.scanned_barcode && <Text style={styles.itemSubText}>Barcode: {item.scanned_barcode}</Text>}
                             </View>

@@ -131,7 +131,7 @@ export default function OnlineOrderDetail() {
                     {items.map((item) => (
                         <View key={item.order_item_id} style={styles.itemRow}>
                             <View style={styles.itemInfo}>
-                                <Text style={styles.itemText}>Product ID: {item.product_id}</Text>
+                                <Text style={styles.itemText}>SKU: {item.product_sku || "N/A"}</Text>
                                 <Text style={styles.itemSubText}>Qty: {item.quantity} (Picked: {item.picked_qty})</Text>
                                 <Text style={styles.itemSubText}>Price: ${(item.unit_price || 0).toFixed(2)}</Text>
                             </View>

@@ -33,6 +33,7 @@ export interface OnlineOrderItem {
     order_item_id: number;
     order_id: number;
     product_id: number;
+    product_sku?: string | null;
     quantity: number;
     unit_price: number;
     picked_qty: number;

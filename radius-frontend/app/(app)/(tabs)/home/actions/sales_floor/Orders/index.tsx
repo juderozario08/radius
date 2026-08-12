@@ -4,7 +4,6 @@ import { ENDPOINTS } from "@/constants/routes";
 import { globalStyles } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
-import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
@@ -95,10 +94,10 @@ export default function OnlineOrdersList() {
     const loadAll = async () => {
         setIsLoading(true);
         setError(null);
-        await Promise.all([
-            fetchOrders("BOPIS", bopisPage, pageSize),
-            fetchOrders("STS", stsPage, pageSize)
-        ]);
+        // Fetch sequentially to avoid overwhelming the Neon PgBouncer connection pool 
+        // which throws "unnamed prepared statement does not exist" on concurrent lib/pq queries
+        await fetchOrders("BOPIS", bopisPage, pageSize);
+        await fetchOrders("STS", stsPage, pageSize);
         setIsLoading(false);
     };
 

@@ -32,7 +32,7 @@ export default function OrderSearchScreen() {
     const bopisStatuses = [
         { label: "All Statuses", value: "" },
         { label: "Ready for Pickup", value: "READY FOR PICKUP" },
-        { label: "Waiting for Customer Pickup", value: "WAITING FOR CUSTOMER PICKUP" },
+        { label: "Awaiting Pickup", value: "AWAITING PICKUP" },
         { label: "Released", value: "RELEASED" }
     ];
 
@@ -42,7 +42,7 @@ export default function OrderSearchScreen() {
         { label: "Shipped", value: "SHIPPED" },
         { label: "Delivering", value: "DELIVERING" },
         { label: "Delivered", value: "DELIVERED" },
-        { label: "Waiting for Customer Pickup", value: "WAITING FOR CUSTOMER PICKUP" }
+        { label: "Awaiting Pickup", value: "AWAITING PICKUP" }
     ];
 
     // Decide which statuses to show based on selected order type, or fallback to activeTab if no explicit filter

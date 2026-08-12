@@ -46,8 +46,8 @@ const (
 )
 
 const (
-	OnlineOrderStatusReadyForPickup           OnlineOrderStatus = "READY FOR PICKUP"
-	OnlineOrderStatusWaitingForCustomerPickup OnlineOrderStatus = "WAITING FOR CUSTOMER PICKUP"
+	OnlineOrderStatusReadyForPickup         OnlineOrderStatus = "READY FOR PICKUP"
+	OnlineOrderStatusAwaitingPickup         OnlineOrderStatus = "AWAITING PICKUP"
 	OnlineOrderStatusReleased                 OnlineOrderStatus = "RELEASED"
 	OnlineOrderStatusWorkInProgress           OnlineOrderStatus = "WORK IN PROGRESS"
 	OnlineOrderStatusShipped                  OnlineOrderStatus = "SHIPPED"
@@ -59,7 +59,7 @@ func (o *OnlineOrder) ValidateStatus() error {
 	switch o.OrderType {
 	case OnlineOrderTypePickup:
 		if o.Status != OnlineOrderStatusReadyForPickup &&
-			o.Status != OnlineOrderStatusWaitingForCustomerPickup &&
+			o.Status != OnlineOrderStatusAwaitingPickup &&
 			o.Status != OnlineOrderStatusReleased {
 			return fmt.Errorf("invalid status %s for BOPIS order", o.Status)
 		}
@@ -68,7 +68,7 @@ func (o *OnlineOrder) ValidateStatus() error {
 			o.Status != OnlineOrderStatusShipped &&
 			o.Status != OnlineOrderStatusDelivering &&
 			o.Status != OnlineOrderStatusDelivered &&
-			o.Status != OnlineOrderStatusWaitingForCustomerPickup {
+			o.Status != OnlineOrderStatusAwaitingPickup {
 			return fmt.Errorf("invalid status %s for STS order", o.Status)
 		}
 	}

@@ -29,7 +29,7 @@ const getStatusColor = (status: string) => {
     switch (status) {
         case "READY FOR PICKUP":
             return { bg: "#FFF3E0", text: "#E65100" }; // Orange
-        case "WAITING FOR CUSTOMER PICKUP":
+        case "AWAITING PICKUP":
             return { bg: "#FFF8E1", text: "#F57F17" }; // Amber
         case "RELEASED":
         case "DELIVERED":

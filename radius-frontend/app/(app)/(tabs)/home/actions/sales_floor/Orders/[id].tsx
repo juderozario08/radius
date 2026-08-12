@@ -114,16 +114,16 @@ export default function OnlineOrderDetail() {
 
                 <View style={styles.card}>
                     <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Financials</Text>
-                    <DetailRow label="Subtotal:" value={`$${order.subtotal.toFixed(2)}`} />
-                    <DetailRow label="Tax:" value={`$${order.tax_amount.toFixed(2)}`} />
-                    <DetailRow label="Shipping:" value={`$${order.shipping_fee.toFixed(2)}`} />
-                    <DetailRow label="Discount:" value={`$${order.discount_total.toFixed(2)}`} />
+                    <DetailRow label="Subtotal:" value={`$${(order.subtotal || 0).toFixed(2)}`} />
+                    <DetailRow label="Tax:" value={`$${(order.tax_amount || 0).toFixed(2)}`} />
+                    <DetailRow label="Shipping:" value={`$${(order.shipping_fee || 0).toFixed(2)}`} />
+                    <DetailRow label="Discount:" value={`$${(order.discount_total || 0).toFixed(2)}`} />
                     {order.promo_code && <DetailRow label="Promo:" value={order.promo_code} />}
                     <View style={globalStyles.divider} />
-                    <DetailRow label="Total:" value={`$${order.total_amount.toFixed(2)}`} />
+                    <DetailRow label="Total:" value={`$${(order.total_amount || 0).toFixed(2)}`} />
                     <View style={globalStyles.divider} />
-                    <DetailRow label="Cost Total:" value={`$${order.cost_total.toFixed(2)}`} />
-                    <DetailRow label="Est. Margin:" value={`$${(order.subtotal - order.cost_total).toFixed(2)}`} />
+                    <DetailRow label="Cost Total:" value={`$${(order.cost_total || 0).toFixed(2)}`} />
+                    <DetailRow label="Est. Margin:" value={`$${((order.subtotal || 0) - (order.cost_total || 0)).toFixed(2)}`} />
                 </View>
 
                 <View style={styles.card}>
@@ -133,10 +133,10 @@ export default function OnlineOrderDetail() {
                             <View style={styles.itemInfo}>
                                 <Text style={styles.itemText}>Product ID: {item.product_id}</Text>
                                 <Text style={styles.itemSubText}>Qty: {item.quantity} (Picked: {item.picked_qty})</Text>
-                                <Text style={styles.itemSubText}>Price: ${item.unit_price.toFixed(2)}</Text>
+                                <Text style={styles.itemSubText}>Price: ${(item.unit_price || 0).toFixed(2)}</Text>
                             </View>
                             <Text style={styles.itemTotal}>
-                                ${ ((item.quantity * item.unit_price) - item.discount_amount).toFixed(2) }
+                                ${ ((item.quantity * (item.unit_price || 0)) - (item.discount_amount || 0)).toFixed(2) }
                             </Text>
                         </View>
                     ))}

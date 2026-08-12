@@ -18,12 +18,12 @@ func TestOnlineOrderService_GetAllOnlineOrders_Admin(t *testing.T) {
 	svc := service.NewOnlineOrderService(mockOrdersRepo, nil, nil, nil, nil, nil)
 
 	mockOrdersRepo.EXPECT().
-		GetAllOnlineOrders(gomock.Any(), 10, 0, nil). // storeID should be nil for Admin
+		GetAllOnlineOrders(gomock.Any(), 10, 0, nil, models.OrderSearchCriteria{}). // storeID should be nil for Admin
 		Return([]models.OnlineOrder{
 			{OrderId: 1},
 		}, 1, nil)
 
-	orders, total, err := svc.GetAllOnlineOrders(context.Background(), "admin@test.com", models.RoleAdmin, 1, 10)
+	orders, total, err := svc.GetAllOnlineOrders(context.Background(), "admin@test.com", models.RoleAdmin, 1, 10, models.OrderSearchCriteria{})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -54,10 +54,10 @@ func TestOnlineOrderService_GetAllOnlineOrders_Manager(t *testing.T) {
 		}, nil)
 
 	mockOrdersRepo.EXPECT().
-		GetAllOnlineOrders(gomock.Any(), 10, 0, &storeId). // storeID should be passed
+		GetAllOnlineOrders(gomock.Any(), 10, 0, &storeId, models.OrderSearchCriteria{}). // storeID should be passed
 		Return([]models.OnlineOrder{}, 0, nil)
 
-	orders, total, err := svc.GetAllOnlineOrders(context.Background(), "manager@test.com", models.RoleManager, 1, 10)
+	orders, total, err := svc.GetAllOnlineOrders(context.Background(), "manager@test.com", models.RoleManager, 1, 10, models.OrderSearchCriteria{})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

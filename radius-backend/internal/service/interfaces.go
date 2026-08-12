@@ -33,7 +33,7 @@ type SalesRepository interface {
 }
 
 type OrdersRepository interface {
-	GetAllOnlineOrders(ctx context.Context, limit, offset int, storeID *int) ([]models.OnlineOrder, int, error)
+	GetAllOnlineOrders(ctx context.Context, limit, offset int, storeID *int, criteria models.OrderSearchCriteria) ([]models.OnlineOrder, int, error)
 	GetOnlineOrderByID(ctx context.Context, id int, storeID *int) (*models.OnlineOrder, []models.OnlineOrderItem, error)
 }
 

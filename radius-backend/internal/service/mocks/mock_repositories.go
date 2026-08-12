@@ -362,9 +362,9 @@ func (m *MockOrdersRepository) EXPECT() *MockOrdersRepositoryMockRecorder {
 }
 
 // GetAllOnlineOrders mocks base method.
-func (m *MockOrdersRepository) GetAllOnlineOrders(ctx context.Context, limit, offset int, storeID *int) ([]models.OnlineOrder, int, error) {
+func (m *MockOrdersRepository) GetAllOnlineOrders(ctx context.Context, limit, offset int, storeID *int, criteria models.OrderSearchCriteria) ([]models.OnlineOrder, int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllOnlineOrders", ctx, limit, offset, storeID)
+	ret := m.ctrl.Call(m, "GetAllOnlineOrders", ctx, limit, offset, storeID, criteria)
 	ret0, _ := ret[0].([]models.OnlineOrder)
 	ret1, _ := ret[1].(int)
 	ret2, _ := ret[2].(error)
@@ -372,9 +372,9 @@ func (m *MockOrdersRepository) GetAllOnlineOrders(ctx context.Context, limit, of
 }
 
 // GetAllOnlineOrders indicates an expected call of GetAllOnlineOrders.
-func (mr *MockOrdersRepositoryMockRecorder) GetAllOnlineOrders(ctx, limit, offset, storeID any) *gomock.Call {
+func (mr *MockOrdersRepositoryMockRecorder) GetAllOnlineOrders(ctx, limit, offset, storeID, criteria any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllOnlineOrders", reflect.TypeOf((*MockOrdersRepository)(nil).GetAllOnlineOrders), ctx, limit, offset, storeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllOnlineOrders", reflect.TypeOf((*MockOrdersRepository)(nil).GetAllOnlineOrders), ctx, limit, offset, storeID, criteria)
 }
 
 // GetOnlineOrderByID mocks base method.

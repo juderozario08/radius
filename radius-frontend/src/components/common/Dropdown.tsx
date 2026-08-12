@@ -22,6 +22,7 @@ export interface DropdownProps<T> {
     title?: string;
     placeholder?: string;
     disabled?: boolean;
+    style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
 }
 
 export default function Dropdown<T>({
@@ -31,6 +32,7 @@ export default function Dropdown<T>({
     title = "Select an option",
     placeholder = "Select...",
     disabled = false,
+    style,
 }: DropdownProps<T>) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -41,7 +43,7 @@ export default function Dropdown<T>({
     return (
         <View>
             <TouchableOpacity
-                style={[styles.dropdownTrigger, disabled && styles.dropdownDisabled]}
+                style={[styles.dropdownTrigger, style, disabled && styles.dropdownDisabled]}
                 disabled={disabled}
                 onPress={() => setIsOpen(true)}
             >
@@ -93,12 +95,12 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: COLORS.inputBg,
+        backgroundColor: COLORS.surface,
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
-        borderRadius: 6,
+        borderRadius: 8,
         paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingVertical: 10,
         minWidth: 70,
     },
     dropdownDisabled: {

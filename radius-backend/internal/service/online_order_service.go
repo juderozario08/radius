@@ -33,7 +33,7 @@ func NewOnlineOrderService(
 	}
 }
 
-func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, email string, role models.EmployeeRole, page, limit int) ([]models.OnlineOrder, int, error) {
+func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, email string, role models.EmployeeRole, page, limit int, criteria models.OrderSearchCriteria) ([]models.OnlineOrder, int, error) {
 	var storeID *int
 	if role != models.RoleAdmin {
 		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
@@ -44,7 +44,7 @@ func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, email strin
 	}
 
 	offset := (page - 1) * limit
-	return s.ordersRepo.GetAllOnlineOrders(ctx, limit, offset, storeID)
+	return s.ordersRepo.GetAllOnlineOrders(ctx, limit, offset, storeID, criteria)
 }
 
 func (s *OnlineOrderService) GetOnlineOrderByID(ctx context.Context, email string, role models.EmployeeRole, id int) (*models.OnlineOrder, []models.OnlineOrderItem, error) {

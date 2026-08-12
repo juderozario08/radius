@@ -1,7 +1,10 @@
 // radius-backend/internal/models/orders.go
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type POStatus string
 
@@ -43,14 +46,34 @@ const (
 )
 
 const (
-	OnlineOrderStatusPlaced         OnlineOrderStatus = "PLACED"
-	OnlineOrderStatusPicking        OnlineOrderStatus = "PICKING"
-	OnlineOrderStatusPacked         OnlineOrderStatus = "PACKED"
-	OnlineOrderStatusReady          OnlineOrderStatus = "READY"
-	OnlineOrderStatusOutForDelivery OnlineOrderStatus = "OUT FOR DELIVERY"
-	OnlineOrderStatusCompleted      OnlineOrderStatus = "COMPLETED"
-	OnlineOrderStatusCancelled      OnlineOrderStatus = "CANCELLED"
+	OnlineOrderStatusReadyForPickup           OnlineOrderStatus = "READY FOR PICKUP"
+	OnlineOrderStatusWaitingForCustomerPickup OnlineOrderStatus = "WAITING FOR CUSTOMER PICKUP"
+	OnlineOrderStatusReleased                 OnlineOrderStatus = "RELEASED"
+	OnlineOrderStatusWorkInProgress           OnlineOrderStatus = "WORK IN PROGRESS"
+	OnlineOrderStatusShipped                  OnlineOrderStatus = "SHIPPED"
+	OnlineOrderStatusDelivering               OnlineOrderStatus = "DELIVERING"
+	OnlineOrderStatusDelivered                OnlineOrderStatus = "DELIVERED"
 )
+
+func (o *OnlineOrder) ValidateStatus() error {
+	switch o.OrderType {
+	case OnlineOrderTypePickup:
+		if o.Status != OnlineOrderStatusReadyForPickup &&
+			o.Status != OnlineOrderStatusWaitingForCustomerPickup &&
+			o.Status != OnlineOrderStatusReleased {
+			return fmt.Errorf("invalid status %s for BOPIS order", o.Status)
+		}
+	case OnlineOrderTypeDelivery, OnlineOrderTypeShipping:
+		if o.Status != OnlineOrderStatusWorkInProgress &&
+			o.Status != OnlineOrderStatusShipped &&
+			o.Status != OnlineOrderStatusDelivering &&
+			o.Status != OnlineOrderStatusDelivered &&
+			o.Status != OnlineOrderStatusWaitingForCustomerPickup {
+			return fmt.Errorf("invalid status %s for STS order", o.Status)
+		}
+	}
+	return nil
+}
 
 type OnlineOrder struct {
 	OrderId         int               `json:"order_id"`
@@ -86,4 +109,16 @@ type GetAllOnlineOrdersResponse struct {
 type GetOnlineOrderResponse struct {
 	OnlineOrder any `json:"online_order"`
 	Items       any `json:"items"`
+}
+
+type OrderSearchCriteria struct {
+	OrderType         string
+	OrderID           *int
+	CustomerFirstName string
+	CustomerLastName  string
+	CustomerEmail     string
+	BillingPhone      string
+	PaymentCard       string
+	SKU               string
+	Status            string
 }

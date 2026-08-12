@@ -34,8 +34,16 @@ func NewOnlineOrderService(
 }
 
 func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, email string, role models.EmployeeRole, page, limit int, criteria models.OrderSearchCriteria) ([]models.OnlineOrder, int, error) {
+	isTargetedSearch := criteria.OrderID != nil ||
+		criteria.CustomerFirstName != "" ||
+		criteria.CustomerLastName != "" ||
+		criteria.CustomerEmail != "" ||
+		criteria.BillingPhone != "" ||
+		criteria.PaymentCard != "" ||
+		criteria.SKU != ""
+
 	var storeID *int
-	if role != models.RoleAdmin {
+	if role != models.RoleAdmin && !isTargetedSearch {
 		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 		if err != nil {
 			return nil, 0, err
@@ -48,14 +56,6 @@ func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, email strin
 }
 
 func (s *OnlineOrderService) GetOnlineOrderByID(ctx context.Context, email string, role models.EmployeeRole, id int) (*models.OnlineOrder, []models.OnlineOrderItem, error) {
-	var storeID *int
-	if role != models.RoleAdmin {
-		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-		if err != nil {
-			return nil, nil, err
-		}
-		storeID = &emp.StoreId
-	}
-
-	return s.ordersRepo.GetOnlineOrderByID(ctx, id, storeID)
+	// Since employees can search for orders globally, they can view them globally.
+	return s.ordersRepo.GetOnlineOrderByID(ctx, id, nil)
 }

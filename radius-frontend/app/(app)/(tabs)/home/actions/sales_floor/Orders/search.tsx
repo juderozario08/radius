@@ -42,7 +42,8 @@ export default function OrderSearchScreen() {
         { label: "Shipped", value: "SHIPPED" },
         { label: "Delivering", value: "DELIVERING" },
         { label: "Delivered", value: "DELIVERED" },
-        { label: "Awaiting Pickup", value: "AWAITING PICKUP" }
+        { label: "Awaiting Pickup", value: "AWAITING PICKUP" },
+        { label: "Released", value: "RELEASED" }
     ];
 
     // Decide which statuses to show based on selected order type, or fallback to activeTab if no explicit filter

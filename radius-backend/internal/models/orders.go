@@ -68,6 +68,7 @@ func (o *OnlineOrder) ValidateStatus() error {
 			o.Status != OnlineOrderStatusShipped &&
 			o.Status != OnlineOrderStatusDelivering &&
 			o.Status != OnlineOrderStatusDelivered &&
+			o.Status != OnlineOrderStatusReleased &&
 			o.Status != OnlineOrderStatusAwaitingPickup {
 			return fmt.Errorf("invalid status %s for STS order", o.Status)
 		}

@@ -13,25 +13,28 @@ interface ProductDetailsProps {
 export const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            <View style={globalStyles.cardHeader}>
-                <Text style={styles.name}>{product.name}</Text>
-                <StatusBadge isActive={product.is_active} />
+            <View style={styles.headerCard}>
+                <View style={globalStyles.cardHeader}>
+                    <Text style={styles.name}>{product.name}</Text>
+                    <StatusBadge isActive={product.is_active} />
+                </View>
+                <Text style={styles.sku}>SKU: {product.sku}</Text>
             </View>
 
             <View style={styles.card}>
                 <Text style={styles.sectionTitle}>Overview</Text>
                 <DetailRow label="Product ID:" value={product.product_id} />
-                <DetailRow label="SKU:" value={product.sku} />
                 <DetailRow label="UPC:" value={product.upc} />
                 <DetailRow label="Brand:" value={product.brand} />
                 <DetailRow label="Category ID:" value={product.category_id} />
-                {product.description && (
-                    <>
-                        <View style={globalStyles.divider} />
-                        <DetailRow label="Description:" value={product.description} />
-                    </>
-                )}
             </View>
+
+            {product.description && (
+                <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>Description</Text>
+                    <Text style={styles.description}>{product.description}</Text>
+                </View>
+            )}
 
             <View style={styles.card}>
                 <Text style={styles.sectionTitle}>Metrics</Text>
@@ -53,12 +56,31 @@ const styles = StyleSheet.create({
     content: {
         padding: 16,
     },
+    headerCard: {
+        backgroundColor: COLORS.surface,
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        elevation: 2,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
     name: {
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: "700",
         color: COLORS.textPrimary,
         flex: 1,
         marginRight: 12,
+    },
+    sku: {
+        fontSize: 14,
+        fontWeight: "500",
+        color: COLORS.textSecondary,
+        marginTop: 8,
     },
     card: {
         backgroundColor: COLORS.surface,
@@ -78,5 +100,11 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         color: COLORS.textPrimary,
         marginBottom: 12,
+    },
+    description: {
+        fontSize: 15,
+        lineHeight: 22,
+        color: COLORS.textPrimary,
+        fontWeight: "400",
     },
 });

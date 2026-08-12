@@ -4,7 +4,6 @@ import { ENDPOINTS } from "@/constants/routes";
 import { globalStyles } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
-import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import React, { useEffect, useState } from "react";
 import {
@@ -12,13 +11,34 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TouchableOpacity,
     View,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import CustomToast from "@/components/common/Toast";
 import { callApi } from "@/utils/helpers";
 import { GetOnlineOrderByIDResponse, OnlineOrder, OnlineOrderItem } from "@/types/order.types";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+
+const getStatusColor = (status: string) => {
+    switch (status) {
+        case "READY FOR PICKUP":
+            return { bg: "#FFF3E0", text: "#E65100" };
+        case "AWAITING PICKUP":
+            return { bg: "#FFF8E1", text: "#F57F17" };
+        case "RELEASED":
+        case "DELIVERED":
+            return { bg: "#E8F5E9", text: "#2E7D32" };
+        case "WORK IN PROGRESS":
+            return { bg: "#E3F2FD", text: "#1565C0" };
+        case "SHIPPED":
+            return { bg: "#F3E5F5", text: "#6A1B9A" };
+        case "DELIVERING":
+            return { bg: "#E0F7FA", text: "#006064" };
+        default:
+            return { bg: COLORS.surface, text: COLORS.textSecondary };
+    }
+};
 
 export default function OnlineOrderDetail() {
     const { id } = useLocalSearchParams();
@@ -85,7 +105,9 @@ export default function OnlineOrderDetail() {
                 <View style={styles.card}>
                     <View style={globalStyles.cardHeader}>
                         <Text style={styles.sectionTitle}>Details</Text>
-                        <StatusBadge isActive={order.status === 'COMPLETED'} />
+                        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status).bg }]}>
+                            <Text style={[styles.statusText, { color: getStatusColor(order.status).text }]}>{order.status}</Text>
+                        </View>
                     </View>
                     <DetailRow label="Type:" value={order.order_type} />
                     <DetailRow label="Customer:" value={order.customer_name} />
@@ -129,7 +151,12 @@ export default function OnlineOrderDetail() {
                 <View style={styles.card}>
                     <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Items ({items.length})</Text>
                     {items.map((item) => (
-                        <View key={item.order_item_id} style={styles.itemRow}>
+                        <TouchableOpacity
+                            key={item.order_item_id}
+                            style={styles.itemRow}
+                            activeOpacity={0.7}
+                            onPress={() => router.push(`/(app)/product/${item.product_id}` as any)}
+                        >
                             <View style={styles.itemInfo}>
                                 <Text style={styles.itemText}>SKU: {item.product_sku || "N/A"}</Text>
                                 <Text style={styles.itemSubText}>Qty: {item.quantity} (Picked: {item.picked_qty})</Text>
@@ -138,7 +165,7 @@ export default function OnlineOrderDetail() {
                             <Text style={styles.itemTotal}>
                                 ${ ((item.quantity * (item.unit_price || 0)) - (item.discount_amount || 0)).toFixed(2) }
                             </Text>
-                        </View>
+                        </TouchableOpacity>
                     ))}
                     {items.length === 0 && <Text style={globalStyles.emptyText}>No items found.</Text>}
                 </View>
@@ -194,5 +221,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
         color: COLORS.primary,
-    }
+    },
+    statusBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    statusText: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
 });

@@ -24,10 +24,15 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 
 	baseConditions := "TRUE"
 
+	// Helper to safely append arguments and return the $N placeholder
+	addArg := func(val any) string {
+		args = append(args, val)
+		countArgs = append(countArgs, val)
+		return fmt.Sprintf("$%d", len(args))
+	}
+
 	if storeID != nil {
-		baseConditions += ` AND o.store_id = $1`
-		args = append(args, *storeID)
-		countArgs = append(countArgs, *storeID)
+		baseConditions += fmt.Sprintf(" AND o.store_id = %s", addArg(*storeID))
 	}
 
 	switch criteria.OrderType {
@@ -38,60 +43,39 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 	}
 
 	if criteria.OrderID != nil {
-		args = append(args, *criteria.OrderID)
-		countArgs = append(countArgs, *criteria.OrderID)
-		baseConditions += ` AND o.order_id = $` + fmt.Sprint(len(args))
+		baseConditions += fmt.Sprintf(" AND o.order_id = %s", addArg(*criteria.OrderID))
 	}
 
 	if criteria.CustomerFirstName != "" {
-		searchPattern := "%" + criteria.CustomerFirstName + "%"
-		args = append(args, searchPattern)
-		countArgs = append(countArgs, searchPattern)
-		baseConditions += ` AND o.customer_name ILIKE $` + fmt.Sprint(len(args))
+		baseConditions += fmt.Sprintf(" AND o.customer_name ILIKE %s", addArg("%"+criteria.CustomerFirstName+"%"))
 	}
 
 	if criteria.CustomerLastName != "" {
-		searchPattern := "%" + criteria.CustomerLastName + "%"
-		args = append(args, searchPattern)
-		countArgs = append(countArgs, searchPattern)
-		baseConditions += ` AND o.customer_name ILIKE $` + fmt.Sprint(len(args))
+		baseConditions += fmt.Sprintf(" AND o.customer_name ILIKE %s", addArg("%"+criteria.CustomerLastName+"%"))
 	}
 
 	if criteria.CustomerEmail != "" {
-		searchPattern := "%" + criteria.CustomerEmail + "%"
-		args = append(args, searchPattern)
-		countArgs = append(countArgs, searchPattern)
-		baseConditions += ` AND o.customer_email ILIKE $` + fmt.Sprint(len(args))
+		baseConditions += fmt.Sprintf(" AND o.customer_email ILIKE %s", addArg("%"+criteria.CustomerEmail+"%"))
 	}
 
 	if criteria.BillingPhone != "" {
-		searchPattern := "%" + criteria.BillingPhone + "%"
-		args = append(args, searchPattern)
-		countArgs = append(countArgs, searchPattern)
-		baseConditions += ` AND o.billing_phone ILIKE $` + fmt.Sprint(len(args))
+		baseConditions += fmt.Sprintf(" AND o.billing_phone ILIKE %s", addArg("%"+criteria.BillingPhone+"%"))
 	}
 
 	if criteria.PaymentCard != "" {
-		args = append(args, criteria.PaymentCard)
-		countArgs = append(countArgs, criteria.PaymentCard)
-		baseConditions += ` AND o.payment_card_last4 = $` + fmt.Sprint(len(args))
+		baseConditions += fmt.Sprintf(" AND o.payment_card_last4 = %s", addArg(criteria.PaymentCard))
 	}
 
 	if criteria.Status != "" {
-		args = append(args, criteria.Status)
-		countArgs = append(countArgs, criteria.Status)
-		baseConditions += ` AND o.status = $` + fmt.Sprint(len(args))
+		baseConditions += fmt.Sprintf(" AND o.status = %s", addArg(criteria.Status))
 	}
 
 	if criteria.SKU != "" {
-		searchPattern := "%" + criteria.SKU + "%"
-		args = append(args, searchPattern)
-		countArgs = append(countArgs, searchPattern)
-		baseConditions += ` AND EXISTS (
+		baseConditions += fmt.Sprintf(` AND EXISTS (
 			SELECT 1 FROM online_order_items ooi
 			JOIN products p ON ooi.product_id = p.product_id
-			WHERE ooi.order_id = o.order_id AND p.sku ILIKE $` + fmt.Sprint(len(args)) + `
-		)`
+			WHERE ooi.order_id = o.order_id AND p.sku ILIKE %s
+		)`, addArg("%"+criteria.SKU+"%"))
 	}
 
 	countQuery = `
@@ -99,31 +83,23 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 		FROM online_orders o
 		WHERE ` + baseConditions
 
+	limitPlaceholder := fmt.Sprintf("$%d", len(args)+1)
+	offsetPlaceholder := fmt.Sprintf("$%d", len(args)+2)
+	args = append(args, limit, offset)
+
 	query = `
 		SELECT o.order_id, o.store_id, o.customer_email, o.customer_name, o.order_type, o.status, o.placed_at, o.fulfilled_at, o.subtotal, o.tax_amount, o.shipping_fee, o.total_amount, o.shipping_address
 		FROM online_orders o
-		WHERE ` + baseConditions + `
+		WHERE ` + baseConditions + fmt.Sprintf(`
 		ORDER BY o.order_id DESC
-		LIMIT $` + fmt.Sprint(len(args)+1) + ` OFFSET $` + fmt.Sprint(len(args)+2)
-
-	args = append(args, limit, offset)
-
-	// Wrap in a transaction to fix lib/pq + PgBouncer compatibility.
-	// In transaction pooling mode, PgBouncer assigns a dedicated server connection
-	// for the duration of the transaction. This prevents lib/pq's prepared statements
-	// from crossing wires between different connections.
-	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
-	if err != nil {
-		return nil, 0, err
-	}
-	defer tx.Rollback()
+		LIMIT %s OFFSET %s`, limitPlaceholder, offsetPlaceholder)
 
 	var total int
-	if err := tx.QueryRowContext(ctx, countQuery, countArgs...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, countQuery, countArgs...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	rows, err := tx.QueryContext(ctx, query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -146,9 +122,7 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 		return nil, 0, err
 	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, 0, err
-	}
+
 
 	if orders == nil {
 		orders = []models.OnlineOrder{}

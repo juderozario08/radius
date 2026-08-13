@@ -3,12 +3,12 @@ package router
 
 import (
 	"net/http"
-	"strings"
 	"radius/internal/config"
 	"radius/internal/handler"
 	"radius/internal/middleware"
 	"radius/internal/models"
 	"radius/internal/service"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"

@@ -22,18 +22,19 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 	var args []any
 	var countArgs []any
 
-	baseConditions := "1=1"
+	baseConditions := "TRUE"
 
 	if storeID != nil {
-		baseConditions += " AND o.store_id = $1"
+		baseConditions += ` AND o.store_id = $1`
 		args = append(args, *storeID)
 		countArgs = append(countArgs, *storeID)
 	}
 
-	if criteria.OrderType == "BOPIS" {
-		baseConditions += " AND o.order_type = 'PICKUP'"
-	} else if criteria.OrderType == "STS" {
-		baseConditions += " AND o.order_type = 'DELIVERY'"
+	switch criteria.OrderType {
+	case "BOPIS":
+		baseConditions += ` AND o.order_type = 'BOPIS'`
+	case "STS":
+		baseConditions += ` AND o.order_type = 'STS'`
 	}
 
 	if criteria.OrderID != nil {
@@ -87,32 +88,42 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 		args = append(args, searchPattern)
 		countArgs = append(countArgs, searchPattern)
 		baseConditions += ` AND EXISTS (
-			SELECT 1 FROM online_order_items ooi 
-			JOIN products p ON ooi.product_id = p.product_id 
+			SELECT 1 FROM online_order_items ooi
+			JOIN products p ON ooi.product_id = p.product_id
 			WHERE ooi.order_id = o.order_id AND p.sku ILIKE $` + fmt.Sprint(len(args)) + `
 		)`
 	}
 
 	countQuery = `
-		SELECT COUNT(*) 
+		SELECT COUNT(*)
 		FROM online_orders o
 		WHERE ` + baseConditions
 
 	query = `
-		SELECT o.order_id, o.store_id, o.customer_email, o.customer_name, o.order_type, o.status, o.placed_at, o.fulfilled_at, o.subtotal, o.tax_amount, o.shipping_fee, o.total_amount, o.shipping_address 
+		SELECT o.order_id, o.store_id, o.customer_email, o.customer_name, o.order_type, o.status, o.placed_at, o.fulfilled_at, o.subtotal, o.tax_amount, o.shipping_fee, o.total_amount, o.shipping_address
 		FROM online_orders o
-		WHERE ` + baseConditions + ` 
-		ORDER BY o.order_id DESC 
+		WHERE ` + baseConditions + `
+		ORDER BY o.order_id DESC
 		LIMIT $` + fmt.Sprint(len(args)+1) + ` OFFSET $` + fmt.Sprint(len(args)+2)
 
 	args = append(args, limit, offset)
 
+	// Wrap in a transaction to fix lib/pq + PgBouncer compatibility.
+	// In transaction pooling mode, PgBouncer assigns a dedicated server connection
+	// for the duration of the transaction. This prevents lib/pq's prepared statements
+	// from crossing wires between different connections.
+	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, 0, err
+	}
+	defer tx.Rollback()
+
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery, countArgs...).Scan(&total); err != nil {
+	if err := tx.QueryRowContext(ctx, countQuery, countArgs...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -135,6 +146,10 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 		return nil, 0, err
 	}
 
+	if err := tx.Commit(); err != nil {
+		return nil, 0, err
+	}
+
 	if orders == nil {
 		orders = []models.OnlineOrder{}
 	}
@@ -148,15 +163,15 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 
 	if storeID != nil {
 		query = `
-			SELECT order_id, store_id, customer_email, customer_name, order_type, status, placed_at, fulfilled_at, subtotal, tax_amount, shipping_fee, total_amount, shipping_address 
-			FROM online_orders 
+			SELECT order_id, store_id, customer_email, customer_name, order_type, status, placed_at, fulfilled_at, subtotal, tax_amount, shipping_fee, total_amount, shipping_address
+			FROM online_orders
 			WHERE order_id = $1 AND store_id = $2
 		`
 		args = []any{id, *storeID}
 	} else {
 		query = `
-			SELECT order_id, store_id, customer_email, customer_name, order_type, status, placed_at, fulfilled_at, subtotal, tax_amount, shipping_fee, total_amount, shipping_address 
-			FROM online_orders 
+			SELECT order_id, store_id, customer_email, customer_name, order_type, status, placed_at, fulfilled_at, subtotal, tax_amount, shipping_fee, total_amount, shipping_address
+			FROM online_orders
 			WHERE order_id = $1
 		`
 		args = []any{id}
@@ -176,7 +191,7 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 	}
 
 	itemQuery := `
-		SELECT ooi.order_item_id, ooi.order_id, ooi.product_id, p.sku as product_sku, ooi.quantity, ooi.unit_price, ooi.picked_qty 
+		SELECT ooi.order_item_id, ooi.order_id, ooi.product_id, p.sku as product_sku, ooi.quantity, ooi.unit_price, ooi.picked_qty
 		FROM online_order_items ooi
 		LEFT JOIN products p ON ooi.product_id = p.product_id
 		WHERE ooi.order_id = $1

@@ -40,8 +40,8 @@ type OnlineOrderType string
 type OnlineOrderStatus string
 
 const (
-	OnlineOrderTypePickup   OnlineOrderType = "PICKUP"
-	OnlineOrderTypeDelivery OnlineOrderType = "DELIVERY"
+	OnlineOrderTypeBOPIS    OnlineOrderType = "BOPIS"
+	OnlineOrderTypeSTS      OnlineOrderType = "STS"
 	OnlineOrderTypeShipping OnlineOrderType = "SHIPPING"
 )
 
@@ -57,13 +57,13 @@ const (
 
 func (o *OnlineOrder) ValidateStatus() error {
 	switch o.OrderType {
-	case OnlineOrderTypePickup:
+	case OnlineOrderTypeBOPIS:
 		if o.Status != OnlineOrderStatusReadyForPickup &&
 			o.Status != OnlineOrderStatusAwaitingPickup &&
 			o.Status != OnlineOrderStatusReleased {
 			return fmt.Errorf("invalid status %s for BOPIS order", o.Status)
 		}
-	case OnlineOrderTypeDelivery, OnlineOrderTypeShipping:
+	case OnlineOrderTypeSTS, OnlineOrderTypeShipping:
 		if o.Status != OnlineOrderStatusWorkInProgress &&
 			o.Status != OnlineOrderStatusShipped &&
 			o.Status != OnlineOrderStatusDelivering &&

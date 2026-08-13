@@ -1,4 +1,4 @@
-//radius-backend/internal/database/database.go
+// radius-backend/internal/database/database.go
 package database
 
 import (

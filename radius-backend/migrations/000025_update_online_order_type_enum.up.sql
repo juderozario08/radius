@@ -1,0 +1,2 @@
+ALTER TYPE online_order_type RENAME VALUE 'PICKUP' TO 'BOPIS';
+ALTER TYPE online_order_type RENAME VALUE 'DELIVERY' TO 'STS';

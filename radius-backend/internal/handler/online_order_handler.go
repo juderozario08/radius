@@ -1,4 +1,4 @@
-//radius-backend/internal/handler/online_order_handler.go
+// radius-backend/internal/handler/online_order_handler.go
 package handler
 
 import (
@@ -27,18 +27,18 @@ func (h *OnlineOrderHandler) GetAllOnlineOrders(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	pageNumber, pageSize := utils.ParsePagination(ctx)
-	
+
 	criteria := models.OrderSearchCriteria{
 		OrderType:         ctx.Query("order_type"),
 		CustomerFirstName: ctx.Query("customer_first_name"),
 		CustomerLastName:  ctx.Query("customer_last_name"),
 		CustomerEmail:     ctx.Query("customer_email"),
-		BillingPhone:  ctx.Query("billing_phone"),
-		PaymentCard:   ctx.Query("payment_card"),
-		SKU:           ctx.Query("sku"),
-		Status:        ctx.Query("status"),
+		BillingPhone:      ctx.Query("billing_phone"),
+		PaymentCard:       ctx.Query("payment_card"),
+		SKU:               ctx.Query("sku"),
+		Status:            ctx.Query("status"),
 	}
-	
+
 	if orderIdStr := ctx.Query("order_id"); orderIdStr != "" {
 		if id, err := strconv.Atoi(orderIdStr); err == nil {
 			criteria.OrderID = &id

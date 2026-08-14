@@ -74,3 +74,16 @@ type SessionRepository interface {
 	GetAllSessions(ctx context.Context, limit, offset int) ([]models.GetAllSessions, int, error)
 	TerminateExpiredSessions(ctx context.Context) (int64, error)
 }
+
+type ReceivingRepository interface {
+	GetPurchaseOrders(ctx context.Context, storeID *int) ([]models.PurchaseOrderSummary, error)
+	GetPurchaseOrderDetail(ctx context.Context, poID int) (*models.PurchaseOrderDetailResponse, error)
+	CheckProductInPO(ctx context.Context, poID int, barcode string) (*models.PurchaseOrderItemDetail, error)
+	ReceivePOItems(ctx context.Context, storeID int, poID int, items []models.ReceivePOItemEntry) error
+	ReceiveLPR(ctx context.Context, storeID int, poID int, lprBarcode string, employeeID int) error
+	GetStockTransfers(ctx context.Context, storeID *int) ([]models.StockTransferSummary, error)
+	GetStockTransferDetail(ctx context.Context, transferID int) (*models.StockTransferDetailResponse, error)
+	CheckProductInTransfer(ctx context.Context, transferID int, barcode string) (*models.StockTransferItemDetail, error)
+	ReceiveTransferItems(ctx context.Context, storeID int, transferID int, items []models.ReceiveTransferItemEntry) error
+	QuickReceiveTransfer(ctx context.Context, storeID int, transferID int) error
+}

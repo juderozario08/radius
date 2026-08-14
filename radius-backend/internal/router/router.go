@@ -35,6 +35,7 @@ type Handlers struct {
 	PlanogramHandler   *handler.PlanogramHandler
 	PricingHandler     *handler.PricingHandler
 	ProductHandler     *handler.ProductHandler
+	ReceivingHandler   *handler.ReceivingHandler
 	StoreHandler       *handler.StoreHandler
 	TransactionHandler *handler.TransactionHandler
 	TransferHandler    *handler.TransferHandler
@@ -157,6 +158,20 @@ func NewRouter(cfg Config) *gin.Engine {
 			mims.GET("/location", cfg.Handlers.InventoryHandler.GetLocationProducts)
 			mims.POST("/bin", cfg.Handlers.InventoryHandler.BinItem)
 			mims.POST("/quantity", cfg.Handlers.InventoryHandler.UpdateQuantity)
+		}
+
+		receiving := salesFloor.Group("/receiving")
+		{
+			receiving.GET("/purchase_orders", cfg.Handlers.ReceivingHandler.GetPurchaseOrders)
+			receiving.GET("/purchase_order", cfg.Handlers.ReceivingHandler.GetPurchaseOrderDetail)
+			receiving.GET("/check_product", cfg.Handlers.ReceivingHandler.CheckProductInPO)
+			receiving.POST("/receive_po", cfg.Handlers.ReceivingHandler.ReceivePO)
+			receiving.POST("/receive_lpr", cfg.Handlers.ReceivingHandler.ReceiveLPR)
+			receiving.GET("/transfers", cfg.Handlers.ReceivingHandler.GetStockTransfers)
+			receiving.GET("/transfer", cfg.Handlers.ReceivingHandler.GetStockTransferDetail)
+			receiving.GET("/check_transfer_product", cfg.Handlers.ReceivingHandler.CheckProductInTransfer)
+			receiving.POST("/receive_transfer", cfg.Handlers.ReceivingHandler.ReceiveTransfer)
+			receiving.POST("/quick_receive_transfer", cfg.Handlers.ReceivingHandler.QuickReceiveTransfer)
 		}
 	}
 

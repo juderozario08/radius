@@ -150,3 +150,135 @@ type CycleCountItem struct {
 	CountedQty  int `json:"counted_qty"`
 	Variance    int `json:"variance"`
 }
+
+// ---- Receiving Models ----
+
+// PO list item (for the PO tab list)
+type PurchaseOrderSummary struct {
+	PoId         int        `json:"po_id"`
+	StoreId      int        `json:"store_id"`
+	StoreName    string     `json:"store_name"`
+	SupplierName string     `json:"supplier_name"`
+	Status       string     `json:"status"`
+	ItemCount    int        `json:"item_count"`
+	OrderedAt    time.Time  `json:"ordered_at"`
+	ExpectedAt   *time.Time `json:"expected_at"`
+	ArrivedAt    *time.Time `json:"arrived_at"`
+	HasLprs      bool       `json:"has_lprs"`
+}
+
+// PO item detail (for Scanner/List tabs)
+type PurchaseOrderItemDetail struct {
+	PoItemId    int     `json:"po_item_id"`
+	ProductId   int     `json:"product_id"`
+	Sku         string  `json:"sku"`
+	Upc         string  `json:"upc"`
+	Name        string  `json:"name"`
+	Brand       string  `json:"brand"`
+	QtyOrdered  int     `json:"qty_ordered"`
+	QtyReceived int     `json:"qty_received"`
+	UnitCost    float64 `json:"unit_cost"`
+}
+
+// LPR detail
+type PurchaseOrderLPR struct {
+	LprId      int        `json:"lpr_id"`
+	LprBarcode string     `json:"lpr_barcode"`
+	IsReceived bool       `json:"is_received"`
+	ReceivedAt *time.Time `json:"received_at"`
+}
+
+// Full PO detail response
+type PurchaseOrderDetailResponse struct {
+	PoId         int                       `json:"po_id"`
+	StoreId      int                       `json:"store_id"`
+	SupplierName string                    `json:"supplier_name"`
+	Status       string                    `json:"status"`
+	OrderedAt    time.Time                 `json:"ordered_at"`
+	ExpectedAt   *time.Time                `json:"expected_at"`
+	ArrivedAt    *time.Time                `json:"arrived_at"`
+	HasLprs      bool                      `json:"has_lprs"`
+	Items        []PurchaseOrderItemDetail `json:"items"`
+	Lprs         []PurchaseOrderLPR        `json:"lprs"`
+}
+
+// Receive request — batch of items
+type ReceivePORequest struct {
+	PoId  int                  `json:"po_id" binding:"required"`
+	Items []ReceivePOItemEntry `json:"items" binding:"required,min=1"`
+}
+
+type ReceivePOItemEntry struct {
+	PoItemId    int `json:"po_item_id" binding:"required"`
+	QtyReceived int `json:"qty_received" binding:"required,min=1"`
+}
+
+// LPR receive request
+type ReceiveLPRRequest struct {
+	PoId       int    `json:"po_id" binding:"required"`
+	LprBarcode string `json:"lpr_barcode" binding:"required"`
+}
+
+// Transfer list item
+type StockTransferSummary struct {
+	TransferId          int       `json:"transfer_id"`
+	FromStoreId         int       `json:"from_store_id"`
+	FromStoreName       string    `json:"from_store_name"`
+	ToStoreId           int       `json:"to_store_id"`
+	ToStoreName         string    `json:"to_store_name"`
+	Status              string    `json:"status"`
+	ManualCheckRequired bool      `json:"manual_check_required"`
+	ItemCount           int       `json:"item_count"`
+	CreatedAt           time.Time `json:"created_at"`
+}
+
+// Transfer detail response
+type StockTransferDetailResponse struct {
+	TransferId          int                       `json:"transfer_id"`
+	FromStoreName       string                    `json:"from_store_name"`
+	ToStoreName         string                    `json:"to_store_name"`
+	Status              string                    `json:"status"`
+	ManualCheckRequired bool                      `json:"manual_check_required"`
+	CreatedAt           time.Time                 `json:"created_at"`
+	Items               []StockTransferItemDetail `json:"items"`
+}
+
+type StockTransferItemDetail struct {
+	TransferItemId int    `json:"transfer_item_id"`
+	ProductId      int    `json:"product_id"`
+	Sku            string `json:"sku"`
+	Upc            string `json:"upc"`
+	Name           string `json:"name"`
+	Brand          string `json:"brand"`
+	QtyRequested   int    `json:"qty_requested"`
+	QtySent        *int   `json:"qty_sent"`
+	QtyReceived    *int   `json:"qty_received"`
+}
+
+// Receive transfer request — batch
+type ReceiveTransferRequest struct {
+	TransferId int                        `json:"transfer_id" binding:"required"`
+	Items      []ReceiveTransferItemEntry `json:"items" binding:"required,min=1"`
+}
+
+type ReceiveTransferItemEntry struct {
+	TransferItemId int `json:"transfer_item_id" binding:"required"`
+	QtyReceived    int `json:"qty_received" binding:"required,min=1"`
+}
+
+// Quick receive (non-manual-check transfers)
+type QuickReceiveTransferRequest struct {
+	TransferId int `json:"transfer_id" binding:"required"`
+}
+
+// Check product in PO response
+type CheckProductInPOResponse struct {
+	Found bool                     `json:"found"`
+	Item  *PurchaseOrderItemDetail `json:"item"`
+}
+
+// Check product in transfer response
+type CheckProductInTransferResponse struct {
+	Found bool                     `json:"found"`
+	Item  *StockTransferItemDetail `json:"item"`
+}

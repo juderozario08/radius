@@ -6,6 +6,8 @@ export default function ActionsLayout() {
         <Stack screenOptions={{ headerShown: false, animation: 'none' }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="back_room/Receiving" />
+            <Stack.Screen name="back_room/ReceivePO" />
+            <Stack.Screen name="back_room/ReceiveTransfer" />
             <Stack.Screen name="back_room/CycleCount" />
             <Stack.Screen name="back_room/Returns" />
             <Stack.Screen name="sales_floor/Mims" />

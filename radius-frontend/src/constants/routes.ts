@@ -59,5 +59,17 @@ export const ENDPOINTS = {
             binItem: "/api/sales_floor/inventory/bin",
             updateQuantity: "/api/sales_floor/inventory/quantity",
         },
+        RECEIVING: {
+            purchaseOrders: "/api/sales_floor/receiving/purchase_orders",
+            purchaseOrder: "/api/sales_floor/receiving/purchase_order",
+            checkProduct: "/api/sales_floor/receiving/check_product",
+            receivePo: "/api/sales_floor/receiving/receive_po",
+            receiveLpr: "/api/sales_floor/receiving/receive_lpr",
+            transfers: "/api/sales_floor/receiving/transfers",
+            transfer: "/api/sales_floor/receiving/transfer",
+            checkTransferProduct: "/api/sales_floor/receiving/check_transfer_product",
+            receiveTransfer: "/api/sales_floor/receiving/receive_transfer",
+            quickReceiveTransfer: "/api/sales_floor/receiving/quick_receive_transfer",
+        },
     }
 };

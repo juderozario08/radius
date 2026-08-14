@@ -21,10 +21,10 @@ func (r *InventoryRepo) GetInventoryByBarcode(ctx context.Context, storeID int, 
 			p.unit_of_measure, p.units_per_case, p.weight, p.is_active,
 			COALESCE(i.on_hand_qty, 0), COALESCE(i.reserved_qty, 0),
 			COALESCE(i.available_qty, 0), COALESCE(i.reorder_qty, 0),
-			i.aisle, i.mims_location_id, i.last_counted_at
+			i.aisle, NULL AS mims_location, i.last_counted_at
 		FROM products p
 		LEFT JOIN inventory i ON p.product_id = i.product_id AND i.store_id = $1
-		WHERE p.upc = $2 OR p.sku = $2
+		WHERE (LENGTH($2) >= 14 AND p.upc = $2) OR (LENGTH($2) BETWEEN 5 AND 10 AND p.sku = $2)
 		LIMIT 1
 	`
 	var item models.MimsProductInventory
@@ -49,7 +49,7 @@ func (r *InventoryRepo) GetProductsByLocation(ctx context.Context, storeID int, 
 			p.unit_of_measure, p.units_per_case, p.weight, p.is_active,
 			COALESCE(i.on_hand_qty, 0), COALESCE(i.reserved_qty, 0),
 			COALESCE(i.available_qty, 0), COALESCE(i.reorder_qty, 0),
-			i.aisle, i.mims_location_id, i.last_counted_at
+			i.aisle, NULL AS mims_location, i.last_counted_at
 		FROM mims_location_items mli
 		JOIN inventory i ON mli.inventory_id = i.inventory_id AND mli.store_id = i.store_id
 		JOIN products p ON i.product_id = p.product_id

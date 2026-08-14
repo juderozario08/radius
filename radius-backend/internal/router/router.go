@@ -160,6 +160,13 @@ func NewRouter(cfg Config) *gin.Engine {
 			mims.POST("/quantity", cfg.Handlers.InventoryHandler.UpdateQuantity)
 		}
 
+		is4tc := salesFloor.Group("/is4tc")
+		{
+			is4tc.GET("/session", cfg.Handlers.FillReportHandler.GetIS4TCSession)
+			is4tc.POST("/session/add", cfg.Handlers.FillReportHandler.AddToIS4TCSession)
+			is4tc.DELETE("/session/clear", cfg.Handlers.FillReportHandler.ClearIS4TCSession)
+		}
+
 		receiving := salesFloor.Group("/receiving")
 		{
 			receiving.GET("/purchase_orders", cfg.Handlers.ReceivingHandler.GetPurchaseOrders)

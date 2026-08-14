@@ -68,7 +68,7 @@ func main() {
 	authService := service.NewAuthService(employeeRepo, sessionService)
 	barcodeService := service.NewBarcodeService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
 	cycleCountService := service.NewCycleCountService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
-	fillReportService := service.NewFillReportService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
+	fillReportService := service.NewFillReportService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo, redisClient)
 	inventoryService := service.NewInventoryService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
 	onlineOrderService := service.NewOnlineOrderService(ordersRepo, productsRepo, inventoryRepo, sessionRepo, storeRepo, employeeRepo)
 	outOfStockService := service.NewOutOfStockService(productsRepo, inventoryRepo, sessionRepo, employeeRepo, storeRepo)

@@ -31,7 +31,7 @@ func (r *SalesRepo) GetAllTransactions(ctx context.Context, limit, offset int, s
 			WHERE store_id = $1
 		`
 		query = `
-			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, discount_total, cost_total, total_amount, payment_method, status, preferred_member_id, payment_reference, created_at
+			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, status, preferred_member_id, payment_reference, created_at
 			FROM transactions
 			WHERE store_id = $1
 			ORDER BY transaction_id ASC
@@ -45,7 +45,7 @@ func (r *SalesRepo) GetAllTransactions(ctx context.Context, limit, offset int, s
 			FROM transactions
 		`
 		query = `
-			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, discount_total, cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at
+			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at
 			FROM transactions
 			ORDER BY transaction_id ASC
 			LIMIT $1 OFFSET $2
@@ -94,13 +94,13 @@ func (r *SalesRepo) GetTransactionByID(ctx context.Context, id int, storeID *int
 
 	if storeID != nil {
 		query = `
-			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, discount_total, cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at
+			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at
 			FROM transactions WHERE transaction_id = $1 AND store_id = $2
 		`
 		args = []any{id, *storeID}
 	} else {
 		query = `
-			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, discount_total, cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at FROM transactions WHERE transaction_id = $1
+			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at FROM transactions WHERE transaction_id = $1
 		`
 		args = []any{id}
 	}

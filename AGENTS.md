@@ -28,6 +28,7 @@ Welcome to the Radius project. This file (`AGENTS.md`) contains the master set o
    - Use standard `StyleSheet.create({})` for component styling.
    - **DRY Principle**: Global styles and colors are defined in `src/constants/styles.ts` and `src/constants/colors.ts`. You MUST import and use these constants rather than hardcoding hex codes or standard padding/margin rules.
 4. **Testing**: Frontend testing (Jest + React Native Testing Library) is not yet implemented but will be soon. Write modular, easily testable components.
+5. **Component Reusability & Consistency**: Whenever designing frontend screens, you MUST follow similar patterns to what already exists. Check the custom components (e.g., in `src/components/`) first. Only create new components if something doesn't already exist that can be slightly modified. Do not build new things from scratch every time.
 
 ---
 
@@ -47,6 +48,15 @@ Welcome to the Radius project. This file (`AGENTS.md`) contains the master set o
 ## 🌳 Git & Version Control
 
 - **Commits**: This is a single-developer project. Standard, descriptive commit messages are perfectly fine. You do not need to enforce strict "Conventional Commits" (e.g., `feat:`, `fix:`) unless requested. Keep branch names simple.
+
+---
+
+## 🧹 Workspace Hygiene
+
+1. **NO Temporary Files in Repository**: You must NEVER leave generated scratch scripts (e.g., `scaffold.py`, `.sh` scripts) or temporary files in the repository. If you must use a scratch script to perform multi-file edits, you must either:
+   - Create it in the designated `scratch/` artifact directory outside the repository.
+   - Delete it immediately after execution. 
+   **Under no circumstances should an agent commit temporary scaffolding scripts to the codebase.**
 
 ---
 

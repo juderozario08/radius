@@ -18,6 +18,7 @@ The workflow **must always start** by generating a `SPEC.md` file based on the u
 - **Permissions**: Full **WRITE** access to the source code.
 - **Responsibilities**: 
   - Writes the code to fulfill the `SPEC.md`.
+  - **Crucial**: Whenever designing frontend UI, strictly follow similar patterns to what already currently exists. Check custom components and only create new ones if something doesn't already exist that can be slightly modified.
   - Must output a structured summary of files changed and the explicit reasoning behind the modifications when passing work to the Reviewer.
 
 ### Stage 2: The Reviewer

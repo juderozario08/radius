@@ -22,8 +22,9 @@
 
 - **Role-Based Access Control (RBAC)**: Secure authentication and authorization for Admins, Managers, and Sales Floor staff, restricting access based on employee roles.
 - **Inventory Management**: Real-time tracking of product stock, cycle counts, out-of-stock reporting, and store-to-store transfers.
+- **Receiving & Logistics**: Comprehensive workflows for processing incoming Purchase Orders (POs), License Plate Receives (LPRs), and inter-store Stock Transfers.
 - **Store & Employee Administration**: Complete administrative tools for onboarding employees, activating/deactivating stores, and managing active sessions.
-- **Sales & POS Integrations**: Handling physical transactions, online orders, and dynamic pricing strategies.
+- **Sales & POS Integrations**: Handling physical transactions, online order fulfillment, and dynamic pricing strategies.
 - **Session Management**: JWT-based session tracking with automated background cleanup workers for secure logins.
 - **Mobile-First Experience**: Built natively for iOS and Android using Expo, ensuring store associates have powerful tools directly on their devices.
 
@@ -40,6 +41,7 @@
 - **Language**: Go (Golang)
 - **Framework**: Gin Web Framework
 - **Database**: PostgreSQL with connection pooling
+- **Caching/State**: Redis (with embedded miniredis for seamless local development)
 - **Migrations**: `golang-migrate` for versioned schema changes
 - **Security**: JWT Authentication, IP Rate Limiting, CORS Middleware
 
@@ -54,6 +56,7 @@ Key Modules include:
 - `Employees & Stores`: Management of staff profiles and branch locations.
 - `Inventory & Products`: Global product catalogs, cycle counting, and fill reports.
 - `Transactions & Orders`: Point-of-Sale (POS) capabilities and online order fulfillment.
+- `Receiving`: Processing incoming purchase orders and inter-store stock transfers.
 - `Merchandising`: Planogram compliance and execution.
 
 ---
@@ -77,7 +80,11 @@ Key Modules include:
    cp .env.example .env
    # Ensure you configure DATABASE_URL and JWT_SECRET_KEY in the .env file.
    ```
-3. Run the server (migrations will run automatically in non-release mode):
+3. (Optional) Populate the database with extensive test data:
+   ```bash
+   go run cmd/seeds/main.go
+   ```
+4. Run the server (migrations will run automatically and embedded Redis will start in non-release mode):
    ```bash
    go run cmd/api/main.go
    ```

@@ -1,10 +1,16 @@
-INSERT INTO categories (name, parent_id) VALUES
-('Office Supplies', NULL),
-('Pens & Pencils', 1),
-('Paper & Notebooks', 1),
-('Technology', NULL),
-('Computers & Tablets', 4),
-('Printers & Scanners', 4),
-('Furniture', NULL),
-('Chairs & Seating', 7),
-('Desks & Tables', 7);
+INSERT INTO categories (name) VALUES
+('Category 1'),
+('Category 2'),
+('Category 3'),
+('Category 4'),
+('Category 5'),
+('Category 6'),
+('Category 7'),
+('Category 8'),
+('Category 9'),
+('Category 10'),
+('Category 11'),
+('Category 12'),
+('Category 13'),
+('Category 14'),
+('Category 15');

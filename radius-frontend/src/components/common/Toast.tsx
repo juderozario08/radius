@@ -60,8 +60,12 @@ const config = {
     ),
 };
 
+import { View } from "react-native";
+
 export default function CustomToast() {
     return (
-        <Toast config={config} />
+        <View style={{ zIndex: 9999, elevation: 9999 }}>
+            <Toast config={config} />
+        </View>
     )
 }

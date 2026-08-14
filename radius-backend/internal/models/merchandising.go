@@ -48,6 +48,13 @@ type FillReportItem struct {
 	FillQty      int        `json:"fill_qty"`
 	Completed    bool       `json:"completed"`
 	CompletedAt  *time.Time `json:"completed_at"`
+	IsEmptyHole  bool       `json:"is_empty_hole"`
+}
+
+type FillReportItemDetail struct {
+	FillReportItem
+	ProductName string `json:"product_name"`
+	ProductSku  string `json:"product_sku"`
 }
 
 type JobType string

@@ -1,14 +1,26 @@
-//radius-backend/internal/handler/fill_report_handler.go
 package handler
 
-import "radius/internal/service"
+import (
+	"net/http"
+	"radius/internal/service"
+	"strconv"
+	"github.com/gin-gonic/gin"
+)
 
 type FillReportHandler struct {
-	fillReportService *service.FillReportService
+	service *service.FillReportService
 }
 
-func NewFillReportHandler(fillReportService *service.FillReportService) *FillReportHandler {
-	return &FillReportHandler{
-		fillReportService: fillReportService,
-	}
+func NewFillReportHandler(s *service.FillReportService) *FillReportHandler {
+	return &FillReportHandler{service: s}
+}
+
+func (h *FillReportHandler) GetFillReport(c *gin.Context) {
+	storeID, _ := strconv.Atoi(c.Param("store_id"))
+	// Call service using storeID
+	c.JSON(http.StatusOK, gin.H{"status": "success", "store_id": storeID, "data": "mock fill report data"})
+}
+
+func (h *FillReportHandler) ScanEmptyHole(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Empty hole logged!"})
 }

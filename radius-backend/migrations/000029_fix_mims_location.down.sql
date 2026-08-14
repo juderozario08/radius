@@ -1,0 +1,2 @@
+-- Intentionally blank since we are using IF NOT EXISTS in the UP migration to gracefully patch missing tables
+-- We don't want to drop these tables in the down migration because they might have been created by 000005.

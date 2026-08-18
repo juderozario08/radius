@@ -155,9 +155,11 @@ func NewRouter(cfg Config) *gin.Engine {
 		mims := salesFloor.Group("/inventory")
 		{
 			mims.GET("/product", cfg.Handlers.InventoryHandler.ScanProduct)
+			mims.GET("/product-details", cfg.Handlers.InventoryHandler.GetProductScreenDetails)
 			mims.GET("/location", cfg.Handlers.InventoryHandler.GetLocationProducts)
 			mims.POST("/bin", cfg.Handlers.InventoryHandler.BinItem)
 			mims.POST("/quantity", cfg.Handlers.InventoryHandler.UpdateQuantity)
+			mims.PUT("/locations/sync", cfg.Handlers.InventoryHandler.SyncLocations)
 		}
 
 		is4tc := salesFloor.Group("/is4tc")

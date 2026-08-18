@@ -7,14 +7,42 @@ type Inventory struct {
 	InventoryId   int        `json:"inventory_id"`
 	StoreId       int        `json:"store_id"`
 	ProductId     int        `json:"product_id"`
-	OnHandQty     int        `json:"on_hand_qty"`
-	ReservedQty   int        `json:"reserved_qty"`
-	ReorderQty    int        `json:"reorder_qty"`
-	Aisle         *string    `json:"aisle"`
-	MimsLocation  *string    `json:"mims_location"`
-	LastCountedAt *time.Time `json:"last_counted_at"`
-	UpdatedAt     *time.Time `json:"updated_at"`
-	AvailableQty  int        `json:"available_qty"`
+	OnHandQty          int        `json:"on_hand_qty"`
+	ReservedQty        int        `json:"reserved_qty"`
+	ReorderQty         int        `json:"reorder_qty"`
+	Aisle              *string    `json:"aisle"`
+	MimsLocation       *string    `json:"mims_location"`
+	LastCountedAt      *time.Time `json:"last_counted_at"`
+	UpdatedAt          *time.Time `json:"updated_at"`
+	AvailableQty       int        `json:"available_qty"`
+	OpenBoxQty         int        `json:"open_box_qty"`
+	NewQty             int        `json:"new_qty"`
+	RtvQty             int        `json:"rtv_qty"`
+	Code88Qty          int        `json:"code88_qty"`
+	BopisQty           int        `json:"bopis_qty"`
+	QuarantineQty      int        `json:"quarantine_qty"`
+	RepairQty          int        `json:"repair_qty"`
+	CustomerOnHoldQty  int        `json:"customer_on_hold_qty"`
+	FcOnHoldQty        int        `json:"fc_on_hold_qty"`
+	VerifyQty          int        `json:"verify_qty"`
+	DemoQty            int        `json:"demo_qty"`
+	OnOrderQty         int        `json:"on_order_qty"`
+	LastReceivedAt     *time.Time `json:"last_received_at"`
+}
+
+type MimsLocationItem struct {
+	MimsLocationId *string `json:"mims_location_id"`
+	StoreId        int     `json:"store_id"`
+	InventoryId    int     `json:"inventory_id"`
+	Quantity       int     `json:"quantity"`
+	LocationType   string  `json:"location_type"`
+}
+
+type ProductScreenDetails struct {
+	Product       Product            `json:"product"`
+	Inventory     Inventory          `json:"inventory"`
+	Locations     []MimsLocationItem `json:"locations"`
+	PlanogramInfo *Planogram         `json:"planogram_info"`
 }
 
 type MimsScanLog struct {
@@ -57,6 +85,11 @@ type BinItemRequest struct {
 type UpdateQuantityRequest struct {
 	ProductId int `json:"product_id" binding:"required"`
 	Quantity  int `json:"quantity"`
+}
+
+type SyncLocationsRequest struct {
+	InventoryId int                `json:"inventory_id" binding:"required"`
+	Locations   []MimsLocationItem `json:"locations" binding:"required"`
 }
 
 type ScanProductResponse struct {

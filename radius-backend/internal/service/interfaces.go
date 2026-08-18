@@ -46,6 +46,8 @@ type InventoryRepository interface {
 	LinkProductToLocation(ctx context.Context, storeID int, locationID string, productID int) error
 	IncrementInventoryQuantity(ctx context.Context, storeID int, productID int, delta int) error
 	UpdateInventoryQuantity(ctx context.Context, storeID int, productID int, quantity int) error
+	GetProductScreenDetails(ctx context.Context, storeID int, productID int) (*models.ProductScreenDetails, error)
+	SyncLocations(ctx context.Context, storeID int, inventoryID int, locations []models.MimsLocationItem) error
 }
 
 type ProductRepository interface {

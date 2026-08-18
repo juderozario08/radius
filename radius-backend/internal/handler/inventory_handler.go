@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -98,4 +99,53 @@ func (h *InventoryHandler) UpdateQuantity(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Quantity updated successfully"})
+}
+
+func (h *InventoryHandler) GetProductScreenDetails(ctx *gin.Context) {
+	email := ctx.GetString("email")
+
+	productIDStr := ctx.Query("product_id")
+	if productIDStr == "" {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "product_id is required"})
+		return
+	}
+
+	productID, err := strconv.Atoi(productIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid product_id"})
+		return
+	}
+
+	result, err := h.inventoryService.GetProductScreenDetails(ctx.Request.Context(), email, productID)
+	if err != nil {
+		log.Printf("[ERROR] InventoryHandler.GetProductScreenDetails: %v", err)
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
+		return
+	}
+
+	if result == nil {
+		ctx.JSON(http.StatusNotFound, models.APIError{Error: "Product not found"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, result)
+}
+
+func (h *InventoryHandler) SyncLocations(ctx *gin.Context) {
+	email := ctx.GetString("email")
+
+	var req models.SyncLocationsRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		return
+	}
+
+	err := h.inventoryService.SyncLocations(ctx.Request.Context(), email, req)
+	if err != nil {
+		log.Printf("[ERROR] InventoryHandler.SyncLocations: %v", err)
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Locations synced successfully"})
 }

@@ -8,7 +8,7 @@ import CustomToast from "@/components/common/Toast";
 import Toast from "react-native-toast-message";
 import { ENDPOINTS } from "@/constants/routes";
 import { callApi } from "@/utils/helpers";
-import { ProductScreenDetails } from "@/types/inventory.types";
+import { ProductScreenDetails, MimsLocationItem } from "@/types/inventory.types";
 import { ProductDetails } from "@/components/inventory/ProductDetails";
 import { ProductLocations } from "@/components/inventory/ProductLocations";
 import { ProductPlanogram } from "@/components/inventory/ProductPlanogram";

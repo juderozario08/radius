@@ -48,6 +48,10 @@ type InventoryRepository interface {
 	UpdateInventoryQuantity(ctx context.Context, storeID int, productID int, quantity int) error
 	GetProductScreenDetails(ctx context.Context, storeID int, productID int) (*models.ProductScreenDetails, error)
 	SyncLocations(ctx context.Context, storeID int, inventoryID int, locations []models.MimsLocationItem) error
+	CreateMimsLocation(ctx context.Context, storeID int, locationID string) error
+	CreateInventoryAdjustment(ctx context.Context, adj models.InventoryAdjustment) error
+	GetPendingAdjustments(ctx context.Context, storeID int) ([]models.PendingAdjustmentDetail, error)
+	ReviewAdjustments(ctx context.Context, storeID int, reviewerID int, reviews []models.ReviewAdjustmentItem) error
 }
 
 type ProductRepository interface {

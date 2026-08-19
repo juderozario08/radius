@@ -315,3 +315,64 @@ type CheckProductInTransferResponse struct {
 	Found bool                     `json:"found"`
 	Item  *StockTransferItemDetail `json:"item"`
 }
+
+type CreateMimsLocationRequest struct {
+	LocationId string `json:"location_id" binding:"required"`
+}
+
+type AdjustInventoryRequest struct {
+	InventoryId int    `json:"inventory_id" binding:"required"`
+	ProductId   int    `json:"product_id" binding:"required"`
+	PreviousQty int    `json:"previous_qty"`
+	AdjustedQty int    `json:"adjusted_qty" binding:"required"`
+	Reason      string `json:"reason"`
+}
+
+type AdjustmentStatus string
+
+const (
+	AdjustmentStatusPending  AdjustmentStatus = "PENDING"
+	AdjustmentStatusApproved AdjustmentStatus = "APPROVED"
+	AdjustmentStatusRejected AdjustmentStatus = "REJECTED"
+	AdjustmentStatusWriteOff AdjustmentStatus = "WRITE_OFF"
+)
+
+type InventoryAdjustment struct {
+	AdjustmentId int              `json:"adjustment_id"`
+	StoreId      int              `json:"store_id"`
+	InventoryId  int              `json:"inventory_id"`
+	ProductId    int              `json:"product_id"`
+	PreviousQty  int              `json:"previous_qty"`
+	AdjustedQty  int              `json:"adjusted_qty"`
+	Reason       string           `json:"reason"`
+	Status       AdjustmentStatus `json:"status"`
+	RequestedBy  int              `json:"requested_by"`
+	ReviewedBy   *int             `json:"reviewed_by"`
+	CreatedAt    time.Time        `json:"created_at"`
+	ReviewedAt   *time.Time       `json:"reviewed_at"`
+}
+
+type PendingAdjustmentDetail struct {
+	AdjustmentId int       `json:"adjustment_id"`
+	InventoryId  int       `json:"inventory_id"`
+	ProductId    int       `json:"product_id"`
+	PreviousQty  int       `json:"previous_qty"`
+	AdjustedQty  int       `json:"adjusted_qty"`
+	Reason       string    `json:"reason"`
+	RequestedBy  string    `json:"requested_by"`
+	CreatedAt    time.Time `json:"created_at"`
+	Name         string    `json:"name"`
+	Sku          string    `json:"sku"`
+	Upc          string    `json:"upc"`
+}
+
+type ReviewAdjustmentItem struct {
+	AdjustmentId int              `json:"adjustment_id" binding:"required"`
+	Status       AdjustmentStatus `json:"status" binding:"required"`
+	AdjustedQty  *int             `json:"adjusted_qty"`
+	Reason       *string          `json:"reason"`
+}
+
+type ReviewAdjustmentRequest struct {
+	Reviews []ReviewAdjustmentItem `json:"reviews" binding:"required,min=1"`
+}

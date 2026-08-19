@@ -61,6 +61,7 @@ type TransactionItem struct {
 	TransactionId     int     `json:"transaction_id"`
 	ProductId         int     `json:"product_id"`
 	ProductSku        *string `json:"product_sku"`
+	ProductName       *string `json:"product_name"`
 	Quantity          int     `json:"quantity"`
 	UnitPrice         float32 `json:"unit_price"`
 	UnitCost          float32 `json:"unit_cost"`

@@ -31,6 +31,7 @@ const salesFloorMapping: ButtonConfig[] = [
     { title: 'Activities', path: '/(app)/(tabs)/home/actions/sales_floor/Activities', imagePath: require('@/assets/images/activities.png') },
     { title: 'Orders', path: '/(app)/(tabs)/home/actions/sales_floor/Orders', imagePath: require('@/assets/images/orders.png') },
     { title: 'Transactions', path: '/(app)/(tabs)/home/actions/sales_floor/Transactions', imagePath: require('@/assets/images/transactions.png') },
+    { title: 'Audit', path: '/(app)/(tabs)/home/actions/sales_floor/Audit', imagePath: require('@/assets/images/activities.png') },
 ];
 
 const adminActionsMapping: ButtonConfig[] = [
@@ -48,11 +49,11 @@ const Subsection = ({ title, mapping }: { title: string, mapping: ButtonConfig[]
             <Text style={styles.sectionTitle}>{title}</Text>
             <View style={styles.grid}>
                 {mapping.map((config, key) => (
-                    <View key={key}>
+                    <View key={key} style={styles.itemWrapper}>
                         <TouchableOpacity style={styles.button} onPress={() => router.navigate(config.path)}>
                             <Image source={config.imagePath} style={globalStyles.headerImageSize} />
                         </TouchableOpacity>
-                        <Text style={styles.buttonText}>{config.title}</Text>
+                        <Text style={styles.buttonText} numberOfLines={1} adjustsFontSizeToFit>{config.title}</Text>
                     </View>
                 ))}
             </View>
@@ -107,6 +108,10 @@ const styles = StyleSheet.create({
         gap: 10,
         paddingHorizontal: 10
     },
+    itemWrapper: {
+        width: 83,
+        alignItems: 'center',
+    },
     button: {
         backgroundColor: "#C70202",
         paddingVertical: 25,
@@ -118,7 +123,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
-        width: 77,
+        width: '100%',
         marginBottom: 5
     },
     buttonText: {

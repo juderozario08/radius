@@ -25,4 +25,6 @@ export const COLORS = {
     background: "#F5F5F5",
     headerBackground: "#FFFFFF",
     neutralBg: "#F0F0F0",
+    success: "#2E7D32",
+    error: "#B00020",
 };

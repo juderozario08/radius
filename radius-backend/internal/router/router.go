@@ -23,6 +23,7 @@ type Config struct {
 }
 
 type Handlers struct {
+	AuditHandler       *handler.AuditHandler
 	AuthHandler        *handler.AuthHandler
 	EmployeeHandler    *handler.EmployeeHandler
 	BarcodeHandler     *handler.BarcodeHandler
@@ -151,13 +152,20 @@ func NewRouter(cfg Config) *gin.Engine {
 
 		salesFloor.GET("/get_all_online_orders", cfg.Handlers.OnlineOrderHandler.GetAllOnlineOrders)
 		salesFloor.GET("/get_online_order", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)
+		salesFloor.GET("/audit", cfg.Handlers.AuditHandler.GetProductAuditTrail)
 
 		mims := salesFloor.Group("/inventory")
 		{
 			mims.GET("/product", cfg.Handlers.InventoryHandler.ScanProduct)
+			mims.GET("/product-details", cfg.Handlers.InventoryHandler.GetProductScreenDetails)
 			mims.GET("/location", cfg.Handlers.InventoryHandler.GetLocationProducts)
 			mims.POST("/bin", cfg.Handlers.InventoryHandler.BinItem)
 			mims.POST("/quantity", cfg.Handlers.InventoryHandler.UpdateQuantity)
+			mims.PUT("/locations/sync", cfg.Handlers.InventoryHandler.SyncLocations)
+			mims.POST("/location", cfg.Handlers.InventoryHandler.CreateMimsLocation)
+			mims.POST("/adjust", cfg.Handlers.InventoryHandler.CreateAdjustment)
+			mims.GET("/adjustments", cfg.Handlers.InventoryHandler.GetPendingAdjustments)
+			mims.POST("/adjustments/review", cfg.Handlers.InventoryHandler.ReviewAdjustments)
 		}
 
 		is4tc := salesFloor.Group("/is4tc")

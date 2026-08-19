@@ -130,4 +130,65 @@ export const globalStyles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
+    
+    // --- Added from Refactoring ---
+    shadowLight: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    buttonPrimary: {
+        backgroundColor: COLORS.primary,
+        padding: 14,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    buttonSecondary: {
+        backgroundColor: COLORS.neutralBg,
+        padding: 14,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    buttonTextPrimary: {
+        color: COLORS.primaryText,
+        fontWeight: "600",
+        fontSize: 16,
+    },
+    buttonTextSecondary: {
+        color: COLORS.textPrimary,
+        fontWeight: "600",
+        fontSize: 16,
+    },
+    textInput: {
+        backgroundColor: COLORS.inputBg,
+        borderWidth: 1,
+        borderColor: COLORS.inputBorder,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        fontSize: 16,
+        color: COLORS.textPrimary,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: COLORS.textPrimary,
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        marginBottom: 16,
+    },
+    modalInputSection: {
+        marginTop: 16,
+        alignItems: "stretch",
+    },
+    modalInputLabel: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: COLORS.textSecondary,
+        marginBottom: 8,
+    },
 });

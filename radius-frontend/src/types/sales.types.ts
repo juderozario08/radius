@@ -27,6 +27,7 @@ export interface TransactionItem {
     transaction_id: number;
     product_id: number;
     product_sku?: string | null;
+    product_name?: string | null;
     quantity: number;
     unit_price: number;
     unit_cost: number;

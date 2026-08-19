@@ -6,7 +6,6 @@ import { useRouter } from 'expo-router';
 import { TopSafeAreaView } from '@/components/common/TopSafeAreaView';
 import HeaderComponent from '@/components/common/HeaderComponent';
 import { BarcodeScanner, BarcodeScannerRef } from '@/components/common/BarcodeScanner';
-import CustomToast from '@/components/common/Toast';
 import { COLORS } from '@/constants/colors';
 import { globalStyles } from '@/constants/styles';
 import { ENDPOINTS } from '@/constants/routes';
@@ -188,7 +187,6 @@ export default function IS4TCScanScreen() {
           </View>
         </View>
       </Modal>
-      <CustomToast />
     </TopSafeAreaView>
   );
 }

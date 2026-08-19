@@ -46,10 +46,17 @@ type InventoryRepository interface {
 	LinkProductToLocation(ctx context.Context, storeID int, locationID string, productID int) error
 	IncrementInventoryQuantity(ctx context.Context, storeID int, productID int, delta int) error
 	UpdateInventoryQuantity(ctx context.Context, storeID int, productID int, quantity int) error
+	GetProductScreenDetails(ctx context.Context, storeID int, productID int) (*models.ProductScreenDetails, error)
+	SyncLocations(ctx context.Context, storeID int, inventoryID int, locations []models.MimsLocationItem) error
+	CreateMimsLocation(ctx context.Context, storeID int, locationID string) error
+	CreateInventoryAdjustment(ctx context.Context, adj models.InventoryAdjustment) error
+	GetPendingAdjustments(ctx context.Context, storeID int) ([]models.PendingAdjustmentDetail, error)
+	ReviewAdjustments(ctx context.Context, storeID int, reviewerID int, reviews []models.ReviewAdjustmentItem) error
 }
 
 type ProductRepository interface {
 	GetProductByID(ctx context.Context, id int) (*models.Product, error)
+	GetProductByBarcode(ctx context.Context, barcode string) (*models.Product, error)
 	SearchProducts(ctx context.Context, query string, categoryID *int, brand *string, isActive *bool, unitOfMeasure *string, limit, offset int) ([]models.Product, int, error)
 }
 
@@ -79,11 +86,15 @@ type ReceivingRepository interface {
 	GetPurchaseOrders(ctx context.Context, storeID *int) ([]models.PurchaseOrderSummary, error)
 	GetPurchaseOrderDetail(ctx context.Context, poID int) (*models.PurchaseOrderDetailResponse, error)
 	CheckProductInPO(ctx context.Context, poID int, barcode string) (*models.PurchaseOrderItemDetail, error)
-	ReceivePOItems(ctx context.Context, storeID int, poID int, items []models.ReceivePOItemEntry) error
+	ReceivePOItems(ctx context.Context, storeID int, poID int, employeeID int, items []models.ReceivePOItemEntry) error
 	ReceiveLPR(ctx context.Context, storeID int, poID int, lprBarcode string, employeeID int) error
 	GetStockTransfers(ctx context.Context, storeID *int) ([]models.StockTransferSummary, error)
 	GetStockTransferDetail(ctx context.Context, transferID int) (*models.StockTransferDetailResponse, error)
 	CheckProductInTransfer(ctx context.Context, transferID int, barcode string) (*models.StockTransferItemDetail, error)
-	ReceiveTransferItems(ctx context.Context, storeID int, transferID int, items []models.ReceiveTransferItemEntry) error
-	QuickReceiveTransfer(ctx context.Context, storeID int, transferID int) error
+	ReceiveTransferItems(ctx context.Context, storeID int, transferID int, employeeID int, items []models.ReceiveTransferItemEntry) error
+	QuickReceiveTransfer(ctx context.Context, storeID int, transferID int, employeeID int) error
+}
+
+type AuditRepository interface {
+	GetProductAuditTrail(ctx context.Context, productID int, storeID *int, filter models.AuditFilter, limit, offset int) ([]models.AuditTrailEntry, int, error)
 }

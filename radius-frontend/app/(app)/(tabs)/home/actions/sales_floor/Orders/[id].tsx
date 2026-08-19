@@ -15,7 +15,6 @@ import {
     View,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
-import CustomToast from "@/components/common/Toast";
 import { callApi } from "@/utils/helpers";
 import { GetOnlineOrderByIDResponse, OnlineOrder, OnlineOrderItem } from "@/types/order.types";
 import { router, useLocalSearchParams } from "expo-router";
@@ -172,7 +171,6 @@ export default function OnlineOrderDetail() {
                 
                 <View style={{ height: 40 }} />
             </ScrollView>
-            <CustomToast />
         </TopSafeAreaView>
     );
 }

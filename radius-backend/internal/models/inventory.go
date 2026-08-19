@@ -7,14 +7,42 @@ type Inventory struct {
 	InventoryId   int        `json:"inventory_id"`
 	StoreId       int        `json:"store_id"`
 	ProductId     int        `json:"product_id"`
-	OnHandQty     int        `json:"on_hand_qty"`
-	ReservedQty   int        `json:"reserved_qty"`
-	ReorderQty    int        `json:"reorder_qty"`
-	Aisle         *string    `json:"aisle"`
-	MimsLocation  *string    `json:"mims_location"`
-	LastCountedAt *time.Time `json:"last_counted_at"`
-	UpdatedAt     *time.Time `json:"updated_at"`
-	AvailableQty  int        `json:"available_qty"`
+	OnHandQty          int        `json:"on_hand_qty"`
+	ReservedQty        int        `json:"reserved_qty"`
+	ReorderQty         int        `json:"reorder_qty"`
+	Aisle              *string    `json:"aisle"`
+	MimsLocation       *string    `json:"mims_location"`
+	LastCountedAt      *time.Time `json:"last_counted_at"`
+	UpdatedAt          *time.Time `json:"updated_at"`
+	AvailableQty       int        `json:"available_qty"`
+	OpenBoxQty         int        `json:"open_box_qty"`
+	NewQty             int        `json:"new_qty"`
+	RtvQty             int        `json:"rtv_qty"`
+	Code88Qty          int        `json:"code88_qty"`
+	BopisQty           int        `json:"bopis_qty"`
+	QuarantineQty      int        `json:"quarantine_qty"`
+	RepairQty          int        `json:"repair_qty"`
+	CustomerOnHoldQty  int        `json:"customer_on_hold_qty"`
+	FcOnHoldQty        int        `json:"fc_on_hold_qty"`
+	VerifyQty          int        `json:"verify_qty"`
+	DemoQty            int        `json:"demo_qty"`
+	OnOrderQty         int        `json:"on_order_qty"`
+	LastReceivedAt     *time.Time `json:"last_received_at"`
+}
+
+type MimsLocationItem struct {
+	MimsLocationId *string `json:"mims_location_id"`
+	StoreId        int     `json:"store_id"`
+	InventoryId    int     `json:"inventory_id"`
+	Quantity       int     `json:"quantity"`
+	LocationType   string  `json:"location_type"`
+}
+
+type ProductScreenDetails struct {
+	Product       Product            `json:"product"`
+	Inventory     Inventory          `json:"inventory"`
+	Locations     []MimsLocationItem `json:"locations"`
+	PlanogramInfo *Planogram         `json:"planogram_info"`
 }
 
 type MimsScanLog struct {
@@ -57,6 +85,11 @@ type BinItemRequest struct {
 type UpdateQuantityRequest struct {
 	ProductId int `json:"product_id" binding:"required"`
 	Quantity  int `json:"quantity"`
+}
+
+type SyncLocationsRequest struct {
+	InventoryId int                `json:"inventory_id" binding:"required"`
+	Locations   []MimsLocationItem `json:"locations" binding:"required"`
 }
 
 type ScanProductResponse struct {
@@ -282,3 +315,109 @@ type CheckProductInTransferResponse struct {
 	Found bool                     `json:"found"`
 	Item  *StockTransferItemDetail `json:"item"`
 }
+
+type CreateMimsLocationRequest struct {
+	LocationId string `json:"location_id" binding:"required"`
+}
+
+type AdjustInventoryRequest struct {
+	InventoryId int    `json:"inventory_id" binding:"required"`
+	ProductId   int    `json:"product_id" binding:"required"`
+	PreviousQty int    `json:"previous_qty"`
+	AdjustedQty int    `json:"adjusted_qty" binding:"required"`
+	Reason      string `json:"reason"`
+}
+
+type AdjustmentStatus string
+
+const (
+	AdjustmentStatusPending  AdjustmentStatus = "PENDING"
+	AdjustmentStatusApproved AdjustmentStatus = "APPROVED"
+	AdjustmentStatusRejected AdjustmentStatus = "REJECTED"
+	AdjustmentStatusWriteOff AdjustmentStatus = "WRITE_OFF"
+)
+
+type InventoryAdjustment struct {
+	AdjustmentId int              `json:"adjustment_id"`
+	StoreId      int              `json:"store_id"`
+	InventoryId  int              `json:"inventory_id"`
+	ProductId    int              `json:"product_id"`
+	PreviousQty  int              `json:"previous_qty"`
+	AdjustedQty  int              `json:"adjusted_qty"`
+	Reason       string           `json:"reason"`
+	Status       AdjustmentStatus `json:"status"`
+	RequestedBy  int              `json:"requested_by"`
+	ReviewedBy   *int             `json:"reviewed_by"`
+	CreatedAt    time.Time        `json:"created_at"`
+	ReviewedAt   *time.Time       `json:"reviewed_at"`
+}
+
+type PendingAdjustmentDetail struct {
+	AdjustmentId int       `json:"adjustment_id"`
+	InventoryId  int       `json:"inventory_id"`
+	ProductId    int       `json:"product_id"`
+	PreviousQty  int       `json:"previous_qty"`
+	AdjustedQty  int       `json:"adjusted_qty"`
+	Reason       string    `json:"reason"`
+	RequestedBy  string    `json:"requested_by"`
+	CreatedAt    time.Time `json:"created_at"`
+	Name         string    `json:"name"`
+	Sku          string    `json:"sku"`
+	Upc          string    `json:"upc"`
+}
+
+type ReviewAdjustmentItem struct {
+	AdjustmentId int              `json:"adjustment_id" binding:"required"`
+	Status       AdjustmentStatus `json:"status" binding:"required"`
+	AdjustedQty  *int             `json:"adjusted_qty"`
+	Reason       *string          `json:"reason"`
+}
+
+type ReviewAdjustmentRequest struct {
+	Reviews []ReviewAdjustmentItem `json:"reviews" binding:"required,min=1"`
+}
+
+// ---- Audit Trail Models ----
+
+type InventoryTransaction struct {
+	TransactionId   int        `json:"transaction_id"`
+	ProductId       int        `json:"product_id"`
+	FromStoreId     *int       `json:"from_store_id"`
+	ToStoreId       *int       `json:"to_store_id"`
+	TransactionType string     `json:"transaction_type"`
+	Quantity        int        `json:"quantity"`
+	UnitCost        *float64   `json:"unit_cost"`
+	UnitPrice       *float64   `json:"unit_price"`
+	ReasonCode      *string    `json:"reason_code"`
+	EmployeeId      *int       `json:"employee_id"`
+	ReferenceId     *string    `json:"reference_id"`
+	CreatedAt       time.Time  `json:"created_at"`
+}
+
+type AuditTrailEntry struct {
+	TransactionId   int        `json:"transaction_id"`
+	TransactionType string     `json:"transaction_type"`
+	Quantity        int        `json:"quantity"`
+	ReasonCode      *string    `json:"reason_code"`
+	ReferenceId     *string    `json:"reference_id"`
+	EmployeeName    *string    `json:"employee_name"`
+	FromStoreName   *string    `json:"from_store_name"`
+	ToStoreName     *string    `json:"to_store_name"`
+	CreatedAt       time.Time  `json:"created_at"`
+}
+
+type AuditTrailResponse struct {
+	Product Product            `json:"product"`
+	Events  []AuditTrailEntry  `json:"events"`
+	Total   int                `json:"total"`
+}
+
+type AuditFilter struct {
+	StartDate       *time.Time `form:"start_date"`
+	EndDate         *time.Time `form:"end_date"`
+	TransactionType *string    `form:"transaction_type"`
+	EmployeeId      *int       `form:"employee_id"`
+	StoreId         *int       `form:"store_id"`
+	SortOrder       string     `form:"sort_order"` // "DESC" or "ASC"
+}
+

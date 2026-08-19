@@ -5,7 +5,6 @@ import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
-import CustomToast from "@/components/common/Toast";
 import { BarcodeScanner, BarcodeScannerRef } from "@/components/common/BarcodeScanner";
 import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
 import { LocationInput } from "@/components/common/LocationInput";
@@ -28,12 +27,14 @@ export default function MimsScreen() {
 
     const fetchProductByBarcode = async (barcode: string) => {
         setIsLoadingMims(true);
+        // Instead of relying solely on the scan endpoint (which returns basic inventory), 
+        // we hit the scan endpoint to find the product, then route to the rich product page.
         const endpoint = `${ENDPOINTS.AUTHENTICATED.MIMS.scanProduct}?barcode=${encodeURIComponent(barcode)}`;
         const response = await callApi<ScanProductResponse>(endpoint, { method: "GET" }, logout);
 
         if (response?.product) {
-            setMimsProduct(response.product);
             Toast.show({ type: "success", text1: "Product Scanned", text2: response.message });
+            router.push(`/(app)/product/${response.product.product_id}` as any);
         } else {
             setMimsProduct(null);
             if (response) {
@@ -91,10 +92,7 @@ export default function MimsScreen() {
                     {
                         name: "MIMS",
                         children: () => (
-                            <MimsTabContent
-                                product={mimsProduct}
-                                isLoading={isLoadingMims}
-                            />
+                            <MimsTabContent isLoading={isLoadingMims} />
                         ),
                     },
                     {
@@ -116,12 +114,11 @@ export default function MimsScreen() {
                     />
                 )}
             />
-            <CustomToast />
         </TopSafeAreaView>
     );
 }
 
-function MimsTabContent({ product, isLoading }: { product: MimsProductInventory | null; isLoading: boolean }) {
+function MimsTabContent({ isLoading }: { isLoading: boolean }) {
     return (
         <KeyboardAvoidingView style={styles.tabContainer} behavior={Platform.OS === "ios" ? "padding" : "height"}>
             <View style={styles.contentContainer}>
@@ -130,10 +127,6 @@ function MimsTabContent({ product, isLoading }: { product: MimsProductInventory 
                         <ActivityIndicator size="large" color={COLORS.primary} />
                         <Text style={styles.loadingText}>Fetching data...</Text>
                     </View>
-                ) : product ? (
-                    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 20 }}>
-                        <ProductDetails product={product} />
-                    </ScrollView>
                 ) : (
                     <View style={globalStyles.centerElement}>
                         <Ionicons name="barcode-outline" size={64} color={COLORS.border} />

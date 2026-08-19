@@ -24,7 +24,6 @@ import {
     View,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
-import CustomToast from "@/components/common/Toast";
 import Pagination from "@/components/common/Pagination";
 
 interface EmployeeDetailModalProps {
@@ -86,7 +85,6 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
                     />
                 </View>
             </View>
-            <CustomToast />
         </Modal>
     );
 };
@@ -206,7 +204,6 @@ export default function StoreEmployees() {
                 onClose={handleCloseDetailModal}
             />
 
-            <CustomToast />
         </TopSafeAreaView>
     );
 }

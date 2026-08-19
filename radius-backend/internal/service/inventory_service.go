@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"radius/internal/models"
 )
 
@@ -182,4 +183,102 @@ func (s *InventoryService) UpdateQuantity(ctx context.Context, email string, req
 		return errors.New("employee not found")
 	}
 	return s.inventoryRepo.UpdateInventoryQuantity(ctx, employee.StoreId, req.ProductId, req.Quantity)
+}
+
+func (s *InventoryService) GetProductScreenDetails(ctx context.Context, email string, productID int) (*models.ProductScreenDetails, error) {
+	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	if employee == nil {
+		return nil, errors.New("employee not found")
+	}
+
+	return s.inventoryRepo.GetProductScreenDetails(ctx, employee.StoreId, productID)
+}
+
+func (s *InventoryService) SyncLocations(ctx context.Context, email string, req models.SyncLocationsRequest) error {
+	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+	if employee == nil {
+		return errors.New("employee not found")
+	}
+
+	// Validate locations
+	for _, loc := range req.Locations {
+		if loc.MimsLocationId != nil {
+			exists, err := s.inventoryRepo.CheckLocationExists(ctx, employee.StoreId, *loc.MimsLocationId)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				return fmt.Errorf("location %s does not exist", *loc.MimsLocationId)
+			}
+		}
+	}
+
+	return s.inventoryRepo.SyncLocations(ctx, employee.StoreId, req.InventoryId, req.Locations)
+}
+
+func (s *InventoryService) CreateMimsLocation(ctx context.Context, email string, req models.CreateMimsLocationRequest) error {
+	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+	if employee == nil {
+		return errors.New("employee not found")
+	}
+
+	return s.inventoryRepo.CreateMimsLocation(ctx, employee.StoreId, req.LocationId)
+}
+
+func (s *InventoryService) CreateInventoryAdjustment(ctx context.Context, email string, req models.AdjustInventoryRequest) error {
+	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+	if employee == nil {
+		return errors.New("employee not found")
+	}
+
+	adj := models.InventoryAdjustment{
+		StoreId:     employee.StoreId,
+		InventoryId: req.InventoryId,
+		ProductId:   req.ProductId,
+		PreviousQty: req.PreviousQty,
+		AdjustedQty: req.AdjustedQty,
+		Reason:      req.Reason,
+		RequestedBy: employee.EmployeeId,
+	}
+
+	return s.inventoryRepo.CreateInventoryAdjustment(ctx, adj)
+}
+
+func (s *InventoryService) GetPendingAdjustments(ctx context.Context, email string) ([]models.PendingAdjustmentDetail, error) {
+	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	if employee == nil {
+		return nil, errors.New("employee not found")
+	}
+
+	return s.inventoryRepo.GetPendingAdjustments(ctx, employee.StoreId)
+}
+
+func (s *InventoryService) ReviewAdjustments(ctx context.Context, email string, req models.ReviewAdjustmentRequest) error {
+	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+	if employee == nil {
+		return errors.New("employee not found")
+	}
+	if employee.Role != models.RoleManager && employee.Role != models.RoleAdmin {
+		return errors.New("unauthorized")
+	}
+
+	return s.inventoryRepo.ReviewAdjustments(ctx, employee.StoreId, employee.EmployeeId, req.Reviews)
 }

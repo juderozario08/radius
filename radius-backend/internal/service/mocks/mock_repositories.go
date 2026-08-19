@@ -417,64 +417,206 @@ func (m *MockInventoryRepository) EXPECT() *MockInventoryRepositoryMockRecorder 
 	return m.recorder
 }
 
-// CreateInventoryItem mocks base method.
-func (m *MockInventoryRepository) CreateInventoryItem(ctx context.Context, model models.Inventory) (*models.Inventory, error) {
+// CheckLocationExists mocks base method.
+func (m *MockInventoryRepository) CheckLocationExists(ctx context.Context, storeID int, locationID string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateInventoryItem", ctx, model)
-	ret0, _ := ret[0].(*models.Inventory)
+	ret := m.ctrl.Call(m, "CheckLocationExists", ctx, storeID, locationID)
+	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateInventoryItem indicates an expected call of CreateInventoryItem.
-func (mr *MockInventoryRepositoryMockRecorder) CreateInventoryItem(ctx, model any) *gomock.Call {
+// CheckLocationExists indicates an expected call of CheckLocationExists.
+func (mr *MockInventoryRepositoryMockRecorder) CheckLocationExists(ctx, storeID, locationID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInventoryItem", reflect.TypeOf((*MockInventoryRepository)(nil).CreateInventoryItem), ctx, model)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckLocationExists", reflect.TypeOf((*MockInventoryRepository)(nil).CheckLocationExists), ctx, storeID, locationID)
 }
 
-// DeleteProductBySku mocks base method.
-func (m *MockInventoryRepository) DeleteProductBySku(ctx context.Context, sku int) (*models.Product, error) {
+// CheckProductInLocation mocks base method.
+func (m *MockInventoryRepository) CheckProductInLocation(ctx context.Context, storeID int, locationID string, productID int) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteProductBySku", ctx, sku)
-	ret0, _ := ret[0].(*models.Product)
+	ret := m.ctrl.Call(m, "CheckProductInLocation", ctx, storeID, locationID, productID)
+	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// DeleteProductBySku indicates an expected call of DeleteProductBySku.
-func (mr *MockInventoryRepositoryMockRecorder) DeleteProductBySku(ctx, sku any) *gomock.Call {
+// CheckProductInLocation indicates an expected call of CheckProductInLocation.
+func (mr *MockInventoryRepositoryMockRecorder) CheckProductInLocation(ctx, storeID, locationID, productID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProductBySku", reflect.TypeOf((*MockInventoryRepository)(nil).DeleteProductBySku), ctx, sku)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckProductInLocation", reflect.TypeOf((*MockInventoryRepository)(nil).CheckProductInLocation), ctx, storeID, locationID, productID)
 }
 
-// GetProductBySku mocks base method.
-func (m *MockInventoryRepository) GetProductBySku(ctx context.Context, sku int) (*models.Product, error) {
+// CreateInventoryAdjustment mocks base method.
+func (m *MockInventoryRepository) CreateInventoryAdjustment(ctx context.Context, adj models.InventoryAdjustment) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProductBySku", ctx, sku)
-	ret0, _ := ret[0].(*models.Product)
+	ret := m.ctrl.Call(m, "CreateInventoryAdjustment", ctx, adj)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateInventoryAdjustment indicates an expected call of CreateInventoryAdjustment.
+func (mr *MockInventoryRepositoryMockRecorder) CreateInventoryAdjustment(ctx, adj any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInventoryAdjustment", reflect.TypeOf((*MockInventoryRepository)(nil).CreateInventoryAdjustment), ctx, adj)
+}
+
+// CreateMimsLocation mocks base method.
+func (m *MockInventoryRepository) CreateMimsLocation(ctx context.Context, storeID int, locationID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateMimsLocation", ctx, storeID, locationID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateMimsLocation indicates an expected call of CreateMimsLocation.
+func (mr *MockInventoryRepositoryMockRecorder) CreateMimsLocation(ctx, storeID, locationID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateMimsLocation", reflect.TypeOf((*MockInventoryRepository)(nil).CreateMimsLocation), ctx, storeID, locationID)
+}
+
+// GetInventoryByBarcode mocks base method.
+func (m *MockInventoryRepository) GetInventoryByBarcode(ctx context.Context, storeID int, barcode string) (*models.MimsProductInventory, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInventoryByBarcode", ctx, storeID, barcode)
+	ret0, _ := ret[0].(*models.MimsProductInventory)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetProductBySku indicates an expected call of GetProductBySku.
-func (mr *MockInventoryRepositoryMockRecorder) GetProductBySku(ctx, sku any) *gomock.Call {
+// GetInventoryByBarcode indicates an expected call of GetInventoryByBarcode.
+func (mr *MockInventoryRepositoryMockRecorder) GetInventoryByBarcode(ctx, storeID, barcode any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductBySku", reflect.TypeOf((*MockInventoryRepository)(nil).GetProductBySku), ctx, sku)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInventoryByBarcode", reflect.TypeOf((*MockInventoryRepository)(nil).GetInventoryByBarcode), ctx, storeID, barcode)
 }
 
-// GetProductByUpc mocks base method.
-func (m *MockInventoryRepository) GetProductByUpc(ctx context.Context, upc string) (*models.Product, error) {
+// GetPendingAdjustments mocks base method.
+func (m *MockInventoryRepository) GetPendingAdjustments(ctx context.Context, storeID int) ([]models.PendingAdjustmentDetail, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProductByUpc", ctx, upc)
-	ret0, _ := ret[0].(*models.Product)
+	ret := m.ctrl.Call(m, "GetPendingAdjustments", ctx, storeID)
+	ret0, _ := ret[0].([]models.PendingAdjustmentDetail)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetProductByUpc indicates an expected call of GetProductByUpc.
-func (mr *MockInventoryRepositoryMockRecorder) GetProductByUpc(ctx, upc any) *gomock.Call {
+// GetPendingAdjustments indicates an expected call of GetPendingAdjustments.
+func (mr *MockInventoryRepositoryMockRecorder) GetPendingAdjustments(ctx, storeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductByUpc", reflect.TypeOf((*MockInventoryRepository)(nil).GetProductByUpc), ctx, upc)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingAdjustments", reflect.TypeOf((*MockInventoryRepository)(nil).GetPendingAdjustments), ctx, storeID)
+}
+
+// GetProductScreenDetails mocks base method.
+func (m *MockInventoryRepository) GetProductScreenDetails(ctx context.Context, storeID, productID int) (*models.ProductScreenDetails, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProductScreenDetails", ctx, storeID, productID)
+	ret0, _ := ret[0].(*models.ProductScreenDetails)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProductScreenDetails indicates an expected call of GetProductScreenDetails.
+func (mr *MockInventoryRepositoryMockRecorder) GetProductScreenDetails(ctx, storeID, productID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductScreenDetails", reflect.TypeOf((*MockInventoryRepository)(nil).GetProductScreenDetails), ctx, storeID, productID)
+}
+
+// GetProductsByLocation mocks base method.
+func (m *MockInventoryRepository) GetProductsByLocation(ctx context.Context, storeID int, locationID string) ([]models.MimsProductInventory, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProductsByLocation", ctx, storeID, locationID)
+	ret0, _ := ret[0].([]models.MimsProductInventory)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProductsByLocation indicates an expected call of GetProductsByLocation.
+func (mr *MockInventoryRepositoryMockRecorder) GetProductsByLocation(ctx, storeID, locationID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductsByLocation", reflect.TypeOf((*MockInventoryRepository)(nil).GetProductsByLocation), ctx, storeID, locationID)
+}
+
+// IncrementInventoryQuantity mocks base method.
+func (m *MockInventoryRepository) IncrementInventoryQuantity(ctx context.Context, storeID, productID, delta int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementInventoryQuantity", ctx, storeID, productID, delta)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrementInventoryQuantity indicates an expected call of IncrementInventoryQuantity.
+func (mr *MockInventoryRepositoryMockRecorder) IncrementInventoryQuantity(ctx, storeID, productID, delta any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementInventoryQuantity", reflect.TypeOf((*MockInventoryRepository)(nil).IncrementInventoryQuantity), ctx, storeID, productID, delta)
+}
+
+// LinkProductToLocation mocks base method.
+func (m *MockInventoryRepository) LinkProductToLocation(ctx context.Context, storeID int, locationID string, productID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LinkProductToLocation", ctx, storeID, locationID, productID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// LinkProductToLocation indicates an expected call of LinkProductToLocation.
+func (mr *MockInventoryRepositoryMockRecorder) LinkProductToLocation(ctx, storeID, locationID, productID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkProductToLocation", reflect.TypeOf((*MockInventoryRepository)(nil).LinkProductToLocation), ctx, storeID, locationID, productID)
+}
+
+// LogScan mocks base method.
+func (m *MockInventoryRepository) LogScan(ctx context.Context, log models.MimsScanLog) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LogScan", ctx, log)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// LogScan indicates an expected call of LogScan.
+func (mr *MockInventoryRepositoryMockRecorder) LogScan(ctx, log any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogScan", reflect.TypeOf((*MockInventoryRepository)(nil).LogScan), ctx, log)
+}
+
+// ReviewAdjustments mocks base method.
+func (m *MockInventoryRepository) ReviewAdjustments(ctx context.Context, storeID, reviewerID int, reviews []models.ReviewAdjustmentItem) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReviewAdjustments", ctx, storeID, reviewerID, reviews)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReviewAdjustments indicates an expected call of ReviewAdjustments.
+func (mr *MockInventoryRepositoryMockRecorder) ReviewAdjustments(ctx, storeID, reviewerID, reviews any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReviewAdjustments", reflect.TypeOf((*MockInventoryRepository)(nil).ReviewAdjustments), ctx, storeID, reviewerID, reviews)
+}
+
+// SyncLocations mocks base method.
+func (m *MockInventoryRepository) SyncLocations(ctx context.Context, storeID, inventoryID int, locations []models.MimsLocationItem) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncLocations", ctx, storeID, inventoryID, locations)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncLocations indicates an expected call of SyncLocations.
+func (mr *MockInventoryRepositoryMockRecorder) SyncLocations(ctx, storeID, inventoryID, locations any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncLocations", reflect.TypeOf((*MockInventoryRepository)(nil).SyncLocations), ctx, storeID, inventoryID, locations)
+}
+
+// UpdateInventoryQuantity mocks base method.
+func (m *MockInventoryRepository) UpdateInventoryQuantity(ctx context.Context, storeID, productID, quantity int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateInventoryQuantity", ctx, storeID, productID, quantity)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateInventoryQuantity indicates an expected call of UpdateInventoryQuantity.
+func (mr *MockInventoryRepositoryMockRecorder) UpdateInventoryQuantity(ctx, storeID, productID, quantity any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateInventoryQuantity", reflect.TypeOf((*MockInventoryRepository)(nil).UpdateInventoryQuantity), ctx, storeID, productID, quantity)
 }
 
 // MockProductRepository is a mock of ProductRepository interface.
@@ -482,16 +624,6 @@ type MockProductRepository struct {
 	ctrl     *gomock.Controller
 	recorder *MockProductRepositoryMockRecorder
 	isgomock struct{}
-}
-
-// GetProductByID implements [service.ProductRepository].
-func (m *MockProductRepository) GetProductByID(ctx context.Context, id int) (*models.Product, error) {
-	panic("unimplemented")
-}
-
-// SearchProducts implements [service.ProductRepository].
-func (m *MockProductRepository) SearchProducts(ctx context.Context, query string, categoryID *int, brand *string, isActive *bool, unitOfMeasure *string, limit, offset int) ([]models.Product, int, error) {
-	panic("unimplemented")
 }
 
 // MockProductRepositoryMockRecorder is the mock recorder for MockProductRepository.
@@ -509,6 +641,106 @@ func NewMockProductRepository(ctrl *gomock.Controller) *MockProductRepository {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockProductRepository) EXPECT() *MockProductRepositoryMockRecorder {
 	return m.recorder
+}
+
+// GetProductByID mocks base method.
+func (m *MockProductRepository) GetProductByID(ctx context.Context, id int) (*models.Product, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProductByID", ctx, id)
+	ret0, _ := ret[0].(*models.Product)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProductByID indicates an expected call of GetProductByID.
+func (mr *MockProductRepositoryMockRecorder) GetProductByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductByID", reflect.TypeOf((*MockProductRepository)(nil).GetProductByID), ctx, id)
+}
+
+// GetProductByBarcode mocks base method.
+func (m *MockProductRepository) GetProductByBarcode(ctx context.Context, barcode string) (*models.Product, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProductByBarcode", ctx, barcode)
+	ret0, _ := ret[0].(*models.Product)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProductByBarcode indicates an expected call of GetProductByBarcode.
+func (mr *MockProductRepositoryMockRecorder) GetProductByBarcode(ctx, barcode any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductByBarcode", reflect.TypeOf((*MockProductRepository)(nil).GetProductByBarcode), ctx, barcode)
+}
+
+// SearchProducts mocks base method.
+func (m *MockProductRepository) SearchProducts(ctx context.Context, query string, categoryID *int, brand *string, isActive *bool, unitOfMeasure *string, limit, offset int) ([]models.Product, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchProducts", ctx, query, categoryID, brand, isActive, unitOfMeasure, limit, offset)
+	ret0, _ := ret[0].([]models.Product)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// SearchProducts indicates an expected call of SearchProducts.
+func (mr *MockProductRepositoryMockRecorder) SearchProducts(ctx, query, categoryID, brand, isActive, unitOfMeasure, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchProducts", reflect.TypeOf((*MockProductRepository)(nil).SearchProducts), ctx, query, categoryID, brand, isActive, unitOfMeasure, limit, offset)
+}
+
+// MockCategoryRepository is a mock of CategoryRepository interface.
+type MockCategoryRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockCategoryRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockCategoryRepositoryMockRecorder is the mock recorder for MockCategoryRepository.
+type MockCategoryRepositoryMockRecorder struct {
+	mock *MockCategoryRepository
+}
+
+// NewMockCategoryRepository creates a new mock instance.
+func NewMockCategoryRepository(ctrl *gomock.Controller) *MockCategoryRepository {
+	mock := &MockCategoryRepository{ctrl: ctrl}
+	mock.recorder = &MockCategoryRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockCategoryRepository) EXPECT() *MockCategoryRepositoryMockRecorder {
+	return m.recorder
+}
+
+// GetAllCategories mocks base method.
+func (m *MockCategoryRepository) GetAllCategories(ctx context.Context) ([]models.Category, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllCategories", ctx)
+	ret0, _ := ret[0].([]models.Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllCategories indicates an expected call of GetAllCategories.
+func (mr *MockCategoryRepositoryMockRecorder) GetAllCategories(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCategories", reflect.TypeOf((*MockCategoryRepository)(nil).GetAllCategories), ctx)
+}
+
+// GetDistinctBrands mocks base method.
+func (m *MockCategoryRepository) GetDistinctBrands(ctx context.Context) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDistinctBrands", ctx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDistinctBrands indicates an expected call of GetDistinctBrands.
+func (mr *MockCategoryRepositoryMockRecorder) GetDistinctBrands(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDistinctBrands", reflect.TypeOf((*MockCategoryRepository)(nil).GetDistinctBrands), ctx)
 }
 
 // MockMerchandisingRepository is a mock of MerchandisingRepository interface.
@@ -704,4 +936,174 @@ func (m *MockSessionRepository) UpdateSessionExpiry(ctx context.Context, session
 func (mr *MockSessionRepositoryMockRecorder) UpdateSessionExpiry(ctx, sessionId, newExpiresAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSessionExpiry", reflect.TypeOf((*MockSessionRepository)(nil).UpdateSessionExpiry), ctx, sessionId, newExpiresAt)
+}
+
+// MockReceivingRepository is a mock of ReceivingRepository interface.
+type MockReceivingRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockReceivingRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockReceivingRepositoryMockRecorder is the mock recorder for MockReceivingRepository.
+type MockReceivingRepositoryMockRecorder struct {
+	mock *MockReceivingRepository
+}
+
+// NewMockReceivingRepository creates a new mock instance.
+func NewMockReceivingRepository(ctrl *gomock.Controller) *MockReceivingRepository {
+	mock := &MockReceivingRepository{ctrl: ctrl}
+	mock.recorder = &MockReceivingRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockReceivingRepository) EXPECT() *MockReceivingRepositoryMockRecorder {
+	return m.recorder
+}
+
+// CheckProductInPO mocks base method.
+func (m *MockReceivingRepository) CheckProductInPO(ctx context.Context, poID int, barcode string) (*models.PurchaseOrderItemDetail, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckProductInPO", ctx, poID, barcode)
+	ret0, _ := ret[0].(*models.PurchaseOrderItemDetail)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckProductInPO indicates an expected call of CheckProductInPO.
+func (mr *MockReceivingRepositoryMockRecorder) CheckProductInPO(ctx, poID, barcode any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckProductInPO", reflect.TypeOf((*MockReceivingRepository)(nil).CheckProductInPO), ctx, poID, barcode)
+}
+
+// CheckProductInTransfer mocks base method.
+func (m *MockReceivingRepository) CheckProductInTransfer(ctx context.Context, transferID int, barcode string) (*models.StockTransferItemDetail, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckProductInTransfer", ctx, transferID, barcode)
+	ret0, _ := ret[0].(*models.StockTransferItemDetail)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckProductInTransfer indicates an expected call of CheckProductInTransfer.
+func (mr *MockReceivingRepositoryMockRecorder) CheckProductInTransfer(ctx, transferID, barcode any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckProductInTransfer", reflect.TypeOf((*MockReceivingRepository)(nil).CheckProductInTransfer), ctx, transferID, barcode)
+}
+
+// GetPurchaseOrderDetail mocks base method.
+func (m *MockReceivingRepository) GetPurchaseOrderDetail(ctx context.Context, poID int) (*models.PurchaseOrderDetailResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPurchaseOrderDetail", ctx, poID)
+	ret0, _ := ret[0].(*models.PurchaseOrderDetailResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPurchaseOrderDetail indicates an expected call of GetPurchaseOrderDetail.
+func (mr *MockReceivingRepositoryMockRecorder) GetPurchaseOrderDetail(ctx, poID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPurchaseOrderDetail", reflect.TypeOf((*MockReceivingRepository)(nil).GetPurchaseOrderDetail), ctx, poID)
+}
+
+// GetPurchaseOrders mocks base method.
+func (m *MockReceivingRepository) GetPurchaseOrders(ctx context.Context, storeID *int) ([]models.PurchaseOrderSummary, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPurchaseOrders", ctx, storeID)
+	ret0, _ := ret[0].([]models.PurchaseOrderSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPurchaseOrders indicates an expected call of GetPurchaseOrders.
+func (mr *MockReceivingRepositoryMockRecorder) GetPurchaseOrders(ctx, storeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPurchaseOrders", reflect.TypeOf((*MockReceivingRepository)(nil).GetPurchaseOrders), ctx, storeID)
+}
+
+// GetStockTransferDetail mocks base method.
+func (m *MockReceivingRepository) GetStockTransferDetail(ctx context.Context, transferID int) (*models.StockTransferDetailResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStockTransferDetail", ctx, transferID)
+	ret0, _ := ret[0].(*models.StockTransferDetailResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStockTransferDetail indicates an expected call of GetStockTransferDetail.
+func (mr *MockReceivingRepositoryMockRecorder) GetStockTransferDetail(ctx, transferID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStockTransferDetail", reflect.TypeOf((*MockReceivingRepository)(nil).GetStockTransferDetail), ctx, transferID)
+}
+
+// GetStockTransfers mocks base method.
+func (m *MockReceivingRepository) GetStockTransfers(ctx context.Context, storeID *int) ([]models.StockTransferSummary, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStockTransfers", ctx, storeID)
+	ret0, _ := ret[0].([]models.StockTransferSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStockTransfers indicates an expected call of GetStockTransfers.
+func (mr *MockReceivingRepositoryMockRecorder) GetStockTransfers(ctx, storeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStockTransfers", reflect.TypeOf((*MockReceivingRepository)(nil).GetStockTransfers), ctx, storeID)
+}
+
+// QuickReceiveTransfer mocks base method.
+func (m *MockReceivingRepository) QuickReceiveTransfer(ctx context.Context, storeID, transferID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QuickReceiveTransfer", ctx, storeID, transferID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// QuickReceiveTransfer indicates an expected call of QuickReceiveTransfer.
+func (mr *MockReceivingRepositoryMockRecorder) QuickReceiveTransfer(ctx, storeID, transferID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QuickReceiveTransfer", reflect.TypeOf((*MockReceivingRepository)(nil).QuickReceiveTransfer), ctx, storeID, transferID)
+}
+
+// ReceiveLPR mocks base method.
+func (m *MockReceivingRepository) ReceiveLPR(ctx context.Context, storeID, poID int, lprBarcode string, employeeID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReceiveLPR", ctx, storeID, poID, lprBarcode, employeeID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReceiveLPR indicates an expected call of ReceiveLPR.
+func (mr *MockReceivingRepositoryMockRecorder) ReceiveLPR(ctx, storeID, poID, lprBarcode, employeeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceiveLPR", reflect.TypeOf((*MockReceivingRepository)(nil).ReceiveLPR), ctx, storeID, poID, lprBarcode, employeeID)
+}
+
+// ReceivePOItems mocks base method.
+func (m *MockReceivingRepository) ReceivePOItems(ctx context.Context, storeID, poID int, items []models.ReceivePOItemEntry) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReceivePOItems", ctx, storeID, poID, items)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReceivePOItems indicates an expected call of ReceivePOItems.
+func (mr *MockReceivingRepositoryMockRecorder) ReceivePOItems(ctx, storeID, poID, items any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceivePOItems", reflect.TypeOf((*MockReceivingRepository)(nil).ReceivePOItems), ctx, storeID, poID, items)
+}
+
+// ReceiveTransferItems mocks base method.
+func (m *MockReceivingRepository) ReceiveTransferItems(ctx context.Context, storeID, transferID int, items []models.ReceiveTransferItemEntry) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReceiveTransferItems", ctx, storeID, transferID, items)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReceiveTransferItems indicates an expected call of ReceiveTransferItems.
+func (mr *MockReceivingRepositoryMockRecorder) ReceiveTransferItems(ctx, storeID, transferID, items any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceiveTransferItems", reflect.TypeOf((*MockReceivingRepository)(nil).ReceiveTransferItems), ctx, storeID, transferID, items)
 }

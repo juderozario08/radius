@@ -62,6 +62,7 @@ func main() {
 	categoryRepo := repository.NewCategoryRepo(db.DB)
 	salesRepo := repository.NewSalesRepo(db.DB)
 	receivingRepo := repository.NewReceivingRepo(db.DB)
+	auditRepo := repository.NewAuditRepo(db.DB)
 
 	employeeService := service.NewEmployeeService(employeeRepo)
 	sessionService := service.NewSessionService(sessionRepo, cfg.JWTSecretKey, redisClient)
@@ -80,8 +81,10 @@ func main() {
 	transactionService := service.NewTransactionService(salesRepo, employeeRepo, sessionRepo)
 	transferService := service.NewTransferService(storeRepo, inventoryRepo, employeeRepo, sessionRepo)
 	receivingService := service.NewReceivingService(receivingRepo, employeeRepo)
+	auditService := service.NewAuditService(auditRepo, employeeRepo, productsRepo)
 
 	appHandlers := router.Handlers{
+		AuditHandler:       handler.NewAuditHandler(auditService),
 		AuthHandler:        handler.NewAuthHandler(authService),
 		BarcodeHandler:     handler.NewBarcodeHandler(barcodeService),
 		CategoryHandler:    handler.NewCategoryHandler(categoryService),

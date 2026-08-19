@@ -16,7 +16,6 @@ import {
     TouchableOpacity,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
-import CustomToast from "@/components/common/Toast";
 import { callApi } from "@/utils/helpers";
 import { GetTransactionByIDResponse, Transaction, TransactionItem } from "@/types/sales.types";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -127,7 +126,8 @@ export default function TransactionDetail() {
                             onPress={() => router.push(`/(app)/product/${item.product_id}` as any)}
                         >
                             <View style={styles.itemInfo}>
-                                <Text style={styles.itemText}>SKU: {item.product_sku || 'N/A'}</Text>
+                                <Text style={styles.itemText}>{item.product_name || 'Unknown Product'}</Text>
+                                <Text style={styles.itemSubText}>SKU: {item.product_sku || 'N/A'}</Text>
                                 <Text style={styles.itemSubText}>Qty: {item.quantity} x ${item.unit_price.toFixed(2)}</Text>
                                 {item.scanned_barcode && <Text style={styles.itemSubText}>Barcode: {item.scanned_barcode}</Text>}
                             </View>
@@ -141,7 +141,6 @@ export default function TransactionDetail() {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
-            <CustomToast />
         </TopSafeAreaView>
     );
 }

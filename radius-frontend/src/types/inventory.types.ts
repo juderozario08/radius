@@ -13,7 +13,63 @@ export interface Product {
     units_per_case: number;
     weight: number;
     is_active: boolean;
+    retail_price: number;
+    constrained_end_after: string | null;
     created_at: string;
+}
+
+export interface Inventory {
+    inventory_id: number;
+    store_id: number;
+    product_id: number;
+    on_hand_qty: number;
+    reserved_qty: number;
+    available_qty: number;
+    reorder_qty: number;
+    aisle: string | null;
+    mims_location: string | null;
+    last_counted_at: string | null;
+    open_box_qty: number;
+    new_qty: number;
+    rtv_qty: number;
+    code88_qty: number;
+    bopis_qty: number;
+    quarantine_qty: number;
+    repair_qty: number;
+    customer_on_hold_qty: number;
+    fc_on_hold_qty: number;
+    verify_qty: number;
+    demo_qty: number;
+    on_order_qty: number;
+    last_received_at: string | null;
+}
+
+export interface MimsLocationItem {
+    mims_location_id: string | null;
+    store_id: number;
+    inventory_id: number;
+    quantity: number;
+    location_type: string;
+}
+
+export interface Planogram {
+    planogram_id: number;
+    store_id: number;
+    name: string;
+    description: string | null;
+    aisle: string | null;
+    valid_from: string;
+    is_active: boolean;
+    created_by: number;
+    created_at: string;
+    updated_at: string | null;
+}
+
+export interface ProductScreenDetails {
+    product: Product;
+    inventory: Inventory;
+    locations: MimsLocationItem[];
+    planogram_info: Planogram | null;
 }
 
 export interface MimsProductInventory extends Product {
@@ -53,4 +109,26 @@ export interface SearchFilters {
     brand?: string;
     is_active?: boolean;
     unit_of_measure?: string;
+}
+
+export type InventoryTransactionType =
+    | "RECEIPT" | "SALE" | "RETURN" | "TRANSFER"
+    | "ADJUSTMENT" | "DAMAGE" | "DEMO_ASSIGNMENT" | "WRITE_OFF" | "CYCLE_COUNT";
+
+export interface AuditTrailEntry {
+    transaction_id: number;
+    transaction_type: InventoryTransactionType;
+    quantity: number;
+    reason_code: string | null;
+    reference_id: string | null;
+    employee_name: string | null;
+    from_store_name: string | null;
+    to_store_name: string | null;
+    created_at: string;
+}
+
+export interface AuditTrailResponse {
+    product: Product;
+    events: AuditTrailEntry[];
+    total: number;
 }

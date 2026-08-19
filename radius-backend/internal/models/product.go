@@ -36,9 +36,11 @@ type Product struct {
 	Brand         string       `json:"brand"`
 	UnitOfMeasure MeasureUnits `json:"unit_of_measure"`
 	UnitsPerCase  int          `json:"units_per_case"`
-	Weight        float32      `json:"weight"`
-	IsActive      bool         `json:"is_active"`
-	CreatedAt     time.Time    `json:"created_at"`
+	Weight              float32      `json:"weight"`
+	IsActive            bool         `json:"is_active"`
+	RetailPrice         float64      `json:"retail_price"`
+	ConstrainedEndAfter *time.Time   `json:"constrained_end_after"`
+	CreatedAt           time.Time    `json:"created_at"`
 }
 
 type ProductSupplier struct {

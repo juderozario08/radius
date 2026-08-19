@@ -55,9 +55,16 @@ export const ENDPOINTS = {
         },
         MIMS: {
             scanProduct: "/api/sales_floor/inventory/product",
+            productDetails: "/api/sales_floor/inventory/product-details",
             getLocationProducts: "/api/sales_floor/inventory/location",
             binItem: "/api/sales_floor/inventory/bin",
             updateQuantity: "/api/sales_floor/inventory/quantity",
+            syncLocations: "/api/sales_floor/inventory/locations/sync",
+            createLocation: "/api/sales_floor/inventory/location",
+            adjustInventory: "/api/sales_floor/inventory/adjust",
+            adjustments: "/api/sales_floor/inventory/adjustments",
+            adjustmentsReview: "/api/sales_floor/inventory/adjustments/review",
+            audit: "/api/sales_floor/audit",
         },
         RECEIVING: {
             purchaseOrders: "/api/sales_floor/receiving/purchase_orders",

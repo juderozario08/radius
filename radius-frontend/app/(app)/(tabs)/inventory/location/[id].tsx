@@ -7,7 +7,6 @@ import Toast from "react-native-toast-message";
 
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
-import CustomToast from "@/components/common/Toast";
 import { BarcodeScanner, BarcodeScannerRef } from "@/components/common/BarcodeScanner";
 import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
 import { ProductAdjusterCard } from "@/components/inventory/ProductAdjusterCard";
@@ -148,7 +147,6 @@ export default function LocationDetailScreen() {
                 />
             )}
 
-            <CustomToast />
         </TopSafeAreaView>
     );
 }

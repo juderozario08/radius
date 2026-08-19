@@ -40,6 +40,9 @@ func (m *MockProductRepo) SearchProducts(ctx context.Context, query string, cate
 	}
 	return nil, 0, nil
 }
+func (m *MockProductRepo) GetProductByBarcode(ctx context.Context, barcode string) (*models.Product, error) {
+	return nil, nil
+}
 
 func TestProductService_GetProductByID_CacheMissAndHit(t *testing.T) {
 	ctrl := gomock.NewController(t)

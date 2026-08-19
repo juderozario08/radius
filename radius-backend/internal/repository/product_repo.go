@@ -37,6 +37,28 @@ func (r *ProductRepo) GetProductByID(ctx context.Context, id int) (*models.Produ
 	return &p, nil
 }
 
+func (r *ProductRepo) GetProductByBarcode(ctx context.Context, barcode string) (*models.Product, error) {
+	query := `
+		SELECT product_id, sku, upc, name, description, category_id, brand, unit_of_measure, units_per_case, weight, is_active, created_at
+		FROM products
+		WHERE sku = $1 OR upc = $1
+		LIMIT 1
+	`
+	var p models.Product
+	err := r.db.QueryRowContext(ctx, query, barcode).Scan(
+		&p.ProductId, &p.Sku, &p.Upc, &p.Name, &p.Description,
+		&p.CategoryId, &p.Brand, &p.UnitOfMeasure, &p.UnitsPerCase,
+		&p.Weight, &p.IsActive, &p.CreatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // Not found
+		}
+		return nil, err
+	}
+	return &p, nil
+}
+
 func (r *ProductRepo) SearchProducts(
 	ctx context.Context,
 	query string,

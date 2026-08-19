@@ -31,7 +31,6 @@ import {
 } from "react-native";
 import { TerminatedBadge } from "@/components/common/TerminatedBadge";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
-import CustomToast from "@/components/common/Toast";
 import PillGroup, { PillOption } from "@/components/common/PillGroup";
 import { CANADIAN_PROVINCES, isCanadianProvince, normalizeCanadianPostalCode } from "@/constants/canada";
 import Pagination from "@/components/common/Pagination";
@@ -224,7 +223,6 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
                     />
                 </View>
             </View>
-            <CustomToast />
         </Modal>
     );
 };
@@ -476,7 +474,6 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
                     />
                 </View>
             </KeyboardAvoidingView>
-            <CustomToast />
         </Modal>
     );
 };

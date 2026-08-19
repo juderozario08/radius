@@ -110,3 +110,25 @@ export interface SearchFilters {
     is_active?: boolean;
     unit_of_measure?: string;
 }
+
+export type InventoryTransactionType =
+    | "RECEIPT" | "SALE" | "RETURN" | "TRANSFER"
+    | "ADJUSTMENT" | "DAMAGE" | "DEMO_ASSIGNMENT" | "WRITE_OFF" | "CYCLE_COUNT";
+
+export interface AuditTrailEntry {
+    transaction_id: number;
+    transaction_type: InventoryTransactionType;
+    quantity: number;
+    reason_code: string | null;
+    reference_id: string | null;
+    employee_name: string | null;
+    from_store_name: string | null;
+    to_store_name: string | null;
+    created_at: string;
+}
+
+export interface AuditTrailResponse {
+    product: Product;
+    events: AuditTrailEntry[];
+    total: number;
+}

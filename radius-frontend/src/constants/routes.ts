@@ -64,6 +64,7 @@ export const ENDPOINTS = {
             adjustInventory: "/api/sales_floor/inventory/adjust",
             adjustments: "/api/sales_floor/inventory/adjustments",
             adjustmentsReview: "/api/sales_floor/inventory/adjustments/review",
+            audit: "/api/sales_floor/audit",
         },
         RECEIVING: {
             purchaseOrders: "/api/sales_floor/receiving/purchase_orders",

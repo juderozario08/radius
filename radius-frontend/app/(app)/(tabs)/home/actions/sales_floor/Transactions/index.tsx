@@ -16,7 +16,6 @@ import {
     View
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
-import CustomToast from "@/components/common/Toast";
 import { callApi } from "@/utils/helpers";
 import Pagination from "@/components/common/Pagination";
 import { GetAllTransactionsResponse, Transaction } from "@/types/sales.types";
@@ -125,7 +124,6 @@ export default function TransactionsList() {
                     </>
                 )}
             </View>
-            <CustomToast />
         </TopSafeAreaView>
     );
 }

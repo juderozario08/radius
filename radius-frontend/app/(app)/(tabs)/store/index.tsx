@@ -26,7 +26,6 @@ import {
     View
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
-import CustomToast from "@/components/common/Toast";
 import { callApi, showToast } from "@/utils/helpers";
 import { GetAllStoresResponse, Store } from "@/types/admin.types";
 import PillGroup, { PillOption } from "@/components/common/PillGroup";
@@ -149,7 +148,6 @@ const StoreDetailModal: React.FC<{
                     </ScrollView>
                 </View>
             </View>
-            <CustomToast />
         </Modal>
     );
 };
@@ -331,7 +329,6 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                     />
                 </View>
             </KeyboardAvoidingView>
-            <CustomToast />
         </Modal>
     );
 };
@@ -497,7 +494,6 @@ export default function Stores() {
                 onSuccess={handleFormSuccess}
             />
 
-            <CustomToast />
         </TopSafeAreaView>
     );
 }

@@ -16,7 +16,6 @@ import {
     TextInput
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
-import CustomToast from "@/components/common/Toast";
 import { callApi } from "@/utils/helpers";
 import Pagination from "@/components/common/Pagination";
 import { GetAllOnlineOrdersResponse, OnlineOrder } from "@/types/order.types";
@@ -242,7 +241,6 @@ export default function OnlineOrdersList() {
                 />
             </View>
 
-            <CustomToast />
         </TopSafeAreaView>
     );
 }

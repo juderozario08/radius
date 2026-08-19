@@ -4,7 +4,6 @@ import { useLocalSearchParams } from "expo-router";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
-import CustomToast from "@/components/common/Toast";
 import Toast from "react-native-toast-message";
 import { ENDPOINTS } from "@/constants/routes";
 import { callApi } from "@/utils/helpers";
@@ -59,10 +58,10 @@ export default function ProductScreen() {
             const endpoint = `/api/sales_floor/inventory/locations/sync`;
             await callApi(endpoint, {
                 method: "PUT",
-                body: JSON.stringify({
+                body: {
                     inventory_id: details.inventory.inventory_id,
                     locations: updatedLocations,
-                })
+                }
             }, logout);
             
             Toast.show({ type: "success", text1: "Locations updated successfully!" });
@@ -79,7 +78,13 @@ export default function ProductScreen() {
             case "Details":
                 return <ProductDetails details={details} />;
             case "Locations":
-                return <ProductLocations locations={details.locations} onHandQty={details.inventory.on_hand_qty} onSave={handleSaveLocations} />;
+                return <ProductLocations
+                    locations={details.locations}
+                    onHandQty={details.inventory.on_hand_qty}
+                    inventoryId={details.inventory.inventory_id}
+                    productId={details.product.product_id}
+                    onSave={handleSaveLocations}
+                />;
             case "Planogram":
                 return <ProductPlanogram planogram={details.planogram_info} />;
             case "Protection":
@@ -146,7 +151,6 @@ export default function ProductScreen() {
                     </View>
                 </View>
             )}
-            <CustomToast />
         </TopSafeAreaView>
     );
 }

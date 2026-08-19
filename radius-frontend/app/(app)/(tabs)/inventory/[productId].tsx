@@ -5,10 +5,9 @@ import { useLocalSearchParams } from "expo-router";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
-import CustomToast from "@/components/common/Toast";
 import { ENDPOINTS } from "@/constants/routes";
 import { callApi } from "@/utils/helpers";
-import { Product } from "@/types/inventory.types";
+import { ProductScreenDetails } from "@/types/inventory.types";
 import { ProductDetails } from "@/components/inventory/ProductDetails";
 import { useAuth } from "@/hooks/useAuth";
 import { COLORS } from "@/constants/colors";
@@ -18,7 +17,7 @@ export default function ProductScreen() {
     const { productId } = useLocalSearchParams();
     const { logout } = useAuth();
 
-    const [product, setProduct] = useState<Product | null>(null);
+    const [productDetails, setProductDetails] = useState<ProductScreenDetails | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -32,10 +31,10 @@ export default function ProductScreen() {
         setIsLoading(true);
         setError(null);
         try {
-            const endpoint = `${ENDPOINTS.AUTHENTICATED.PRODUCTS.get}?id=${productId}`;
-            const data = await callApi<Product>(endpoint, { method: "GET" }, logout);
+            const endpoint = `/api/sales_floor/inventory/product-details?product_id=${productId}`;
+            const data = await callApi<ProductScreenDetails>(endpoint, { method: "GET" }, logout);
             if (data) {
-                setProduct(data);
+                setProductDetails(data);
             } else {
                 setError("Product not found");
             }
@@ -56,14 +55,13 @@ export default function ProductScreen() {
                 <View style={globalStyles.centerElement}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
                 </View>
-            ) : error || !product ? (
+            ) : error || !productDetails ? (
                 <View style={globalStyles.centerElement}>
                     <Text style={globalStyles.errorText}>{error || "Product not found"}</Text>
                 </View>
             ) : (
-                <ProductDetails product={product} />
+                <ProductDetails details={productDetails} />
             )}
-            <CustomToast />
         </TopSafeAreaView>
     );
 }

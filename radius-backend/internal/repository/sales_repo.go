@@ -118,7 +118,7 @@ func (r *SalesRepo) GetTransactionByID(ctx context.Context, id int, storeID *int
 	}
 
 	itemQuery := `
-		SELECT ti.transaction_item_id, ti.transaction_id, ti.product_id, p.sku as product_sku, ti.quantity, ti.unit_price, ti.unit_cost, ti.discount_amount, ti.return_reason, ti.scanned_barcode
+		SELECT ti.transaction_item_id, ti.transaction_id, ti.product_id, p.sku as product_sku, p.name as product_name, ti.quantity, ti.unit_price, ti.unit_cost, ti.discount_amount, ti.return_reason, ti.scanned_barcode
 		FROM transaction_items ti
 		LEFT JOIN products p ON ti.product_id = p.product_id
 		WHERE ti.transaction_id = $1
@@ -133,7 +133,7 @@ func (r *SalesRepo) GetTransactionByID(ctx context.Context, id int, storeID *int
 	for rows.Next() {
 		var i models.TransactionItem
 		if err := rows.Scan(
-			&i.TransactionItemId, &i.TransactionId, &i.ProductId, &i.ProductSku, &i.Quantity,
+			&i.TransactionItemId, &i.TransactionId, &i.ProductId, &i.ProductSku, &i.ProductName, &i.Quantity,
 			&i.UnitPrice, &i.UnitCost, &i.DiscountAmount, &i.ReturnReason, &i.ScannedBarcode,
 		); err != nil {
 			return nil, nil, err

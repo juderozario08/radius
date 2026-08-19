@@ -17,7 +17,6 @@ import {
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
-import CustomToast from "@/components/common/Toast";
 import { COLORS } from "@/constants/colors";
 import { globalStyles } from "@/constants/styles";
 import { ENDPOINTS } from "@/constants/routes";
@@ -501,7 +500,6 @@ export default function ProductSearchScreen() {
                 categories={categories}
                 brands={brands}
             />
-            <CustomToast />
         </TopSafeAreaView>
     );
 }

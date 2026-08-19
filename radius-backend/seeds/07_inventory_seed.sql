@@ -242,24 +242,4 @@ INSERT INTO inventory (store_id, product_id, reserved_qty, reorder_point, reorde
 
 
 -- Insert some mock mims location items
-INSERT INTO mims_location_items (store_id, inventory_id, mims_location_id, quantity, location_type) VALUES
-(1, 1, NULL, 1, 'UNBINNED'),
-(1, 1, '01-99-35-301', 3, 'OVERSTOCK'),
-(1, 2, NULL, 1, 'UNBINNED'),
-(1, 2, '01-99-35-301', 3, 'OVERSTOCK'),
-(1, 3, NULL, 1, 'UNBINNED'),
-(1, 3, '01-99-35-301', 3, 'OVERSTOCK'),
-(1, 4, NULL, 1, 'UNBINNED'),
-(1, 4, '01-99-35-301', 3, 'OVERSTOCK'),
-(1, 5, NULL, 1, 'UNBINNED'),
-(1, 5, '01-99-35-301', 3, 'OVERSTOCK'),
-(1, 6, NULL, 1, 'UNBINNED'),
-(1, 6, '01-99-35-301', 3, 'OVERSTOCK'),
-(1, 7, NULL, 1, 'UNBINNED'),
-(1, 7, '01-99-35-301', 3, 'OVERSTOCK'),
-(1, 8, NULL, 1, 'UNBINNED'),
-(1, 8, '01-99-35-301', 3, 'OVERSTOCK'),
-(1, 9, NULL, 1, 'UNBINNED'),
-(1, 9, '01-99-35-301', 3, 'OVERSTOCK'),
-(1, 10, NULL, 1, 'UNBINNED'),
-(1, 10, '01-99-35-301', 3, 'OVERSTOCK');
+-- Removed as per request. Users are meant to create these themselves.

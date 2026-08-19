@@ -149,3 +149,77 @@ func (h *InventoryHandler) SyncLocations(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Locations synced successfully"})
 }
+
+func (h *InventoryHandler) CreateMimsLocation(ctx *gin.Context) {
+	email := ctx.GetString("email")
+
+	var req models.CreateMimsLocationRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		return
+	}
+
+	err := h.inventoryService.CreateMimsLocation(ctx.Request.Context(), email, req)
+	if err != nil {
+		log.Printf("[ERROR] InventoryHandler.CreateMimsLocation: %v", err)
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Location created successfully"})
+}
+
+func (h *InventoryHandler) CreateAdjustment(ctx *gin.Context) {
+	email := ctx.GetString("email")
+
+	var req models.AdjustInventoryRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		return
+	}
+
+	err := h.inventoryService.CreateInventoryAdjustment(ctx.Request.Context(), email, req)
+	if err != nil {
+		log.Printf("[ERROR] InventoryHandler.CreateAdjustment: %v", err)
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Adjustment submitted for review"})
+}
+
+func (h *InventoryHandler) GetPendingAdjustments(ctx *gin.Context) {
+	email := ctx.GetString("email")
+
+	adjustments, err := h.inventoryService.GetPendingAdjustments(ctx.Request.Context(), email)
+	if err != nil {
+		log.Printf("[ERROR] InventoryHandler.GetPendingAdjustments: %v", err)
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, adjustments)
+}
+
+func (h *InventoryHandler) ReviewAdjustments(ctx *gin.Context) {
+	email := ctx.GetString("email")
+
+	var req models.ReviewAdjustmentRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		return
+	}
+
+	err := h.inventoryService.ReviewAdjustments(ctx.Request.Context(), email, req)
+	if err != nil {
+		log.Printf("[ERROR] InventoryHandler.ReviewAdjustments: %v", err)
+		if err.Error() == "unauthorized" {
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "unauthorized"})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		}
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Adjustments reviewed successfully"})
+}

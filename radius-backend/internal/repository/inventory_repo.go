@@ -4,6 +4,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"radius/internal/models"
 )
 
@@ -252,6 +253,99 @@ func (r *InventoryRepo) SyncLocations(ctx context.Context, storeID int, inventor
 	for _, loc := range locations {
 		if loc.Quantity > 0 {
 			_, err = tx.ExecContext(ctx, insertQuery, loc.MimsLocationId, storeID, inventoryID, loc.Quantity, loc.LocationType)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (r *InventoryRepo) CreateMimsLocation(ctx context.Context, storeID int, locationID string) error {
+	query := `INSERT INTO mims_location (mims_location_id, store_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`
+	_, err := r.db.ExecContext(ctx, query, locationID, storeID)
+	return err
+}
+
+func (r *InventoryRepo) CreateInventoryAdjustment(ctx context.Context, adj models.InventoryAdjustment) error {
+	query := `
+		INSERT INTO inventory_adjustments (store_id, inventory_id, product_id, previous_qty, adjusted_qty, reason, requested_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`
+	_, err := r.db.ExecContext(ctx, query, adj.StoreId, adj.InventoryId, adj.ProductId, adj.PreviousQty, adj.AdjustedQty, adj.Reason, adj.RequestedBy)
+	return err
+}
+
+func (r *InventoryRepo) GetPendingAdjustments(ctx context.Context, storeID int) ([]models.PendingAdjustmentDetail, error) {
+	query := `
+		SELECT
+			a.adjustment_id, a.inventory_id, a.product_id, a.previous_qty, a.adjusted_qty, a.reason, a.created_at,
+			e.first_name || ' ' || e.last_name AS requested_by,
+			p.name, p.sku, p.upc
+		FROM inventory_adjustments a
+		JOIN employees e ON a.requested_by = e.employee_id
+		JOIN products p ON a.product_id = p.product_id
+		WHERE a.store_id = $1 AND a.status = 'PENDING'
+		ORDER BY a.created_at DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, storeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []models.PendingAdjustmentDetail
+	for rows.Next() {
+		var d models.PendingAdjustmentDetail
+		if err := rows.Scan(
+			&d.AdjustmentId, &d.InventoryId, &d.ProductId, &d.PreviousQty, &d.AdjustedQty, &d.Reason, &d.CreatedAt,
+			&d.RequestedBy, &d.Name, &d.Sku, &d.Upc,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, d)
+	}
+	return results, rows.Err()
+}
+
+func (r *InventoryRepo) ReviewAdjustments(ctx context.Context, storeID int, reviewerID int, reviews []models.ReviewAdjustmentItem) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	updateAdjQuery := `
+		UPDATE inventory_adjustments
+		SET status = $1, reviewed_by = $2, reviewed_at = NOW(), adjusted_qty = COALESCE($3, adjusted_qty), reason = COALESCE($4, reason)
+		WHERE adjustment_id = $5 AND store_id = $6 AND status = 'PENDING'
+		RETURNING inventory_id, COALESCE($3, adjusted_qty)
+	`
+
+	updateInvQuery := `
+		UPDATE inventory
+		SET on_hand = $1
+		WHERE inventory_id = $2
+	`
+
+	for _, rev := range reviews {
+		var finalQty int
+		var invId int
+
+		err := tx.QueryRowContext(ctx, updateAdjQuery, rev.Status, reviewerID, rev.AdjustedQty, rev.Reason, rev.AdjustmentId, storeID).Scan(&invId, &finalQty)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				// The adjustment might not exist, might not belong to this store, or might not be PENDING.
+				// For bulk operations, it's safer to return an error or skip. Let's return error to rollback.
+				return fmt.Errorf("adjustment %d not found or already reviewed", rev.AdjustmentId)
+			}
+			return err
+		}
+
+		if rev.Status == models.AdjustmentStatusApproved || rev.Status == models.AdjustmentStatusWriteOff {
+			_, err = tx.ExecContext(ctx, updateInvQuery, finalQty, invId)
 			if err != nil {
 				return err
 			}

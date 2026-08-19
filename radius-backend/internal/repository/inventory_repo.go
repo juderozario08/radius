@@ -137,13 +137,13 @@ func (r *InventoryRepo) LinkProductToLocation(ctx context.Context, storeID int, 
 }
 
 func (r *InventoryRepo) IncrementInventoryQuantity(ctx context.Context, storeID int, productID int, delta int) error {
-	query := `UPDATE inventory SET on_hand_qty = on_hand_qty + $1 WHERE product_id = $2 AND store_id = $3`
+	query := `UPDATE inventory SET new_qty = new_qty + $1 WHERE product_id = $2 AND store_id = $3`
 	_, err := r.db.ExecContext(ctx, query, delta, productID, storeID)
 	return err
 }
 
 func (r *InventoryRepo) UpdateInventoryQuantity(ctx context.Context, storeID int, productID int, quantity int) error {
-	query := `UPDATE inventory SET on_hand_qty = $1 WHERE product_id = $2 AND store_id = $3`
+	query := `UPDATE inventory SET new_qty = $1 WHERE product_id = $2 AND store_id = $3`
 	_, err := r.db.ExecContext(ctx, query, quantity, productID, storeID)
 	return err
 }
@@ -326,7 +326,7 @@ func (r *InventoryRepo) ReviewAdjustments(ctx context.Context, storeID int, revi
 
 	updateInvQuery := `
 		UPDATE inventory
-		SET on_hand_qty = $1
+		SET new_qty = $1
 		WHERE inventory_id = $2
 	`
 

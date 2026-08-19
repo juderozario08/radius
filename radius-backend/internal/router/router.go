@@ -23,6 +23,7 @@ type Config struct {
 }
 
 type Handlers struct {
+	AuditHandler       *handler.AuditHandler
 	AuthHandler        *handler.AuthHandler
 	EmployeeHandler    *handler.EmployeeHandler
 	BarcodeHandler     *handler.BarcodeHandler
@@ -151,6 +152,7 @@ func NewRouter(cfg Config) *gin.Engine {
 
 		salesFloor.GET("/get_all_online_orders", cfg.Handlers.OnlineOrderHandler.GetAllOnlineOrders)
 		salesFloor.GET("/get_online_order", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)
+		salesFloor.GET("/audit", cfg.Handlers.AuditHandler.GetProductAuditTrail)
 
 		mims := salesFloor.Group("/inventory")
 		{

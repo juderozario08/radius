@@ -658,6 +658,21 @@ func (mr *MockProductRepositoryMockRecorder) GetProductByID(ctx, id any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductByID", reflect.TypeOf((*MockProductRepository)(nil).GetProductByID), ctx, id)
 }
 
+// GetProductByBarcode mocks base method.
+func (m *MockProductRepository) GetProductByBarcode(ctx context.Context, barcode string) (*models.Product, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProductByBarcode", ctx, barcode)
+	ret0, _ := ret[0].(*models.Product)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProductByBarcode indicates an expected call of GetProductByBarcode.
+func (mr *MockProductRepositoryMockRecorder) GetProductByBarcode(ctx, barcode any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductByBarcode", reflect.TypeOf((*MockProductRepository)(nil).GetProductByBarcode), ctx, barcode)
+}
+
 // SearchProducts mocks base method.
 func (m *MockProductRepository) SearchProducts(ctx context.Context, query string, categoryID *int, brand *string, isActive *bool, unitOfMeasure *string, limit, offset int) ([]models.Product, int, error) {
 	m.ctrl.T.Helper()

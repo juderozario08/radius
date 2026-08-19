@@ -167,7 +167,7 @@ func (r *ReceivingRepo) CheckProductInPO(ctx context.Context, poID int, barcode 
 	return &item, nil
 }
 
-func (r *ReceivingRepo) ReceivePOItems(ctx context.Context, storeID int, poID int, items []models.ReceivePOItemEntry) error {
+func (r *ReceivingRepo) ReceivePOItems(ctx context.Context, storeID int, poID int, employeeID int, items []models.ReceivePOItemEntry) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -186,10 +186,11 @@ func (r *ReceivingRepo) ReceivePOItems(ctx context.Context, storeID int, poID in
 
 		// Increment store inventory
 		var productID int
+		var unitCost float64
 		err = tx.QueryRowContext(ctx,
-			`SELECT product_id FROM purchase_orders_items WHERE po_item_id = $1`,
+			`SELECT product_id, unit_cost FROM purchase_orders_items WHERE po_item_id = $1`,
 			item.PoItemId,
-		).Scan(&productID)
+		).Scan(&productID, &unitCost)
 		if err != nil {
 			return err
 		}
@@ -198,6 +199,18 @@ func (r *ReceivingRepo) ReceivePOItems(ctx context.Context, storeID int, poID in
 			`UPDATE inventory SET on_hand_qty = on_hand_qty + $1, updated_at = NOW() WHERE product_id = $2 AND store_id = $3`,
 			item.QtyReceived, productID, storeID,
 		)
+		if err != nil {
+			return err
+		}
+
+		// Log to audit trail
+		auditQuery := `
+			INSERT INTO inventory_transactions
+				(product_id, to_store_id, transaction_type, quantity, unit_cost, employee_id, reference_id)
+			VALUES ($1, $2, 'RECEIPT', $3, $4, $5, $6)
+		`
+		refId := fmt.Sprintf("PO:%d", poID)
+		_, err = tx.ExecContext(ctx, auditQuery, productID, storeID, item.QtyReceived, unitCost, employeeID, refId)
 		if err != nil {
 			return err
 		}
@@ -248,7 +261,7 @@ func (r *ReceivingRepo) ReceiveLPR(ctx context.Context, storeID int, poID int, l
 
 	// Get all LPR items and update PO items + inventory
 	rows, err := tx.QueryContext(ctx,
-		`SELECT li.po_item_id, li.qty, poi.product_id
+		`SELECT li.po_item_id, li.qty, poi.product_id, poi.unit_cost
 		FROM purchase_order_lpr_items li
 		JOIN purchase_orders_items poi ON li.po_item_id = poi.po_item_id
 		WHERE li.lpr_id = $1`,
@@ -263,11 +276,12 @@ func (r *ReceivingRepo) ReceiveLPR(ctx context.Context, storeID int, poID int, l
 		poItemID  int
 		qty       int
 		productID int
+		unitCost  float64
 	}
 	var lprItems []lprItem
 	for rows.Next() {
 		var li lprItem
-		if err := rows.Scan(&li.poItemID, &li.qty, &li.productID); err != nil {
+		if err := rows.Scan(&li.poItemID, &li.qty, &li.productID, &li.unitCost); err != nil {
 			return err
 		}
 		lprItems = append(lprItems, li)
@@ -289,6 +303,18 @@ func (r *ReceivingRepo) ReceiveLPR(ctx context.Context, storeID int, poID int, l
 			`UPDATE inventory SET on_hand_qty = on_hand_qty + $1, updated_at = NOW() WHERE product_id = $2 AND store_id = $3`,
 			li.qty, li.productID, storeID,
 		)
+		if err != nil {
+			return err
+		}
+
+		// Log to audit trail
+		auditQuery := `
+			INSERT INTO inventory_transactions
+				(product_id, to_store_id, transaction_type, quantity, unit_cost, employee_id, reference_id)
+			VALUES ($1, $2, 'RECEIPT', $3, $4, $5, $6)
+		`
+		refId := fmt.Sprintf("PO:%d", poID)
+		_, err = tx.ExecContext(ctx, auditQuery, li.productID, storeID, li.qty, li.unitCost, employeeID, refId)
 		if err != nil {
 			return err
 		}
@@ -454,7 +480,7 @@ func (r *ReceivingRepo) CheckProductInTransfer(ctx context.Context, transferID i
 	return &item, nil
 }
 
-func (r *ReceivingRepo) ReceiveTransferItems(ctx context.Context, storeID int, transferID int, items []models.ReceiveTransferItemEntry) error {
+func (r *ReceivingRepo) ReceiveTransferItems(ctx context.Context, storeID int, transferID int, employeeID int, items []models.ReceiveTransferItemEntry) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -488,6 +514,18 @@ func (r *ReceivingRepo) ReceiveTransferItems(ctx context.Context, storeID int, t
 		if err != nil {
 			return err
 		}
+
+		// Log to audit trail
+		auditQuery := `
+			INSERT INTO inventory_transactions
+				(product_id, to_store_id, transaction_type, quantity, employee_id, reference_id)
+			VALUES ($1, $2, 'RECEIPT', $3, $4, $5)
+		`
+		refId := fmt.Sprintf("TRANSFER:%d", transferID)
+		_, err = tx.ExecContext(ctx, auditQuery, productID, storeID, item.QtyReceived, employeeID, refId)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Auto-update transfer status
@@ -499,7 +537,7 @@ func (r *ReceivingRepo) ReceiveTransferItems(ctx context.Context, storeID int, t
 	return tx.Commit()
 }
 
-func (r *ReceivingRepo) QuickReceiveTransfer(ctx context.Context, storeID int, transferID int) error {
+func (r *ReceivingRepo) QuickReceiveTransfer(ctx context.Context, storeID int, transferID int, employeeID int) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -546,6 +584,18 @@ func (r *ReceivingRepo) QuickReceiveTransfer(ctx context.Context, storeID int, t
 			`UPDATE inventory SET on_hand_qty = on_hand_qty + $1, updated_at = NOW() WHERE product_id = $2 AND store_id = $3`,
 			ti.qty, ti.productID, storeID,
 		)
+		if err != nil {
+			return err
+		}
+
+		// Log to audit trail
+		auditQuery := `
+			INSERT INTO inventory_transactions
+				(product_id, to_store_id, transaction_type, quantity, employee_id, reference_id)
+			VALUES ($1, $2, 'RECEIPT', $3, $4, $5)
+		`
+		refId := fmt.Sprintf("TRANSFER:%d", transferID)
+		_, err = tx.ExecContext(ctx, auditQuery, ti.productID, storeID, ti.qty, employeeID, refId)
 		if err != nil {
 			return err
 		}

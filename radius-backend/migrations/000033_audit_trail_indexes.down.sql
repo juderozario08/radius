@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS idx_inventory_transactions_store_product;
+DROP INDEX IF EXISTS idx_inventory_transactions_product;

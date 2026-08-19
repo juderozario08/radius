@@ -296,7 +296,7 @@ func (r *InventoryRepo) GetPendingAdjustments(ctx context.Context, storeID int) 
 	}
 	defer rows.Close()
 
-	var results []models.PendingAdjustmentDetail
+	results := []models.PendingAdjustmentDetail{}
 	for rows.Next() {
 		var d models.PendingAdjustmentDetail
 		if err := rows.Scan(
@@ -321,7 +321,7 @@ func (r *InventoryRepo) ReviewAdjustments(ctx context.Context, storeID int, revi
 		UPDATE inventory_adjustments
 		SET status = $1, reviewed_by = $2, reviewed_at = NOW(), adjusted_qty = COALESCE($3, adjusted_qty), reason = COALESCE($4, reason)
 		WHERE adjustment_id = $5 AND store_id = $6 AND status = 'PENDING'
-		RETURNING inventory_id, COALESCE($3, adjusted_qty)
+		RETURNING inventory_id, product_id, COALESCE($3, adjusted_qty), previous_qty, COALESCE($4, reason)
 	`
 
 	updateInvQuery := `
@@ -330,15 +330,21 @@ func (r *InventoryRepo) ReviewAdjustments(ctx context.Context, storeID int, revi
 		WHERE inventory_id = $2
 	`
 
-	for _, rev := range reviews {
-		var finalQty int
-		var invId int
+	auditQuery := `
+		INSERT INTO inventory_transactions
+			(product_id, to_store_id, transaction_type, quantity, reason_code, employee_id, reference_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`
 
-		err := tx.QueryRowContext(ctx, updateAdjQuery, rev.Status, reviewerID, rev.AdjustedQty, rev.Reason, rev.AdjustmentId, storeID).Scan(&invId, &finalQty)
+	deleteAdjQuery := `DELETE FROM inventory_adjustments WHERE adjustment_id = $1`
+
+	for _, rev := range reviews {
+		var invId, productId, finalQty, previousQty int
+		var reason string
+
+		err := tx.QueryRowContext(ctx, updateAdjQuery, rev.Status, reviewerID, rev.AdjustedQty, rev.Reason, rev.AdjustmentId, storeID).Scan(&invId, &productId, &finalQty, &previousQty, &reason)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				// The adjustment might not exist, might not belong to this store, or might not be PENDING.
-				// For bulk operations, it's safer to return an error or skip. Let's return error to rollback.
 				return fmt.Errorf("adjustment %d not found or already reviewed", rev.AdjustmentId)
 			}
 			return err
@@ -349,6 +355,27 @@ func (r *InventoryRepo) ReviewAdjustments(ctx context.Context, storeID int, revi
 			if err != nil {
 				return err
 			}
+		}
+
+		// Log to audit trail
+		txnType := "ADJUSTMENT"
+		if rev.Status == models.AdjustmentStatusWriteOff {
+			txnType = "WRITE_OFF"
+		}
+		qtyDelta := finalQty - previousQty
+		if rev.Status == models.AdjustmentStatusRejected {
+			qtyDelta = 0 // Rejected means no actual quantity change
+		}
+		refId := fmt.Sprintf("ADJUSTMENT:%d", rev.AdjustmentId)
+		_, err = tx.ExecContext(ctx, auditQuery, productId, storeID, txnType, qtyDelta, reason, reviewerID, refId)
+		if err != nil {
+			return err
+		}
+
+		// Delete the resolved adjustment
+		_, err = tx.ExecContext(ctx, deleteAdjQuery, rev.AdjustmentId)
+		if err != nil {
+			return err
 		}
 	}
 

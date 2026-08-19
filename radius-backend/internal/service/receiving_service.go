@@ -95,7 +95,7 @@ func (s *ReceivingService) ReceivePO(ctx context.Context, email string, req mode
 		return errors.New("cannot receive for a different store")
 	}
 
-	return s.receivingRepo.ReceivePOItems(ctx, detail.StoreId, req.PoId, req.Items)
+	return s.receivingRepo.ReceivePOItems(ctx, detail.StoreId, req.PoId, employee.EmployeeId, req.Items)
 }
 
 func (s *ReceivingService) ReceiveLPR(ctx context.Context, email string, req models.ReceiveLPRRequest) error {
@@ -182,7 +182,7 @@ func (s *ReceivingService) ReceiveTransfer(ctx context.Context, email string, re
 	// Since the detail doesn't directly expose it, use the employee's store
 	toStoreID = employee.StoreId
 
-	return s.receivingRepo.ReceiveTransferItems(ctx, toStoreID, req.TransferId, req.Items)
+	return s.receivingRepo.ReceiveTransferItems(ctx, toStoreID, req.TransferId, employee.EmployeeId, req.Items)
 }
 
 func (s *ReceivingService) QuickReceiveTransfer(ctx context.Context, email string, req models.QuickReceiveTransferRequest) error {
@@ -205,5 +205,5 @@ func (s *ReceivingService) QuickReceiveTransfer(ctx context.Context, email strin
 		return errors.New("this transfer requires manual check — cannot quick receive")
 	}
 
-	return s.receivingRepo.QuickReceiveTransfer(ctx, employee.StoreId, req.TransferId)
+	return s.receivingRepo.QuickReceiveTransfer(ctx, employee.StoreId, req.TransferId, employee.EmployeeId)
 }

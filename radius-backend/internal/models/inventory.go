@@ -376,3 +376,48 @@ type ReviewAdjustmentItem struct {
 type ReviewAdjustmentRequest struct {
 	Reviews []ReviewAdjustmentItem `json:"reviews" binding:"required,min=1"`
 }
+
+// ---- Audit Trail Models ----
+
+type InventoryTransaction struct {
+	TransactionId   int        `json:"transaction_id"`
+	ProductId       int        `json:"product_id"`
+	FromStoreId     *int       `json:"from_store_id"`
+	ToStoreId       *int       `json:"to_store_id"`
+	TransactionType string     `json:"transaction_type"`
+	Quantity        int        `json:"quantity"`
+	UnitCost        *float64   `json:"unit_cost"`
+	UnitPrice       *float64   `json:"unit_price"`
+	ReasonCode      *string    `json:"reason_code"`
+	EmployeeId      *int       `json:"employee_id"`
+	ReferenceId     *string    `json:"reference_id"`
+	CreatedAt       time.Time  `json:"created_at"`
+}
+
+type AuditTrailEntry struct {
+	TransactionId   int        `json:"transaction_id"`
+	TransactionType string     `json:"transaction_type"`
+	Quantity        int        `json:"quantity"`
+	ReasonCode      *string    `json:"reason_code"`
+	ReferenceId     *string    `json:"reference_id"`
+	EmployeeName    *string    `json:"employee_name"`
+	FromStoreName   *string    `json:"from_store_name"`
+	ToStoreName     *string    `json:"to_store_name"`
+	CreatedAt       time.Time  `json:"created_at"`
+}
+
+type AuditTrailResponse struct {
+	Product Product            `json:"product"`
+	Events  []AuditTrailEntry  `json:"events"`
+	Total   int                `json:"total"`
+}
+
+type AuditFilter struct {
+	StartDate       *time.Time `form:"start_date"`
+	EndDate         *time.Time `form:"end_date"`
+	TransactionType *string    `form:"transaction_type"`
+	EmployeeId      *int       `form:"employee_id"`
+	StoreId         *int       `form:"store_id"`
+	SortOrder       string     `form:"sort_order"` // "DESC" or "ASC"
+}
+

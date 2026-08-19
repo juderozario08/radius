@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/colors";
+import { globalStyles } from "@/constants/styles";
 import { PurchaseOrderItemDetail, StockTransferItemDetail } from "@/types/receiving.types";
 
 interface ReceivingItemCardProps {
@@ -24,7 +25,7 @@ export function ReceivingItemCard({ item, scannedQty, onUpdateQuantity }: Receiv
     const incrementQuantity = () => onUpdateQuantity(Math.min(qtyOrderedOrRequested - qtyAlreadyReceived, scannedQty + 1));
 
     return (
-        <View style={styles.card}>
+        <View style={[globalStyles.card, { marginBottom: 12, padding: 16, borderWidth: 1, borderColor: COLORS.border, shadowOpacity: 0.05, elevation: 1 }]}>
             <Text style={styles.productName}>{item.name}</Text>
             <Text style={styles.productMeta}>SKU: {item.sku} | UPC: {item.upc}</Text>
 
@@ -56,19 +57,6 @@ export function ReceivingItemCard({ item, scannedQty, onUpdateQuantity }: Receiv
 }
 
 const styles = StyleSheet.create({
-    card: {
-        backgroundColor: COLORS.surface,
-        padding: 16,
-        borderRadius: 8,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        elevation: 1,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-    },
     productName: {
         fontSize: 16,
         fontWeight: "700",

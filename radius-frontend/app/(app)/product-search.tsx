@@ -250,8 +250,8 @@ function FilterPanel({
 // --- Product Card Component ---
 function ProductCard({ product, onPress }: { product: Product; onPress: () => void }) {
     return (
-        <TouchableOpacity style={styles.productCard} onPress={onPress} activeOpacity={0.7}>
-            <View style={styles.productCardHeader}>
+        <TouchableOpacity style={[globalStyles.card, { marginBottom: 10, borderWidth: 1, borderColor: COLORS.border, shadowOpacity: 0.05, elevation: 1 }]} onPress={onPress} activeOpacity={0.7}>
+            <View style={globalStyles.cardHeader}>
                 <View style={{ flex: 1, marginRight: 8 }}>
                     <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
                     <Text style={styles.productBrand}>{product.brand}</Text>
@@ -593,19 +593,7 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
         flexGrow: 1,
     },
-    productCard: {
-        backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 10,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 1,
-    },
+
     productCardHeader: {
         flexDirection: "row",
         justifyContent: "space-between",

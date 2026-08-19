@@ -234,9 +234,9 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                     </View>
 
                     <ScrollView style={[styles.formContainer, { backgroundColor: COLORS.background }]} showsVerticalScrollIndicator>
-                        <Text style={styles.inputLabel}>Store Details *</Text>
+                        <Text style={[globalStyles.modalInputLabel, { marginTop: 12 }]}>Store Details *</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[globalStyles.textInput, { marginBottom: 12 }]}
                             placeholder="Store Name"
                             value={formValues.name}
                             onChangeText={(text) => updateField("name", text)}
@@ -245,7 +245,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             onSubmitEditing={() => phoneRef.current?.focus()}
                         />
                         <TextInput
-                            style={styles.input}
+                            style={[globalStyles.textInput, { marginBottom: 12 }]}
                             placeholder="Phone Number"
                             keyboardType="phone-pad"
                             value={formValues.phone}
@@ -256,9 +256,9 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             onSubmitEditing={() => addressRef.current?.focus()}
                         />
 
-                        <Text style={styles.inputLabel}>Location *</Text>
+                        <Text style={[globalStyles.modalInputLabel, { marginTop: 12 }]}>Location *</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[globalStyles.textInput, { marginBottom: 12 }]}
                             placeholder="Street Address"
                             value={formValues.address}
                             onChangeText={(text) => updateField("address", text)}
@@ -268,7 +268,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             onSubmitEditing={() => cityRef.current?.focus()}
                         />
                         <TextInput
-                            style={styles.input}
+                            style={[globalStyles.textInput, { marginBottom: 12 }]}
                             placeholder="City"
                             value={formValues.city}
                             onChangeText={(text) => updateField("city", text)}
@@ -277,14 +277,14 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             submitBehavior="submit"
                             onSubmitEditing={() => postalCodeRef.current?.focus()}
                         />
-                        <Text style={styles.inputLabel}>Province *</Text>
+                        <Text style={globalStyles.modalInputLabel}>Province *</Text>
                         <PillGroup
                             options={CANADIAN_PROVINCES.map((province) => ({ label: province, value: province }))}
                             value={formValues.province}
                             onChange={(v) => updateField("province", v)}
                         />
                         <TextInput
-                            style={styles.input}
+                            style={[globalStyles.textInput, { marginBottom: 12 }]}
                             placeholder="Postal (A1A 1A1)"
                             autoCapitalize="characters"
                             value={formValues.postal_code}
@@ -295,9 +295,9 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             onSubmitEditing={() => timezoneRef.current?.focus()}
                         />
 
-                        <Text style={styles.inputLabel}>System Configuration</Text>
+                        <Text style={globalStyles.modalInputLabel}>System Configuration</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[globalStyles.textInput, { marginBottom: 12 }]}
                             placeholder="Timezone (e.g. America/Toronto)"
                             value={formValues.timezone}
                             autoCapitalize="none"
@@ -307,7 +307,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             onSubmitEditing={handleSubmit}
                         />
 
-                        <Text style={styles.inputLabel}>Status *</Text>
+                        <Text style={globalStyles.modalInputLabel}>Status *</Text>
                         <PillGroup options={STATUS_OPTIONS} value={formValues.is_active} onChange={(v) => updateField("is_active", v)} />
                         <View style={{ height: 20 }} />
                     </ScrollView>
@@ -526,24 +526,6 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         padding: 20
-    },
-    inputLabel: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-        marginBottom: 8,
-        marginTop: 12
-    },
-    input: {
-        backgroundColor: COLORS.inputBg,
-        borderWidth: 1,
-        borderColor: COLORS.inputBorder,
-        borderRadius: 8,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        fontSize: 15,
-        marginBottom: 12,
-        color: COLORS.textPrimary,
     },
     inputRow: {
         flexDirection: "row",

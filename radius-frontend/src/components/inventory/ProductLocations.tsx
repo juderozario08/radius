@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert } from "react-native";
 import { MimsLocationItem } from "@/types/inventory.types";
 import { COLORS } from "@/constants/colors";
+import { globalStyles } from "@/constants/styles";
 import { ENDPOINTS } from "@/constants/routes";
 import { Ionicons } from "@expo/vector-icons";
 import { LocationInput } from "@/components/common/LocationInput";
@@ -13,6 +14,7 @@ import Toast from "react-native-toast-message";
 interface ProductLocationsProps {
     locations: MimsLocationItem[];
     onHandQty: number;
+    sellableQty: number;
     inventoryId: number;
     productId: number;
     onSave?: (locations: MimsLocationItem[]) => void;
@@ -21,7 +23,7 @@ interface ProductLocationsProps {
 const CARD_MIN_HEIGHT = 56;
 
 export const ProductLocations: React.FC<ProductLocationsProps> = ({
-    locations, onHandQty, inventoryId, productId, onSave,
+    locations, onHandQty, sellableQty, inventoryId, productId, onSave,
 }) => {
     const { logout } = useAuth();
 
@@ -182,7 +184,10 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
                     <Text style={styles.sectionTitle}>From: </Text>
                     <Ionicons name="enter-outline" size={20} color={COLORS.textSecondary} style={{ transform: [{ rotateY: '180deg' }] }} />
                 </View>
-                <Text style={styles.sectionValue}>On hand: {onHandQty}</Text>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <Text style={styles.sectionValue}>On hand: {onHandQty}</Text>
+                    <Text style={styles.sectionValue}>Sellable: {sellableQty}</Text>
+                </View>
             </View>
 
             <View style={styles.listHeader}>
@@ -325,16 +330,17 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
                 transparent={true}
                 onRequestClose={() => { setIsModalVisible(false); setNewLocationId(""); }}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Add Bin Location</Text>
-                            <TouchableOpacity onPress={() => { setIsModalVisible(false); setNewLocationId(""); }}>
-                                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
-                            </TouchableOpacity>
-                        </View>
+                <View style={globalStyles.modalOverlay}>
+                    <View style={globalStyles.modalContentWrapper}>
+                        <View style={globalStyles.modalCardContainer}>
+                            <View style={globalStyles.modalHeader}>
+                                <Text style={globalStyles.modalTitle}>Add Bin Location</Text>
+                                <TouchableOpacity onPress={() => { setIsModalVisible(false); setNewLocationId(""); }}>
+                                    <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                                </TouchableOpacity>
+                            </View>
 
-                        <Text style={styles.modalSubtitle}>Scan a bin location barcode or enter the 9-digit number</Text>
+                            <Text style={globalStyles.modalSubtitle}>Scan a bin location barcode or enter the 9-digit number</Text>
 
                         <BarcodeScanner
                             ref={scannerRef}
@@ -342,17 +348,18 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
                             height={200}
                         />
 
-                        <View style={styles.modalInputSection}>
-                            <Text style={styles.modalInputLabel}>Bin Number</Text>
+                        <View style={globalStyles.modalInputSection}>
+                            <Text style={globalStyles.modalInputLabel}>Bin Number</Text>
                             <LocationInput
                                 value={newLocationId}
                                 onChangeText={setNewLocationId}
                             />
                         </View>
 
-                        <TouchableOpacity style={styles.modalAddButton} onPress={handleAddLocation}>
-                            <Text style={styles.modalAddButtonText}>Add</Text>
+                        <TouchableOpacity style={[globalStyles.buttonPrimary, { marginTop: 24, borderRadius: 24 }]} onPress={handleAddLocation}>
+                            <Text style={globalStyles.buttonTextPrimary}>Add</Text>
                         </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -573,56 +580,4 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
     // Modal styles
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 24,
-    },
-    modalContent: {
-        backgroundColor: COLORS.surface,
-        borderRadius: 24,
-        padding: 24,
-        width: "100%",
-        maxWidth: 400,
-    },
-    modalHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 8,
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    modalSubtitle: {
-        fontSize: 14,
-        color: COLORS.textSecondary,
-        marginBottom: 16,
-    },
-    modalInputSection: {
-        marginTop: 16,
-        alignItems: "center",
-    },
-    modalInputLabel: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-        marginBottom: 12,
-    },
-    modalAddButton: {
-        backgroundColor: COLORS.primary,
-        borderRadius: 24,
-        paddingVertical: 14,
-        alignItems: "center",
-        marginTop: 24,
-    },
-    modalAddButtonText: {
-        color: "#FFF",
-        fontWeight: "700",
-        fontSize: 16,
-    },
 });

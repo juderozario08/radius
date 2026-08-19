@@ -81,6 +81,7 @@ export default function ProductScreen() {
                 return <ProductLocations
                     locations={details.locations}
                     onHandQty={details.inventory.on_hand_qty}
+                    sellableQty={details.inventory.open_box_qty + details.inventory.new_qty}
                     inventoryId={details.inventory.inventory_id}
                     productId={details.product.product_id}
                     onSave={handleSaveLocations}

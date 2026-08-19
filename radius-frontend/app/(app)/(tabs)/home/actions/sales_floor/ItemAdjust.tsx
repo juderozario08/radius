@@ -40,7 +40,7 @@ export default function ItemAdjust() {
     const { logout } = useAuth();
     const [loading, setLoading] = useState(true);
     const [adjustments, setAdjustments] = useState<PendingAdjustmentDetail[]>([]);
-    
+
     // Local edits for quantity and reason, keyed by adjustment_id
     const [editedQty, setEditedQty] = useState<{ [key: number]: number }>({});
     const [editedReason, setEditedReason] = useState<{ [key: number]: string }>({});
@@ -52,7 +52,7 @@ export default function ItemAdjust() {
         const res = await callApi<PendingAdjustmentDetail[]>(ENDPOINTS.AUTHENTICATED.MIMS.adjustments, { method: "GET" }, logout);
         if (res) {
             setAdjustments(res);
-            
+
             // Initialize local edits with the requested values
             const initialQty: { [key: number]: number } = {};
             const initialReason: { [key: number]: string } = {};
@@ -105,8 +105,8 @@ export default function ItemAdjust() {
     // Review submission
     const submitReviews = async (reviews: ReviewAdjustmentItem[]) => {
         if (reviews.length === 0) return;
-        
-        const res = await callApi<{message: string}>(ENDPOINTS.AUTHENTICATED.MIMS.adjustmentsReview, {
+
+        const res = await callApi<{ message: string }>(ENDPOINTS.AUTHENTICATED.MIMS.adjustmentsReview, {
             method: "POST",
             body: { reviews }
         }, logout);
@@ -121,14 +121,14 @@ export default function ItemAdjust() {
     const processSingle = (id: number, status: AdjustmentStatus) => {
         Alert.alert("Confirm Action", `Are you sure you want to mark this as ${status}?`, [
             { text: "Cancel", style: "cancel" },
-            { 
-                text: "Confirm", 
+            {
+                text: "Confirm",
                 onPress: () => submitReviews([{
                     adjustment_id: id,
                     status,
                     adjusted_qty: editedQty[id],
                     reason: editedReason[id]
-                }]) 
+                }])
             }
         ]);
     };
@@ -159,8 +159,8 @@ export default function ItemAdjust() {
         const reason = editedReason[item.adjustment_id] ?? "";
 
         return (
-            <View style={[styles.card, isSelected && styles.cardSelected]}>
-                <View style={styles.cardHeader}>
+            <View style={[STYLES.card, isSelected && styles.cardSelected]}>
+                <View style={STYLES.cardHeader}>
                     <TouchableOpacity onPress={() => toggleSelection(item.adjustment_id)} style={styles.checkbox}>
                         <Ionicons name={isSelected ? "checkbox" : "square-outline"} size={24} color={COLORS.primary} />
                     </TouchableOpacity>
@@ -178,7 +178,7 @@ export default function ItemAdjust() {
                             <TouchableOpacity style={styles.stepBtn} onPress={() => handleQtyChange(item.adjustment_id, -1)}>
                                 <Ionicons name="remove" size={20} color={COLORS.textPrimary} />
                             </TouchableOpacity>
-                            <TextInput 
+                            <TextInput
                                 style={styles.qtyInput}
                                 keyboardType="number-pad"
                                 value={qty.toString()}
@@ -195,8 +195,8 @@ export default function ItemAdjust() {
                         <Text style={styles.label}>Reason Code</Text>
                         <View style={styles.reasonScrollWrapper}>
                             {REASON_CODES.map(rc => (
-                                <TouchableOpacity 
-                                    key={rc} 
+                                <TouchableOpacity
+                                    key={rc}
                                     style={[styles.reasonBadge, reason === rc && styles.reasonBadgeSelected]}
                                     onPress={() => handleReasonChange(item.adjustment_id, rc)}
                                 >
@@ -208,14 +208,14 @@ export default function ItemAdjust() {
                 </View>
 
                 <View style={styles.actionsRow}>
-                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.success }]} onPress={() => processSingle(item.adjustment_id, "APPROVED")}>
-                        <Text style={styles.actionText}>Approve</Text>
+                    <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 8, backgroundColor: COLORS.success }]} onPress={() => processSingle(item.adjustment_id, "APPROVED")}>
+                        <Text style={STYLES.buttonTextPrimary}>Approve</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.accent }]} onPress={() => processSingle(item.adjustment_id, "WRITE_OFF")}>
-                        <Text style={styles.actionText}>Write-off</Text>
+                    <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 8, backgroundColor: COLORS.accent }]} onPress={() => processSingle(item.adjustment_id, "WRITE_OFF")}>
+                        <Text style={STYLES.buttonTextPrimary}>Write-off</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.error }]} onPress={() => processSingle(item.adjustment_id, "REJECTED")}>
-                        <Text style={styles.actionText}>Deny</Text>
+                    <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 8, backgroundColor: COLORS.error }]} onPress={() => processSingle(item.adjustment_id, "REJECTED")}>
+                        <Text style={STYLES.buttonTextPrimary}>Deny</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -228,7 +228,7 @@ export default function ItemAdjust() {
                 headerLeft={<BackButton />}
                 headerCenter={(
                     <View style={{ flexDirection: 'row' }}>
-                        <Text style={STYLES.headerTitle}>Item Adjustments Review</Text>
+                        <Text style={STYLES.headerTitle}>Item Adjustments</Text>
                     </View>
                 )}
                 headerRight={(
@@ -239,14 +239,14 @@ export default function ItemAdjust() {
                     </TouchableOpacity>
                 )}
             />
-            
+
             <View style={styles.container}>
                 {loading ? (
                     <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
                 ) : adjustments.length === 0 ? (
                     <Text style={styles.emptyText}>No pending adjustments to review.</Text>
                 ) : (
-                    <FlatList 
+                    <FlatList
                         data={adjustments}
                         keyExtractor={item => item.adjustment_id.toString()}
                         renderItem={renderItem}
@@ -256,17 +256,17 @@ export default function ItemAdjust() {
             </View>
 
             {adjustments.length > 0 && selectedIds.size > 0 && (
-                <View style={styles.bulkFooter}>
+                <View style={[styles.bulkFooter, STYLES.shadowLight]}>
                     <Text style={styles.bulkCount}>{selectedIds.size} Selected</Text>
                     <View style={styles.bulkActions}>
-                        <TouchableOpacity style={[styles.bulkBtn, { backgroundColor: COLORS.success }]} onPress={() => processBulk("APPROVED")}>
-                            <Text style={styles.actionText}>Approve</Text>
+                        <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 10, backgroundColor: COLORS.success }]} onPress={() => processBulk("APPROVED")}>
+                            <Text style={STYLES.buttonTextPrimary}>Approve</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={[styles.bulkBtn, { backgroundColor: COLORS.accent }]} onPress={() => processBulk("WRITE_OFF")}>
-                            <Text style={styles.actionText}>Write-off</Text>
+                        <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 10, backgroundColor: COLORS.accent }]} onPress={() => processBulk("WRITE_OFF")}>
+                            <Text style={STYLES.buttonTextPrimary}>Write-off</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={[styles.bulkBtn, { backgroundColor: COLORS.error }]} onPress={() => processBulk("REJECTED")}>
-                            <Text style={styles.actionText}>Deny</Text>
+                        <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 10, backgroundColor: COLORS.error }]} onPress={() => processBulk("REJECTED")}>
+                            <Text style={STYLES.buttonTextPrimary}>Deny</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -282,7 +282,8 @@ const styles = StyleSheet.create({
     },
     listContent: {
         padding: 15,
-        paddingBottom: 100, // Space for sticky footer
+        paddingBottom: 100, // Space for bulk footer
+        gap: 15,
     },
     emptyText: {
         textAlign: 'center',
@@ -290,27 +291,9 @@ const styles = StyleSheet.create({
         color: COLORS.textSecondary,
         fontSize: 16,
     },
-    card: {
-        backgroundColor: COLORS.surface,
-        borderRadius: 8,
-        padding: 15,
-        marginBottom: 15,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
-    },
     cardSelected: {
         borderColor: COLORS.primary,
         borderWidth: 2,
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginBottom: 15,
     },
     checkbox: {
         marginRight: 10,
@@ -416,16 +399,6 @@ const styles = StyleSheet.create({
         borderTopColor: COLORS.border,
         paddingTop: 15,
     },
-    actionBtn: {
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        borderRadius: 6,
-    },
-    actionText: {
-        color: COLORS.surface,
-        fontWeight: 'bold',
-        fontSize: 13,
-    },
     bulkFooter: {
         position: 'absolute',
         bottom: 0,
@@ -452,10 +425,5 @@ const styles = StyleSheet.create({
     bulkActions: {
         flexDirection: 'row',
         gap: 10,
-    },
-    bulkBtn: {
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        borderRadius: 8,
     }
 });

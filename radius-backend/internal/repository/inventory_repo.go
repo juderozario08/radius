@@ -326,7 +326,7 @@ func (r *InventoryRepo) ReviewAdjustments(ctx context.Context, storeID int, revi
 
 	updateInvQuery := `
 		UPDATE inventory
-		SET on_hand = $1
+		SET on_hand_qty = $1
 		WHERE inventory_id = $2
 	`
 

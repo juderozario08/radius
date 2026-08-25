@@ -197,3 +197,184 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 
 	return &o, items, nil
 }
+
+func (r *OrdersRepo) GetAllPrintOrders(ctx context.Context, limit, offset int, storeID *int, criteria models.PrintOrderSearchCriteria) ([]models.PrintOrder, int, error) {
+	var countQuery string
+	var query string
+	var args []any
+	var countArgs []any
+
+	baseConditions := "TRUE"
+
+	addArg := func(val any) string {
+		args = append(args, val)
+		countArgs = append(countArgs, val)
+		return fmt.Sprintf("$%d", len(args))
+	}
+
+	if storeID != nil {
+		baseConditions += fmt.Sprintf(" AND po.store_id = %s", addArg(*storeID))
+	}
+
+	if criteria.OrderType != "" {
+		baseConditions += fmt.Sprintf(" AND po.order_type = %s", addArg(criteria.OrderType))
+	}
+
+	if criteria.OrderID != nil {
+		baseConditions += fmt.Sprintf(" AND po.print_order_id = %s", addArg(*criteria.OrderID))
+	}
+
+	if criteria.CustomerName != "" {
+		baseConditions += fmt.Sprintf(" AND po.customer_name ILIKE %s", addArg("%"+criteria.CustomerName+"%"))
+	}
+
+	if criteria.CustomerEmail != "" {
+		baseConditions += fmt.Sprintf(" AND po.customer_email ILIKE %s", addArg("%"+criteria.CustomerEmail+"%"))
+	}
+
+	if criteria.CustomerPhone != "" {
+		baseConditions += fmt.Sprintf(" AND po.customer_phone ILIKE %s", addArg("%"+criteria.CustomerPhone+"%"))
+	}
+
+	if criteria.Status != "" {
+		baseConditions += fmt.Sprintf(" AND po.status = %s", addArg(criteria.Status))
+	}
+
+	countQuery = `
+		SELECT COUNT(*)
+		FROM print_orders po
+		WHERE ` + baseConditions
+
+	limitPlaceholder := fmt.Sprintf("$%d", len(args)+1)
+	offsetPlaceholder := fmt.Sprintf("$%d", len(args)+2)
+	args = append(args, limit, offset)
+
+	query = `
+		SELECT 
+			po.print_order_id, 
+			po.store_id, 
+			po.customer_name, 
+			COALESCE(po.customer_email, ''), 
+			COALESCE(po.customer_phone, ''), 
+			po.order_type, 
+			po.status, 
+			po.subtotal, 
+			po.tax_amount, 
+			po.shipping_fee, 
+			po.total_amount, 
+			COALESCE(po.shipping_address, ''), 
+			COALESCE(po.notes, ''), 
+			po.placed_at, 
+			po.fulfilled_at
+		FROM print_orders po
+		WHERE ` + baseConditions + fmt.Sprintf(`
+		ORDER BY po.print_order_id DESC
+		LIMIT %s OFFSET %s`, limitPlaceholder, offsetPlaceholder)
+
+	var total int
+	if err := r.db.QueryRowContext(ctx, countQuery, countArgs...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var orders []models.PrintOrder
+	for rows.Next() {
+		var o models.PrintOrder
+		if err := rows.Scan(
+			&o.PrintOrderId, &o.StoreId, &o.CustomerName, &o.CustomerEmail, &o.CustomerPhone,
+			&o.OrderType, &o.Status, &o.Subtotal, &o.TaxAmount, &o.ShippingFee,
+			&o.TotalAmount, &o.ShippingAddress, &o.Notes, &o.PlacedAt, &o.FulfilledAt,
+		); err != nil {
+			return nil, 0, err
+		}
+		orders = append(orders, o)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	if orders == nil {
+		orders = []models.PrintOrder{}
+	}
+
+	return orders, total, nil
+}
+
+func (r *OrdersRepo) GetPrintOrderByID(ctx context.Context, id int, storeID *int) (*models.PrintOrder, []models.PrintOrderItem, error) {
+	var query string
+	var args []any
+
+	if storeID != nil {
+		query = `
+			SELECT 
+				print_order_id, store_id, customer_name, COALESCE(customer_email, ''), COALESCE(customer_phone, ''),
+				order_type, status, subtotal, tax_amount, shipping_fee, total_amount, COALESCE(shipping_address, ''),
+				COALESCE(notes, ''), placed_at, fulfilled_at
+			FROM print_orders
+			WHERE print_order_id = $1 AND store_id = $2
+		`
+		args = []any{id, *storeID}
+	} else {
+		query = `
+			SELECT 
+				print_order_id, store_id, customer_name, COALESCE(customer_email, ''), COALESCE(customer_phone, ''),
+				order_type, status, subtotal, tax_amount, shipping_fee, total_amount, COALESCE(shipping_address, ''),
+				COALESCE(notes, ''), placed_at, fulfilled_at
+			FROM print_orders
+			WHERE print_order_id = $1
+		`
+		args = []any{id}
+	}
+
+	var o models.PrintOrder
+	err := r.db.QueryRowContext(ctx, query, args...).Scan(
+		&o.PrintOrderId, &o.StoreId, &o.CustomerName, &o.CustomerEmail, &o.CustomerPhone,
+		&o.OrderType, &o.Status, &o.Subtotal, &o.TaxAmount, &o.ShippingFee,
+		&o.TotalAmount, &o.ShippingAddress, &o.Notes, &o.PlacedAt, &o.FulfilledAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil, nil
+		}
+		return nil, nil, err
+	}
+
+	itemQuery := `
+		SELECT print_order_item_id, print_order_id, service_id, description, quantity, unit_price
+		FROM print_order_items
+		WHERE print_order_id = $1
+		ORDER BY print_order_item_id ASC
+	`
+	rows, err := r.db.QueryContext(ctx, itemQuery, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	var items []models.PrintOrderItem
+	for rows.Next() {
+		var i models.PrintOrderItem
+		if err := rows.Scan(
+			&i.PrintOrderItemId, &i.PrintOrderId, &i.ServiceId, &i.Description, &i.Quantity, &i.UnitPrice,
+		); err != nil {
+			return nil, nil, err
+		}
+		items = append(items, i)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	if items == nil {
+		items = []models.PrintOrderItem{}
+	}
+
+	return &o, items, nil
+}

@@ -82,6 +82,7 @@ func main() {
 	transferService := service.NewTransferService(storeRepo, inventoryRepo, employeeRepo, sessionRepo)
 	receivingService := service.NewReceivingService(receivingRepo, employeeRepo)
 	auditService := service.NewAuditService(auditRepo, employeeRepo, productsRepo)
+	printOrderService := service.NewPrintOrderService(ordersRepo, employeeRepo)
 
 	appHandlers := router.Handlers{
 		AuditHandler:       handler.NewAuditHandler(auditService),
@@ -102,6 +103,7 @@ func main() {
 		TransferHandler:    handler.NewTransferHandler(transferService),
 		SessionHandler:     handler.NewSessionHandler(sessionService),
 		EmployeeHandler:    handler.NewEmployeeHandler(employeeService),
+		PrintOrderHandler:  handler.NewPrintOrderHandler(printOrderService),
 	}
 
 

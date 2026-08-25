@@ -41,6 +41,7 @@ type Handlers struct {
 	TransactionHandler *handler.TransactionHandler
 	TransferHandler    *handler.TransferHandler
 	SessionHandler     *handler.SessionHandler
+	PrintOrderHandler  *handler.PrintOrderHandler
 }
 
 func NewRouter(cfg Config) *gin.Engine {
@@ -152,6 +153,8 @@ func NewRouter(cfg Config) *gin.Engine {
 
 		salesFloor.GET("/get_all_online_orders", cfg.Handlers.OnlineOrderHandler.GetAllOnlineOrders)
 		salesFloor.GET("/get_online_order", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)
+		salesFloor.GET("/get_all_print_orders", cfg.Handlers.PrintOrderHandler.GetAllPrintOrders)
+		salesFloor.GET("/get_print_order", cfg.Handlers.PrintOrderHandler.GetPrintOrderByID)
 		salesFloor.GET("/audit", cfg.Handlers.AuditHandler.GetProductAuditTrail)
 
 		mims := salesFloor.Group("/inventory")

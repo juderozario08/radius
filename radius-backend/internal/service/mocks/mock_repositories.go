@@ -393,6 +393,38 @@ func (mr *MockOrdersRepositoryMockRecorder) GetOnlineOrderByID(ctx, id, storeID 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOnlineOrderByID", reflect.TypeOf((*MockOrdersRepository)(nil).GetOnlineOrderByID), ctx, id, storeID)
 }
 
+// GetAllPrintOrders mocks base method.
+func (m *MockOrdersRepository) GetAllPrintOrders(ctx context.Context, limit, offset int, storeID *int, criteria models.PrintOrderSearchCriteria) ([]models.PrintOrder, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllPrintOrders", ctx, limit, offset, storeID, criteria)
+	ret0, _ := ret[0].([]models.PrintOrder)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetAllPrintOrders indicates an expected call of GetAllPrintOrders.
+func (mr *MockOrdersRepositoryMockRecorder) GetAllPrintOrders(ctx, limit, offset, storeID, criteria any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPrintOrders", reflect.TypeOf((*MockOrdersRepository)(nil).GetAllPrintOrders), ctx, limit, offset, storeID, criteria)
+}
+
+// GetPrintOrderByID mocks base method.
+func (m *MockOrdersRepository) GetPrintOrderByID(ctx context.Context, id int, storeID *int) (*models.PrintOrder, []models.PrintOrderItem, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPrintOrderByID", ctx, id, storeID)
+	ret0, _ := ret[0].(*models.PrintOrder)
+	ret1, _ := ret[1].([]models.PrintOrderItem)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetPrintOrderByID indicates an expected call of GetPrintOrderByID.
+func (mr *MockOrdersRepositoryMockRecorder) GetPrintOrderByID(ctx, id, storeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrintOrderByID", reflect.TypeOf((*MockOrdersRepository)(nil).GetPrintOrderByID), ctx, id, storeID)
+}
+
 // MockInventoryRepository is a mock of InventoryRepository interface.
 type MockInventoryRepository struct {
 	ctrl     *gomock.Controller

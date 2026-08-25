@@ -123,3 +123,93 @@ type OrderSearchCriteria struct {
 	SKU               string
 	Status            string
 }
+
+// Print Order Types & Statuses
+type PrintOrderType string
+type PrintOrderStatus string
+
+const (
+	PrintOrderTypeWeb    PrintOrderType = "WEB"
+	PrintOrderTypeWalkIn PrintOrderType = "WALK_IN"
+)
+
+const (
+	PrintOrderStatusPending        PrintOrderStatus = "PENDING"
+	PrintOrderStatusInProgress     PrintOrderStatus = "IN PROGRESS"
+	PrintOrderStatusReadyForPickup PrintOrderStatus = "READY FOR PICKUP"
+	PrintOrderStatusShipped        PrintOrderStatus = "SHIPPED"
+	PrintOrderStatusCompleted      PrintOrderStatus = "COMPLETED"
+	PrintOrderStatusCancelled      PrintOrderStatus = "CANCELLED"
+)
+
+type PrintService struct {
+	ServiceId   int       `json:"service_id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Category    string    `json:"category"`
+	BasePrice   float32   `json:"base_price"`
+	IsActive    bool      `json:"is_active"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type PrintSupply struct {
+	SupplyId         int       `json:"supply_id"`
+	StoreId          int       `json:"store_id"`
+	Name             string    `json:"name"`
+	Description      string    `json:"description"`
+	Unit             string    `json:"unit"`
+	CurrentQty       int       `json:"current_qty"`
+	ReorderThreshold int       `json:"reorder_threshold"`
+	ReorderQty       int       `json:"reorder_qty"`
+	UnitCost         float32   `json:"unit_cost"`
+	SupplierName     string    `json:"supplier_name"`
+	IsActive         bool      `json:"is_active"`
+	IsLowStock       bool      `json:"is_low_stock"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+type PrintOrder struct {
+	PrintOrderId    int              `json:"print_order_id"`
+	StoreId         int              `json:"store_id"`
+	CustomerName    string           `json:"customer_name"`
+	CustomerEmail   string           `json:"customer_email"`
+	CustomerPhone   string           `json:"customer_phone"`
+	OrderType       PrintOrderType   `json:"order_type"`
+	Status          PrintOrderStatus `json:"status"`
+	Subtotal        float32          `json:"subtotal"`
+	TaxAmount       float32          `json:"tax_amount"`
+	ShippingFee     float32          `json:"shipping_fee"`
+	TotalAmount     float32          `json:"total_amount"`
+	ShippingAddress string           `json:"shipping_address"`
+	Notes           string           `json:"notes"`
+	PlacedAt        time.Time        `json:"placed_at"`
+	FulfilledAt     *time.Time       `json:"fulfilled_at"`
+}
+
+type PrintOrderItem struct {
+	PrintOrderItemId int     `json:"print_order_item_id"`
+	PrintOrderId     int     `json:"print_order_id"`
+	ServiceId        *int    `json:"service_id"`
+	Description      string  `json:"description"`
+	Quantity         int     `json:"quantity"`
+	UnitPrice        float32 `json:"unit_price"`
+}
+
+type GetAllPrintOrdersResponse struct {
+	PrintOrders any `json:"print_orders"`
+	TotalLength int `json:"total_length"`
+}
+
+type GetPrintOrderResponse struct {
+	PrintOrder any `json:"print_order"`
+	Items      any `json:"items"`
+}
+
+type PrintOrderSearchCriteria struct {
+	OrderType     string
+	OrderID       *int
+	CustomerName  string
+	CustomerEmail string
+	CustomerPhone string
+	Status        string
+}

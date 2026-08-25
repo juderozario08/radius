@@ -4,6 +4,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"net"
 	"radius/internal/models"
 	"time"
 )
@@ -65,6 +66,45 @@ func (r *SessionRepo) GetSessionById(ctx context.Context, id int) (*models.Sessi
 	}
 
 	return &session, nil
+}
+
+func (r *SessionRepo) GetSessionsByEmployeeId(ctx context.Context, employeeId int) ([]models.Session, error) {
+	query := `
+		SELECT session_id, employee_id, store_id, ip_address, created_at, expires_at, access_token_hash, refresh_token_hash
+		FROM sessions
+		WHERE employee_id = $1 AND expires_at > NOW();
+	`
+	rows, err := r.db.QueryContext(ctx, query, employeeId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var sessions []models.Session
+	for rows.Next() {
+		var s models.Session
+		var ipStr string
+		err := rows.Scan(
+			&s.SessionId,
+			&s.EmployeeId,
+			&s.StoreId,
+			&ipStr,
+			&s.CreatedAt,
+			&s.ExpiresAt,
+			&s.AccessTokenHash,
+			&s.RefreshTokenHash,
+		)
+		if err != nil {
+			return nil, err
+		}
+		s.IpAddress = net.ParseIP(ipStr)
+		sessions = append(sessions, s)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return sessions, nil
 }
 
 func (r *SessionRepo) TerminateSessionById(ctx context.Context, id int) error {

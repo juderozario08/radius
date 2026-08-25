@@ -32,8 +32,16 @@ type MockSessionRepo struct {
 	UpdateAccessTokenHashFunc             func(ctx context.Context, sessionId int, newAccessTokenHash string) error
 	UpdateSessionExpiryFunc               func(ctx context.Context, sessionId int, newExpiresAt time.Time) error
 	CreateSessionFunc                     func(ctx context.Context, model models.CreateSessionRequest) (*models.CreateSessionResponse, error)
+	GetSessionsByEmployeeIdFunc           func(ctx context.Context, employeeId int) ([]models.Session, error)
 	GetAllSessionsFunc                    func(ctx context.Context, limit, offset int) ([]models.GetAllSessions, int, error)
 	TerminateExpiredSessionsFunc          func(ctx context.Context) (int64, error)
+}
+
+func (m *MockSessionRepo) GetSessionsByEmployeeId(ctx context.Context, employeeId int) ([]models.Session, error) {
+	if m.GetSessionsByEmployeeIdFunc != nil {
+		return m.GetSessionsByEmployeeIdFunc(ctx, employeeId)
+	}
+	return nil, nil
 }
 
 func (m *MockSessionRepo) GetSessionByAccessTokenHash(ctx context.Context, accessTokenHash string) (*models.GetSessionByHashedToken, error) {

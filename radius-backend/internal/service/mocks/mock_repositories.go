@@ -822,6 +822,21 @@ func (mr *MockSessionRepositoryMockRecorder) GetAllSessions(ctx, limit, offset a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllSessions", reflect.TypeOf((*MockSessionRepository)(nil).GetAllSessions), ctx, limit, offset)
 }
 
+// GetSessionsByEmployeeId mocks base method.
+func (m *MockSessionRepository) GetSessionsByEmployeeId(ctx context.Context, employeeId int) ([]models.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionsByEmployeeId", ctx, employeeId)
+	ret0, _ := ret[0].([]models.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSessionsByEmployeeId indicates an expected call of GetSessionsByEmployeeId.
+func (mr *MockSessionRepositoryMockRecorder) GetSessionsByEmployeeId(ctx, employeeId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionsByEmployeeId", reflect.TypeOf((*MockSessionRepository)(nil).GetSessionsByEmployeeId), ctx, employeeId)
+}
+
 // GetSessionByAccessTokenHash mocks base method.
 func (m *MockSessionRepository) GetSessionByAccessTokenHash(ctx context.Context, accessTokenHash string) (*models.GetSessionByHashedToken, error) {
 	m.ctrl.T.Helper()

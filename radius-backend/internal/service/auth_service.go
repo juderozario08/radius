@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"net"
 	"radius/internal/models"
 	"radius/internal/utils"
 	"strings"
@@ -43,12 +44,22 @@ func (s *AuthService) Login(ctx context.Context, model models.EmployeeLoginReque
 		return nil, errors.New("inactive account")
 	}
 
-	if employee.SessionId != nil && !model.Force {
-		return &models.LoginResult{RequiresConfirmation: true}, nil
-	}
-	if employee.SessionId != nil && model.Force {
-		if _, err := s.sessionService.TerminateSessionById(ctx, *employee.SessionId); err != nil {
-			return nil, err
+	activeSessions, err := s.sessionService.GetSessionsByEmployeeId(ctx, employee.EmployeeId)
+	if err == nil && len(activeSessions) > 0 {
+		parsedIP := net.ParseIP(ipAddress)
+		hasSameIPSession := false
+		for _, sess := range activeSessions {
+			if sess.IpAddress != nil && parsedIP != nil && sess.IpAddress.Equal(parsedIP) {
+				hasSameIPSession = true
+				break
+			} else if sess.IpAddress != nil && sess.IpAddress.String() == ipAddress {
+				hasSameIPSession = true
+				break
+			}
+		}
+
+		if hasSameIPSession && !model.Force {
+			return &models.LoginResult{RequiresConfirmation: true}, nil
 		}
 	}
 

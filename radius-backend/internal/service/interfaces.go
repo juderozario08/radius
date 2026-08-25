@@ -78,6 +78,7 @@ type SessionRepository interface {
 	UpdateAccessTokenHash(ctx context.Context, sessionId int, newAccessTokenHash string) error
 	UpdateSessionExpiry(ctx context.Context, sessionId int, newExpiresAt time.Time) error
 	CreateSession(ctx context.Context, model models.CreateSessionRequest) (*models.CreateSessionResponse, error)
+	GetSessionsByEmployeeId(ctx context.Context, employeeId int) ([]models.Session, error)
 	GetAllSessions(ctx context.Context, limit, offset int) ([]models.GetAllSessions, int, error)
 	TerminateExpiredSessions(ctx context.Context) (int64, error)
 }

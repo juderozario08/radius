@@ -28,7 +28,22 @@ func NewSessionService(sessionRepo SessionRepository, jwtSecret []byte, redisCli
 	}
 }
 
+func (s *SessionService) GetSessionsByEmployeeId(ctx context.Context, employeeId int) ([]models.Session, error) {
+	return s.sessionRepo.GetSessionsByEmployeeId(ctx, employeeId)
+}
+
 func (s *SessionService) CreateSession(ctx context.Context, employeeId int, role models.EmployeeRole, email string, ipAddress string, storeId int) (string, string, int, error) {
+	// Clean up any existing sessions for this employee ID (DB + Redis)
+	existingSessions, err := s.sessionRepo.GetSessionsByEmployeeId(ctx, employeeId)
+	if err == nil {
+		for _, existing := range existingSessions {
+			_ = s.sessionRepo.TerminateSessionById(ctx, existing.SessionId)
+			if existing.AccessTokenHash != "" {
+				s.redisClient.Del(ctx, "session:"+existing.AccessTokenHash)
+			}
+		}
+	}
+
 	accessToken, err := utils.GenerateAccessToken(employeeId, email, role, s.jwtSecret)
 	if err != nil {
 		return "", "", -1, err

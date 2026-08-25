@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"net"
 	"radius/internal/models"
 	"radius/internal/service"
 	"radius/internal/service/mocks"
@@ -30,13 +31,10 @@ func TestAuthService_Login_Success(t *testing.T) {
 	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
 	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
 
-	// We need a real SessionService because AuthService depends on it directly
-	// instead of an interface (though ideally it should use an interface too).
 	jwtSecret := []byte("testsecret")
 	db := setupAuthTestRedis()
 	
 	sessionService := service.NewSessionService(mockSessionRepo, jwtSecret, db)
-
 	authService := service.NewAuthService(mockEmployeeRepo, sessionService)
 
 	password := "password123"
@@ -45,7 +43,6 @@ func TestAuthService_Login_Success(t *testing.T) {
 	isActive := true
 	isTerminated := false
 
-	// Mock getting the employee
 	mockEmployeeRepo.EXPECT().
 		GetEmployeeByEmailWithSession(gomock.Any(), "test@test.com").
 		Return(&models.GetEmployeeByEmailWithSession{
@@ -61,7 +58,11 @@ func TestAuthService_Login_Success(t *testing.T) {
 			},
 		}, nil)
 
-	// Mock creating a session
+	mockSessionRepo.EXPECT().
+		GetSessionsByEmployeeId(gomock.Any(), 1).
+		Return([]models.Session{}, nil).
+		AnyTimes()
+
 	mockSessionRepo.EXPECT().
 		CreateSession(gomock.Any(), gomock.Any()).
 		Return(&models.CreateSessionResponse{
@@ -95,7 +96,6 @@ func TestAuthService_Login_InvalidPassword(t *testing.T) {
 
 	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
 
-	// sessionRepo is not used because it fails before creating a session
 	db := setupAuthTestRedis()
 	sessionService := service.NewSessionService(nil, []byte("testsecret"), db)
 	authService := service.NewAuthService(mockEmployeeRepo, sessionService)
@@ -125,7 +125,7 @@ func TestAuthService_Login_InvalidPassword(t *testing.T) {
 	}
 }
 
-func TestAuthService_Login_RequiresConfirmation(t *testing.T) {
+func TestAuthService_Login_RequiresConfirmation_SameIP(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -140,18 +140,27 @@ func TestAuthService_Login_RequiresConfirmation(t *testing.T) {
 
 	isActive := true
 	isTerminated := false
-	sessionId := 42 // Active session exists
 
 	mockEmployeeRepo.EXPECT().
 		GetEmployeeByEmailWithSession(gomock.Any(), "test@test.com").
 		Return(&models.GetEmployeeByEmailWithSession{
 			EmployeeId:   1,
 			PasswordHash: hashedPassword,
-			SessionId:    &sessionId,
 			EmployeeBase: models.EmployeeBase{
 				Email:        "test@test.com",
 				IsActive:     &isActive,
 				IsTerminated: &isTerminated,
+			},
+		}, nil)
+
+	// Existing session on SAME IP (127.0.0.1)
+	mockSessionRepo.EXPECT().
+		GetSessionsByEmployeeId(gomock.Any(), 1).
+		Return([]models.Session{
+			{
+				SessionId: 42,
+				EmployeeId: 1,
+				IpAddress: net.ParseIP("127.0.0.1"),
 			},
 		}, nil)
 
@@ -166,6 +175,83 @@ func TestAuthService_Login_RequiresConfirmation(t *testing.T) {
 	}
 
 	if !result.RequiresConfirmation {
-		t.Fatal("expected confirmation to be required due to existing session")
+		t.Fatal("expected confirmation to be required due to existing session on same IP")
+	}
+}
+
+func TestAuthService_Login_DifferentIP_AutoLogsOutPreviousSession(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+	db := setupAuthTestRedis()
+	
+	sessionService := service.NewSessionService(mockSessionRepo, []byte("testsecret"), db)
+	authService := service.NewAuthService(mockEmployeeRepo, sessionService)
+
+	password := "password123"
+	hashedPassword, _ := utils.HashPassword(password)
+
+	isActive := true
+	isTerminated := false
+
+	mockEmployeeRepo.EXPECT().
+		GetEmployeeByEmailWithSession(gomock.Any(), "test@test.com").
+		Return(&models.GetEmployeeByEmailWithSession{
+			EmployeeId:   1,
+			PasswordHash: hashedPassword,
+			EmployeeBase: models.EmployeeBase{
+				Email:        "test@test.com",
+				Role:         models.RoleAdmin,
+				StoreId:      1,
+				IsActive:     &isActive,
+				IsTerminated: &isTerminated,
+			},
+		}, nil)
+
+	// Active session exists on 10.0.0.201, but new login is from 10.17.21.28
+	mockSessionRepo.EXPECT().
+		GetSessionsByEmployeeId(gomock.Any(), 1).
+		Return([]models.Session{
+			{
+				SessionId:       42,
+				EmployeeId:      1,
+				IpAddress:       net.ParseIP("10.0.0.201"),
+				AccessTokenHash: "hash123",
+			},
+		}, nil).
+		AnyTimes()
+
+	// Should terminate the existing session on 10.0.0.201
+	mockSessionRepo.EXPECT().
+		TerminateSessionById(gomock.Any(), 42).
+		Return(nil)
+
+	// And create the new session for 10.17.21.28
+	mockSessionRepo.EXPECT().
+		CreateSession(gomock.Any(), gomock.Any()).
+		Return(&models.CreateSessionResponse{
+			SessionId:  101,
+			EmployeeId: 1,
+			StoreId:    1,
+		}, nil)
+
+	result, err := authService.Login(context.Background(), models.EmployeeLoginRequest{
+		Email:    "test@test.com",
+		Password: password,
+		Force:    false, // No force needed for different IP!
+	}, "10.17.21.28")
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if result.RequiresConfirmation {
+		t.Fatal("expected no confirmation required when IP is different")
+	}
+
+	if result.Session.SessionId != 101 {
+		t.Fatalf("expected new session id 101, got %d", result.Session.SessionId)
 	}
 }

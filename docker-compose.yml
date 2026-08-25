@@ -1,0 +1,57 @@
+services:
+  api:
+    build:
+      context: ./radius-backend
+      dockerfile: Dockerfile
+    container_name: radius-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://radius_user:radius_password@postgres:5432/radius_db?sslmode=disable
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=radius-secret-jwt-key-2026-secure-token
+      - PORT=8080
+      - GIN_MODE=debug
+      - ALLOWED_ORIGINS=*
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: radius-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: radius_user
+      POSTGRES_PASSWORD: radius_password
+      POSTGRES_DB: radius_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U radius_user -d radius_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: radius-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:

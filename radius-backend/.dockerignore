@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.log
+bin/
+tmp/
+.DS_Store
+.idea/
+.vscode/
+coverage.out
+graphify-out/

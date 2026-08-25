@@ -27,5 +27,9 @@ TRUNCATE TABLE
     purchase_order_lpr_items,
     stock_transfers,
     stock_transfer_items,
-    mims_scan_log
+    mims_scan_log,
+    print_services,
+    print_supplies,
+    print_orders,
+    print_order_items
 RESTART IDENTITY CASCADE;

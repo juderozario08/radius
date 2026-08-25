@@ -1,5 +1,7 @@
 ALTER TABLE stock_transfers DROP CONSTRAINT stock_transfers_requested_by_fkey;
 
+TRUNCATE TABLE stock_transfer_items, stock_transfers RESTART IDENTITY CASCADE;
+
 INSERT INTO stock_transfers (from_store_id, to_store_id, status, requested_by, created_at, received_at) VALUES
 (1, 2, 'IN_TRANSIT', 1, '2026-07-02 11:59:21', NULL),
 (2, 1, 'PENDING', 1, '2026-07-02 14:56:21', NULL),

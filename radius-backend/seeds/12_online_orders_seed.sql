@@ -1,3 +1,5 @@
+TRUNCATE TABLE online_order_items, online_orders RESTART IDENTITY CASCADE;
+
 INSERT INTO online_orders (store_id, customer_email, customer_name, subtotal, tax_amount, shipping_fee, total_amount, status, order_type, alternate_pickup_person, shipping_address) VALUES
 (2, 'customer1@bopis.com', 'Customer 1', 100.00, 10.00, 0.00, 110.00, 'READY FOR PICKUP', 'BOPIS', NULL, 'Store Address'),
 (1, 'customer2@bopis.com', 'Customer 2', 100.00, 10.00, 0.00, 110.00, 'READY FOR PICKUP', 'BOPIS', NULL, 'Store Address'),

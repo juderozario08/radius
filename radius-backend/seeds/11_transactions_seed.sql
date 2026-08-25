@@ -1,5 +1,7 @@
 ALTER TABLE transactions DROP CONSTRAINT transactions_employee_id_fkey;
 
+TRUNCATE TABLE transaction_items, transactions RESTART IDENTITY CASCADE;
+
 INSERT INTO transactions (store_id, register_id, employee_id, subtotal, tax_amount, total_amount, transaction_type, payment_method, status) VALUES
 (2, 'REG1', 4, 50.00, 5.00, 55.00, 'SALE', 'CARD', 'COMPLETED'),
 (1, 'REG1', 3, 50.00, 5.00, 55.00, 'SALE', 'CARD', 'COMPLETED'),

@@ -1,5 +1,7 @@
 ALTER TABLE purchase_orders DROP CONSTRAINT purchase_orders_created_by_fkey;
 
+TRUNCATE TABLE purchase_orders_items, purchase_orders, purchase_order_lpr_items, purchase_order_lprs RESTART IDENTITY CASCADE;
+
 INSERT INTO purchase_orders (store_id, supplier_id, status, ordered_at, expected_at, arrived_at, created_by) VALUES
 (2, 2, 'RECEIVED', NOW() - INTERVAL '1 days', NOW() + INTERVAL '2 days', NOW() - INTERVAL '1 hours', 1),
 (1, 3, 'RECEIVED', NOW() - INTERVAL '2 days', NOW() + INTERVAL '2 days', NOW() - INTERVAL '2 hours', 2),

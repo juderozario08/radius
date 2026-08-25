@@ -40,7 +40,7 @@ const adminActionsMapping: ButtonConfig[] = [
 ]
 
 const serviceActionsMapping: ButtonConfig[] = [
-    { title: 'Print Orders', path: '/(app)/(tabs)/home/actions/service/Orders', imagePath: require('@/assets/images/print_orders.png') },
+    { title: 'Print Orders', path: '/(app)/(tabs)/home/actions/service/PrintOrders', imagePath: require('@/assets/images/print_orders.png') },
 ]
 
 const Subsection = ({ title, mapping }: { title: string, mapping: ButtonConfig[] }) => {

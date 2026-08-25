@@ -20,7 +20,7 @@ export default function ActionsLayout() {
             <Stack.Screen name="sales_floor/Transactions" />
             <Stack.Screen name="admin/Employees" />
             <Stack.Screen name="admin/Sessions" />
-            <Stack.Screen name="service/Orders" />
+            <Stack.Screen name="service/PrintOrders" />
         </Stack>
     );
 }

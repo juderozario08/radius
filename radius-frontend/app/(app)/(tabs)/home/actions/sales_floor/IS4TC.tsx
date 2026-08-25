@@ -5,6 +5,7 @@ import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
 import { TopSafeAreaView } from '@/components/common/TopSafeAreaView';
 import HeaderComponent from '@/components/common/HeaderComponent';
+import BackButton from '@/components/common/BackButton';
 import { BarcodeScanner, BarcodeScannerRef } from '@/components/common/BarcodeScanner';
 import { COLORS } from '@/constants/colors';
 import { globalStyles } from '@/constants/styles';
@@ -109,6 +110,7 @@ export default function IS4TCScanScreen() {
   return (
     <TopSafeAreaView style={[globalStyles.container, { backgroundColor: COLORS.headerBackground }]}>
       <HeaderComponent
+        headerLeft={<BackButton />}
         headerCenter={<Text style={globalStyles.headerTitle}>IS4TC Scan</Text>}
         headerRight={
           <View style={{ flexDirection: 'row', gap: 15, marginRight: 15 }}>

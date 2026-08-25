@@ -51,6 +51,10 @@ export const ENDPOINTS = {
             ONLINE_ORDERS: {
                 getAll: "/api/sales_floor/get_all_online_orders",
                 get: "/api/sales_floor/get_online_order",
+            },
+            PRINT_ORDERS: {
+                getAll: "/api/sales_floor/get_all_print_orders",
+                get: "/api/sales_floor/get_print_order",
             }
         },
         MIMS: {

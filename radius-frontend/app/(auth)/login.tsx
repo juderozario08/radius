@@ -54,7 +54,7 @@ export default function LoginScreen() {
     async function submitLogin(force: boolean) {
         setLoading(true);
         try {
-            const res = await apiFetch<LoginResponse>(ENDPOINTS.UNAUTHENTICATED.login, {
+            const res = await apiFetch<LoginResponse>(ENDPOINTS.AUTH.login, {
                 method: "POST",
                 body: JSON.stringify({ email, password, force }),
             });

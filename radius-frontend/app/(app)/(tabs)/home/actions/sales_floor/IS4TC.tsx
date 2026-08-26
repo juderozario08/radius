@@ -30,7 +30,7 @@ export default function IS4TCScanScreen() {
 
   const fetchSession = async () => {
     try {
-      const response = await callApi<{status: string, items: MimsProductInventory[]}>('/api/sales_floor/is4tc/session', { method: "GET" }, logout);
+      const response = await callApi<{status: string, items: MimsProductInventory[]}>(ENDPOINTS.SALES_FLOOR.IS4TC.session, { method: "GET" }, logout);
       if (response && response.items) {
         setScannedItems(response.items);
       }
@@ -45,7 +45,7 @@ export default function IS4TCScanScreen() {
       { text: "Clear", style: "destructive", onPress: async () => {
           setIsProcessing(true);
           try {
-            await callApi('/api/sales_floor/is4tc/session/clear', { method: "DELETE" }, logout);
+            await callApi(ENDPOINTS.SALES_FLOOR.IS4TC.clearSession, { method: "DELETE" }, logout);
             setScannedItems([]);
             Toast.show({ type: "success", text1: "Cleared", text2: "IS4TC session cleared." });
           } catch (error) {
@@ -66,12 +66,12 @@ export default function IS4TCScanScreen() {
 
     setIsProcessing(true);
     try {
-      const endpoint = `${ENDPOINTS.AUTHENTICATED.MIMS.scanProduct}?barcode=${encodeURIComponent(barcode)}`;
+      const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.scanProduct}?barcode=${encodeURIComponent(barcode)}`;
       const response = await callApi<ScanProductResponse>(endpoint, { method: "GET" }, logout);
 
       if (response?.product) {
         // Add to Redis session
-        const addResp = await callApi<{status: string, items: MimsProductInventory[]}>('/api/sales_floor/is4tc/session/add', {
+        const addResp = await callApi<{status: string, items: MimsProductInventory[]}>(ENDPOINTS.SALES_FLOOR.IS4TC.addToSession, {
           method: "POST",
           body: { product: response.product }
         }, logout);

@@ -36,8 +36,7 @@ export default function ProductScreen() {
         setIsLoading(true);
         setError(null);
         try {
-            // Updated endpoint
-            const endpoint = `/api/sales_floor/inventory/product-details?product_id=${productId}`;
+            const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails}?product_id=${productId}`;
             const data = await callApi<ProductScreenDetails>(endpoint, { method: "GET" }, logout);
             if (data) {
                 setDetails(data);
@@ -55,7 +54,7 @@ export default function ProductScreen() {
         if (!details) return;
         setIsLoading(true);
         try {
-            const endpoint = `/api/sales_floor/inventory/locations/sync`;
+            const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.syncLocations;
             await callApi(endpoint, {
                 method: "PUT",
                 body: {

@@ -49,7 +49,7 @@ export default function ItemAdjust() {
     // Fetch pending adjustments
     const fetchAdjustments = async () => {
         setLoading(true);
-        const res = await callApi<PendingAdjustmentDetail[]>(ENDPOINTS.AUTHENTICATED.MIMS.adjustments, { method: "GET" }, logout);
+        const res = await callApi<PendingAdjustmentDetail[]>(ENDPOINTS.SALES_FLOOR.INVENTORY.adjustments, { method: "GET" }, logout);
         if (res) {
             setAdjustments(res);
 
@@ -106,7 +106,7 @@ export default function ItemAdjust() {
     const submitReviews = async (reviews: ReviewAdjustmentItem[]) => {
         if (reviews.length === 0) return;
 
-        const res = await callApi<{ message: string }>(ENDPOINTS.AUTHENTICATED.MIMS.adjustmentsReview, {
+        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.INVENTORY.adjustmentsReview, {
             method: "POST",
             body: { reviews }
         }, logout);

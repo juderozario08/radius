@@ -59,7 +59,7 @@ export default function OnlineOrderDetail() {
         setIsLoading(true);
         setError(null);
 
-        const endpoint = `${ENDPOINTS.AUTHENTICATED.SERVICE.ONLINE_ORDERS.get}?id=${id}`;
+        const endpoint = `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.get}?id=${id}`;
         const data = await callApi<GetOnlineOrderByIDResponse>(endpoint, { method: "GET" }, logout);
 
         if (data) {

@@ -26,7 +26,7 @@ export default function ReceiveTransfer() {
 
     const fetchTransfer = useCallback(async () => {
         setIsLoading(true);
-        const data = await callApi<StockTransferDetailResponse>(`${ENDPOINTS.AUTHENTICATED.RECEIVING.transfer}?transfer_id=${transfer_id}`, { method: "GET" }, logout);
+        const data = await callApi<StockTransferDetailResponse>(`${ENDPOINTS.SALES_FLOOR.RECEIVING.transfer}?transfer_id=${transfer_id}`, { method: "GET" }, logout);
         if (data) {
             setTransfer(data);
             setScannedItems({}); // Reset local scans on refresh
@@ -41,7 +41,7 @@ export default function ReceiveTransfer() {
     const handleScan = async (barcode: string) => {
         if (!transfer) return;
 
-        const res = await callApi<CheckProductInTransferResponse>(`${ENDPOINTS.AUTHENTICATED.RECEIVING.checkTransferProduct}?transfer_id=${transfer.transfer_id}&barcode=${barcode}`, { method: "GET" }, logout);
+        const res = await callApi<CheckProductInTransferResponse>(`${ENDPOINTS.SALES_FLOOR.RECEIVING.checkTransferProduct}?transfer_id=${transfer.transfer_id}&barcode=${barcode}`, { method: "GET" }, logout);
         if (res) {
             if (res.found && res.item) {
                 const itemId = res.item.transfer_item_id;
@@ -79,7 +79,7 @@ export default function ReceiveTransfer() {
             qty_received: qty
         }));
 
-        const res = await callApi<{ message: string }>(ENDPOINTS.AUTHENTICATED.RECEIVING.receiveTransfer, {
+        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.receiveTransfer, {
             method: "POST",
             body: { transfer_id: transfer.transfer_id, items }
         }, logout);

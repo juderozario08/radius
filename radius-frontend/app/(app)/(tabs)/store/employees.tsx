@@ -110,7 +110,7 @@ export default function StoreEmployees() {
         setIsLoading(true);
         setError(null);
 
-        const data = await callApi<GetAllEmployeeResponse>(`${ENDPOINTS.AUTHENTICATED.MANAGER.EMPLOYEES.getAll}?page_number=${page}&page_size=${limit}`, { method: "GET" }, logout);
+        const data = await callApi<GetAllEmployeeResponse>(`${ENDPOINTS.MANAGER.EMPLOYEES.getAll}?page_number=${page}&page_size=${limit}`, { method: "GET" }, logout);
 
         if (data) {
             setEmployees(data.employees || []);

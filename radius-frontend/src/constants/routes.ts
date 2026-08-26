@@ -1,63 +1,67 @@
 //radius-frontend/src/constants/routes.ts
 export const ENDPOINTS = {
-    UNAUTHENTICATED: {
+    AUTH: {
         login: "/login",
-        refresh_token: "/api/refresh_token",
-    },
-    AUTHENTICATED: {
+        refreshToken: "/api/refresh_token",
         logout: "/api/logout",
-        verify_token: "/api/verify_token",
+        verifyToken: "/api/verify_token",
+    },
+    ADMIN: {
+        EMPLOYEES: {
+            getAll: "/api/admin/employees",
+            create: "/api/admin/employees/create",
+            update: "/api/admin/employees/update",
+            terminate: "/api/admin/employees/terminate",
+            activate: "/api/admin/employees/activate",
+        },
+        SESSIONS: {
+            getAll: "/api/admin/sessions",
+            terminate: "/api/admin/sessions/terminate",
+        },
+        STORES: {
+            getAll: "/api/admin/stores",
+            update: "/api/admin/stores/update",
+            create: "/api/admin/stores/create",
+            activate: "/api/admin/stores/activate",
+            deactivate: "/api/admin/stores/deactivate",
+        },
+    },
+    MANAGER: {
+        STORE: {
+            get: "/api/manager/store",
+        },
+        EMPLOYEES: {
+            getAll: "/api/manager/employees",
+        },
+    },
+    SALES_FLOOR: {
         PRODUCTS: {
-            get: "/api/sales_floor/get_product",
-            search: "/api/sales_floor/search_products",
-            categories: "/api/sales_floor/get_all_categories",
-            brands: "/api/sales_floor/get_distinct_brands",
+            get: "/api/sales_floor/products/get",
+            search: "/api/sales_floor/products/search",
+            categories: "/api/sales_floor/products/categories",
+            brands: "/api/sales_floor/products/brands",
+            audit: "/api/sales_floor/products/audit",
         },
-        ADMIN: {
-            EMPLOYEES: {
-                getAll: "/api/admin/get_all_employees",
-                create: "/api/admin/create_employee",
-                update: "/api/admin/update_employee",
-                terminate: "/api/admin/terminate_employee",
-                activate: "/api/admin/activate_employee",
+        TRANSACTIONS: {
+            getAll: "/api/sales_floor/transactions",
+            get: "/api/sales_floor/transactions/get",
+        },
+        ORDERS: {
+            ONLINE: {
+                getAll: "/api/sales_floor/orders/online",
+                get: "/api/sales_floor/orders/online/get",
             },
-            SESSIONS: {
-                getAll: "/api/admin/get_all_sessions",
-                terminate: "/api/admin/terminate_session",
+            PRINT: {
+                getAll: "/api/sales_floor/orders/print",
+                get: "/api/sales_floor/orders/print/get",
             },
-            STORE: {
-                getAll: "/api/admin/get_all_stores",
-                update: "/api/admin/update_store",
-                create: "/api/admin/create_store",
-                activate: "/api/admin/activate_store",
-                deactivate: "/api/admin/deactivate_store"
-            }
         },
-        MANAGER: {
-            STORE: {
-                get: "/api/manager/get_store",
-            },
-            EMPLOYEES: {
-                getAll: "/api/manager/get_employees",
-            }
+        IS4TC: {
+            session: "/api/sales_floor/is4tc/session",
+            addToSession: "/api/sales_floor/is4tc/session/add",
+            clearSession: "/api/sales_floor/is4tc/session/clear",
         },
-        SALES: {
-            TRANSACTIONS: {
-                getAll: "/api/sales_floor/get_all_transactions",
-                get: "/api/sales_floor/get_transaction",
-            }
-        },
-        SERVICE: {
-            ONLINE_ORDERS: {
-                getAll: "/api/sales_floor/get_all_online_orders",
-                get: "/api/sales_floor/get_online_order",
-            },
-            PRINT_ORDERS: {
-                getAll: "/api/sales_floor/get_all_print_orders",
-                get: "/api/sales_floor/get_print_order",
-            }
-        },
-        MIMS: {
+        INVENTORY: {
             scanProduct: "/api/sales_floor/inventory/product",
             productDetails: "/api/sales_floor/inventory/product-details",
             getLocationProducts: "/api/sales_floor/inventory/location",
@@ -68,7 +72,6 @@ export const ENDPOINTS = {
             adjustInventory: "/api/sales_floor/inventory/adjust",
             adjustments: "/api/sales_floor/inventory/adjustments",
             adjustmentsReview: "/api/sales_floor/inventory/adjustments/review",
-            audit: "/api/sales_floor/audit",
         },
         RECEIVING: {
             purchaseOrders: "/api/sales_floor/receiving/purchase_orders",
@@ -82,5 +85,17 @@ export const ENDPOINTS = {
             receiveTransfer: "/api/sales_floor/receiving/receive_transfer",
             quickReceiveTransfer: "/api/sales_floor/receiving/quick_receive_transfer",
         },
-    }
+        CYCLE_COUNT: {
+            getWeekly: "/api/sales_floor/cycle_counts",
+            getDetail: "/api/sales_floor/cycle_counts/detail",
+            getItems: "/api/sales_floor/cycle_counts/items",
+            start: "/api/sales_floor/cycle_counts/start",
+            scan: "/api/sales_floor/cycle_counts/scan",
+            submit: "/api/sales_floor/cycle_counts/submit",
+            approve: "/api/sales_floor/cycle_counts/approve",
+            search: "/api/sales_floor/cycle_counts/search",
+            schedule: "/api/sales_floor/cycle_counts/schedule",
+            transfer: "/api/sales_floor/cycle_counts/transfer",
+        },
+    },
 };

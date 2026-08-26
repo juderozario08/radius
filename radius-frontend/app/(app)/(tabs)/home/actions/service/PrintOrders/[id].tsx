@@ -59,7 +59,7 @@ export default function PrintOrderDetail() {
         setIsLoading(true);
         setError(null);
 
-        const endpoint = `${ENDPOINTS.AUTHENTICATED.SERVICE.PRINT_ORDERS.get}?id=${id}`;
+        const endpoint = `${ENDPOINTS.SALES_FLOOR.ORDERS.PRINT.get}?id=${id}`;
         const data = await callApi<GetPrintOrderResponse>(endpoint, { method: "GET" }, logout);
 
         if (data && data.print_order) {

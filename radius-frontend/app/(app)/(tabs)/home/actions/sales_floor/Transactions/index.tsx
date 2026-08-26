@@ -39,7 +39,7 @@ export default function TransactionsList() {
         setIsLoading(true);
         setError(null);
 
-        const endpoint = `${ENDPOINTS.AUTHENTICATED.SALES.TRANSACTIONS.getAll}?page_size=${limit}&page_number=${page}`;
+        const endpoint = `${ENDPOINTS.SALES_FLOOR.TRANSACTIONS.getAll}?page_size=${limit}&page_number=${page}`;
         const data = await callApi<GetAllTransactionsResponse>(endpoint, { method: "GET" }, logout);
 
         if (data) {

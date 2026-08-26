@@ -311,8 +311,8 @@ export default function ProductSearchScreen() {
 
     const loadFilterOptions = async () => {
         const [cats, brnds] = await Promise.all([
-            callApi<Category[]>(ENDPOINTS.AUTHENTICATED.PRODUCTS.categories, { method: "GET" }, logout),
-            callApi<string[]>(ENDPOINTS.AUTHENTICATED.PRODUCTS.brands, { method: "GET" }, logout),
+            callApi<Category[]>(ENDPOINTS.SALES_FLOOR.PRODUCTS.categories, { method: "GET" }, logout),
+            callApi<string[]>(ENDPOINTS.SALES_FLOOR.PRODUCTS.brands, { method: "GET" }, logout),
         ]);
         if (cats) setCategories(cats);
         if (brnds) setBrands(brnds);
@@ -334,7 +334,7 @@ export default function ProductSearchScreen() {
         params.append("limit", String(PAGE_SIZE));
         params.append("offset", String(pageOffset));
 
-        const endpoint = `${ENDPOINTS.AUTHENTICATED.PRODUCTS.search}?${params.toString()}`;
+        const endpoint = `${ENDPOINTS.SALES_FLOOR.PRODUCTS.search}?${params.toString()}`;
         const data = await callApi<SearchProductsResponse>(endpoint, { method: "GET" }, logout);
 
         if (data) {

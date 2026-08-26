@@ -38,7 +38,7 @@ export default function LocationDetailScreen() {
 
     const validateAndFetchLocation = async () => {
         setIsLoading(true);
-        const endpoint = `${ENDPOINTS.AUTHENTICATED.MIMS.getLocationProducts}?location_id=${encodeURIComponent(locationId)}`;
+        const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.getLocationProducts}?location_id=${encodeURIComponent(locationId)}`;
         const response = await callApi<LocationProductsResponse>(endpoint, { method: "GET" }, logout);
 
         if (!response) {
@@ -54,7 +54,7 @@ export default function LocationDetailScreen() {
     const fetchProductsByLocation = async () => {
         if (locationError) return;
         setIsLoading(true);
-        const endpoint = `${ENDPOINTS.AUTHENTICATED.MIMS.getLocationProducts}?location_id=${encodeURIComponent(locationId)}`;
+        const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.getLocationProducts}?location_id=${encodeURIComponent(locationId)}`;
         const response = await callApi<LocationProductsResponse>(endpoint, { method: "GET" }, logout);
         setProducts(response?.products ?? []);
         setIsLoading(false);
@@ -62,7 +62,7 @@ export default function LocationDetailScreen() {
 
     const handleBarcodeScanned = async (barcode: string) => {
         setIsLoading(true);
-        const response = await callApi<MimsProductInventory>(ENDPOINTS.AUTHENTICATED.MIMS.binItem, {
+        const response = await callApi<MimsProductInventory>(ENDPOINTS.SALES_FLOOR.INVENTORY.binItem, {
             method: "POST",
             body: JSON.stringify({ barcode, location_id: locationId, action }),
         }, logout);
@@ -78,7 +78,7 @@ export default function LocationDetailScreen() {
     };
 
     const handleUpdateQuantity = async (productId: number, newQuantity: number) => {
-        const result = await callApi(ENDPOINTS.AUTHENTICATED.MIMS.updateQuantity, {
+        const result = await callApi(ENDPOINTS.SALES_FLOOR.INVENTORY.updateQuantity, {
             method: "POST",
             body: JSON.stringify({ product_id: productId, quantity: newQuantity }),
         }, logout);

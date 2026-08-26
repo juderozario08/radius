@@ -81,8 +81,8 @@ const StoreDetailModal: React.FC<{
     const confirmToggleStatus = async () => {
         setIsUpdatingStatus(true);
         const endpoint = store.is_active
-            ? ENDPOINTS.AUTHENTICATED.ADMIN.STORE.deactivate
-            : ENDPOINTS.AUTHENTICATED.ADMIN.STORE.activate;
+            ? ENDPOINTS.ADMIN.STORES.deactivate
+            : ENDPOINTS.ADMIN.STORES.activate;
 
         const result = await callApi(
             endpoint,
@@ -215,7 +215,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
         }
 
         setIsSubmitting(true);
-        const endpoint = isEditMode ? ENDPOINTS.AUTHENTICATED.ADMIN.STORE.update : ENDPOINTS.AUTHENTICATED.ADMIN.STORE.create;
+        const endpoint = isEditMode ? ENDPOINTS.ADMIN.STORES.update : ENDPOINTS.ADMIN.STORES.create;
         const result = await callApi(endpoint, { method: isEditMode ? "PUT" : "POST", body: payload }, logout);
         setIsSubmitting(false);
 
@@ -363,7 +363,7 @@ export default function Stores() {
         setIsLoading(true);
         setError(null);
 
-        const endpoint = `${ENDPOINTS.AUTHENTICATED.ADMIN.STORE.getAll}?page_size=${limit}&page_number=${page}`;
+        const endpoint = `${ENDPOINTS.ADMIN.STORES.getAll}?page_size=${limit}&page_number=${page}`;
         const data = await callApi<GetAllStoresResponse>(endpoint, { method: "GET" }, logout);
 
         if (data) {

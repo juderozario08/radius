@@ -111,7 +111,7 @@ export default function OnlineOrdersList() {
             if (value && key !== 'order_type') queryParams.append(key, value);
         });
 
-        const endpoint = `${ENDPOINTS.AUTHENTICATED.SERVICE.ONLINE_ORDERS.getAll}?${queryParams.toString()}`;
+        const endpoint = `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?${queryParams.toString()}`;
         const data = await callApi<GetAllOnlineOrdersResponse>(endpoint, { method: "GET" }, logout);
 
         if (data) {

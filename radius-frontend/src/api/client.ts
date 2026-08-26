@@ -39,7 +39,7 @@ async function refreshAccessToken(): Promise<string | null> {
                 return null;
             }
 
-            const response = await fetch(`${BASE_URL}${ENDPOINTS.UNAUTHENTICATED.refresh_token}`, {
+            const response = await fetch(`${BASE_URL}${ENDPOINTS.AUTH.refreshToken}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ refresh_token: refreshToken }),

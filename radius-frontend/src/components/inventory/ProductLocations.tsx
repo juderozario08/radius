@@ -123,7 +123,7 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
         }
 
         try {
-            await callApi(ENDPOINTS.AUTHENTICATED.MIMS.createLocation, {
+            await callApi(ENDPOINTS.SALES_FLOOR.INVENTORY.createLocation, {
                 method: "POST",
                 body: { location_id: formattedId },
             }, logout);
@@ -154,7 +154,7 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
         }
 
         try {
-            await callApi(ENDPOINTS.AUTHENTICATED.MIMS.adjustInventory, {
+            await callApi(ENDPOINTS.SALES_FLOOR.INVENTORY.adjustInventory, {
                 method: "POST",
                 body: {
                     inventory_id: inventoryId,

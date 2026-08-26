@@ -41,7 +41,7 @@ export default function TransactionDetail() {
         setIsLoading(true);
         setError(null);
 
-        const endpoint = `${ENDPOINTS.AUTHENTICATED.SALES.TRANSACTIONS.get}?id=${id}`;
+        const endpoint = `${ENDPOINTS.SALES_FLOOR.TRANSACTIONS.get}?id=${id}`;
         const data = await callApi<GetTransactionByIDResponse>(endpoint, { method: "GET" }, logout);
 
         if (data) {

@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // apiFetch will auto-refresh the access token if it's expired
                 // (via the interceptor in client.ts), so this call transparently
                 // handles both valid and expired-but-refreshable access tokens.
-                const res = await apiFetch<VerifyTokenResponse>(ENDPOINTS.AUTHENTICATED.verify_token, {
+                const res = await apiFetch<VerifyTokenResponse>(ENDPOINTS.AUTH.verifyToken, {
                     method: "POST",
                 });
 
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function logout() {
         try {
-            await apiFetch<LogoutResponse>(ENDPOINTS.AUTHENTICATED.logout, {
+            await apiFetch<LogoutResponse>(ENDPOINTS.AUTH.logout, {
                 method: "POST",
             });
         } catch {

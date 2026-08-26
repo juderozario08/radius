@@ -104,7 +104,7 @@ export default function PrintOrdersList() {
             if (value && key !== "order_type") queryParams.append(key, value);
         });
 
-        const endpoint = `${ENDPOINTS.AUTHENTICATED.SERVICE.PRINT_ORDERS.getAll}?${queryParams.toString()}`;
+        const endpoint = `${ENDPOINTS.SALES_FLOOR.ORDERS.PRINT.getAll}?${queryParams.toString()}`;
         const data = await callApi<GetAllPrintOrdersResponse>(endpoint, { method: "GET" }, logout);
 
         if (data) {

@@ -51,7 +51,7 @@ export default function Audit() {
         const currentOffset = reset ? 0 : offset;
 
         try {
-            const baseUrl = `${process.env.EXPO_PUBLIC_API_URL}${ENDPOINTS.AUTHENTICATED.MIMS.audit}?barcode=${barcode.trim()}&limit=${LIMIT}&offset=${currentOffset}&sort_order=${sortOrder}`;
+            const baseUrl = `${process.env.EXPO_PUBLIC_API_URL}${ENDPOINTS.SALES_FLOOR.PRODUCTS.audit}?barcode=${barcode.trim()}&limit=${LIMIT}&offset=${currentOffset}&sort_order=${sortOrder}`;
             let url = filterTxnType ? `${baseUrl}&transaction_type=${filterTxnType}` : baseUrl;
             if (user?.role === 'ADMIN' && filterStoreId.trim()) {
                 url += `&store_id=${filterStoreId.trim()}`;

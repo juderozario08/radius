@@ -120,7 +120,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
     const confirmTerminate = async () => {
         setIsTerminating(true);
         const result = await callApi(
-            ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.terminate,
+            ENDPOINTS.ADMIN.EMPLOYEES.terminate,
             { method: "POST", body: { employee_id: employee.employee_id } },
             logout
         );
@@ -136,7 +136,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
     const confirmActivate = async () => {
         setIsActivating(true);
         const result = await callApi(
-            ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.activate,
+            ENDPOINTS.ADMIN.EMPLOYEES.activate,
             { method: "POST", body: { employee_id: employee.employee_id } },
             logout
         );
@@ -311,7 +311,7 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
         }
 
         setIsSubmitting(true);
-        const endpoint = isEditMode ? ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.update : ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.create;
+        const endpoint = isEditMode ? ENDPOINTS.ADMIN.EMPLOYEES.update : ENDPOINTS.ADMIN.EMPLOYEES.create;
         const result = await callApi(endpoint, { method: isEditMode ? "PUT" : "POST", body: payload }, logout);
         setIsSubmitting(false);
 
@@ -505,7 +505,7 @@ export default function Employees() {
         setIsLoading(true);
         setError(null);
 
-        let url = `${ENDPOINTS.AUTHENTICATED.ADMIN.EMPLOYEES.getAll}?page_number=${page}&page_size=${limit}`;
+        let url = `${ENDPOINTS.ADMIN.EMPLOYEES.getAll}?page_number=${page}&page_size=${limit}`;
         if (store_id) {
             url += `&store_id=${store_id}`;
         }

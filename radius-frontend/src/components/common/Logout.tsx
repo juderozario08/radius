@@ -12,7 +12,7 @@ const LogoutComponent = () => {
 
     async function submitLogout() {
         try {
-            const res = await apiFetch<LogoutResponse>(ENDPOINTS.AUTHENTICATED.logout, {
+            const res = await apiFetch<LogoutResponse>(ENDPOINTS.AUTH.logout, {
                 method: "POST",
             });
             await logout();

@@ -26,14 +26,14 @@ export default function Receiving() {
 
     const fetchPOs = useCallback(async () => {
         setIsRefreshingPOs(true);
-        const data = await callApi<{ purchase_orders: PurchaseOrderSummary[] }>(ENDPOINTS.AUTHENTICATED.RECEIVING.purchaseOrders, { method: "GET" }, logout);
+        const data = await callApi<{ purchase_orders: PurchaseOrderSummary[] }>(ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrders, { method: "GET" }, logout);
         if (data) setPos(data.purchase_orders);
         setIsRefreshingPOs(false);
     }, [logout]);
 
     const fetchTransfers = useCallback(async () => {
         setIsRefreshingTransfers(true);
-        const data = await callApi<{ transfers: StockTransferSummary[] }>(ENDPOINTS.AUTHENTICATED.RECEIVING.transfers, { method: "GET" }, logout);
+        const data = await callApi<{ transfers: StockTransferSummary[] }>(ENDPOINTS.SALES_FLOOR.RECEIVING.transfers, { method: "GET" }, logout);
         if (data) setTransfers(data.transfers);
         setIsRefreshingTransfers(false);
     }, [logout]);
@@ -45,7 +45,7 @@ export default function Receiving() {
 
     const handleQuickReceive = async (transferId: number) => {
         setIsQuickReceiving(prev => ({ ...prev, [transferId]: true }));
-        const res = await callApi<{ message: string }>(ENDPOINTS.AUTHENTICATED.RECEIVING.quickReceiveTransfer, {
+        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.quickReceiveTransfer, {
             method: "POST",
             body: { transfer_id: transferId }
         }, logout);

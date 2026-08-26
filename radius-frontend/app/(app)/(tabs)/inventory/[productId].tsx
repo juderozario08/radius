@@ -31,7 +31,7 @@ export default function ProductScreen() {
         setIsLoading(true);
         setError(null);
         try {
-            const endpoint = `/api/sales_floor/inventory/product-details?product_id=${productId}`;
+            const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails}?product_id=${productId}`;
             const data = await callApi<ProductScreenDetails>(endpoint, { method: "GET" }, logout);
             if (data) {
                 setProductDetails(data);

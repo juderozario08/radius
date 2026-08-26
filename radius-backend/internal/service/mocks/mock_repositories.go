@@ -117,6 +117,21 @@ func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeeByEmailWithSession(ctx,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeByEmailWithSession", reflect.TypeOf((*MockEmployeeRepository)(nil).GetEmployeeByEmailWithSession), ctx, email)
 }
 
+// GetEmployeeById mocks base method.
+func (m *MockEmployeeRepository) GetEmployeeById(ctx context.Context, id int) (*models.Employee, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmployeeById", ctx, id)
+	ret0, _ := ret[0].(*models.Employee)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmployeeById indicates an expected call of GetEmployeeById.
+func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeeById(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeeById", reflect.TypeOf((*MockEmployeeRepository)(nil).GetEmployeeById), ctx, id)
+}
+
 // TerminateEmployeeById mocks base method.
 func (m *MockEmployeeRepository) TerminateEmployeeById(ctx context.Context, id int) error {
 	m.ctrl.T.Helper()
@@ -377,22 +392,6 @@ func (mr *MockOrdersRepositoryMockRecorder) GetAllOnlineOrders(ctx, limit, offse
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllOnlineOrders", reflect.TypeOf((*MockOrdersRepository)(nil).GetAllOnlineOrders), ctx, limit, offset, storeID, criteria)
 }
 
-// GetOnlineOrderByID mocks base method.
-func (m *MockOrdersRepository) GetOnlineOrderByID(ctx context.Context, id int, storeID *int) (*models.OnlineOrder, []models.OnlineOrderItem, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOnlineOrderByID", ctx, id, storeID)
-	ret0, _ := ret[0].(*models.OnlineOrder)
-	ret1, _ := ret[1].([]models.OnlineOrderItem)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetOnlineOrderByID indicates an expected call of GetOnlineOrderByID.
-func (mr *MockOrdersRepositoryMockRecorder) GetOnlineOrderByID(ctx, id, storeID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOnlineOrderByID", reflect.TypeOf((*MockOrdersRepository)(nil).GetOnlineOrderByID), ctx, id, storeID)
-}
-
 // GetAllPrintOrders mocks base method.
 func (m *MockOrdersRepository) GetAllPrintOrders(ctx context.Context, limit, offset int, storeID *int, criteria models.PrintOrderSearchCriteria) ([]models.PrintOrder, int, error) {
 	m.ctrl.T.Helper()
@@ -407,6 +406,22 @@ func (m *MockOrdersRepository) GetAllPrintOrders(ctx context.Context, limit, off
 func (mr *MockOrdersRepositoryMockRecorder) GetAllPrintOrders(ctx, limit, offset, storeID, criteria any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPrintOrders", reflect.TypeOf((*MockOrdersRepository)(nil).GetAllPrintOrders), ctx, limit, offset, storeID, criteria)
+}
+
+// GetOnlineOrderByID mocks base method.
+func (m *MockOrdersRepository) GetOnlineOrderByID(ctx context.Context, id int, storeID *int) (*models.OnlineOrder, []models.OnlineOrderItem, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOnlineOrderByID", ctx, id, storeID)
+	ret0, _ := ret[0].(*models.OnlineOrder)
+	ret1, _ := ret[1].([]models.OnlineOrderItem)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetOnlineOrderByID indicates an expected call of GetOnlineOrderByID.
+func (mr *MockOrdersRepositoryMockRecorder) GetOnlineOrderByID(ctx, id, storeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOnlineOrderByID", reflect.TypeOf((*MockOrdersRepository)(nil).GetOnlineOrderByID), ctx, id, storeID)
 }
 
 // GetPrintOrderByID mocks base method.
@@ -675,21 +690,6 @@ func (m *MockProductRepository) EXPECT() *MockProductRepositoryMockRecorder {
 	return m.recorder
 }
 
-// GetProductByID mocks base method.
-func (m *MockProductRepository) GetProductByID(ctx context.Context, id int) (*models.Product, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProductByID", ctx, id)
-	ret0, _ := ret[0].(*models.Product)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetProductByID indicates an expected call of GetProductByID.
-func (mr *MockProductRepositoryMockRecorder) GetProductByID(ctx, id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductByID", reflect.TypeOf((*MockProductRepository)(nil).GetProductByID), ctx, id)
-}
-
 // GetProductByBarcode mocks base method.
 func (m *MockProductRepository) GetProductByBarcode(ctx context.Context, barcode string) (*models.Product, error) {
 	m.ctrl.T.Helper()
@@ -703,6 +703,21 @@ func (m *MockProductRepository) GetProductByBarcode(ctx context.Context, barcode
 func (mr *MockProductRepositoryMockRecorder) GetProductByBarcode(ctx, barcode any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductByBarcode", reflect.TypeOf((*MockProductRepository)(nil).GetProductByBarcode), ctx, barcode)
+}
+
+// GetProductByID mocks base method.
+func (m *MockProductRepository) GetProductByID(ctx context.Context, id int) (*models.Product, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProductByID", ctx, id)
+	ret0, _ := ret[0].(*models.Product)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProductByID indicates an expected call of GetProductByID.
+func (mr *MockProductRepositoryMockRecorder) GetProductByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductByID", reflect.TypeOf((*MockProductRepository)(nil).GetProductByID), ctx, id)
 }
 
 // SearchProducts mocks base method.
@@ -854,21 +869,6 @@ func (mr *MockSessionRepositoryMockRecorder) GetAllSessions(ctx, limit, offset a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllSessions", reflect.TypeOf((*MockSessionRepository)(nil).GetAllSessions), ctx, limit, offset)
 }
 
-// GetSessionsByEmployeeId mocks base method.
-func (m *MockSessionRepository) GetSessionsByEmployeeId(ctx context.Context, employeeId int) ([]models.Session, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSessionsByEmployeeId", ctx, employeeId)
-	ret0, _ := ret[0].([]models.Session)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetSessionsByEmployeeId indicates an expected call of GetSessionsByEmployeeId.
-func (mr *MockSessionRepositoryMockRecorder) GetSessionsByEmployeeId(ctx, employeeId any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionsByEmployeeId", reflect.TypeOf((*MockSessionRepository)(nil).GetSessionsByEmployeeId), ctx, employeeId)
-}
-
 // GetSessionByAccessTokenHash mocks base method.
 func (m *MockSessionRepository) GetSessionByAccessTokenHash(ctx context.Context, accessTokenHash string) (*models.GetSessionByHashedToken, error) {
 	m.ctrl.T.Helper()
@@ -912,6 +912,21 @@ func (m *MockSessionRepository) GetSessionByRefreshTokenHash(ctx context.Context
 func (mr *MockSessionRepositoryMockRecorder) GetSessionByRefreshTokenHash(ctx, refreshTokenHash any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionByRefreshTokenHash", reflect.TypeOf((*MockSessionRepository)(nil).GetSessionByRefreshTokenHash), ctx, refreshTokenHash)
+}
+
+// GetSessionsByEmployeeId mocks base method.
+func (m *MockSessionRepository) GetSessionsByEmployeeId(ctx context.Context, employeeId int) ([]models.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionsByEmployeeId", ctx, employeeId)
+	ret0, _ := ret[0].([]models.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSessionsByEmployeeId indicates an expected call of GetSessionsByEmployeeId.
+func (mr *MockSessionRepositoryMockRecorder) GetSessionsByEmployeeId(ctx, employeeId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionsByEmployeeId", reflect.TypeOf((*MockSessionRepository)(nil).GetSessionsByEmployeeId), ctx, employeeId)
 }
 
 // TerminateExpiredSessions mocks base method.
@@ -1100,17 +1115,17 @@ func (mr *MockReceivingRepositoryMockRecorder) GetStockTransfers(ctx, storeID an
 }
 
 // QuickReceiveTransfer mocks base method.
-func (m *MockReceivingRepository) QuickReceiveTransfer(ctx context.Context, storeID, transferID int) error {
+func (m *MockReceivingRepository) QuickReceiveTransfer(ctx context.Context, storeID, transferID, employeeID int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QuickReceiveTransfer", ctx, storeID, transferID)
+	ret := m.ctrl.Call(m, "QuickReceiveTransfer", ctx, storeID, transferID, employeeID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // QuickReceiveTransfer indicates an expected call of QuickReceiveTransfer.
-func (mr *MockReceivingRepositoryMockRecorder) QuickReceiveTransfer(ctx, storeID, transferID any) *gomock.Call {
+func (mr *MockReceivingRepositoryMockRecorder) QuickReceiveTransfer(ctx, storeID, transferID, employeeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QuickReceiveTransfer", reflect.TypeOf((*MockReceivingRepository)(nil).QuickReceiveTransfer), ctx, storeID, transferID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QuickReceiveTransfer", reflect.TypeOf((*MockReceivingRepository)(nil).QuickReceiveTransfer), ctx, storeID, transferID, employeeID)
 }
 
 // ReceiveLPR mocks base method.
@@ -1128,29 +1143,270 @@ func (mr *MockReceivingRepositoryMockRecorder) ReceiveLPR(ctx, storeID, poID, lp
 }
 
 // ReceivePOItems mocks base method.
-func (m *MockReceivingRepository) ReceivePOItems(ctx context.Context, storeID, poID int, items []models.ReceivePOItemEntry) error {
+func (m *MockReceivingRepository) ReceivePOItems(ctx context.Context, storeID, poID, employeeID int, items []models.ReceivePOItemEntry) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReceivePOItems", ctx, storeID, poID, items)
+	ret := m.ctrl.Call(m, "ReceivePOItems", ctx, storeID, poID, employeeID, items)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ReceivePOItems indicates an expected call of ReceivePOItems.
-func (mr *MockReceivingRepositoryMockRecorder) ReceivePOItems(ctx, storeID, poID, items any) *gomock.Call {
+func (mr *MockReceivingRepositoryMockRecorder) ReceivePOItems(ctx, storeID, poID, employeeID, items any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceivePOItems", reflect.TypeOf((*MockReceivingRepository)(nil).ReceivePOItems), ctx, storeID, poID, items)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceivePOItems", reflect.TypeOf((*MockReceivingRepository)(nil).ReceivePOItems), ctx, storeID, poID, employeeID, items)
 }
 
 // ReceiveTransferItems mocks base method.
-func (m *MockReceivingRepository) ReceiveTransferItems(ctx context.Context, storeID, transferID int, items []models.ReceiveTransferItemEntry) error {
+func (m *MockReceivingRepository) ReceiveTransferItems(ctx context.Context, storeID, transferID, employeeID int, items []models.ReceiveTransferItemEntry) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReceiveTransferItems", ctx, storeID, transferID, items)
+	ret := m.ctrl.Call(m, "ReceiveTransferItems", ctx, storeID, transferID, employeeID, items)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ReceiveTransferItems indicates an expected call of ReceiveTransferItems.
-func (mr *MockReceivingRepositoryMockRecorder) ReceiveTransferItems(ctx, storeID, transferID, items any) *gomock.Call {
+func (mr *MockReceivingRepositoryMockRecorder) ReceiveTransferItems(ctx, storeID, transferID, employeeID, items any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceiveTransferItems", reflect.TypeOf((*MockReceivingRepository)(nil).ReceiveTransferItems), ctx, storeID, transferID, items)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReceiveTransferItems", reflect.TypeOf((*MockReceivingRepository)(nil).ReceiveTransferItems), ctx, storeID, transferID, employeeID, items)
+}
+
+// MockAuditRepository is a mock of AuditRepository interface.
+type MockAuditRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockAuditRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockAuditRepositoryMockRecorder is the mock recorder for MockAuditRepository.
+type MockAuditRepositoryMockRecorder struct {
+	mock *MockAuditRepository
+}
+
+// NewMockAuditRepository creates a new mock instance.
+func NewMockAuditRepository(ctrl *gomock.Controller) *MockAuditRepository {
+	mock := &MockAuditRepository{ctrl: ctrl}
+	mock.recorder = &MockAuditRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockAuditRepository) EXPECT() *MockAuditRepositoryMockRecorder {
+	return m.recorder
+}
+
+// GetProductAuditTrail mocks base method.
+func (m *MockAuditRepository) GetProductAuditTrail(ctx context.Context, productID int, storeID *int, filter models.AuditFilter, limit, offset int) ([]models.AuditTrailEntry, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProductAuditTrail", ctx, productID, storeID, filter, limit, offset)
+	ret0, _ := ret[0].([]models.AuditTrailEntry)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetProductAuditTrail indicates an expected call of GetProductAuditTrail.
+func (mr *MockAuditRepositoryMockRecorder) GetProductAuditTrail(ctx, productID, storeID, filter, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductAuditTrail", reflect.TypeOf((*MockAuditRepository)(nil).GetProductAuditTrail), ctx, productID, storeID, filter, limit, offset)
+}
+
+// MockCycleCountRepository is a mock of CycleCountRepository interface.
+type MockCycleCountRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockCycleCountRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockCycleCountRepositoryMockRecorder is the mock recorder for MockCycleCountRepository.
+type MockCycleCountRepositoryMockRecorder struct {
+	mock *MockCycleCountRepository
+}
+
+// NewMockCycleCountRepository creates a new mock instance.
+func NewMockCycleCountRepository(ctrl *gomock.Controller) *MockCycleCountRepository {
+	mock := &MockCycleCountRepository{ctrl: ctrl}
+	mock.recorder = &MockCycleCountRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockCycleCountRepository) EXPECT() *MockCycleCountRepositoryMockRecorder {
+	return m.recorder
+}
+
+// ApproveCycleCount mocks base method.
+func (m *MockCycleCountRepository) ApproveCycleCount(ctx context.Context, storeID, countID, approverID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ApproveCycleCount", ctx, storeID, countID, approverID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ApproveCycleCount indicates an expected call of ApproveCycleCount.
+func (mr *MockCycleCountRepositoryMockRecorder) ApproveCycleCount(ctx, storeID, countID, approverID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApproveCycleCount", reflect.TypeOf((*MockCycleCountRepository)(nil).ApproveCycleCount), ctx, storeID, countID, approverID)
+}
+
+// AutoAssignCycleCount mocks base method.
+func (m *MockCycleCountRepository) AutoAssignCycleCount(ctx context.Context, countID, storeID, employeeID int) (*models.CycleCount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AutoAssignCycleCount", ctx, countID, storeID, employeeID)
+	ret0, _ := ret[0].(*models.CycleCount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AutoAssignCycleCount indicates an expected call of AutoAssignCycleCount.
+func (mr *MockCycleCountRepositoryMockRecorder) AutoAssignCycleCount(ctx, countID, storeID, employeeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AutoAssignCycleCount", reflect.TypeOf((*MockCycleCountRepository)(nil).AutoAssignCycleCount), ctx, countID, storeID, employeeID)
+}
+
+// CreateScheduleEntry mocks base method.
+func (m *MockCycleCountRepository) CreateScheduleEntry(ctx context.Context, storeID, categoryID int, scheduledDate time.Time, createdBy int) (*models.CycleCountScheduleEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateScheduleEntry", ctx, storeID, categoryID, scheduledDate, createdBy)
+	ret0, _ := ret[0].(*models.CycleCountScheduleEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateScheduleEntry indicates an expected call of CreateScheduleEntry.
+func (mr *MockCycleCountRepositoryMockRecorder) CreateScheduleEntry(ctx, storeID, categoryID, scheduledDate, createdBy any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateScheduleEntry", reflect.TypeOf((*MockCycleCountRepository)(nil).CreateScheduleEntry), ctx, storeID, categoryID, scheduledDate, createdBy)
+}
+
+// GetCycleCountByID mocks base method.
+func (m *MockCycleCountRepository) GetCycleCountByID(ctx context.Context, countID, storeID int) (*models.CycleCount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCycleCountByID", ctx, countID, storeID)
+	ret0, _ := ret[0].(*models.CycleCount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCycleCountByID indicates an expected call of GetCycleCountByID.
+func (mr *MockCycleCountRepositoryMockRecorder) GetCycleCountByID(ctx, countID, storeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCycleCountByID", reflect.TypeOf((*MockCycleCountRepository)(nil).GetCycleCountByID), ctx, countID, storeID)
+}
+
+// GetCycleCountItems mocks base method.
+func (m *MockCycleCountRepository) GetCycleCountItems(ctx context.Context, countID int) ([]models.CycleCountItemDetail, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCycleCountItems", ctx, countID)
+	ret0, _ := ret[0].([]models.CycleCountItemDetail)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCycleCountItems indicates an expected call of GetCycleCountItems.
+func (mr *MockCycleCountRepositoryMockRecorder) GetCycleCountItems(ctx, countID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCycleCountItems", reflect.TypeOf((*MockCycleCountRepository)(nil).GetCycleCountItems), ctx, countID)
+}
+
+// GetSchedule mocks base method.
+func (m *MockCycleCountRepository) GetSchedule(ctx context.Context, storeID int, fromDate, toDate time.Time) ([]models.CycleCountScheduleEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSchedule", ctx, storeID, fromDate, toDate)
+	ret0, _ := ret[0].([]models.CycleCountScheduleEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSchedule indicates an expected call of GetSchedule.
+func (mr *MockCycleCountRepositoryMockRecorder) GetSchedule(ctx, storeID, fromDate, toDate any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSchedule", reflect.TypeOf((*MockCycleCountRepository)(nil).GetSchedule), ctx, storeID, fromDate, toDate)
+}
+
+// GetWeeklyCycleCounts mocks base method.
+func (m *MockCycleCountRepository) GetWeeklyCycleCounts(ctx context.Context, storeID int) ([]models.CycleCountSummary, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWeeklyCycleCounts", ctx, storeID)
+	ret0, _ := ret[0].([]models.CycleCountSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWeeklyCycleCounts indicates an expected call of GetWeeklyCycleCounts.
+func (mr *MockCycleCountRepositoryMockRecorder) GetWeeklyCycleCounts(ctx, storeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWeeklyCycleCounts", reflect.TypeOf((*MockCycleCountRepository)(nil).GetWeeklyCycleCounts), ctx, storeID)
+}
+
+// RecordScan mocks base method.
+func (m *MockCycleCountRepository) RecordScan(ctx context.Context, storeID int, req models.RecordScanRequest, employeeID int) (*models.CycleCountItemDetail, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordScan", ctx, storeID, req, employeeID)
+	ret0, _ := ret[0].(*models.CycleCountItemDetail)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RecordScan indicates an expected call of RecordScan.
+func (mr *MockCycleCountRepositoryMockRecorder) RecordScan(ctx, storeID, req, employeeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordScan", reflect.TypeOf((*MockCycleCountRepository)(nil).RecordScan), ctx, storeID, req, employeeID)
+}
+
+// SearchCycleCounts mocks base method.
+func (m *MockCycleCountRepository) SearchCycleCounts(ctx context.Context, storeID int, criteria models.CycleCountSearchCriteria) ([]models.CycleCountSummary, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchCycleCounts", ctx, storeID, criteria)
+	ret0, _ := ret[0].([]models.CycleCountSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchCycleCounts indicates an expected call of SearchCycleCounts.
+func (mr *MockCycleCountRepositoryMockRecorder) SearchCycleCounts(ctx, storeID, criteria any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCycleCounts", reflect.TypeOf((*MockCycleCountRepository)(nil).SearchCycleCounts), ctx, storeID, criteria)
+}
+
+// StartCycleCount mocks base method.
+func (m *MockCycleCountRepository) StartCycleCount(ctx context.Context, storeID, categoryID, employeeID int) (*models.CycleCount, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartCycleCount", ctx, storeID, categoryID, employeeID)
+	ret0, _ := ret[0].(*models.CycleCount)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartCycleCount indicates an expected call of StartCycleCount.
+func (mr *MockCycleCountRepositoryMockRecorder) StartCycleCount(ctx, storeID, categoryID, employeeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartCycleCount", reflect.TypeOf((*MockCycleCountRepository)(nil).StartCycleCount), ctx, storeID, categoryID, employeeID)
+}
+
+// SubmitForApproval mocks base method.
+func (m *MockCycleCountRepository) SubmitForApproval(ctx context.Context, storeID, countID int, notes *string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitForApproval", ctx, storeID, countID, notes)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitForApproval indicates an expected call of SubmitForApproval.
+func (mr *MockCycleCountRepositoryMockRecorder) SubmitForApproval(ctx, storeID, countID, notes any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitForApproval", reflect.TypeOf((*MockCycleCountRepository)(nil).SubmitForApproval), ctx, storeID, countID, notes)
+}
+
+// TransferOwnership mocks base method.
+func (m *MockCycleCountRepository) TransferOwnership(ctx context.Context, storeID, countID, newEmployeeID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransferOwnership", ctx, storeID, countID, newEmployeeID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TransferOwnership indicates an expected call of TransferOwnership.
+func (mr *MockCycleCountRepositoryMockRecorder) TransferOwnership(ctx, storeID, countID, newEmployeeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferOwnership", reflect.TypeOf((*MockCycleCountRepository)(nil).TransferOwnership), ctx, storeID, countID, newEmployeeID)
 }

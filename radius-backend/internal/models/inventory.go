@@ -161,27 +161,131 @@ type OutOfStockLog struct {
 type CycleCountStatus string
 
 const (
-	CycleCountStatusNotStarted CycleCountStatus = "NOT STARTED"
-	CycleCountStatusInProgress CycleCountStatus = "IN PROGRESS"
-	CycleCountStatusCompleted  CycleCountStatus = "COMPLETED"
+	CycleCountStatusNotStarted      CycleCountStatus = "NOT STARTED"
+	CycleCountStatusInProgress      CycleCountStatus = "IN PROGRESS"
+	CycleCountStatusPendingApproval CycleCountStatus = "PENDING APPROVAL"
+	CycleCountStatusApproved        CycleCountStatus = "APPROVED"
+	CycleCountStatusCompleted       CycleCountStatus = "COMPLETED"
 )
 
 type CycleCount struct {
-	CountId    int              `json:"count_id"`
-	StoreId    int              `json:"store_id"`
-	CountDate  *time.Time       `json:"count_date"`
-	CategoryId int              `json:"category_id"`
-	Status     CycleCountStatus `json:"status"`
-	CountedBy  *int             `json:"counted_by"`
+	CountId           int              `json:"count_id"`
+	StoreId           int              `json:"store_id"`
+	CountDate         *time.Time       `json:"count_date"`
+	CategoryId        int              `json:"category_id"`
+	CategoryName      string           `json:"category_name"`
+	Status            CycleCountStatus `json:"status"`
+	CountedBy         *int             `json:"counted_by"`
+	CountedByName     *string          `json:"counted_by_name"`
+	ApprovedBy        *int             `json:"approved_by"`
+	ApprovedByName    *string          `json:"approved_by_name"`
+	TotalVarianceCost float64          `json:"total_variance_cost"`
+	TotalItems        int              `json:"total_items"`
+	CountedItems      int              `json:"counted_items"`
+	StartedAt         *time.Time       `json:"started_at"`
+	CompletedAt       *time.Time       `json:"completed_at"`
+	ApprovedAt        *time.Time       `json:"approved_at"`
+	Notes             *string          `json:"notes"`
+}
+
+type CycleCountSummary struct {
+	CountId           int              `json:"count_id"`
+	StoreId           int              `json:"store_id"`
+	CategoryName      string           `json:"category_name"`
+	CategoryId        int              `json:"category_id"`
+	Status            CycleCountStatus `json:"status"`
+	CountedByName     *string          `json:"counted_by_name"`
+	TotalItems        int              `json:"total_items"`
+	CountedItems      int              `json:"counted_items"`
+	CountDate         *time.Time       `json:"count_date"`
+	TotalVarianceCost float64          `json:"total_variance_cost"`
 }
 
 type CycleCountItem struct {
-	CountItemId int `json:"count_item_id"`
-	CountId     int `json:"count_id"`
-	ProductId   int `json:"product_id"`
-	ExpectedQty int `json:"expected_qty"`
-	CountedQty  int `json:"counted_qty"`
-	Variance    int `json:"variance"`
+	CountItemId  int        `json:"count_item_id"`
+	CountId      int        `json:"count_id"`
+	ProductId    int        `json:"product_id"`
+	ExpectedQty  int        `json:"expected_qty"`
+	CountedQty   int        `json:"counted_qty"`
+	Variance     int        `json:"variance"`
+	VarianceCost float64    `json:"variance_cost"`
+	ReasonCode   *string    `json:"reason_code"`
+	ScannedAt    *time.Time `json:"scanned_at"`
+	ScannedBy    *int       `json:"scanned_by"`
+}
+
+type CycleCountItemDetail struct {
+	CountItemId  int        `json:"count_item_id"`
+	CountId      int        `json:"count_id"`
+	ProductId    int        `json:"product_id"`
+	ProductName  string     `json:"product_name"`
+	Sku          string     `json:"sku"`
+	Upc          string     `json:"upc"`
+	Brand        string     `json:"brand"`
+	CostPrice    float64    `json:"cost_price"`
+	ExpectedQty  int        `json:"expected_qty"`
+	CountedQty   int        `json:"counted_qty"`
+	Variance     int        `json:"variance"`
+	VarianceCost float64    `json:"variance_cost"`
+	ReasonCode   *string    `json:"reason_code"`
+	ScannedAt    *time.Time `json:"scanned_at"`
+	ScannedBy    *int       `json:"scanned_by"`
+}
+
+type CycleCountDetailResponse struct {
+	Count CycleCount             `json:"count"`
+	Items []CycleCountItemDetail `json:"items"`
+}
+
+type CycleCountScheduleEntry struct {
+	ScheduleId    int        `json:"schedule_id"`
+	StoreId       int        `json:"store_id"`
+	CategoryId    int        `json:"category_id"`
+	CategoryName  string     `json:"category_name"`
+	ScheduledDate time.Time  `json:"scheduled_date"`
+	CreatedBy     *int       `json:"created_by"`
+	CreatedByName *string    `json:"created_by_name"`
+	CycleCountId  *int       `json:"cycle_count_id"`
+	CountStatus   *string    `json:"count_status"`
+}
+
+type CycleCountSearchCriteria struct {
+	Query      string  `json:"query"`
+	Status     string  `json:"status"`
+	CategoryId *int    `json:"category_id"`
+	DateFrom   *string `json:"date_from"`
+	DateTo     *string `json:"date_to"`
+}
+
+type StartCycleCountRequest struct {
+	CategoryId int `json:"category_id" binding:"required"`
+}
+
+type RecordScanRequest struct {
+	CountId    int     `json:"count_id" binding:"required"`
+	ProductId  *int    `json:"product_id"`
+	Barcode    *string `json:"barcode"`
+	CountedQty *int    `json:"counted_qty"`
+	ReasonCode *string `json:"reason_code"`
+}
+
+type SubmitCycleCountRequest struct {
+	CountId int     `json:"count_id" binding:"required"`
+	Notes   *string `json:"notes"`
+}
+
+type ApproveCycleCountRequest struct {
+	CountId int `json:"count_id" binding:"required"`
+}
+
+type TransferCycleCountOwnershipRequest struct {
+	CountId    int `json:"count_id" binding:"required"`
+	EmployeeId int `json:"employee_id" binding:"required"`
+}
+
+type CreateScheduleRequest struct {
+	CategoryId    int    `json:"category_id" binding:"required"`
+	ScheduledDate string `json:"scheduled_date" binding:"required"`
 }
 
 // ---- Receiving Models ----

@@ -8,6 +8,7 @@ import (
 
 type EmployeeRepository interface {
 	GetEmployeeByEmail(ctx context.Context, email string) (*models.Employee, error)
+	GetEmployeeById(ctx context.Context, id int) (*models.Employee, error)
 	GetEmployeeByEmailWithSession(ctx context.Context, email string) (*models.GetEmployeeByEmailWithSession, error)
 	GetAllEmployees(ctx context.Context, limit, offset int, storeId *int) ([]models.Employee, int, error)
 	CreateEmployee(ctx context.Context, model models.CreateEmployeeRow) (*models.CreateEmployeeResponse, error)
@@ -100,4 +101,19 @@ type ReceivingRepository interface {
 
 type AuditRepository interface {
 	GetProductAuditTrail(ctx context.Context, productID int, storeID *int, filter models.AuditFilter, limit, offset int) ([]models.AuditTrailEntry, int, error)
+}
+
+type CycleCountRepository interface {
+	GetWeeklyCycleCounts(ctx context.Context, storeID int) ([]models.CycleCountSummary, error)
+	GetCycleCountByID(ctx context.Context, countID int, storeID int) (*models.CycleCount, error)
+	GetCycleCountItems(ctx context.Context, countID int) ([]models.CycleCountItemDetail, error)
+	StartCycleCount(ctx context.Context, storeID int, categoryID int, employeeID int) (*models.CycleCount, error)
+	AutoAssignCycleCount(ctx context.Context, countID int, storeID int, employeeID int) (*models.CycleCount, error)
+	RecordScan(ctx context.Context, storeID int, req models.RecordScanRequest, employeeID int) (*models.CycleCountItemDetail, error)
+	SubmitForApproval(ctx context.Context, storeID int, countID int, notes *string) error
+	ApproveCycleCount(ctx context.Context, storeID int, countID int, approverID int) error
+	TransferOwnership(ctx context.Context, storeID int, countID int, newEmployeeID int) error
+	SearchCycleCounts(ctx context.Context, storeID int, criteria models.CycleCountSearchCriteria) ([]models.CycleCountSummary, error)
+	GetSchedule(ctx context.Context, storeID int, fromDate time.Time, toDate time.Time) ([]models.CycleCountScheduleEntry, error)
+	CreateScheduleEntry(ctx context.Context, storeID int, categoryID int, scheduledDate time.Time, createdBy int) (*models.CycleCountScheduleEntry, error)
 }

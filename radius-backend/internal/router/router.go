@@ -105,57 +105,70 @@ func NewRouter(cfg Config) *gin.Engine {
 	admin := router.Group("/api/admin")
 	admin.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewAdminActions))
 	{
-		admin.GET("/health", func(ctx *gin.Context) {
-			ctx.JSON(http.StatusOK, models.APIMessage{
-				Message: "Admin route is working!",
-			})
-		})
+		employees := admin.Group("/employees")
+		{
+			employees.POST("/create", cfg.Handlers.EmployeeHandler.CreateEmployee)
+			employees.GET("", cfg.Handlers.EmployeeHandler.GetAllEmployees)
+			employees.POST("/terminate", cfg.Handlers.EmployeeHandler.TerminateEmployee)
+			employees.POST("/activate", cfg.Handlers.EmployeeHandler.ActivateEmployee)
+			employees.PUT("/update", cfg.Handlers.EmployeeHandler.UpdateEmployee)
+		}
 
-		admin.POST("/create_employee", cfg.Handlers.EmployeeHandler.CreateEmployee)
-		admin.GET("/get_all_employees", cfg.Handlers.EmployeeHandler.GetAllEmployees)
-		admin.POST("/terminate_employee", cfg.Handlers.EmployeeHandler.TerminateEmployee)
-		admin.POST("/activate_employee", cfg.Handlers.EmployeeHandler.ActivateEmployee)
-		admin.PUT("/update_employee", cfg.Handlers.EmployeeHandler.UpdateEmployee)
+		sessions := admin.Group("/sessions")
+		{
+			sessions.GET("", cfg.Handlers.SessionHandler.GetAllSessions)
+			sessions.POST("/terminate", cfg.Handlers.SessionHandler.TerminateSession)
+		}
 
-		admin.GET("/get_all_sessions", cfg.Handlers.SessionHandler.GetAllSessions)
-		admin.POST("/terminate_session", cfg.Handlers.SessionHandler.TerminateSession)
-
-		admin.GET("/get_all_stores", cfg.Handlers.StoreHandler.GetAllStores)
-		admin.PUT("/update_store", cfg.Handlers.StoreHandler.UpdateStore)
-		admin.POST("/create_store", cfg.Handlers.StoreHandler.CreateStore)
-		admin.POST("/activate_store", cfg.Handlers.StoreHandler.ActivateStore)
-		admin.POST("/deactivate_store", cfg.Handlers.StoreHandler.DeactivateStore)
+		stores := admin.Group("/stores")
+		{
+			stores.GET("", cfg.Handlers.StoreHandler.GetAllStores)
+			stores.PUT("/update", cfg.Handlers.StoreHandler.UpdateStore)
+			stores.POST("/create", cfg.Handlers.StoreHandler.CreateStore)
+			stores.POST("/activate", cfg.Handlers.StoreHandler.ActivateStore)
+			stores.POST("/deactivate", cfg.Handlers.StoreHandler.DeactivateStore)
+		}
 	}
 
 	manager := router.Group("/api/manager")
 	manager.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewManagerActions))
 	{
-		manager.GET("/health", func(ctx *gin.Context) {
-			ctx.JSON(http.StatusOK, models.APIMessage{
-				Message: "Manager route is working!",
-			})
-		})
+		store := manager.Group("/store")
+		{
+			store.GET("", cfg.Handlers.StoreHandler.GetStore)
+		}
 
-		manager.GET("/get_store", cfg.Handlers.StoreHandler.GetStore)
-		manager.GET("/get_employees", cfg.Handlers.EmployeeHandler.GetManagerEmployees)
+		employees := manager.Group("/employees")
+		{
+			employees.GET("", cfg.Handlers.EmployeeHandler.GetManagerEmployees)
+		}
 	}
 
 	salesFloor := router.Group("/api/sales_floor")
 	salesFloor.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewSalesFloorAction))
 	{
-		salesFloor.GET("/get_all_transactions", cfg.Handlers.TransactionHandler.GetAllTransactions)
-		salesFloor.GET("/get_transaction", cfg.Handlers.TransactionHandler.GetTransactionByID)
-		salesFloor.GET("/get_product", cfg.Handlers.ProductHandler.GetProductByID)
-		salesFloor.GET("/search_products", cfg.Handlers.ProductHandler.SearchProducts)
+		products := salesFloor.Group("/products")
+		{
+			products.GET("/get", cfg.Handlers.ProductHandler.GetProductByID)
+			products.GET("/search", cfg.Handlers.ProductHandler.SearchProducts)
+			products.GET("/categories", cfg.Handlers.CategoryHandler.GetAllCategories)
+			products.GET("/brands", cfg.Handlers.CategoryHandler.GetDistinctBrands)
+			products.GET("/audit", cfg.Handlers.AuditHandler.GetProductAuditTrail)
+		}
 
-		salesFloor.GET("/get_all_categories", cfg.Handlers.CategoryHandler.GetAllCategories)
-		salesFloor.GET("/get_distinct_brands", cfg.Handlers.CategoryHandler.GetDistinctBrands)
+		transactions := salesFloor.Group("/transactions")
+		{
+			transactions.GET("", cfg.Handlers.TransactionHandler.GetAllTransactions)
+			transactions.GET("/get", cfg.Handlers.TransactionHandler.GetTransactionByID)
+		}
 
-		salesFloor.GET("/get_all_online_orders", cfg.Handlers.OnlineOrderHandler.GetAllOnlineOrders)
-		salesFloor.GET("/get_online_order", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)
-		salesFloor.GET("/get_all_print_orders", cfg.Handlers.PrintOrderHandler.GetAllPrintOrders)
-		salesFloor.GET("/get_print_order", cfg.Handlers.PrintOrderHandler.GetPrintOrderByID)
-		salesFloor.GET("/audit", cfg.Handlers.AuditHandler.GetProductAuditTrail)
+		orders := salesFloor.Group("/orders")
+		{
+			orders.GET("/online", cfg.Handlers.OnlineOrderHandler.GetAllOnlineOrders)
+			orders.GET("/online/get", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)
+			orders.GET("/print", cfg.Handlers.PrintOrderHandler.GetAllPrintOrders)
+			orders.GET("/print/get", cfg.Handlers.PrintOrderHandler.GetPrintOrderByID)
+		}
 
 		mims := salesFloor.Group("/inventory")
 		{
@@ -190,6 +203,21 @@ func NewRouter(cfg Config) *gin.Engine {
 			receiving.GET("/check_transfer_product", cfg.Handlers.ReceivingHandler.CheckProductInTransfer)
 			receiving.POST("/receive_transfer", cfg.Handlers.ReceivingHandler.ReceiveTransfer)
 			receiving.POST("/quick_receive_transfer", cfg.Handlers.ReceivingHandler.QuickReceiveTransfer)
+		}
+
+		cycleCounts := salesFloor.Group("/cycle_counts")
+		{
+			cycleCounts.GET("", cfg.Handlers.CycleCountHandler.GetWeeklyCycleCounts)
+			cycleCounts.GET("/detail", cfg.Handlers.CycleCountHandler.GetCycleCountDetail)
+			cycleCounts.GET("/items", cfg.Handlers.CycleCountHandler.GetCycleCountItems)
+			cycleCounts.POST("/start", cfg.Handlers.CycleCountHandler.StartCycleCount)
+			cycleCounts.POST("/scan", cfg.Handlers.CycleCountHandler.RecordScan)
+			cycleCounts.POST("/submit", cfg.Handlers.CycleCountHandler.SubmitForApproval)
+			cycleCounts.POST("/approve", cfg.Handlers.CycleCountHandler.ApproveCycleCount)
+			cycleCounts.POST("/transfer", cfg.Handlers.CycleCountHandler.TransferOwnership)
+			cycleCounts.GET("/search", cfg.Handlers.CycleCountHandler.SearchCycleCounts)
+			cycleCounts.GET("/schedule", cfg.Handlers.CycleCountHandler.GetSchedule)
+			cycleCounts.POST("/schedule", cfg.Handlers.CycleCountHandler.CreateScheduleEntry)
 		}
 	}
 

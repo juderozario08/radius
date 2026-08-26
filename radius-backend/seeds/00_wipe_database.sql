@@ -18,6 +18,7 @@ TRUNCATE TABLE
     online_order_items,
     cycle_counts,
     cycle_count_items,
+    cycle_count_schedule,
     inventory_transactions,
     audit_log,
     preferred_members,

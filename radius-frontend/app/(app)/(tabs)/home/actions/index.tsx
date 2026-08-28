@@ -20,6 +20,7 @@ type ButtonConfig = {
 const backRoomMapping: ButtonConfig[] = [
     { title: 'Receiving', path: '/(app)/(tabs)/home/actions/back_room/Receiving', imagePath: require('@/assets/images/receiving.png') },
     { title: 'Cycle Count', path: '/(app)/(tabs)/home/actions/back_room/CycleCount', imagePath: require('@/assets/images/cycle_count.png') },
+    { title: 'Fill Reports', path: '/(app)/(tabs)/home/actions/back_room/FillReports', imagePath: require('@/assets/images/fill_report.png') },
     { title: 'Returns', path: '/(app)/(tabs)/home/actions/back_room/Returns', imagePath: require('@/assets/images/returns.png') }
 ]
 

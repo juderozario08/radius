@@ -3,25 +3,63 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"radius/internal/models"
 )
 
 type TransactionService struct {
-	salesRepo    SalesRepository
-	employeeRepo EmployeeRepository
-	sessionRepo  SessionRepository
+	salesRepo      SalesRepository
+	employeeRepo   EmployeeRepository
+	sessionRepo    SessionRepository
+	fillReportRepo FillReportRepository
 }
 
 func NewTransactionService(
 	salesRepo SalesRepository,
 	employeeRepo EmployeeRepository,
 	sessionRepo SessionRepository,
+	fillReportRepo FillReportRepository,
 ) *TransactionService {
 	return &TransactionService{
-		salesRepo:    salesRepo,
-		employeeRepo: employeeRepo,
-		sessionRepo:  sessionRepo,
+		salesRepo:      salesRepo,
+		employeeRepo:   employeeRepo,
+		sessionRepo:    sessionRepo,
+		fillReportRepo: fillReportRepo,
 	}
+}
+
+func (s *TransactionService) CreateTransaction(ctx context.Context, email string, role models.EmployeeRole, req models.CreateTransactionRequest) (*models.Transaction, error) {
+	var storeID int
+	var employeeID *int
+
+	if email != "" {
+		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
+		if err == nil && emp != nil {
+			storeID = emp.StoreId
+			employeeID = &emp.EmployeeId
+		}
+	}
+
+	if storeID == 0 && req.StoreId != nil && *req.StoreId > 0 {
+		storeID = *req.StoreId
+	}
+
+	if storeID == 0 {
+		return nil, fmt.Errorf("store ID is required to create a transaction")
+	}
+
+	// 1. Create transaction header, items, update on_hand inventory, and audit trail
+	tx, items, err := s.salesRepo.CreateTransaction(ctx, storeID, employeeID, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Automatically report sold items to the store's active Fill Report
+	if s.fillReportRepo != nil && len(items) > 0 {
+		_ = s.fillReportRepo.AddSoldItems(ctx, storeID, items)
+	}
+
+	return tx, nil
 }
 
 func (s *TransactionService) GetAllTransactions(ctx context.Context, email string, role models.EmployeeRole, page, limit int) ([]models.Transaction, int, error) {

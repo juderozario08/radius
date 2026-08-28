@@ -27,7 +27,7 @@ type StoreRepository interface {
 }
 
 type SalesRepository interface {
-	CreateTransaction(ctx context.Context)
+	CreateTransaction(ctx context.Context, storeID int, employeeID *int, req models.CreateTransactionRequest) (*models.Transaction, []models.TransactionItem, error)
 	GetAllTransactions(ctx context.Context, limit, offset int, storeID *int) ([]models.Transaction, int, error)
 	GetTransactionByID(ctx context.Context, id int, storeID *int) (*models.Transaction, []models.TransactionItem, error)
 	GetProductTransactions(ctx context.Context, sku int)
@@ -70,6 +70,12 @@ type CategoryRepository interface {
 
 type MerchandisingRepository interface {
 	// Add merchandising repository methods here when implemented
+}
+
+type FillReportRepository interface {
+	GetActiveFillReportForStore(ctx context.Context, storeID int, filter models.FillReportFilter) (*models.FillReport, []models.FillReportItemDetail, error)
+	AddEmptyHole(ctx context.Context, storeID int, productID int, employeeID *int) error
+	AddSoldItems(ctx context.Context, storeID int, items []models.TransactionItem) error
 }
 
 type SessionRepository interface {

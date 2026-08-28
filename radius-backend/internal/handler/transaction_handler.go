@@ -22,6 +22,30 @@ func NewTransactionHandler(transactionService *service.TransactionService) *Tran
 	}
 }
 
+func (h *TransactionHandler) CreateTransaction(ctx *gin.Context) {
+	email := ctx.GetString("email")
+	role := models.EmployeeRole(ctx.GetString("role"))
+
+	var req models.CreateTransactionRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid request payload: " + err.Error()})
+		return
+	}
+
+	createdTx, err := h.transactionService.CreateTransaction(ctx.Request.Context(), email, role, req)
+	if err != nil {
+		log.Printf("[ERROR] TransactionHandler.CreateTransaction: %v", err)
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{
+		"status":      "success",
+		"message":     "Transaction created and reported to fill report",
+		"transaction": createdTx,
+	})
+}
+
 func (h *TransactionHandler) GetAllTransactions(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))

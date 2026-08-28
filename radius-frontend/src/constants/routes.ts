@@ -61,6 +61,10 @@ export const ENDPOINTS = {
             addToSession: "/api/sales_floor/is4tc/session/add",
             clearSession: "/api/sales_floor/is4tc/session/clear",
         },
+        FILL_REPORT: {
+            get: "/api/sales_floor/fill_reports",
+            emptyHole: "/api/sales_floor/fill_reports/empty_hole",
+        },
         INVENTORY: {
             scanProduct: "/api/sales_floor/inventory/product",
             productDetails: "/api/sales_floor/inventory/product-details",

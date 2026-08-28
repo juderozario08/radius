@@ -297,15 +297,19 @@ func (m *MockSalesRepository) EXPECT() *MockSalesRepositoryMockRecorder {
 }
 
 // CreateTransaction mocks base method.
-func (m *MockSalesRepository) CreateTransaction(ctx context.Context) {
+func (m *MockSalesRepository) CreateTransaction(ctx context.Context, storeID int, employeeID *int, req models.CreateTransactionRequest) (*models.Transaction, []models.TransactionItem, error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CreateTransaction", ctx)
+	ret := m.ctrl.Call(m, "CreateTransaction", ctx, storeID, employeeID, req)
+	ret0, _ := ret[0].(*models.Transaction)
+	ret1, _ := ret[1].([]models.TransactionItem)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // CreateTransaction indicates an expected call of CreateTransaction.
-func (mr *MockSalesRepositoryMockRecorder) CreateTransaction(ctx any) *gomock.Call {
+func (mr *MockSalesRepositoryMockRecorder) CreateTransaction(ctx, storeID, employeeID, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransaction", reflect.TypeOf((*MockSalesRepository)(nil).CreateTransaction), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransaction", reflect.TypeOf((*MockSalesRepository)(nil).CreateTransaction), ctx, storeID, employeeID, req)
 }
 
 // GetAllTransactions mocks base method.
@@ -1410,3 +1414,71 @@ func (mr *MockCycleCountRepositoryMockRecorder) TransferOwnership(ctx, storeID, 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferOwnership", reflect.TypeOf((*MockCycleCountRepository)(nil).TransferOwnership), ctx, storeID, countID, newEmployeeID)
 }
+
+// MockFillReportRepository is a mock of FillReportRepository interface.
+type MockFillReportRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockFillReportRepositoryMockRecorder
+}
+
+// MockFillReportRepositoryMockRecorder is the mock recorder for MockFillReportRepository.
+type MockFillReportRepositoryMockRecorder struct {
+	mock *MockFillReportRepository
+}
+
+// NewMockFillReportRepository creates a new mock instance.
+func NewMockFillReportRepository(ctrl *gomock.Controller) *MockFillReportRepository {
+	mock := &MockFillReportRepository{ctrl: ctrl}
+	mock.recorder = &MockFillReportRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockFillReportRepository) EXPECT() *MockFillReportRepositoryMockRecorder {
+	return m.recorder
+}
+
+// GetActiveFillReportForStore mocks base method.
+func (m *MockFillReportRepository) GetActiveFillReportForStore(ctx context.Context, storeID int, filter models.FillReportFilter) (*models.FillReport, []models.FillReportItemDetail, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActiveFillReportForStore", ctx, storeID, filter)
+	ret0, _ := ret[0].(*models.FillReport)
+	ret1, _ := ret[1].([]models.FillReportItemDetail)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetActiveFillReportForStore indicates an expected call of GetActiveFillReportForStore.
+func (mr *MockFillReportRepositoryMockRecorder) GetActiveFillReportForStore(ctx, storeID, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveFillReportForStore", reflect.TypeOf((*MockFillReportRepository)(nil).GetActiveFillReportForStore), ctx, storeID, filter)
+}
+
+// AddEmptyHole mocks base method.
+func (m *MockFillReportRepository) AddEmptyHole(ctx context.Context, storeID, productID int, employeeID *int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddEmptyHole", ctx, storeID, productID, employeeID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddEmptyHole indicates an expected call of AddEmptyHole.
+func (mr *MockFillReportRepositoryMockRecorder) AddEmptyHole(ctx, storeID, productID, employeeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddEmptyHole", reflect.TypeOf((*MockFillReportRepository)(nil).AddEmptyHole), ctx, storeID, productID, employeeID)
+}
+
+// AddSoldItems mocks base method.
+func (m *MockFillReportRepository) AddSoldItems(ctx context.Context, storeID int, items []models.TransactionItem) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddSoldItems", ctx, storeID, items)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddSoldItems indicates an expected call of AddSoldItems.
+func (mr *MockFillReportRepositoryMockRecorder) AddSoldItems(ctx, storeID, items any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSoldItems", reflect.TypeOf((*MockFillReportRepository)(nil).AddSoldItems), ctx, storeID, items)
+}
+

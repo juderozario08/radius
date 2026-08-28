@@ -160,6 +160,8 @@ func NewRouter(cfg Config) *gin.Engine {
 		{
 			transactions.GET("", cfg.Handlers.TransactionHandler.GetAllTransactions)
 			transactions.GET("/get", cfg.Handlers.TransactionHandler.GetTransactionByID)
+			transactions.POST("", cfg.Handlers.TransactionHandler.CreateTransaction)
+			transactions.POST("/create", cfg.Handlers.TransactionHandler.CreateTransaction)
 		}
 
 		orders := salesFloor.Group("/orders")
@@ -189,6 +191,12 @@ func NewRouter(cfg Config) *gin.Engine {
 			is4tc.GET("/session", cfg.Handlers.FillReportHandler.GetIS4TCSession)
 			is4tc.POST("/session/add", cfg.Handlers.FillReportHandler.AddToIS4TCSession)
 			is4tc.DELETE("/session/clear", cfg.Handlers.FillReportHandler.ClearIS4TCSession)
+		}
+
+		fillReports := salesFloor.Group("/fill_reports")
+		{
+			fillReports.GET("", cfg.Handlers.FillReportHandler.GetFillReport)
+			fillReports.POST("/empty_hole", cfg.Handlers.FillReportHandler.ScanEmptyHole)
 		}
 
 		receiving := salesFloor.Group("/receiving")

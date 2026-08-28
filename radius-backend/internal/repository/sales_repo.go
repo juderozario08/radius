@@ -4,6 +4,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"radius/internal/models"
 )
 
@@ -15,8 +16,164 @@ func NewSalesRepo(db *sql.DB) *SalesRepo {
 	return &SalesRepo{db: db}
 }
 
-func (r *SalesRepo) CreateTransaction(ctx context.Context) {
+func (r *SalesRepo) CreateTransaction(ctx context.Context, storeID int, employeeID *int, req models.CreateTransactionRequest) (*models.Transaction, []models.TransactionItem, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	txType := req.TransactionType
+	if txType == "" {
+		txType = models.TransactionTypeSale
+	}
+	status := models.TransactionStatusCompleted
+
+	var createdTx models.Transaction
+	createdTx.StoreId = storeID
+	createdTx.RegisterId = req.RegisterId
+	createdTx.EmployeeId = employeeID
+	createdTx.TransactionType = txType
+	createdTx.Subtotal = req.Subtotal
+	createdTx.TaxAmount = req.TaxAmount
+	createdTx.DiscountTotal = req.DiscountTotal
+	createdTx.CostTotal = req.CostTotal
+	createdTx.TotalAmount = req.TotalAmount
+	createdTx.PaymentMethod = req.PaymentMethod
+	createdTx.CardType = req.CardType
+	createdTx.CardNumber = req.CardNumber
+	createdTx.Status = status
+	createdTx.PreferredMemberId = req.PreferredMemberId
+	createdTx.PaymentReference = req.PaymentReference
+
+	insertTxQuery := `
+		INSERT INTO transactions (
+			store_id, register_id, employee_id, transaction_type, subtotal, tax_amount,
+			discount_total, cost_total, total_amount, payment_method, card_type, card_number,
+			status, preferred_member_id, payment_reference, created_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+		RETURNING transaction_id, created_at
+	`
+
+	err = tx.QueryRowContext(
+		ctx,
+		insertTxQuery,
+		storeID,
+		req.RegisterId,
+		employeeID,
+		txType,
+		req.Subtotal,
+		req.TaxAmount,
+		req.DiscountTotal,
+		req.CostTotal,
+		req.TotalAmount,
+		req.PaymentMethod,
+		req.CardType,
+		req.CardNumber,
+		status,
+		req.PreferredMemberId,
+		req.PaymentReference,
+	).Scan(&createdTx.TransactionId, &createdTx.CreatedAt)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to insert transaction header: %w", err)
+	}
+
+	insertItemStmt, err := tx.PrepareContext(ctx, `
+		INSERT INTO transaction_items (
+			transaction_id, product_id, quantity, unit_price, unit_cost, discount_amount, scanned_barcode
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING transaction_item_id
+	`)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to prepare insert transaction item stmt: %w", err)
+	}
+	defer insertItemStmt.Close()
+
+	updateInventoryStmt, err := tx.PrepareContext(ctx, `
+		UPDATE inventory
+		SET on_hand_qty = on_hand_qty - $1, updated_at = NOW()
+		WHERE store_id = $2 AND product_id = $3
+	`)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to prepare update inventory stmt: %w", err)
+	}
+	defer updateInventoryStmt.Close()
+
+	insertAuditStmt, err := tx.PrepareContext(ctx, `
+		INSERT INTO inventory_transactions (
+			product_id, from_store_id, transaction_type, quantity, unit_price, unit_cost, employee_id, reference_id, created_at
+		)
+		VALUES ($1, $2, 'SALE', $3, $4, $5, $6, $7, NOW())
+	`)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to prepare audit log stmt: %w", err)
+	}
+	defer insertAuditStmt.Close()
+
+	refID := fmt.Sprintf("TX-%d", createdTx.TransactionId)
+	createdItems := []models.TransactionItem{}
+
+	for _, itemReq := range req.Items {
+		var item models.TransactionItem
+		item.TransactionId = createdTx.TransactionId
+		item.ProductId = itemReq.ProductId
+		item.Quantity = itemReq.Quantity
+		item.UnitPrice = itemReq.UnitPrice
+		item.UnitCost = itemReq.UnitCost
+		item.DiscountAmount = itemReq.DiscountAmount
+		item.ScannedBarcode = itemReq.ScannedBarcode
+
+		err = insertItemStmt.QueryRowContext(
+			ctx,
+			createdTx.TransactionId,
+			itemReq.ProductId,
+			itemReq.Quantity,
+			itemReq.UnitPrice,
+			itemReq.UnitCost,
+			itemReq.DiscountAmount,
+			itemReq.ScannedBarcode,
+		).Scan(&item.TransactionItemId)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to insert transaction item (product %d): %w", itemReq.ProductId, err)
+		}
+
+		// Update on_hand_qty in inventory
+		if itemReq.Quantity > 0 {
+			_, err = updateInventoryStmt.ExecContext(ctx, itemReq.Quantity, storeID, itemReq.ProductId)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to update inventory for product %d: %w", itemReq.ProductId, err)
+			}
+
+			// Write to audit trail
+			unitPriceFloat := float64(itemReq.UnitPrice)
+			unitCostFloat := float64(itemReq.UnitCost)
+			_, err = insertAuditStmt.ExecContext(
+				ctx,
+				itemReq.ProductId,
+				storeID,
+				itemReq.Quantity,
+				unitPriceFloat,
+				unitCostFloat,
+				employeeID,
+				refID,
+			)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to insert audit trail for product %d: %w", itemReq.ProductId, err)
+			}
+		}
+
+		createdItems = append(createdItems, item)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return &createdTx, createdItems, nil
 }
+
 
 func (r *SalesRepo) GetAllTransactions(ctx context.Context, limit, offset int, storeID *int) ([]models.Transaction, int, error) {
 	var countQuery string

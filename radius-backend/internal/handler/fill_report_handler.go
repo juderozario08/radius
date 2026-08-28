@@ -6,6 +6,7 @@ import (
 	"radius/internal/models"
 	"radius/internal/service"
 	"strconv"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,17 +19,70 @@ func NewFillReportHandler(s *service.FillReportService) *FillReportHandler {
 }
 
 func (h *FillReportHandler) GetFillReport(c *gin.Context) {
-	storeID, _ := strconv.Atoi(c.Param("store_id"))
-	// Call service using storeID
-	c.JSON(http.StatusOK, gin.H{"status": "success", "store_id": storeID, "data": "mock fill report data"})
+	storeID := c.GetInt("store_id")
+
+	// Allow overriding store_id via query param for managers/admins
+	if storeParam := c.Query("store_id"); storeParam != "" {
+		if parsed, err := strconv.Atoi(storeParam); err == nil && parsed > 0 {
+			storeID = parsed
+		}
+	}
+
+	if storeID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
+		return
+	}
+
+	var filter models.FillReportFilter
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid query parameters", "details": err.Error()})
+		return
+	}
+
+	resp, err := h.service.GetStoreFillReport(c.Request.Context(), storeID, filter)
+	if err != nil {
+		log.Printf("Error getting fill report for store %d: %v", storeID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve fill report", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 func (h *FillReportHandler) ScanEmptyHole(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Empty hole logged!"})
+	storeID := c.GetInt("store_id")
+	if storeID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
+		return
+	}
+
+	var req models.ScanEmptyHoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload", "details": err.Error()})
+		return
+	}
+
+	var empID *int
+	if eid := c.GetInt("employee_id"); eid > 0 {
+		empID = &eid
+	}
+
+	if err := h.service.LogEmptyHole(c.Request.Context(), storeID, req.ProductID, empID); err != nil {
+		log.Printf("Error logging empty hole: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to log empty hole", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Empty hole logged to fill report"})
 }
 
 func (h *FillReportHandler) GetIS4TCSession(c *gin.Context) {
 	storeID := c.GetInt("store_id")
+	if storeID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
+		return
+	}
+
 	items, err := h.service.GetActiveIS4TCSession(c.Request.Context(), storeID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve session"})
@@ -39,6 +93,11 @@ func (h *FillReportHandler) GetIS4TCSession(c *gin.Context) {
 
 func (h *FillReportHandler) AddToIS4TCSession(c *gin.Context) {
 	storeID := c.GetInt("store_id")
+	if storeID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
+		return
+	}
+
 	var req struct {
 		Product models.MimsProductInventory `json:"product"`
 	}
@@ -48,7 +107,12 @@ func (h *FillReportHandler) AddToIS4TCSession(c *gin.Context) {
 		return
 	}
 
-	items, err := h.service.AddToIS4TCSession(c.Request.Context(), storeID, req.Product)
+	var empID *int
+	if eid := c.GetInt("employee_id"); eid > 0 {
+		empID = &eid
+	}
+
+	items, err := h.service.AddToIS4TCSession(c.Request.Context(), storeID, req.Product, empID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add to session"})
 		return
@@ -58,6 +122,11 @@ func (h *FillReportHandler) AddToIS4TCSession(c *gin.Context) {
 
 func (h *FillReportHandler) ClearIS4TCSession(c *gin.Context) {
 	storeID := c.GetInt("store_id")
+	if storeID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
+		return
+	}
+
 	err := h.service.ClearIS4TCSession(c.Request.Context(), storeID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear session"})

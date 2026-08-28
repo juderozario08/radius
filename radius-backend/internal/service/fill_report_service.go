@@ -6,19 +6,22 @@ import (
 	"fmt"
 	"radius/internal/models"
 	"time"
+
 	"github.com/redis/go-redis/v9"
 )
 
 type FillReportService struct {
-	storeRepo     StoreRepository
-	employeeRepo  EmployeeRepository
-	sessionRepo   SessionRepository
-	inventoryRepo InventoryRepository
-	productsRepo  ProductRepository
-	redisClient   *redis.Client
+	fillReportRepo FillReportRepository
+	storeRepo      StoreRepository
+	employeeRepo   EmployeeRepository
+	sessionRepo    SessionRepository
+	inventoryRepo  InventoryRepository
+	productsRepo   ProductRepository
+	redisClient    *redis.Client
 }
 
 func NewFillReportService(
+	fillReportRepo FillReportRepository,
 	storeRepo StoreRepository,
 	employeeRepo EmployeeRepository,
 	sessionRepo SessionRepository,
@@ -27,12 +30,13 @@ func NewFillReportService(
 	redisClient *redis.Client,
 ) *FillReportService {
 	return &FillReportService{
-		storeRepo:     storeRepo,
-		employeeRepo:  employeeRepo,
-		sessionRepo:   sessionRepo,
-		inventoryRepo: inventoryRepo,
-		productsRepo:  productsRepo,
-		redisClient:   redisClient,
+		fillReportRepo: fillReportRepo,
+		storeRepo:      storeRepo,
+		employeeRepo:   employeeRepo,
+		sessionRepo:    sessionRepo,
+		inventoryRepo:  inventoryRepo,
+		productsRepo:   productsRepo,
+		redisClient:    redisClient,
 	}
 }
 
@@ -52,13 +56,19 @@ func (s *FillReportService) GetActiveIS4TCSession(ctx context.Context, storeID i
 	return items, nil
 }
 
-func (s *FillReportService) AddToIS4TCSession(ctx context.Context, storeID int, product models.MimsProductInventory) ([]models.MimsProductInventory, error) {
+func (s *FillReportService) AddToIS4TCSession(ctx context.Context, storeID int, product models.MimsProductInventory, employeeID *int) ([]models.MimsProductInventory, error) {
+	// 1. Automatically log empty hole to DB Fill Report
+	if s.fillReportRepo != nil {
+		_ = s.fillReportRepo.AddEmptyHole(ctx, storeID, product.ProductId, employeeID)
+	}
+
+	// 2. Add to active Redis session
 	items, err := s.GetActiveIS4TCSession(ctx, storeID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Avoid duplicates
+	// Avoid duplicates in memory session
 	for _, item := range items {
 		if item.ProductId == product.ProductId {
 			return items, nil
@@ -74,7 +84,7 @@ func (s *FillReportService) AddToIS4TCSession(ctx context.Context, storeID int, 
 	}
 
 	key := fmt.Sprintf("is4tc_session:%d", storeID)
-	// Expire after 24 hours of inactivity just to be safe
+	// Expire after 24 hours of inactivity
 	err = s.redisClient.Set(ctx, key, data, 24*time.Hour).Err()
 	if err != nil {
 		return nil, err
@@ -88,10 +98,37 @@ func (s *FillReportService) ClearIS4TCSession(ctx context.Context, storeID int) 
 	return s.redisClient.Del(ctx, key).Err()
 }
 
-func (s *FillReportService) GetStoreFillReport(ctx context.Context, storeID int, userRole models.EmployeeRole, userStoreId int) (*models.FillReport, []models.FillReportItemDetail, error) {
-	return nil, nil, nil
+func (s *FillReportService) GetStoreFillReport(ctx context.Context, storeID int, filter models.FillReportFilter) (*models.FillReportResponse, error) {
+	report, items, err := s.fillReportRepo.GetActiveFillReportForStore(ctx, storeID, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	totalItems := len(items)
+	fillQtySum := 0
+	is4tcCount := 0
+
+	for _, item := range items {
+		if item.IsEmptyHole {
+			is4tcCount++
+		} else {
+			fillQtySum += item.FillQty
+		}
+	}
+
+	return &models.FillReportResponse{
+		FillReport: *report,
+		Items:      items,
+		TotalItems: totalItems,
+		FillQtySum: fillQtySum,
+		Is4tcCount: is4tcCount,
+	}, nil
 }
 
-func (s *FillReportService) LogEmptyHole(ctx context.Context, storeID int, productID int, employeeID int) error {
-	return nil
+func (s *FillReportService) LogEmptyHole(ctx context.Context, storeID int, productID int, employeeID *int) error {
+	return s.fillReportRepo.AddEmptyHole(ctx, storeID, productID, employeeID)
+}
+
+func (s *FillReportService) LogSoldItems(ctx context.Context, storeID int, items []models.TransactionItem) error {
+	return s.fillReportRepo.AddSoldItems(ctx, storeID, items)
 }

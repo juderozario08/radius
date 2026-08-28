@@ -1,30 +1,36 @@
 # Radius Application Features Tracker
 
-This document tracks the actual application features and modules based on the current state of the codebase.
+This document tracks the application features and modules that are **NOT YET IMPLEMENTED** or are currently existing only as stubs/placeholders in the codebase.
 
-## ✅ Implemented Features
+## 🚧 Missing / Unimplemented Features
 
-The following features have been built and have active endpoints/logic in the backend and frontend:
+### 1. Out of Stock (OOS) Reporting
+- **Status:** Empty Skeletons (0% complete)
+- **Backend:** `out_of_stock_handler.go` and `out_of_stock_service.go` exist but have no logic or registered endpoints.
+- **Frontend:** Placeholder component `OOSCard.tsx`. No UI flow implemented.
 
-- [x] **Authentication & Sessions**: Secure login, JWT generation, and session management (`auth_handler.go`, `session_handler.go`).
-- [x] **Employee Administration**: Creating and managing staff profiles and roles (`employee_handler.go`).
-- [x] **Store Administration**: Managing store locations and branch details (`store_handler.go`).
-- [x] **Product Catalog & Categories**: Browsing the global product directory and categories (`product_handler.go`, `category_handler.go`).
-- [x] **Inventory Tracking**: Viewing and managing baseline stock levels (`inventory_handler.go`).
-- [x] **Receiving (POs & LPRs)**: Processing incoming purchase orders and license plate receives (`receiving_handler.go`).
-- [x] **Transactions / POS**: Handling physical in-store point-of-sale transactions (`transaction_handler.go`).
-- [x] **Online Orders**: Managing and fulfilling digital order requests (`online_order_handler.go`).
+### 2. Outbound Stock Transfers
+- **Status:** Partial - Inbound receiving works, outbound is missing (~30% complete)
+- **Backend:** `transfer_handler.go` and `transfer_service.go` are stubs. Logic for creating and dispatching outbound transfers is missing.
+- **Frontend:** The `Store > Transfers` screen (`transfers.tsx`) is a placeholder ("Coming soon").
 
----
+### 3. Dynamic Pricing & Price Tags
+- **Status:** DB Schema only (~5% complete)
+- **Backend:** `pricing_handler.go` and `pricing_service.go` are empty skeletons.
+- **Frontend:** The `Price Tags` tab (`price_tags/index.tsx`) is a placeholder ("Coming soon").
 
-## 🚧 Not Yet Implemented (Currently Stubs)
+### 4. Planograms & Merchandising Compliance
+- **Status:** DB Schema and Mockups (~10% complete)
+- **Backend:** Handler, service, and `merchandising_repo.go` are empty skeletons.
+- **Frontend:** `ProductPlanogram.tsx` exists as a mockup UI, but no active integration.
 
-The following features are planned in the architecture and have initial placeholder files, but the actual logic and endpoints have not yet been built:
+### 5. Returns / RMA Workflow
+- **Status:** DB Schema and Placeholders (~10% complete)
+- **Backend:** Support for `return_reason` exists in DB, but no dedicated returns handler/service logic.
+- **Frontend:** The `Back Room > Returns` screen (`Returns.tsx`) is a placeholder.
 
-- [ ] **Barcode Scanning**: Using mobile device cameras to scan UPC/EANs and fetch product details (`barcode_handler.go`).
-- [ ] **Cycle Counts**: Performing routine manual counts of physical inventory on the floor (`cycle_count_handler.go`).
-- [ ] **Fill Reports**: Generating and actioning reports for restocking shelves from the back room (`fill_report_handler.go`).
-- [ ] **Out-of-Stock Reporting**: Flagging and tracking items that are empty on the sales floor (`out_of_stock_handler.go`).
-- [ ] **Stock Transfers**: Moving inventory securely between different store locations (`transfer_handler.go`).
-- [ ] **Planograms**: Visual merchandising compliance and shelf-layout tracking (`planogram_handler.go`).
-- [ ] **Dynamic Pricing**: Managing markdowns, sales, and temporary price adjustments (`pricing_handler.go`).
+### 6. Additional Frontend Gaps
+- **Store Tab Sub-pages:** `purchase_orders.tsx` and `transfers.tsx` are placeholders.
+- **Sales Floor Activities:** The `Activities` screen is a placeholder.
+- **Dashboard & Notifications:** The home `Dashboard` has static text, and the `Notifications` screen is a placeholder.
+- **API Client Stubs:** Dedicated API fetch wrappers (`inventory.api.ts`, `orders.api.ts`, etc.) are currently empty (app uses direct `apiFetch` in screens instead).

@@ -1,9 +1,8 @@
 -- ==============================================================================
 -- 13_print_orders_seed.sql
--- Seed data for Print Services, Supplies, Orders, and Items
+-- Print Services catalog, shop supplies inventory, print orders and order items
 -- ==============================================================================
 
--- Truncate existing print data and reset primary key identity sequences
 TRUNCATE TABLE 
     print_order_items,
     print_orders,
@@ -29,141 +28,150 @@ INSERT INTO print_services (name, description, category, base_price, is_active) 
 
 -- 2. Print Supplies Inventory
 INSERT INTO print_supplies (store_id, name, description, unit, current_qty, reorder_threshold, reorder_qty, unit_cost, supplier_name, is_active) VALUES
-(1, '20lb White Bond Paper (Letter Ream)', '500 sheets standard copy paper', 'REAM', 45, 15, 50, 4.50, 'Domtar Paper Supply', true),
-(1, '28lb Bright White Laser Paper', '500 sheets heavy presentation paper', 'REAM', 12, 10, 30, 8.20, 'Hammermill Commercial', true),
-(1, '16pt Matte Cardstock (12x18 Sheets)', '250 sheets premium cardstock', 'PACK', 8, 10, 25, 18.50, 'Mohawk Fine Papers', true),
-(1, '13oz Scrim Vinyl Banner Roll 36"x100ft', 'Matte white wide format roll', 'ROLL', 3, 2, 5, 65.00, 'Grimco Graphic Supplies', true),
-(1, 'Black Toner Cartridge (DocuColor 550)', 'High-yield black toner 30k pages', 'CARTRIDGE', 2, 2, 4, 120.00, 'Xerox Canada', true),
+(1, '20lb White Bond Paper (Letter Ream)', '500 sheets standard copy paper', 'REAM', 42, 15, 50, 4.50, 'Domtar Paper Supply', true),
+(1, '28lb Bright White Laser Paper', '500 sheets heavy presentation paper', 'REAM', 11, 10, 30, 8.20, 'Hammermill Commercial', true),
+(1, '16pt Matte Cardstock (12x18 Sheets)', '250 sheets premium cardstock', 'PACK', 14, 10, 25, 18.50, 'Mohawk Fine Papers', true),
+(1, '13oz Scrim Vinyl Banner Roll 36"x100ft', 'Matte white wide format roll', 'ROLL', 8, 2, 5, 65.00, 'Grimco Graphic Supplies', true),
+(1, 'Black Toner Cartridge (DocuColor 550)', 'High-yield black toner 30k pages', 'CARTRIDGE', 13, 2, 4, 120.00, 'Xerox Canada', true),
 (1, 'Cyan Toner Cartridge (DocuColor 550)', 'High-yield cyan toner 34k pages', 'CARTRIDGE', 1, 2, 4, 145.00, 'Xerox Canada', true),
-(1, 'Thermal Lamination Pouches (Letter 5mil)', 'Box of 100 laminating pouches', 'BOX', 14, 5, 20, 12.00, 'GBC Binding Systems', true),
-(1, 'Black Spiral Binding Coils (12mm)', 'Box of 100 coils 4:1 pitch', 'BOX', 6, 4, 10, 15.00, 'Akiles Binding Products', true),
+(1, 'Thermal Lamination Pouches (Letter 5mil)', 'Box of 100 laminating pouches', 'BOX', 13, 5, 20, 12.00, 'GBC Binding Systems', true),
+(1, 'Black Spiral Binding Coils (12mm)', 'Box of 100 coils 4:1 pitch', 'BOX', 15, 4, 10, 15.00, 'Akiles Binding Products', true),
+(2, '20lb White Bond Paper (Letter Ream)', '500 sheets standard copy paper', 'REAM', 49, 15, 50, 4.50, 'Domtar Paper Supply', true),
+(2, '28lb Bright White Laser Paper', '500 sheets heavy presentation paper', 'REAM', 19, 10, 30, 8.20, 'Hammermill Commercial', true),
+(2, '16pt Matte Cardstock (12x18 Sheets)', '250 sheets premium cardstock', 'PACK', 18, 10, 25, 18.50, 'Mohawk Fine Papers', true),
+(2, '13oz Scrim Vinyl Banner Roll 36"x100ft', 'Matte white wide format roll', 'ROLL', 5, 2, 5, 65.00, 'Grimco Graphic Supplies', true),
+(2, 'Black Toner Cartridge (DocuColor 550)', 'High-yield black toner 30k pages', 'CARTRIDGE', 1, 2, 4, 120.00, 'Xerox Canada', true),
+(2, 'Cyan Toner Cartridge (DocuColor 550)', 'High-yield cyan toner 34k pages', 'CARTRIDGE', 1, 2, 4, 145.00, 'Xerox Canada', true),
+(2, 'Thermal Lamination Pouches (Letter 5mil)', 'Box of 100 laminating pouches', 'BOX', 19, 5, 20, 12.00, 'GBC Binding Systems', true),
+(2, 'Black Spiral Binding Coils (12mm)', 'Box of 100 coils 4:1 pitch', 'BOX', 15, 4, 10, 15.00, 'Akiles Binding Products', true);
 
-(2, '20lb White Bond Paper (Letter Ream)', '500 sheets standard copy paper', 'REAM', 38, 15, 50, 4.50, 'Domtar Paper Supply', true),
-(2, '16pt Matte Cardstock (12x18 Sheets)', '250 sheets premium cardstock', 'PACK', 15, 10, 25, 18.50, 'Mohawk Fine Papers', true),
-(2, '13oz Scrim Vinyl Banner Roll 36"x100ft', 'Matte white wide format roll', 'ROLL', 1, 2, 5, 65.00, 'Grimco Graphic Supplies', true),
-(2, 'Black Toner Cartridge (DocuColor 550)', 'High-yield black toner 30k pages', 'CARTRIDGE', 3, 2, 4, 120.00, 'Xerox Canada', true),
-(2, 'Thermal Lamination Pouches (Letter 5mil)', 'Box of 100 laminating pouches', 'BOX', 8, 5, 20, 12.00, 'GBC Binding Systems', true);
-
--- 3. Print Orders (Web Orders & Walk-In across stores)
+-- 3. Print Orders
 INSERT INTO print_orders (store_id, customer_name, customer_email, customer_phone, order_type, status, subtotal, tax_amount, shipping_fee, total_amount, shipping_address, notes, placed_at, fulfilled_at) VALUES
--- Web Orders (Store 1)
-(1, 'Sarah Jenkins', 'sjenkins@apextech.io', '416-555-0143', 'WEB', 'READY FOR PICKUP', 59.98, 7.80, 0.00, 67.78, 'Store Pickup Counter', 'Please double-box and include receipt in bag', NOW() - INTERVAL '2 hours', NULL),
-(1, 'Michael Chang', 'mchang@novadesign.ca', '416-555-0188', 'WEB', 'IN PROGRESS', 124.98, 16.25, 12.50, 153.73, '450 University Ave, Suite 800, Toronto, ON M5G 1V2', 'Deliver before 4 PM on weekday', NOW() - INTERVAL '5 hours', NULL),
-(1, 'David Miller', 'dmiller@millerlegal.com', '416-555-0122', 'WEB', 'PENDING', 29.99, 3.90, 0.00, 33.89, 'Store Pickup Counter', 'Hold for David Miller or associate', NOW() - INTERVAL '30 minutes', NULL),
-(1, 'Elena Rostova', 'elena.rostova@artgallery.ca', '416-555-0199', 'WEB', 'SHIPPED', 89.98, 11.70, 15.00, 116.68, '12 Queen St East, Unit 4B, Toronto, ON M5C 1N6', 'Tracking: CP892019482CA', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
-(1, 'TechCorp Ventures', 'admin@techcorp.com', '416-555-0105', 'WEB', 'COMPLETED', 299.80, 38.97, 0.00, 338.77, 'Store Pickup Counter', 'Signed off and picked up by courier', NOW() - INTERVAL '5 days', NOW() - INTERVAL '4 days'),
-(1, 'Marcus Vance', 'mvance@consulting.com', '416-555-0177', 'WEB', 'CANCELLED', 44.99, 5.85, 0.00, 50.84, 'Store Pickup Counter', 'Customer requested cancellation prior to production', NOW() - INTERVAL '6 days', NULL),
-(1, 'Rachel Adams', 'rachel.a@startup.co', '416-555-0164', 'WEB', 'READY FOR PICKUP', 74.98, 9.75, 0.00, 84.73, 'Store Pickup Counter', 'Proof verified via email approval', NOW() - INTERVAL '4 hours', NULL),
-(1, 'Green Earth Landscaping', 'orders@greenearth.ca', '416-555-0131', 'WEB', 'IN PROGRESS', 99.96, 12.99, 10.00, 122.95, '88 Bay St, Toronto, ON M5J 2R8', 'Outdoor signs require weatherproof stake kit', NOW() - INTERVAL '1 day', NULL),
-
--- Walk-In Orders (Store 1)
-(1, 'Robert Tremblay', 'robert.tremblay@gmail.com', '416-555-0211', 'WALK_IN', 'READY FOR PICKUP', 18.49, 2.40, 0.00, 20.89, NULL, 'Customer will return at 3:30 PM', NOW() - INTERVAL '1 hour', NULL),
-(1, 'Amanda Flores', 'amanda.flores@outlook.com', '416-555-0233', 'WALK_IN', 'IN PROGRESS', 44.99, 5.85, 0.00, 50.84, NULL, 'Rush order for evening presentation', NOW() - INTERVAL '45 minutes', NULL),
-(1, 'James Wilson', 'jwilson@cityrealty.com', '416-555-0255', 'WALK_IN', 'COMPLETED', 149.95, 19.49, 0.00, 169.44, NULL, 'Paid in full via terminal 02', NOW() - INTERVAL '1 day', NOW() - INTERVAL '22 hours'),
-(1, 'Sophia Chen', 'sophia.chen@uwaterloo.ca', '416-555-0277', 'WALK_IN', 'PENDING', 21.00, 2.73, 0.00, 23.73, NULL, 'Thesis draft printing on 28lb paper', NOW() - INTERVAL '15 minutes', NULL),
-(1, 'Apex Dental Clinic', 'frontdesk@apexdental.ca', '416-555-0288', 'WALK_IN', 'COMPLETED', 59.98, 7.80, 0.00, 67.78, NULL, 'New patient intake forms pad', NOW() - INTERVAL '3 days', NOW() - INTERVAL '2 days'),
-(1, 'Carlos Ramirez', 'carlos.r@foodtruck.ca', '416-555-0299', 'WALK_IN', 'READY FOR PICKUP', 35.00, 4.55, 0.00, 39.55, NULL, '10 laminated truck menus', NOW() - INTERVAL '3 hours', NULL),
-
--- Web Orders (Store 2)
-(2, 'Pacific Coast Logistics', 'dispatch@pacificlogistics.ca', '604-555-0311', 'WEB', 'READY FOR PICKUP', 159.98, 19.20, 0.00, 179.18, 'Granville Counter Pickup', 'Hold at customer service desk', NOW() - INTERVAL '3 hours', NULL),
-(2, 'Kendra Scott', 'kendra@westcoastyoga.com', '604-555-0322', 'WEB', 'IN PROGRESS', 79.99, 9.60, 14.00, 103.59, '1055 West Georgia St, Vancouver, BC V6E 3P3', 'Send courier notification when shipped', NOW() - INTERVAL '6 hours', NULL),
-(2, 'Liam O''Connor', 'liam@vancouverbistro.ca', '604-555-0333', 'WEB', 'PENDING', 49.99, 6.00, 0.00, 55.99, 'Granville Counter Pickup', 'Summer promo menu inserts', NOW() - INTERVAL '1 hour', NULL),
-(2, 'Harbourfront Retailers', 'marketing@harbourretail.ca', '604-555-0344', 'WEB', 'SHIPPED', 239.97, 28.80, 20.00, 288.77, '200 Burrard St, Vancouver, BC V6C 3L6', 'Shipped via Canada Post Expedited', NOW() - INTERVAL '3 days', NOW() - INTERVAL '2 days'),
-(2, 'Dr. Emily Watson', 'dr.watson@pacificchiro.ca', '604-555-0355', 'WEB', 'COMPLETED', 89.98, 10.80, 0.00, 100.78, 'Granville Counter Pickup', 'Patient brochure reprint', NOW() - INTERVAL '4 days', NOW() - INTERVAL '3 days'),
-(2, 'Whistler Snow Tours', 'info@whistlersnow.com', '604-555-0366', 'WEB', 'CANCELLED', 79.99, 9.60, 0.00, 89.59, 'Granville Counter Pickup', 'Duplicate submission', NOW() - INTERVAL '7 days', NULL),
-(2, 'Studio 9 Architecture', 'print@studio9arch.ca', '604-555-0377', 'WEB', 'READY FOR PICKUP', 134.97, 16.20, 0.00, 151.17, 'Granville Counter Pickup', '3 sets blueprints on 24x36 foam board', NOW() - INTERVAL '5 hours', NULL),
-
--- Walk-In Orders (Store 2)
-(2, 'Taro Tanaka', 'taro.tanaka@japanconsulting.ca', '604-555-0411', 'WALK_IN', 'READY FOR PICKUP', 29.99, 3.60, 0.00, 33.59, NULL, 'Bilingual English/Japanese business cards', NOW() - INTERVAL '2 hours', NULL),
-(2, 'Zoe Washington', 'zoe.w@vancouverarts.org', '604-555-0422', 'WALK_IN', 'IN PROGRESS', 69.98, 8.40, 0.00, 78.38, NULL, 'Gallery exhibition handouts', NOW() - INTERVAL '50 minutes', NULL),
-(2, 'Bradley Cooper', 'bcooper@granvillepub.ca', '604-555-0433', 'WALK_IN', 'COMPLETED', 42.00, 5.04, 0.00, 47.04, NULL, 'Weekly bar flyers laminated', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
-(2, 'Grace Murray', 'grace.murray@ubc.ca', '604-555-0444', 'WALK_IN', 'PENDING', 15.00, 1.80, 0.00, 16.80, NULL, 'Conference poster draft', NOW() - INTERVAL '20 minutes', NULL),
-(2, 'West End Bakery', 'orders@westendbakery.ca', '604-555-0455', 'WALK_IN', 'COMPLETED', 79.98, 9.60, 0.00, 89.58, NULL, 'Custom logo stickers x 200', NOW() - INTERVAL '3 days', NOW() - INTERVAL '2 days');
+(1, 'Patricia Davis', 'patriciadavis98@bell.net', '647-657-9176', 'WEB', 'READY FOR PICKUP', 49.98, 6.50, 0.00, 56.48, 'Store Pickup Counter', 'Customer job note for order #0001', NOW() - INTERVAL '2 hours', NULL),
+(2, 'Metro Construction Group', 'adminorders1@outlook.com', '647-903-7716', 'WALK_IN', 'IN PROGRESS', 34.99, 4.55, 0.00, 39.54, NULL, 'Customer job note for order #0002', NOW() - INTERVAL '4 hours', NULL),
+(1, 'Vance Consulting Group', 'adminorders@bell.net', '778-855-7123', 'WEB', 'PENDING', 7.00, 0.91, 0.00, 7.91, 'Store Pickup Counter', 'Customer job note for order #0003', NOW() - INTERVAL '6 hours', NULL),
+(2, 'Richard Lewis', 'richard_lewis50@novadesign.ca', '403-693-7208', 'WALK_IN', 'SHIPPED', 145.96, 18.97, 0.00, 164.93, NULL, 'Customer job note for order #0004', NOW() - INTERVAL '8 hours', NOW() - INTERVAL '6 hours'),
+(1, 'Jessica Scott', 'jessica_scott26@apextech.io', '613-701-6289', 'WEB', 'COMPLETED', 320.11, 41.61, 0.00, 361.72, 'Store Pickup Counter', 'Customer job note for order #0005', NOW() - INTERVAL '10 hours', NOW() - INTERVAL '9 hours'),
+(2, 'Charles Nelson', 'charles.nelson44@yahoo.ca', '403-395-7337', 'WALK_IN', 'CANCELLED', 209.96, 27.29, 0.00, 237.25, NULL, 'Customer job note for order #0006', NOW() - INTERVAL '12 hours', NULL),
+(1, 'Art Gallery of Ontario', 'admin_orders@gmail.com', '613-919-9997', 'WEB', 'READY FOR PICKUP', 24.99, 3.25, 0.00, 28.24, 'Store Pickup Counter', 'Customer job note for order #0007', NOW() - INTERVAL '14 hours', NULL),
+(2, 'Polaris Media Group', 'admin_orders52@novadesign.ca', '604-899-6311', 'WALK_IN', 'IN PROGRESS', 24.99, 3.25, 0.00, 28.24, NULL, 'Customer job note for order #0008', NOW() - INTERVAL '16 hours', NULL),
+(1, 'Metro Construction Group', 'adminorders@bell.net', '902-335-7802', 'WEB', 'PENDING', 94.97, 12.35, 0.00, 107.32, 'Store Pickup Counter', 'Customer job note for order #0009', NOW() - INTERVAL '18 hours', NULL),
+(2, 'Donald Peterson', 'donaldpeterson@gmail.com', '902-506-2895', 'WALK_IN', 'SHIPPED', 5.00, 0.65, 0.00, 5.65, NULL, 'Customer job note for order #0010', NOW() - INTERVAL '20 hours', NOW() - INTERVAL '18 hours'),
+(1, 'Kimberly Cox', 'kimberlycox@novadesign.ca', '778-433-3327', 'WEB', 'COMPLETED', 69.98, 9.10, 0.00, 79.08, 'Store Pickup Counter', 'Customer job note for order #0011', NOW() - INTERVAL '22 hours', NOW() - INTERVAL '21 hours'),
+(2, 'Andrew James', 'andrew.james@rogers.com', '647-525-8035', 'WALK_IN', 'CANCELLED', 79.98, 10.40, 0.00, 90.38, NULL, 'Customer job note for order #0012', NOW() - INTERVAL '24 hours', NULL),
+(1, 'Michelle Alvarez', 'michelle_alvarez73@apextech.io', '778-368-9486', 'WEB', 'READY FOR PICKUP', 1.25, 0.16, 0.00, 1.41, 'Store Pickup Counter', 'Customer job note for order #0013', NOW() - INTERVAL '26 hours', NULL),
+(2, 'Brian Gagnon', 'brian_gagnon46@apextech.io', '778-593-6939', 'WALK_IN', 'IN PROGRESS', 50.00, 6.50, 0.00, 56.50, NULL, 'Customer job note for order #0014', NOW() - INTERVAL '28 hours', NULL),
+(1, 'Amanda Johnson', 'amanda_johnson@apextech.io', '416-932-1916', 'WEB', 'PENDING', 94.99, 12.35, 0.00, 107.34, 'Store Pickup Counter', 'Customer job note for order #0015', NOW() - INTERVAL '30 hours', NULL),
+(2, 'Vance Consulting Group', 'admin.orders53@apextech.io', '514-447-7385', 'WALK_IN', 'SHIPPED', 299.92, 38.99, 0.00, 338.91, NULL, 'Customer job note for order #0016', NOW() - INTERVAL '32 hours', NOW() - INTERVAL '30 hours'),
+(1, 'Stephanie Thomas', 'stephanie_thomas@outlook.com', '514-886-4433', 'WEB', 'COMPLETED', 189.96, 24.69, 0.00, 214.65, 'Store Pickup Counter', 'Customer job note for order #0017', NOW() - INTERVAL '34 hours', NOW() - INTERVAL '33 hours'),
+(2, 'Jeffrey Thompson', 'jeffrey_thompson31@novadesign.ca', '514-883-8414', 'WALK_IN', 'CANCELLED', 43.49, 5.65, 0.00, 49.14, NULL, 'Customer job note for order #0018', NOW() - INTERVAL '36 hours', NULL),
+(1, 'Laura Robinson', 'laura_robinson@novadesign.ca', '647-889-1248', 'WEB', 'READY FOR PICKUP', 89.98, 11.70, 0.00, 101.68, 'Store Pickup Counter', 'Customer job note for order #0019', NOW() - INTERVAL '38 hours', NULL),
+(2, 'Gary Torres', 'gary_torres24@yahoo.ca', '514-959-5230', 'WALK_IN', 'IN PROGRESS', 89.98, 11.70, 0.00, 101.68, NULL, 'Customer job note for order #0020', NOW() - INTERVAL '40 hours', NULL),
+(1, 'Amy Baker', 'amy_baker@gmail.com', '604-434-6026', 'WEB', 'PENDING', 55.98, 7.28, 0.00, 63.26, 'Store Pickup Counter', 'Customer job note for order #0021', NOW() - INTERVAL '42 hours', NULL),
+(2, 'Jonathan Gomez', 'jonathan.gomez@rogers.com', '604-413-6685', 'WALK_IN', 'SHIPPED', 30.29, 3.94, 0.00, 34.23, NULL, 'Customer job note for order #0022', NOW() - INTERVAL '44 hours', NOW() - INTERVAL '42 hours'),
+(1, 'Harbourfront Retailers', 'admin.orders@apextech.io', '403-974-5070', 'WEB', 'COMPLETED', 179.94, 23.39, 0.00, 203.33, 'Store Pickup Counter', 'Customer job note for order #0023', NOW() - INTERVAL '46 hours', NOW() - INTERVAL '45 hours'),
+(2, 'Justin Cook', 'justincook@rogers.com', '613-591-6134', 'WALK_IN', 'CANCELLED', 5.00, 0.65, 0.00, 5.65, NULL, 'Customer job note for order #0024', NOW() - INTERVAL '48 hours', NULL),
+(1, 'Japan Consulting Canada', 'adminorders83@yahoo.ca', '604-873-9595', 'WEB', 'READY FOR PICKUP', 6.30, 0.82, 0.00, 7.12, 'Store Pickup Counter', 'Customer job note for order #0025', NOW() - INTERVAL '50 hours', NULL),
+(2, 'Benjamin Ward', 'benjamin_ward82@novadesign.ca', '604-733-4450', 'WALK_IN', 'IN PROGRESS', 45.00, 5.85, 0.00, 50.85, NULL, 'Customer job note for order #0026', NOW() - INTERVAL '52 hours', NULL),
+(1, 'Cedar Point Medical', 'admin.orders92@novadesign.ca', '604-476-1067', 'WEB', 'PENDING', 1.25, 0.16, 0.00, 1.41, 'Store Pickup Counter', 'Customer job note for order #0027', NOW() - INTERVAL '54 hours', NULL),
+(2, 'Frank Castillo', 'frank.castillo@novadesign.ca', '403-838-9210', 'WALK_IN', 'SHIPPED', 134.97, 17.55, 0.00, 152.52, NULL, 'Customer job note for order #0028', NOW() - INTERVAL '56 hours', NOW() - INTERVAL '54 hours'),
+(1, 'Debra Bouchard', 'debrabouchard71@bell.net', '514-496-8936', 'WEB', 'COMPLETED', 14.99, 1.95, 0.00, 16.94, 'Store Pickup Counter', 'Customer job note for order #0029', NOW() - INTERVAL '58 hours', NOW() - INTERVAL '57 hours'),
+(2, 'Patrick Williams', 'patrickwilliams@bell.net', '403-911-3490', 'WALK_IN', 'CANCELLED', 34.99, 4.55, 0.00, 39.54, NULL, 'Customer job note for order #0030', NOW() - INTERVAL '60 hours', NULL),
+(1, 'Carolyn Martinez', 'carolynmartinez90@yahoo.ca', '514-877-7443', 'WEB', 'READY FOR PICKUP', 24.99, 3.25, 0.00, 28.24, 'Store Pickup Counter', 'Customer job note for order #0031', NOW() - INTERVAL '62 hours', NULL),
+(2, 'Jerry Taylor', 'jerrytaylor@yahoo.ca', '416-205-4490', 'WALK_IN', 'IN PROGRESS', 34.99, 4.55, 0.00, 39.54, NULL, 'Customer job note for order #0032', NOW() - INTERVAL '64 hours', NULL),
+(1, 'Pacific Chiropractic Health', 'adminorders52@gmail.com', '647-495-3732', 'WEB', 'PENDING', 199.96, 25.99, 0.00, 225.95, 'Store Pickup Counter', 'Customer job note for order #0033', NOW() - INTERVAL '66 hours', NULL),
+(2, 'Jose Walker', 'jose.walker@apextech.io', '613-313-7916', 'WALK_IN', 'SHIPPED', 79.99, 10.40, 0.00, 90.39, NULL, 'Customer job note for order #0034', NOW() - INTERVAL '68 hours', NOW() - INTERVAL '66 hours'),
+(1, 'Noah Nguyen', 'noahnguyen84@gmail.com', '902-792-1698', 'WEB', 'COMPLETED', 39.99, 5.20, 0.00, 45.19, 'Store Pickup Counter', 'Customer job note for order #0035', NOW() - INTERVAL '70 hours', NOW() - INTERVAL '69 hours'),
+(2, 'Ethan Hall', 'ethan_hall99@outlook.com', '604-467-3748', 'WALK_IN', 'CANCELLED', 56.99, 7.41, 0.00, 64.40, NULL, 'Customer job note for order #0036', NOW() - INTERVAL '72 hours', NULL),
+(1, 'Art Gallery of Ontario', 'admin.orders24@bell.net', '416-975-4952', 'WEB', 'READY FOR PICKUP', 160.13, 20.82, 0.00, 180.95, 'Store Pickup Counter', 'Customer job note for order #0037', NOW() - INTERVAL '74 hours', NULL),
+(2, 'James Collins', 'james_collins95@gmail.com', '416-336-5430', 'WALK_IN', 'IN PROGRESS', 14.00, 1.82, 0.00, 15.82, NULL, 'Customer job note for order #0038', NOW() - INTERVAL '76 hours', NULL),
+(1, 'Patricia Rogers', 'patriciarogers@gmail.com', '613-380-3284', 'WEB', 'PENDING', 80.28, 10.44, 0.00, 90.72, 'Store Pickup Counter', 'Customer job note for order #0039', NOW() - INTERVAL '78 hours', NULL),
+(2, 'Michael Reed', 'michael_reed@rogers.com', '902-903-5296', 'WALK_IN', 'SHIPPED', 109.97, 14.30, 0.00, 124.27, NULL, 'Customer job note for order #0040', NOW() - INTERVAL '80 hours', NOW() - INTERVAL '78 hours'),
+(1, 'Elizabeth Richardson', 'elizabeth_richardson@novadesign.ca', '403-866-2554', 'WEB', 'COMPLETED', 194.95, 25.34, 0.00, 220.29, 'Store Pickup Counter', 'Customer job note for order #0041', NOW() - INTERVAL '82 hours', NOW() - INTERVAL '81 hours'),
+(2, 'Vancouver Arts Council', 'admin_orders37@yahoo.ca', '416-296-4939', 'WALK_IN', 'CANCELLED', 105.98, 13.78, 0.00, 119.76, NULL, 'Customer job note for order #0042', NOW() - INTERVAL '84 hours', NULL),
+(1, 'Jessica Sanders', 'jessica.sanders@bell.net', '514-404-7212', 'WEB', 'READY FOR PICKUP', 79.97, 10.40, 0.00, 90.37, 'Store Pickup Counter', 'Customer job note for order #0043', NOW() - INTERVAL '86 hours', NULL),
+(2, 'Charles Cote', 'charles.cote@apextech.io', '778-243-8394', 'WALK_IN', 'IN PROGRESS', 99.96, 12.99, 0.00, 112.95, NULL, 'Customer job note for order #0044', NOW() - INTERVAL '88 hours', NULL),
+(1, 'Nancy Brown', 'nancybrown60@novadesign.ca', '416-951-3759', 'WEB', 'PENDING', 139.96, 18.19, 0.00, 158.15, 'Store Pickup Counter', 'Customer job note for order #0045', NOW() - INTERVAL '90 hours', NULL),
+(2, 'Matthew Hernandez', 'matthewhernandez@gmail.com', '647-393-1709', 'WALK_IN', 'SHIPPED', 349.95, 45.49, 0.00, 395.44, NULL, 'Customer job note for order #0046', NOW() - INTERVAL '92 hours', NOW() - INTERVAL '90 hours'),
+(1, 'Granville Street Pub', 'adminorders34@novadesign.ca', '416-994-6728', 'WEB', 'COMPLETED', 59.98, 7.80, 0.00, 67.78, 'Store Pickup Counter', 'Customer job note for order #0047', NOW() - INTERVAL '94 hours', NOW() - INTERVAL '93 hours'),
+(2, 'Donald Harris', 'donaldharris5@apextech.io', '416-769-8781', 'WALK_IN', 'CANCELLED', 6.00, 0.78, 0.00, 6.78, NULL, 'Customer job note for order #0048', NOW() - INTERVAL '96 hours', NULL),
+(1, 'Pacific Chiropractic Health', 'admin_orders45@bell.net', '778-677-3743', 'WEB', 'READY FOR PICKUP', 204.96, 26.64, 0.00, 231.60, 'Store Pickup Counter', 'Customer job note for order #0049', NOW() - INTERVAL '98 hours', NULL),
+(2, 'Andrew Hill', 'andrew.hill@rogers.com', '902-308-6468', 'WALK_IN', 'IN PROGRESS', 59.98, 7.80, 0.00, 67.78, NULL, 'Customer job note for order #0050', NOW() - INTERVAL '100 hours', NULL);
 
 -- 4. Print Order Items
 INSERT INTO print_order_items (print_order_id, service_id, description, quantity, unit_price) VALUES
--- Order 1 (Sarah Jenkins - 2x Business Cards)
-(1, 4, 'Premium Matte Business Cards (500) - Front/Back Color', 2, 29.99),
-
--- Order 2 (Michael Chang - Banner + Poster)
-(2, 7, 'Outdoor Vinyl Banner 3x6 ft - Grommets Every 2ft', 1, 79.99),
-(2, 8, 'Foam Board Presentation Poster 24x36 - Matte Laminated', 1, 44.99),
-
--- Order 3 (David Miller - Business Cards)
-(3, 4, 'Premium Matte Business Cards (500) - Standard Template', 1, 29.99),
-
--- Order 4 (Elena Rostova - 2x Posters)
-(4, 8, 'Foam Board Presentation Poster 24x36 - High Resolution Photo', 2, 44.99),
-
--- Order 5 (TechCorp Ventures - Banners + Manuals + Cards)
-(5, 7, 'Outdoor Vinyl Banner 3x6 ft', 2, 79.99),
-(5, 3, 'Spiral Bound Training Manual - 50 Pages Color', 6, 14.99),
-(5, 4, 'Premium Matte Business Cards (500)', 1, 49.86),
-
--- Order 6 (Marcus Vance - Cancelled Poster)
-(6, 8, 'Foam Board Presentation Poster 24x36', 1, 44.99),
-
--- Order 7 (Rachel Adams - Postcards + Brochures)
-(7, 6, 'Event Postcards 4x6 (250) - Gloss Finish', 1, 34.99),
-(7, 12, 'Custom Die-Cut Vinyl Stickers (100) - 2" Circle', 1, 39.99),
-
--- Order 8 (Green Earth Landscaping - 4x Yard Signs)
-(8, 9, 'Heavy-Duty Yard Sign 18x24 - Dual Sided with Stake', 4, 24.99),
-
--- Order 9 (Robert Tremblay - Training Manual + Coil)
-(9, 3, 'Spiral Bound Training Manual - 30 Pages B&W', 1, 14.99),
-(9, 10, 'High-Gloss Lamination (Menu Size)', 1, 3.50),
-
--- Order 10 (Amanda Flores - Foam Board Poster)
-(10, 8, 'Foam Board Presentation Poster 24x36 - Color Gloss', 1, 44.99),
-
--- Order 11 (James Wilson - Brochures + Yard Signs)
-(11, 5, 'Glossy Tri-Fold Brochures (100)', 2, 49.99),
-(11, 9, 'Heavy-Duty Yard Sign 18x24', 2, 24.99),
-
--- Order 12 (Sophia Chen - Binding & Presentation)
-(12, 2, 'Full Color Presentation Printing - 12 Double-Sided Pages', 1, 15.00),
-(12, 11, 'Twin Loop Wire Binding - Black Metal', 1, 6.00),
-
--- Order 13 (Apex Dental - 2x Business Cards)
-(13, 4, 'Premium Matte Business Cards (500) - Appointment Back', 2, 29.99),
-
--- Order 14 (Carlos Ramirez - 10x Laminated Menus)
-(14, 10, 'High-Gloss Lamination (Menu Size) - 5mil Sealed', 10, 3.50),
-
--- Order 15 (Pacific Coast Logistics - 2x Outdoor Banners)
-(15, 7, 'Outdoor Vinyl Banner 3x6 ft - Weatherproof Hemming', 2, 79.99),
-
--- Order 16 (Kendra Scott - Outdoor Banner)
-(16, 7, 'Outdoor Vinyl Banner 3x6 ft', 1, 79.99),
-
--- Order 17 (Liam O'Connor - Tri-Fold Brochures)
-(17, 5, 'Glossy Tri-Fold Brochures (100) - Dine-In Menu', 1, 49.99),
-
--- Order 18 (Harbourfront Retailers - 3x Banners)
-(18, 7, 'Outdoor Vinyl Banner 3x6 ft - Grand Opening', 3, 79.99),
-
--- Order 19 (Dr. Emily Watson - 2x Posters)
+(1, 9, 'Heavy-Duty Yard Sign 18x24', 2, 24.99),
+(2, 6, 'Event Postcards 4x6 (250)', 1, 34.99),
+(3, 10, 'High-Gloss Lamination (Menu Size)', 2, 3.50),
+(4, 11, 'Twin Loop Wire Binding (per book)', 1, 6.00),
+(4, 6, 'Event Postcards 4x6 (250)', 4, 34.99),
+(5, 1, 'Standard B&W Printing (Letter)', 1, 0.15),
+(5, 7, 'Outdoor Vinyl Banner 3x6 ft', 4, 79.99),
+(6, 7, 'Outdoor Vinyl Banner 3x6 ft', 2, 79.99),
+(6, 9, 'Heavy-Duty Yard Sign 18x24', 2, 24.99),
+(7, 9, 'Heavy-Duty Yard Sign 18x24', 1, 24.99),
+(8, 9, 'Heavy-Duty Yard Sign 18x24', 1, 24.99),
+(9, 9, 'Heavy-Duty Yard Sign 18x24', 1, 24.99),
+(9, 6, 'Event Postcards 4x6 (250)', 2, 34.99),
+(10, 2, 'Full Color Presentation Printing', 4, 1.25),
+(11, 6, 'Event Postcards 4x6 (250)', 2, 34.99),
+(12, 6, 'Event Postcards 4x6 (250)', 1, 34.99),
+(12, 8, 'Foam Board Presentation Poster 24x36', 1, 44.99),
+(13, 2, 'Full Color Presentation Printing', 1, 1.25),
+(14, 13, 'Custom Branded Notepads (50 sheets, 5pk)', 2, 22.50),
+(14, 2, 'Full Color Presentation Printing', 4, 1.25),
+(15, 5, 'Glossy Tri-Fold Brochures (100)', 1, 49.99),
+(15, 13, 'Custom Branded Notepads (50 sheets, 5pk)', 2, 22.50),
+(16, 6, 'Event Postcards 4x6 (250)', 4, 34.99),
+(16, 12, 'Custom Die-Cut Vinyl Stickers (100)', 4, 39.99),
+(17, 7, 'Outdoor Vinyl Banner 3x6 ft', 2, 79.99),
+(17, 3, 'Spiral Bound Training Manual', 2, 14.99),
+(18, 10, 'High-Gloss Lamination (Menu Size)', 1, 3.50),
+(18, 12, 'Custom Die-Cut Vinyl Stickers (100)', 1, 39.99),
 (19, 8, 'Foam Board Presentation Poster 24x36', 2, 44.99),
-
--- Order 20 (Whistler Snow Tours - Banner)
-(20, 7, 'Outdoor Vinyl Banner 3x6 ft', 1, 79.99),
-
--- Order 21 (Studio 9 Architecture - 3x Posters)
-(21, 8, 'Foam Board Presentation Poster 24x36 - Floor Plans', 3, 44.99),
-
--- Order 22 (Taro Tanaka - Business Cards)
-(22, 4, 'Premium Matte Business Cards (500) - Japanese Font Proofed', 1, 29.99),
-
--- Order 23 (Zoe Washington - Postcards + Stickers)
-(23, 6, 'Event Postcards 4x6 (250)', 1, 34.99),
-(23, 6, 'Event Postcards 4x6 (250) - Artist Bio', 1, 34.99),
-
--- Order 24 (Bradley Cooper - 12x Laminated Menus)
-(24, 10, 'High-Gloss Lamination (Menu Size)', 12, 3.50),
-
--- Order 25 (Grace Murray - Presentation Printing)
-(25, 2, 'Full Color Presentation Printing - 12 Pages', 1, 15.00),
-
--- Order 26 (West End Bakery - 2x Custom Stickers)
-(26, 12, 'Custom Die-Cut Vinyl Stickers (100) - Gold Foil Accent', 2, 39.99);
+(20, 8, 'Foam Board Presentation Poster 24x36', 2, 44.99),
+(21, 9, 'Heavy-Duty Yard Sign 18x24', 2, 24.99),
+(21, 11, 'Twin Loop Wire Binding (per book)', 1, 6.00),
+(22, 4, 'Premium Matte Business Cards (500)', 1, 29.99),
+(22, 1, 'Standard B&W Printing (Letter)', 2, 0.15),
+(23, 9, 'Heavy-Duty Yard Sign 18x24', 4, 24.99),
+(23, 12, 'Custom Die-Cut Vinyl Stickers (100)', 2, 39.99),
+(24, 2, 'Full Color Presentation Printing', 4, 1.25),
+(25, 1, 'Standard B&W Printing (Letter)', 2, 0.15),
+(25, 11, 'Twin Loop Wire Binding (per book)', 1, 6.00),
+(26, 13, 'Custom Branded Notepads (50 sheets, 5pk)', 2, 22.50),
+(27, 2, 'Full Color Presentation Printing', 1, 1.25),
+(28, 6, 'Event Postcards 4x6 (250)', 1, 34.99),
+(28, 5, 'Glossy Tri-Fold Brochures (100)', 2, 49.99),
+(29, 3, 'Spiral Bound Training Manual', 1, 14.99),
+(30, 6, 'Event Postcards 4x6 (250)', 1, 34.99),
+(31, 9, 'Heavy-Duty Yard Sign 18x24', 1, 24.99),
+(32, 6, 'Event Postcards 4x6 (250)', 1, 34.99),
+(33, 5, 'Glossy Tri-Fold Brochures (100)', 4, 49.99),
+(34, 7, 'Outdoor Vinyl Banner 3x6 ft', 1, 79.99),
+(35, 12, 'Custom Die-Cut Vinyl Stickers (100)', 1, 39.99),
+(36, 5, 'Glossy Tri-Fold Brochures (100)', 1, 49.99),
+(36, 10, 'High-Gloss Lamination (Menu Size)', 2, 3.50),
+(37, 1, 'Standard B&W Printing (Letter)', 1, 0.15),
+(37, 7, 'Outdoor Vinyl Banner 3x6 ft', 2, 79.99),
+(38, 10, 'High-Gloss Lamination (Menu Size)', 4, 3.50),
+(39, 12, 'Custom Die-Cut Vinyl Stickers (100)', 2, 39.99),
+(39, 1, 'Standard B&W Printing (Letter)', 2, 0.15),
+(40, 12, 'Custom Die-Cut Vinyl Stickers (100)', 2, 39.99),
+(40, 4, 'Premium Matte Business Cards (500)', 1, 29.99),
+(41, 12, 'Custom Die-Cut Vinyl Stickers (100)', 4, 39.99),
+(41, 6, 'Event Postcards 4x6 (250)', 1, 34.99),
+(42, 11, 'Twin Loop Wire Binding (per book)', 1, 6.00),
+(42, 5, 'Glossy Tri-Fold Brochures (100)', 2, 49.99),
+(43, 9, 'Heavy-Duty Yard Sign 18x24', 2, 24.99),
+(43, 4, 'Premium Matte Business Cards (500)', 1, 29.99),
+(44, 9, 'Heavy-Duty Yard Sign 18x24', 4, 24.99),
+(45, 6, 'Event Postcards 4x6 (250)', 4, 34.99),
+(46, 4, 'Premium Matte Business Cards (500)', 1, 29.99),
+(46, 7, 'Outdoor Vinyl Banner 3x6 ft', 4, 79.99),
+(47, 6, 'Event Postcards 4x6 (250)', 1, 34.99),
+(47, 9, 'Heavy-Duty Yard Sign 18x24', 1, 24.99),
+(48, 11, 'Twin Loop Wire Binding (per book)', 1, 6.00),
+(49, 12, 'Custom Die-Cut Vinyl Stickers (100)', 4, 39.99),
+(49, 13, 'Custom Branded Notepads (50 sheets, 5pk)', 2, 22.50),
+(50, 4, 'Premium Matte Business Cards (500)', 2, 29.99);

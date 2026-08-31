@@ -1,2 +1,4 @@
 graphify-out/
 subagents.json
+__pycache__/
+*.pyc

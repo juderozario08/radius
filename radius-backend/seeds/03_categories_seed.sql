@@ -1,16 +1,21 @@
+-- ==============================================================================
+-- 03_categories_seed.sql
+-- Product categories catalog
+-- ==============================================================================
+
 INSERT INTO categories (name) VALUES
-('Category 1'),
-('Category 2'),
-('Category 3'),
-('Category 4'),
-('Category 5'),
-('Category 6'),
-('Category 7'),
-('Category 8'),
-('Category 9'),
-('Category 10'),
-('Category 11'),
-('Category 12'),
-('Category 13'),
-('Category 14'),
-('Category 15');
+('Office Supplies'),
+('Paper & Stationery'),
+('Ink & Toner'),
+('Technology & Electronics'),
+('Desk Accessories'),
+('Breakroom & Cleaning'),
+('Furniture & Lighting'),
+('Mailing & Shipping Supplies'),
+('School & Art Supplies'),
+('Printers & Scanners'),
+('Audio & Headphones'),
+('Storage & Organization'),
+('Cables & Adapters'),
+('Computer Peripherals'),
+('Presentation & Boards');

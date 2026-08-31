@@ -1,4 +1,8 @@
--- Completely wipes all data from the database and restarts IDs
+-- ==============================================================================
+-- 00_wipe_database.sql
+-- Completely wipes all dynamic table data and restarts IDs (Preserves Stores & Employees)
+-- ==============================================================================
+
 TRUNCATE TABLE 
     categories,
     suppliers,

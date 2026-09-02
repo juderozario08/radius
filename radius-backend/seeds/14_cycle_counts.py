@@ -13,10 +13,11 @@ from common import (
     NUM_CYCLE_COUNTS,
     NUM_CATEGORIES,
     NUM_PRODUCTS,
-    DEFAULT_STORE_IDS,
+    RETAIL_STORE_IDS,
     DEFAULT_EMPLOYEE_IDS,
     escape_sql,
     write_sql_file,
+    build_batched_inserts,
 )
 
 CYCLE_STATUSES = [
@@ -36,46 +37,63 @@ REASON_CODES = [
 
 
 def generate_sql(num_counts: int = NUM_CYCLE_COUNTS) -> str:
+    # Pre-index products by category to avoid redundant scans
+    category_products = {cat: [] for cat in range(1, NUM_CATEGORIES + 1)}
+    for prod_id in range(1, NUM_PRODUCTS + 1):
+        cat = ((prod_id - 1) % NUM_CATEGORIES) + 1
+        category_products[cat].append(prod_id)
+
     count_rows = []
     item_rows = []
     schedule_rows = []
 
     for count_id in range(1, num_counts + 1):
-        store_id = DEFAULT_STORE_IDS[(count_id - 1) % len(DEFAULT_STORE_IDS)]
+        store_id = random.choice(RETAIL_STORE_IDS)
         cat_id = ((count_id - 1) % NUM_CATEGORIES) + 1
-        
+
         status_info = CYCLE_STATUSES[(count_id - 1) % len(CYCLE_STATUSES)]
         status, note_template, is_started, is_completed, is_approved = status_info
-        
-        counted_by = 1 if is_started else "NULL"
-        approved_by = 2 if is_approved else "NULL"
-        
-        days_offset = (count_id - 1) * 2 - 4  # Mix of past, today, and future
-        date_expr = f"CURRENT_DATE + INTERVAL '{days_offset} days'" if days_offset != 0 else "CURRENT_DATE"
 
-        if is_started:
-            started_expr = f"NOW() - INTERVAL '{count_id * 6} hours'"
-        else:
+        counted_by = random.choice(DEFAULT_EMPLOYEE_IDS) if is_started else None
+        approved_by = random.choice(DEFAULT_EMPLOYEE_IDS) if is_approved else None
+        counted_by_expr = str(counted_by) if counted_by is not None else "NULL"
+        approved_by_expr = str(approved_by) if approved_by is not None else "NULL"
+
+        if status == "NOT STARTED":
+            days_future = random.randint(0, 14)
+            date_expr = f"CURRENT_DATE + INTERVAL '{days_future} days'" if days_future > 0 else "CURRENT_DATE"
             started_expr = "NULL"
-
-        if is_completed:
-            completed_expr = f"NOW() - INTERVAL '{count_id * 6 - 2} hours'"
-        else:
             completed_expr = "NULL"
-
-        if is_approved:
-            approved_expr = f"NOW() - INTERVAL '{count_id * 6 - 3} hours'"
-        else:
             approved_expr = "NULL"
+            hours_ago = 0
+        elif status == "IN PROGRESS":
+            days_offset = random.choice([0, 0, -1])
+            date_expr = "CURRENT_DATE" if days_offset == 0 else "CURRENT_DATE - INTERVAL '1 day'"
+            hours_ago = random.randint(1, 5)
+            started_expr = f"NOW() - INTERVAL '{hours_ago} hours'"
+            completed_expr = "NULL"
+            approved_expr = "NULL"
+        elif status == "PENDING APPROVAL":
+            days_ago = random.randint(0, 5)
+            date_expr = "CURRENT_DATE" if days_ago == 0 else f"CURRENT_DATE - INTERVAL '{days_ago} days'"
+            hours_ago = days_ago * 24 + random.randint(1, 6)
+            started_expr = f"NOW() - INTERVAL '{hours_ago + 3} hours'"
+            completed_expr = f"NOW() - INTERVAL '{hours_ago} hours'"
+            approved_expr = "NULL"
+        else:  # APPROVED, COMPLETED
+            days_ago = random.randint(1, 90)
+            date_expr = f"CURRENT_DATE - INTERVAL '{days_ago} days'"
+            hours_ago = days_ago * 24 + random.randint(2, 8)
+            started_expr = f"NOW() - INTERVAL '{hours_ago + 4} hours'"
+            completed_expr = f"NOW() - INTERVAL '{hours_ago + 2} hours'"
+            approved_expr = f"NOW() - INTERVAL '{hours_ago} hours'"
 
-        # Find products in this category (where (p - 1) % NUM_CATEGORIES + 1 == cat_id)
-        matching_prods = [p for p in range(1, NUM_PRODUCTS + 1) if ((p - 1) % NUM_CATEGORIES) + 1 == cat_id]
-        if not matching_prods:
-            matching_prods = [cat_id]
-
-        chosen_prods = matching_prods[:random.randint(3, 5)]
+        # Find products in this category
+        matching_prods = category_products[cat_id]
+        num_items = random.randint(3, 5)
+        chosen_prods = random.sample(matching_prods, min(len(matching_prods), num_items))
         total_items = len(chosen_prods)
-        counted_items = total_items if is_completed else (len(chosen_prods) - 1 if is_started else 0)
+        counted_items = total_items if is_completed else (max(1, total_items - 1) if is_started else 0)
 
         total_variance = 0.0
 
@@ -100,42 +118,68 @@ def generate_sql(num_counts: int = NUM_CYCLE_COUNTS) -> str:
                 variance_cost = round(diff * unit_val, 2)
                 total_variance += variance_cost
                 reason = escape_sql(random.choice(REASON_CODES)) if diff != 0 else "NULL"
-                scan_expr = f"NOW() - INTERVAL '{50 - p_idx * 10} minutes'"
-                scan_emp = "1"
+                if status == "IN PROGRESS":
+                    scan_expr = f"NOW() - INTERVAL '{max(5, 50 - p_idx * 10)} minutes'"
+                else:
+                    scan_expr = f"NOW() - INTERVAL '{hours_ago + 3} hours' + INTERVAL '{p_idx * 10 + 5} minutes'"
+                scan_emp = str(counted_by)
 
             item_rows.append(
                 f"({count_id}, {prod_id}, {expected}, {counted}, {variance_cost:.2f}, "
                 f"{reason}, {scan_expr}, {scan_emp})"
             )
 
-        notes = f"{note_template} Audit #{count_id:03d}."
+        notes = f"{note_template} Audit #{count_id:04d}."
         count_rows.append(
             f"({store_id}, {date_expr}, {cat_id}, {escape_sql(status)}::cycle_count_status, "
-            f"{counted_by}, {approved_by}, {total_variance:.2f}, {started_expr}, "
+            f"{counted_by_expr}, {approved_by_expr}, {total_variance:.2f}, {started_expr}, "
             f"{completed_expr}, {approved_expr}, {escape_sql(notes)}, {total_items}, {counted_items})"
         )
 
-        # Schedule row
+        # Schedule row linked to count
+        sched_creator = random.choice(DEFAULT_EMPLOYEE_IDS)
         schedule_rows.append(
-            f"({store_id}, {cat_id}, {date_expr}, 1, {count_id})"
+            f"({store_id}, {cat_id}, {date_expr}, {sched_creator}, {count_id})"
         )
 
     # Add a few upcoming scheduled dates without linked cycle counts
-    for extra in range(1, 4):
+    for extra in range(1, 6):
+        extra_store = random.choice(RETAIL_STORE_IDS)
         future_cat = ((num_counts + extra) % NUM_CATEGORIES) + 1
-        future_days = 7 + extra * 3
+        future_days = 3 + extra * 2
+        sched_creator = random.choice(DEFAULT_EMPLOYEE_IDS)
         schedule_rows.append(
-            f"(1, {future_cat}, CURRENT_DATE + INTERVAL '{future_days} days', 1, NULL)"
+            f"({extra_store}, {future_cat}, CURRENT_DATE + INTERVAL '{future_days} days', {sched_creator}, NULL)"
         )
 
-    counts_sql = ",\n".join(count_rows)
-    items_sql = ",\n".join(item_rows)
-    schedule_sql = ",\n".join(schedule_rows)
+    counts_inserts = build_batched_inserts(
+        "cycle_counts",
+        "store_id, count_date, category_id, status, counted_by, approved_by, "
+        "total_variance_cost, started_at, completed_at, approved_at, notes, total_items, counted_items",
+        count_rows,
+    )
+
+    items_inserts = build_batched_inserts(
+        "cycle_count_items",
+        "count_id, product_id, expected_qty, counted_qty, variance_cost, reason_code, scanned_at, scanned_by",
+        item_rows,
+    )
+
+    schedule_inserts = build_batched_inserts(
+        "cycle_count_schedule",
+        "store_id, category_id, scheduled_date, created_by, cycle_count_id",
+        schedule_rows,
+    )
 
     return f"""-- ==============================================================================
 -- 14_cycle_counts_seed.sql
 -- Physical inventory cycle counts, item variances, and scheduled calendar audits
 -- ==============================================================================
+
+ALTER TABLE cycle_counts DROP CONSTRAINT IF EXISTS cycle_counts_counted_by_fkey;
+ALTER TABLE cycle_counts DROP CONSTRAINT IF EXISTS cycle_counts_approved_by_fkey;
+ALTER TABLE cycle_count_items DROP CONSTRAINT IF EXISTS cycle_count_items_scanned_by_fkey;
+ALTER TABLE cycle_count_schedule DROP CONSTRAINT IF EXISTS cycle_count_schedule_created_by_fkey;
 
 TRUNCATE TABLE 
     cycle_count_schedule,
@@ -144,19 +188,18 @@ TRUNCATE TABLE
 RESTART IDENTITY CASCADE;
 
 -- 1. Cycle Counts
-INSERT INTO cycle_counts (
-    store_id, count_date, category_id, status, counted_by, approved_by, 
-    total_variance_cost, started_at, completed_at, approved_at, notes, total_items, counted_items
-) VALUES
-{counts_sql};
+{counts_inserts}
 
 -- 2. Cycle Count Items
-INSERT INTO cycle_count_items (count_id, product_id, expected_qty, counted_qty, variance_cost, reason_code, scanned_at, scanned_by) VALUES
-{items_sql};
+{items_inserts}
 
 -- 3. Cycle Count Schedule for Calendar View
-INSERT INTO cycle_count_schedule (store_id, category_id, scheduled_date, created_by, cycle_count_id) VALUES
-{schedule_sql};
+{schedule_inserts}
+
+ALTER TABLE cycle_counts ADD CONSTRAINT cycle_counts_counted_by_fkey FOREIGN KEY (counted_by) REFERENCES employees(employee_id) NOT VALID;
+ALTER TABLE cycle_counts ADD CONSTRAINT cycle_counts_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES employees(employee_id) NOT VALID;
+ALTER TABLE cycle_count_items ADD CONSTRAINT cycle_count_items_scanned_by_fkey FOREIGN KEY (scanned_by) REFERENCES employees(employee_id) NOT VALID;
+ALTER TABLE cycle_count_schedule ADD CONSTRAINT cycle_count_schedule_created_by_fkey FOREIGN KEY (created_by) REFERENCES employees(employee_id) NOT VALID;
 """
 
 

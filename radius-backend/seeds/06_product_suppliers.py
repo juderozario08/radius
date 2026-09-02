@@ -14,6 +14,7 @@ from common import (
     NUM_SUPPLIERS,
     escape_sql,
     write_sql_file,
+    build_batched_inserts,
 )
 
 
@@ -39,14 +40,20 @@ def generate_sql(num_products: int = NUM_PRODUCTS, num_suppliers: int = NUM_SUPP
             sec_cost = round(cost_price * random.uniform(1.02, 1.15), 2)
             rows.append(f"({product_id}, {sec_supplier_id}, {escape_sql(sec_sku)}, {sec_cost:.2f}, false)")
 
-    values_str = ",\n".join(rows)
+    inserts_sql = build_batched_inserts(
+        table="product_suppliers",
+        columns="product_id, supplier_id, supplier_sku, cost_price, is_primary",
+        rows=rows,
+    )
+
     return f"""-- ==============================================================================
 -- 06_product_suppliers_seed.sql
 -- Mapping between products and wholesale suppliers (Primary & Secondary vendors)
 -- ==============================================================================
 
-INSERT INTO product_suppliers (product_id, supplier_id, supplier_sku, cost_price, is_primary) VALUES
-{values_str};
+TRUNCATE TABLE product_suppliers RESTART IDENTITY CASCADE;
+
+{inserts_sql}
 """
 
 

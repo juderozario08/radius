@@ -4,6 +4,7 @@ Generator for 04_suppliers_seed.sql
 Generates wholesale supplier vendors.
 """
 
+import re
 import sys
 import random
 from pathlib import Path
@@ -12,16 +13,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (
     NUM_SUPPLIERS,
     SUPPLIERS_LIST,
-    COMPANY_NAMES,
     random_phone,
     escape_sql,
     write_sql_file,
+    build_batched_inserts,
+    fake,
 )
 
 
 def generate_sql(num_suppliers: int = NUM_SUPPLIERS) -> str:
     rows = []
-    
+    seen_names = set()
+
     for i in range(num_suppliers):
         if i < len(SUPPLIERS_LIST):
             supp = SUPPLIERS_LIST[i]
@@ -29,9 +32,15 @@ def generate_sql(num_suppliers: int = NUM_SUPPLIERS) -> str:
             email = supp["email"]
             phone = supp["phone"]
             lead_time = supp["lead_time"]
+            seen_names.add(name)
         else:
-            name = f"{random.choice(COMPANY_NAMES)} Corp"
-            slug = name.lower().replace(" ", "").replace("&", "")
+            comp = fake.company() if fake else f"Vendor {i + 1}"
+            name = f"{comp} Distribution"
+            if name in seen_names:
+                name = f"{comp} {i + 1} Distribution"
+            seen_names.add(name)
+
+            slug = re.sub(r"[^a-z0-9]", "", comp.lower())[:30]
             email = f"orders@{slug}.ca"
             phone = random_phone("1-800")
             lead_time = random.randint(3, 8)
@@ -39,14 +48,16 @@ def generate_sql(num_suppliers: int = NUM_SUPPLIERS) -> str:
         row_str = f"({escape_sql(name)}, {escape_sql(email)}, {escape_sql(phone)}, {lead_time})"
         rows.append(row_str)
 
-    values_str = ",\n".join(rows)
+    inserts_sql = build_batched_inserts("suppliers", "name, contact_email, phone, lead_time_days", rows)
+
     return f"""-- ==============================================================================
 -- 04_suppliers_seed.sql
--- Supplier vendors for purchasing and replenishment
+-- Wholesale supplier vendors for purchasing and replenishment
 -- ==============================================================================
 
-INSERT INTO suppliers (name, contact_email, phone, lead_time_days) VALUES
-{values_str};
+TRUNCATE TABLE suppliers RESTART IDENTITY CASCADE;
+
+{inserts_sql}
 """
 
 

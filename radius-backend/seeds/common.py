@@ -1,6 +1,6 @@
 """
 Common utilities, configuration, and data pools for Radius seed generators.
-Pure Python standard library with zero external dependencies.
+Uses Faker for high-volume realistic data generation.
 """
 
 import os
@@ -12,23 +12,42 @@ from typing import Any, List, Optional, Tuple
 
 SEEDS_DIR = Path(__file__).resolve().parent
 
-# Default High-Volume Configurations
+try:
+    from faker import Faker
+    fake = Faker('en_CA')
+    Faker.seed(42)
+    random.seed(42)
+except ImportError:
+    fake = None
+
+# ==============================================================================
+# High-Volume Data Generation Constants
+# ==============================================================================
 NUM_CATEGORIES = 15
-NUM_SUPPLIERS = 15
-NUM_PRODUCTS = 240
-NUM_PREFERRED_MEMBERS = 100
-NUM_PURCHASE_ORDERS = 40
-NUM_STOCK_TRANSFERS = 30
-NUM_TRANSACTIONS = 120
-NUM_ONLINE_ORDERS = 80
-NUM_PRINT_SERVICES = 13
-NUM_PRINT_ORDERS = 50
-NUM_CYCLE_COUNTS = 20
+NUM_SUPPLIERS = 100
+NUM_PRODUCTS = 10000
+NUM_PREFERRED_MEMBERS = 2000
+NUM_PURCHASE_ORDERS = 2000
+NUM_STOCK_TRANSFERS = 2000
+NUM_TRANSACTIONS = 50000
+NUM_ONLINE_ORDERS = 5000
+NUM_PRINT_ORDERS = 5000
+NUM_CYCLE_COUNTS = 1000
 
 # Store & Employee IDs
-DEFAULT_STORE_IDS = [1, 2]
-ALL_STORE_IDS = [1, 2, 3, 4, 5, 6, 7, 8]  # Matching 01_stores_seed
+# Store 1 is the Head Office — NO transactions, transfers, or purchase orders
+ALL_STORE_IDS = [1, 2, 3, 4, 5, 6, 7]
+RETAIL_STORE_IDS = [2, 3, 4, 5, 6, 7]  # Excludes Head Office
 DEFAULT_EMPLOYEE_IDS = [1, 2, 3, 4]
+
+# Batch size for chunked INSERT statements to avoid memory issues
+INSERT_BATCH_SIZE = 1000
+
+
+def chunk_list(lst: list, n: int):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
 
 
 def escape_sql(val: Any) -> str:
@@ -52,6 +71,22 @@ def write_sql_file(filename: str, content: str) -> Path:
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(content.strip() + "\n")
     return out_path
+
+
+def build_batched_inserts(
+    table: str,
+    columns: str,
+    rows: List[str],
+    batch_size: int = INSERT_BATCH_SIZE,
+    on_conflict: str = "",
+) -> str:
+    """Build multiple INSERT statements from rows, batched to avoid huge single queries."""
+    statements = []
+    conflict_str = f"\n{on_conflict}" if on_conflict else ""
+    for chunk in chunk_list(rows, batch_size):
+        values_str = ",\n".join(chunk)
+        statements.append(f"INSERT INTO {table} ({columns}) VALUES\n{values_str}{conflict_str};")
+    return "\n\n".join(statements)
 
 
 # ==============================================================================

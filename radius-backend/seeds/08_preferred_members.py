@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Generator for 08_preferred_members_seed.sql
-Generates customer loyalty and preferred member accounts.
+Generates customer loyalty and preferred member accounts using Faker.
 """
 
 import sys
@@ -11,45 +11,39 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (
     NUM_PREFERRED_MEMBERS,
-    FIRST_NAMES,
-    LAST_NAMES,
-    random_email,
     random_phone,
     random_date,
     escape_sql,
     write_sql_file,
+    build_batched_inserts,
+    fake,
 )
 
 TIERS = ["BRONZE", "SILVER", "GOLD", "PLATINUM"]
+EMAIL_DOMAINS = ["gmail.com", "outlook.com", "yahoo.ca", "rogers.com"]
 
 
 def generate_sql(num_members: int = NUM_PREFERRED_MEMBERS) -> str:
     rows = []
-    used_emails = set()
-    used_phones = set()
 
-    for i in range(num_members):
-        first = FIRST_NAMES[i % len(FIRST_NAMES)]
-        last = LAST_NAMES[(i * 3 + 7) % len(LAST_NAMES)]
-        
-        # Ensure unique email
-        email = random_email(first, last)
-        counter = 1
-        while email in used_emails:
-            email = random_email(first, f"{last}{counter}")
-            counter += 1
-        used_emails.add(email)
+    for i in range(1, num_members + 1):
+        if fake:
+            first = fake.first_name()
+            last = fake.last_name()
+        else:
+            first = f"MemberFirst{i}"
+            last = f"MemberLast{i}"
 
-        # Ensure unique phone
+        clean_first = first.lower().replace("'", "").replace(" ", "").replace("-", "")
+        clean_last = last.lower().replace("'", "").replace(" ", "").replace("-", "")
+        email_domain = random.choice(EMAIL_DOMAINS)
+        email = f"{clean_first}.{clean_last}{i}@{email_domain}"
+
         phone = random_phone()
-        while phone in used_phones:
-            phone = random_phone()
-        used_phones.add(phone)
-
         is_active = True
-        joined_date = random_date(start_days_ago=1000, end_days_ago=30).isoformat()
+        joined_date = random_date(1000, 30)
         tier = random.choices(TIERS, weights=[40, 30, 20, 10])[0]
-        points = random.randint(100, 5000) if tier != "BRONZE" else random.randint(0, 500)
+        points = random.randint(0, 500) if tier == "BRONZE" else random.randint(100, 5000)
 
         row_str = (
             f"({escape_sql(first)}, {escape_sql(last)}, {escape_sql(email)}, "
@@ -58,7 +52,9 @@ def generate_sql(num_members: int = NUM_PREFERRED_MEMBERS) -> str:
         )
         rows.append(row_str)
 
-    values_str = ",\n".join(rows)
+    columns = "first_name, last_name, email, phone, is_active, joined_date, tier_level, points_balance"
+    inserts_sql = build_batched_inserts("preferred_members", columns, rows)
+
     return f"""-- ==============================================================================
 -- 08_preferred_members_seed.sql
 -- Preferred customer loyalty members and reward tiers
@@ -66,8 +62,7 @@ def generate_sql(num_members: int = NUM_PREFERRED_MEMBERS) -> str:
 
 TRUNCATE TABLE preferred_members RESTART IDENTITY CASCADE;
 
-INSERT INTO preferred_members (first_name, last_name, email, phone, is_active, joined_date, tier_level, points_balance) VALUES
-{values_str};
+{inserts_sql}
 """
 
 

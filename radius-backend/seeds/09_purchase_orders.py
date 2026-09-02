@@ -13,10 +13,11 @@ from common import (
     NUM_PURCHASE_ORDERS,
     NUM_SUPPLIERS,
     NUM_PRODUCTS,
-    DEFAULT_STORE_IDS,
+    RETAIL_STORE_IDS,
     DEFAULT_EMPLOYEE_IDS,
     escape_sql,
     write_sql_file,
+    build_batched_inserts,
 )
 
 PO_STATUSES = ["RECEIVED", "RECEIVED", "SHIPPED", "DELIVERING", "DELIVERED", "PARTIAL", "DRAFT"]
@@ -27,17 +28,17 @@ def generate_sql(num_pos: int = NUM_PURCHASE_ORDERS) -> str:
     item_rows = []
 
     for po_id in range(1, num_pos + 1):
-        store_id = DEFAULT_STORE_IDS[(po_id - 1) % len(DEFAULT_STORE_IDS)]
-        supplier_id = ((po_id - 1) % NUM_SUPPLIERS) + 1
-        status = PO_STATUSES[(po_id - 1) % len(PO_STATUSES)]
-        created_by = DEFAULT_EMPLOYEE_IDS[(po_id - 1) % len(DEFAULT_EMPLOYEE_IDS)]
-        
-        days_ago = po_id + 1
+        store_id = random.choice(RETAIL_STORE_IDS)
+        supplier_id = random.randint(1, NUM_SUPPLIERS)
+        status = random.choice(PO_STATUSES)
+        created_by = random.choice(DEFAULT_EMPLOYEE_IDS)
+
+        days_ago = random.randint(2, 90)
         ordered_expr = f"NOW() - INTERVAL '{days_ago} days'"
         expected_expr = f"NOW() + INTERVAL '2 days'"
-        
+
         if status in ("RECEIVED", "DELIVERED"):
-            arrived_expr = f"NOW() - INTERVAL '{po_id} hours'"
+            arrived_expr = f"NOW() - INTERVAL '{random.randint(1, 48)} hours'"
         else:
             arrived_expr = "NULL"
 
@@ -53,8 +54,17 @@ def generate_sql(num_pos: int = NUM_PURCHASE_ORDERS) -> str:
             unit_cost = round(random.uniform(10.0, 65.0), 2)
             item_rows.append(f"({po_id}, {prod_id}, {qty_ordered}, {unit_cost:.2f})")
 
-    po_values_str = ",\n".join(po_rows)
-    items_values_str = ",\n".join(item_rows)
+    po_inserts = build_batched_inserts(
+        "purchase_orders",
+        "store_id, supplier_id, status, ordered_at, expected_at, arrived_at, created_by",
+        po_rows,
+    )
+
+    items_inserts = build_batched_inserts(
+        "purchase_orders_items",
+        "po_id, product_id, qty_ordered, unit_cost",
+        item_rows,
+    )
 
     return f"""-- ==============================================================================
 -- 09_purchase_orders_seed.sql
@@ -65,11 +75,9 @@ ALTER TABLE purchase_orders DROP CONSTRAINT IF EXISTS purchase_orders_created_by
 
 TRUNCATE TABLE purchase_orders_items, purchase_orders, purchase_order_lpr_items, purchase_order_lprs RESTART IDENTITY CASCADE;
 
-INSERT INTO purchase_orders (store_id, supplier_id, status, ordered_at, expected_at, arrived_at, created_by) VALUES
-{po_values_str};
+{po_inserts}
 
-INSERT INTO purchase_orders_items (po_id, product_id, qty_ordered, unit_cost) VALUES
-{items_values_str};
+{items_inserts}
 
 ALTER TABLE purchase_orders ADD CONSTRAINT purchase_orders_created_by_fkey FOREIGN KEY (created_by) REFERENCES employees(employee_id) NOT VALID;
 """

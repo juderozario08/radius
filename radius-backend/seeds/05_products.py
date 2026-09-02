@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Generator for 05_products_seed.sql
-Generates product master records mapped across categories.
+Generates master product catalog records mapped across categories.
 """
 
 import sys
@@ -16,10 +16,13 @@ from common import (
     CATEGORY_PRODUCTS,
     escape_sql,
     write_sql_file,
+    build_batched_inserts,
+    fake,
 )
 
 
 def generate_sql(num_products: int = NUM_PRODUCTS) -> str:
+    columns = "sku, upc, name, description, category_id, brand, weight, is_active, retail_price, constrained_end_after"
     rows = []
     
     for i in range(num_products):
@@ -35,20 +38,28 @@ def generate_sql(num_products: int = NUM_PRODUCTS) -> str:
         item_idx = (i // NUM_CATEGORIES) % len(cat_pool) if cat_pool else 0
         
         if cat_pool:
-            base_name, base_desc, brand, weight, price = cat_pool[item_idx]
+            base_name, base_desc, base_brand, base_weight, base_price = cat_pool[item_idx]
             # If cycling over products, add slight modifier to ensure variety
             cycle = i // (NUM_CATEGORIES * len(cat_pool))
-            if cycle > 0:
-                name = f"{base_name} (Gen {cycle + 1})"
-                description = f"{base_desc} - Edition {cycle + 1}"
-            else:
+            if cycle == 0:
                 name = base_name
                 description = base_desc
+                brand = base_brand
+            elif cycle <= 5:
+                name = f"{base_name} (Gen {cycle + 1})"
+                description = f"{base_desc} - Edition {cycle + 1}"
+                brand = base_brand
+            else:
+                name = f"{base_name} (Gen {cycle + 1})"
+                brand = fake.company()[:100] if fake else base_brand
+                description = f"{base_desc} - {fake.catch_phrase()}" if fake else f"{base_desc} - Edition {cycle + 1}"
+            weight = base_weight
+            price = base_price
         else:
             name = f"Retail Product {product_idx}"
             description = f"Standard retail catalog item {product_idx}"
-            brand = f"Brand {(i % 5) + 1}"
-            weight = round(random.uniform(0.5, 5.0), 2)
+            brand = fake.company()[:100] if fake else f"Brand {(i % 5) + 1}"
+            weight = round(random.uniform(0.5, 5.0), 3)
             price = round(random.uniform(9.99, 149.99), 2)
 
         is_active = True
@@ -62,14 +73,16 @@ def generate_sql(num_products: int = NUM_PRODUCTS) -> str:
         )
         rows.append(row_str)
 
-    values_str = ",\n".join(rows)
+    batched_inserts = build_batched_inserts("products", columns, rows)
+
     return f"""-- ==============================================================================
 -- 05_products_seed.sql
--- Product catalog items
+-- Master Products Catalog
 -- ==============================================================================
 
-INSERT INTO products (sku, upc, name, description, category_id, brand, weight, is_active, retail_price, constrained_end_after) VALUES
-{values_str};
+TRUNCATE TABLE products RESTART IDENTITY CASCADE;
+
+{batched_inserts}
 """
 
 

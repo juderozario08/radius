@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -23,6 +24,18 @@ func main() {
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
 		log.Fatal("DATABASE_URL is not set in the environment")
+	}
+
+	// 1. Execute python generator
+	fmt.Println("Running Python seed generator...")
+	cmd := exec.Command("python3", "seeds/generate_all.py")
+	if _, err := os.Stat("venv/bin/python3"); err == nil {
+		cmd = exec.Command("venv/bin/python3", "seeds/generate_all.py")
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Fatalf("Failed to run python generator: %v", err)
 	}
 
 	// Connect to the database
@@ -75,9 +88,14 @@ func main() {
 		if err != nil {
 			log.Fatalf("\nError executing %s: %v", fileName, err)
 		}
-
+		
 		fmt.Println("SUCCESS")
+
+		// 3. Delete the file after successful execution
+		if err := os.Remove(filePath); err != nil {
+			log.Printf("Warning: Failed to delete %s: %v\n", filePath, err)
+		}
 	}
 
-	fmt.Println("\nAll seed files executed successfully!")
+	fmt.Println("\nAll seed files executed and cleaned up successfully!")
 }

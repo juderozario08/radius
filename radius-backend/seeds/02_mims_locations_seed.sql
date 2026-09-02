@@ -1,2 +1,0 @@
--- MIMS Locations seed is empty
--- Users are meant to create these themselves

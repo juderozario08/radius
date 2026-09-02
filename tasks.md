@@ -1,36 +1,41 @@
 # Radius Application Features Tracker
 
-This document tracks the application features and modules that are **NOT YET IMPLEMENTED** or are currently existing only as stubs/placeholders in the codebase.
+This document tracks application features, modules, and workflows that are **PLANNED**, **PARTIALLY IMPLEMENTED**, or currently existing as **UI/Backend Stubs** in the codebase.
 
-## 🚧 Missing / Unimplemented Features
+---
 
-### 1. Out of Stock (OOS) Reporting
-- **Status:** Empty Skeletons (0% complete)
-- **Backend:** `out_of_stock_handler.go` and `out_of_stock_service.go` exist but have no logic or registered endpoints.
-- **Frontend:** Placeholder component `OOSCard.tsx`. No UI flow implemented.
+## 🚧 Active Backlog & Partially Implemented Features
 
-### 2. Outbound Stock Transfers
-- **Status:** Partial - Inbound receiving works, outbound is missing (~30% complete)
-- **Backend:** `transfer_handler.go` and `transfer_service.go` are stubs. Logic for creating and dispatching outbound transfers is missing.
-- **Frontend:** The `Store > Transfers` screen (`transfers.tsx`) is a placeholder ("Coming soon").
+### 1. Outbound Stock Transfer Creation & Dispatching
+- **Status:** Partial (~35% complete) — Inbound receiving works; outbound creation is a stub.
+- **Backend:** `transfer_handler.go` and `transfer_service.go` exist as stubs. Endpoints for initiating an outbound transfer, scanning items into the transfer manifest, and dispatching in-transit status need completion.
+- **Frontend:** `Store > Transfers` screen (`transfers.tsx`) is a placeholder ("Coming soon"). Needs UI for selecting destination store, adding items/quantities, and reviewing dispatch manifests.
 
-### 3. Dynamic Pricing & Price Tags
-- **Status:** DB Schema only (~5% complete)
-- **Backend:** `pricing_handler.go` and `pricing_service.go` are empty skeletons.
-- **Frontend:** The `Price Tags` tab (`price_tags/index.tsx`) is a placeholder ("Coming soon").
+### 2. Planograms & Visual Merchandising Compliance
+- **Status:** View-Only Active (~40% complete)
+- **Backend:** `inventory_repo.go` reads active planogram information for product screen details. `PlanogramService`, `PlanogramHandler`, and `MerchandisingRepo` are boilerplate shells awaiting CRUD and compliance endpoints.
+- **Frontend:** `ProductPlanogram.tsx` displays facing and aisle data. A dedicated graphical planogram builder and camera shelf compliance validator are planned.
 
-### 4. Planograms & Merchandising Compliance
-- **Status:** DB Schema and Mockups (~10% complete)
-- **Backend:** Handler, service, and `merchandising_repo.go` are empty skeletons.
-- **Frontend:** `ProductPlanogram.tsx` exists as a mockup UI, but no active integration.
+### 3. Customer Returns & RMA Pipeline
+- **Status:** Schema Foundation Only (~15% complete)
+- **Backend:** Transaction items store `return_reason` and `inventory_transactions` supports `RETURN` transaction types. Dedicated return authorization services, return receipt generation, and Return-to-Vendor (RTV) dispositioning need handlers.
+- **Frontend:** `Back Room > Returns` screen (`Returns.tsx`) is a placeholder.
 
-### 5. Returns / RMA Workflow
-- **Status:** DB Schema and Placeholders (~10% complete)
-- **Backend:** Support for `return_reason` exists in DB, but no dedicated returns handler/service logic.
-- **Frontend:** The `Back Room > Returns` screen (`Returns.tsx`) is a placeholder.
+### 4. Sales Floor Activities Feed
+- **Status:** UI Placeholder (~5% complete)
+- **Backend:** Endpoints for employee task distribution, price change task batches, and manager shift notes are pending.
+- **Frontend:** `Sales Floor > Activities` screen (`Activities.tsx`) is a placeholder.
 
-### 6. Additional Frontend Gaps
-- **Store Tab Sub-pages:** `purchase_orders.tsx` and `transfers.tsx` are placeholders.
-- **Sales Floor Activities:** The `Activities` screen is a placeholder.
-- **Dashboard & Notifications:** The home `Dashboard` has static text, and the `Notifications` screen is a placeholder.
-- **API Client Stubs:** Dedicated API fetch wrappers (`inventory.api.ts`, `orders.api.ts`, etc.) are currently empty (app uses direct `apiFetch` in screens instead).
+### 5. Real-Time Push Notifications & Alerts
+- **Status:** UI Placeholder (~5% complete)
+- **Backend:** Notification dispatcher service for curbside BOPIS arrivals, manager adjustment approval alerts, and low stock warnings is pending.
+- **Frontend:** `Notifications` screen (`Notifications.tsx`) is a placeholder.
+
+---
+
+## 🧹 Completed Schema & Codebase Cleanups
+
+- [x] **Drop 7 Unused Database Tables & Custom Enums**: Removed dead tables (`audit_log`, `out_of_stock_log`, `price_history`, `price_tag_jobs`, `price_tag_job_items`, `print_supplies`, `print_services`) and 5 unused enums via `golang-migrate` migration `000037`.
+- [x] **Consolidate Audit Ledger**: Standardized on `inventory_transactions` as the sole immutable audit log across POS sales, PO receiving, stock transfers, cycle counts, and manager adjustments.
+- [x] **High-Volume Seed Data Pipeline**: Automated Python synthetic seed generation with Faker, chunked SQL batch execution, and automatic file cleanup via `cmd/seeds/main.go`.
+- [x] **Store 1 Head Office Constraint**: Enforced separation between Head Office (Store 1: inventory/MIMS only) and Retail Branches (Stores 2–7: retail transactions, transfers, POs, online orders, print orders, and cycle counts).

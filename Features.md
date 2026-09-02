@@ -1,6 +1,6 @@
 # Radius Application Features
 
-Welcome to the comprehensive feature guide for **Radius**, a full-stack retail and mobile inventory management application. This document provides a complete overview of all existing, operational, and planned features across the Radius mobile application (React Native / Expo v54) and backend service (Go / Gin / PostgreSQL / Redis).
+Welcome to the comprehensive feature guide for **Radius**, a full-stack retail, mobile inventory management, and store logistics application. This document provides a complete overview of all operational, architectural, and planned features across the Radius mobile application (React Native / Expo v54) and backend service (Go / Gin / PostgreSQL / Redis).
 
 ---
 
@@ -18,8 +18,9 @@ Welcome to the comprehensive feature guide for **Radius**, a full-stack retail a
 10. [Omnichannel Online Order Fulfillment](#10-omnichannel-online-order-fulfillment)
 11. [Print & Copy Service Center](#11-print--copy-service-center)
 12. [Audit Trails & Inventory History](#12-audit-trails--inventory-history)
-13. [Hardware & Mobile Device Capabilities](#13-hardware--mobile-device-capabilities)
-14. [Roadmap & Planned Features](#14-roadmap--planned-features)
+13. [High-Volume Seed & Synthetic Data Pipeline](#13-high-volume-seed--synthetic-data-pipeline)
+14. [Hardware & Mobile Device Capabilities](#14-hardware--mobile-device-capabilities)
+15. [Roadmap & Planned Features](#15-roadmap--planned-features)
 
 ---
 
@@ -42,12 +43,15 @@ Welcome to the comprehensive feature guide for **Radius**, a full-stack retail a
 - **Store Directory & Profile Management**: Centralized store directory maintaining branch addresses, Canadian postal codes, phone numbers, timezones, and operational metadata.
 - **Store Activation & Lifecycle Management**: Administrative capability to onboard new store locations, edit location details, and toggle active/inactive store status.
 - **Multi-Store Context Switching**: Dynamic store context provider allowing managers and administrators to switch between branch views seamlessly without logging out.
+- **Head Office vs. Retail Separation**:
+  - **Store 1 (Head Office)**: Designated as central administration/storage; stores inventory and MIMS warehouse bins but contains zero POS registers, customer transactions, POs, or stock transfers.
+  - **Stores 2–7 (Retail Branches)**: Fully operational sales floor branches equipped with retail registers, receiving bays, BOPIS pickup desks, and cycle count schedules.
 
 ---
 
 ## 3. Employee & Staff Management
 
-- **Employee Directory**: Paginated and filterable employee directory displaying employee roles, contact information, assignment store, and employment status.
+- **Employee Directory**: Paginated and filterable employee directory displaying employee roles, contact information, assigned store, and employment status.
 - **Employee Onboarding & Editing**: Comprehensive forms for creating new staff profiles, setting roles, assigning stores, and updating personal or contact details.
 - **Staff Lifecycle Control (Activation & Termination)**: Safe deactivation or permanent termination toggles with audit safeguards protecting core records.
 - **Store-Specific Employee Rosters**: Managerial view isolating employees assigned to specific store branches.
@@ -56,30 +60,45 @@ Welcome to the comprehensive feature guide for **Radius**, a full-stack retail a
 
 ## 4. Product Catalog & Search
 
-- **Global Product Catalog**: Master product registry storing SKU numbers, UPC/EAN barcodes, titles, descriptions, categories, brands, units of measure (Each, Case, Pack), case pack quantities, item weights, and MSRPs.
+- **Global Product Catalog**: Master product registry storing SKU numbers, UPC/EAN barcodes, titles, descriptions, categories, brands, units of measure (Each, Case, Pack), case pack quantities, item weights, default costs, and retail MSRPs.
 - **Multi-Faceted Search Engine**: Fast search across product names, SKU numbers, or barcodes with dynamic filters for categories, brands, price points, and in-stock status.
 - **Category Hierarchy & Brand Caching**: Redis-cached category trees and distinct brand aggregations for rapid querying and navigation.
 - **Rich Product Detail Screen**: Multi-tab product overview showing:
   - **Details**: Full specifications, pricing, brand info, and store-specific stock breakdown.
   - **Locations**: Active sales floor and backroom bin assignments with quantities.
-  - **Planogram**: Visual merchandising placements and facing allocations.
+  - **Planogram**: Merchandising placements, facing allocations, and aisle mappings.
 
 ---
 
 ## 5. Mobile Inventory Management (MIMS)
 
-- **Real-Time Barcode Product Lookup**: Integrated mobile barcode scanner that immediately queries store stock levels, reserved quantities, and location metadata.
-- **Bin Location Management**: Standardized 9-digit location system (`Aisle-Section-Shelf-Bin`) distinguishing between Sales Floor and Backroom locations.
-- **Item Binning & Location Syncing**: Move products between backroom storage and sales floor shelves, adjust quantities per bin, and synchronize multi-bin configurations.
-- **Inventory Adjustment Requests**: Sales floor tool for logging unit variances with standardized reason codes (`Shrink / Theft`, `Damaged`, `Found`, `Store Use`, `Code 88`, `Other`).
-- **Supervisor Adjustment Review**: Manager approval queue allowing supervisors to review, adjust, approve, write off, or reject pending inventory adjustments before committing changes to master stock records.
-- **Scan Activity Logging**: Automated telemetry recording barcode scan events, user IDs, timestamps, and scan types for store auditing.
+- **Real-Time Barcode Product Lookup**: Integrated mobile barcode scanner querying store stock levels, reserved quantities, and location metadata.
+- **Standardized Bin Location System**: Standardized 9-digit location identifiers (`Aisle-Bay-Shelf-Position`, e.g., `01-02-01-001`) with regex validation.
+- **Multi-Bin Product Mapping (`mims_location_items`)**:
+  - Tracks specific bin assignments with `OVERSTOCK`, `TOP_STOCK`, and `UNBINNED` location types.
+  - Item binning workflow supporting `IN` (move into bin) and `OUT` (pick from bin) actions with quantity validation against active inventory.
+  - Multi-location synchronization endpoint (`PUT /api/sales_floor/inventory/locations/sync`).
+- **Granular Sub-Inventory Tracking**: Tracks 11 dedicated stock buckets per product at every store:
+  - `new_qty` (Active sellable store stock)
+  - `open_box_qty` (Returned / inspected open-box units)
+  - `bopis_qty` (Allocated for online customer pickup)
+  - `rtv_qty` (Staged for Return-to-Vendor)
+  - `code88_qty` (Marked down / clearance)
+  - `quarantine_qty` (Held pending QA inspection)
+  - `repair_qty` (Under customer or depot repair)
+  - `customer_on_hold_qty` / `fc_on_hold_qty` (Special order holds)
+  - `demo_qty` (Sales floor floor display units)
+  - `on_order_qty` (Inbound open PO quantities)
+  - `on_hand_qty` & `available_qty` (PostgreSQL `GENERATED ALWAYS AS STORED` calculated totals).
+- **Inventory Adjustment Requests**: Sales floor tool for logging unit discrepancies with standardized reason codes.
+- **Supervisor Adjustment Review**: Manager approval queue allowing supervisors to review, adjust, approve, write off, or reject pending inventory adjustments before committing changes.
+- **Scan Activity Telemetry**: Automated logging (`mims_scan_log`) recording hardware scan events, employee IDs, timestamps, and scan types.
 
 ---
 
 ## 6. Cycle Counting & Inventory Auditing
 
-- **Weekly Cycle Count Scheduling**: Automated and manual scheduling of weekly cycle counts organized by product category and department.
+- **Weekly Cycle Count Scheduling**: Automated and manual scheduling of weekly cycle counts organized by product category (`cycle_count_schedule`).
 - **Interactive Mobile Count Scanner**: Real-time scanner interface for counting store inventory against expected counts with live count increments and manual entry fallbacks.
 - **Discrepancy & Variance Analysis**: Automated calculation of unit variances and dollar discrepancies between book inventory and physically counted units.
 - **Cycle Count Approval Workflow**: Multi-stage lifecycle (`NOT STARTED` ➔ `IN PROGRESS` ➔ `PENDING APPROVAL` ➔ `APPROVED` / `COMPLETED`).
@@ -108,9 +127,9 @@ Welcome to the comprehensive feature guide for **Radius**, a full-stack retail a
 
 ## 9. Point of Sale (POS) & Transactions
 
-- **Transaction Processing**: Comprehensive transaction recording supporting multiple payment methods (`Cash`, `Card`, `Gift Card`) and transaction types (`Sale`, `Return`, `Void`).
-- **Detailed Sales Itemization**: Line-item tracking with quantities, unit prices, discounts, subtotal, sales tax calculations, and payment card references.
-- **Transaction History & Pagination**: Searchable transaction registry allowing staff to filter and review receipts by date, store, register ID, and cashier.
+- **Transaction Processing**: Comprehensive transaction recording supporting multiple payment methods (`Card`, `Cash`, `Gift Card`) and transaction types (`Sale`, `Return`, `Void`).
+- **Detailed Sales Itemization**: Line-item tracking with quantities, unit prices, unit costs, discounts, subtotal, sales tax calculations (e.g., 13% ON, 12% BC), and payment card references.
+- **Transaction History & Search**: Searchable transaction registry allowing staff to filter and review receipts by date, store, register ID, and cashier.
 - **Real-Time Stock Deduction**: Automated decrementing of on-hand inventory upon successful sale transaction completion.
 
 ---
@@ -136,29 +155,43 @@ Welcome to the comprehensive feature guide for **Radius**, a full-stack retail a
 
 ## 12. Audit Trails & Inventory History
 
-- **Product-Level Audit Log**: Immutable chronological log of all stock movements for any SKU or barcode across the store network.
-- **Activity Tracking**: Tracks events including `Receipts`, `Sales`, `Returns`, `Adjustments`, `Transfers`, `Demo Assignments`, and `Cycle Counts`.
-- **Multi-Parameter Filtering**: Filter audit history by transaction type, store branch, and sort by timestamp.
+- **Master Inventory Audit Ledger (`inventory_transactions`)**: Dedicated, typed, immutable ledger recording every stock modification across the entire network.
+- **Activity Tracking**: Tracks events including `RECEIPT`, `SALE`, `RETURN`, `TRANSFER`, `ADJUSTMENT`, `DAMAGE`, `DEMO_ASSIGNMENT`, `WRITE_OFF`, and `CYCLE_COUNT`.
+- **Audit Screen (`Audit.tsx`)**: Allows store managers to inspect chronological stock event history for any product, with employee attribution and reference IDs.
 
 ---
 
-## 13. Hardware & Mobile Device Capabilities
+## 13. High-Volume Seed & Synthetic Data Pipeline
 
-- **Camera Barcode Scanner**: Hardware-accelerated barcode scanning using `expo-camera` supporting standard 1D/2D barcodes (UPC-A, EAN-13, Code 128, etc.).
+- **Automated Synthetic Generation**: Python-based generator utilizing Faker with deterministic seeding.
+- **Scale**:
+  - **70,000** Inventory Records (7 stores × 10,000 products)
+  - **50,000** POS Transactions + line items
+  - **10,000** Products Catalog with brand/cost distributions
+  - **5,000** Online Customer Orders (BOPIS / STS)
+  - **5,000** Print Orders & Items
+  - **2,000** Purchase Orders & Line Items
+  - **2,000** Inter-Store Stock Transfers
+  - **2,000** Loyalty Preferred Members
+  - **1,000** Cycle Count Audits & Schedules
+  - **525** MIMS Bin Locations
+- **Zero Artifact Bloat**: The Go runner (`cmd/seeds/main.go`) executes the generator, runs chunked SQL batches, and automatically removes temporary files.
+
+---
+
+## 14. Hardware & Mobile Device Capabilities
+
+- **Camera Barcode Scanner**: Hardware-accelerated barcode scanning using `expo-camera` supporting standard 1D/2D barcodes (UPC-A, EAN-13, Code 128).
 - **Haptic Feedback**: Tactile responses via `expo-haptics` for successful scans, errors, and button interactions.
 - **Secure Credential Storage**: Safe on-device persistence of authentication tokens using `expo-secure-store`.
 - **Keyboard & View Adaptation**: Responsive layout management with safe area context and keyboard avoidance across iOS and Android devices.
 
 ---
 
-## 14. Roadmap & Planned Features
+## 15. Roadmap & Planned Features
 
-The following modules represent active roadmap initiatives and architectural stubs in development:
-
-- **Out of Stock (OOS) Escalation System**: Automated vendor out-of-stock reporting and zero-balance escalation workflows.
 - **Outbound Stock Transfer Creation**: Picking, packing, and dispatching outbound stock transfers to neighboring store locations.
-- **Dynamic Pricing & Digital Shelf Price Tags**: Algorithmic markdown rules and automated batch printing/updating of Electronic Shelf Labels (ESLs).
-- **Interactive Planograms & Merchandising Compliance**: Graphical planogram rendering and photo-based shelf compliance validation.
 - **Customer Returns & RMA Pipeline**: Dedicated return authorization flow with item inspection, damage dispositioning, and Return-to-Vendor (RTV) processing.
-- **Sales Floor Activities Stream**: Centralized associate task feed for shift assignments, price change batches, and customer assistance alerts.
+- **Visual Planogram Builder & Shelf Compliance**: Graphical planogram rendering and photo-based shelf compliance validation.
+- **Sales Floor Activities Stream**: Centralized associate task feed for shift assignments and customer assistance alerts.
 - **Real-Time Push Notifications**: In-app and push notifications for urgent curbside arrivals, receiving dock notices, and approval requests.

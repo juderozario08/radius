@@ -1,4 +1,4 @@
-//radius-backend/internal/models/merchandising.go
+// radius-backend/internal/models/merchandising.go
 package models
 
 import "time"
@@ -92,49 +92,4 @@ type FillReportResponse struct {
 
 type ScanEmptyHoleRequest struct {
 	ProductID int `json:"product_id" binding:"required"`
-}
-
-type JobType string
-
-const (
-	JobTypePlanogram   JobType = "PLANOGRAM"
-	JobTypePriceChange JobType = "PRICE CHANGE"
-	JobTypeNewItem     JobType = "NEW ITEM"
-	JobTypeClearance   JobType = "CLEARANCE"
-)
-
-type PriceTagJobStatus string
-
-const (
-	PriceTagJobStatusPending PriceTagJobStatus = "PENDING"
-	PriceTagJobStatusPrinted PriceTagJobStatus = "PRINTED"
-)
-
-type PriceTagJob struct {
-	TagJobId    int               `json:"tag_job_id"`
-	StoreId     int               `json:"store_id"`
-	JobType     JobType           `json:"job_type"`
-	RequestedBy int               `json:"requested_by"`
-	Status      PriceTagJobStatus `json:"status"`
-	CreatedAt   time.Time         `json:"created_at"`
-	PrintedAt   *time.Time        `json:"printed_at"`
-}
-
-type PriceTagJobItemsLabelTemplate string
-
-const (
-	PriceTagJobItemsShelfTagTemplate      PriceTagJobItemsLabelTemplate = "SHELF TAG"
-	PriceTagJobItemsSmallBusinessTemplate PriceTagJobItemsLabelTemplate = "SMALL BUSINESS"
-	PriceTagJobItemsBusinessTemplate      PriceTagJobItemsLabelTemplate = "BUSINESS"
-	PriceTagJobItemsLargeTemplate         PriceTagJobItemsLabelTemplate = "LARGE"
-	PriceTagJobItemsClearanceTemplate     PriceTagJobItemsLabelTemplate = "CLEARANCE"
-)
-
-type PriceTagJobItem struct {
-	TagItemId     int                           `json:"tag_item_id"`
-	TagJobId      int                           `json:"tag_job_id"`
-	ProductId     int                           `json:"product_id"`
-	LabelTemplate PriceTagJobItemsLabelTemplate `json:"label_template"`
-	Price         float32                       `json:"price"`
-	Printed       bool                          `json:"printed"`
 }

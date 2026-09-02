@@ -1,4 +1,4 @@
-//radius-backend/internal/models/inventory.go
+// radius-backend/internal/models/inventory.go
 package models
 
 import "time"
@@ -129,33 +129,6 @@ type StockTransferItem struct {
 	QtyRequested   int  `json:"qty_requested"`
 	QtySent        *int `json:"qty_sent"`
 	QtyReceived    *int `json:"qty_received"`
-}
-
-type DetectedBy string
-type Resolution string
-
-const (
-	DetectedByEmployee DetectedBy = "EMPLOYEE"
-	DetectedBySystem   DetectedBy = "SYSTEM"
-)
-
-const (
-	ResolutionRestocked    Resolution = "RESTOCKED"
-	ResolutionDiscontinued Resolution = "DISCONTINUED"
-	ResolutionRelocated    Resolution = "RELOCATED"
-)
-
-type OutOfStockLog struct {
-	OOSId                int         `json:"oos_id"`
-	StoreId              int         `json:"store_id"`
-	ProductId            int         `json:"product_id"`
-	DetectedAt           time.Time   `json:"detected_at"`
-	DetectedBy           DetectedBy  `json:"detected_by"`
-	EmployeeId           *int        `json:"employee_id"`
-	ResolvedAt           *time.Time  `json:"resolved_at"`
-	Resolution           *Resolution `json:"resolution"`
-	AutoReorderTriggered bool        `json:"auto_reorder_triggered"`
-	Notes                *string     `json:"notes"`
 }
 
 type CycleCountStatus string

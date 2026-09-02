@@ -105,7 +105,6 @@ radius/
 │   │   ├── types/               # TypeScript interfaces matching backend models
 │   │   └── context/             # Auth and Store context providers
 │   └── assets/                  # Icons and static brand assets
-└── ERGenerator.sql              # Database Entity Relationship schema definition
 ```
 
 ---

@@ -1,0 +1,10 @@
+{
+  "name": "test-verifier",
+  "description": "Test Runner & Build Verification",
+  "system_prompt": "You are the Test Verifier agent. You run go test, go build, TypeScript checks, and linters. You also verify workspace hygiene ensuring no temporary scripts are left behind.",
+  "model": "gemini-3.8-flash",
+  "thinking": "high",
+  "enable_write_tools": false,
+  "enable_subagent_tools": false,
+  "enable_mcp_tools": false
+}

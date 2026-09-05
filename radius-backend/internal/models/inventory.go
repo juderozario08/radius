@@ -39,10 +39,9 @@ type MimsLocationItem struct {
 }
 
 type ProductScreenDetails struct {
-	Product       Product            `json:"product"`
-	Inventory     Inventory          `json:"inventory"`
-	Locations     []MimsLocationItem `json:"locations"`
-	PlanogramInfo *Planogram         `json:"planogram_info"`
+	Product   Product            `json:"product"`
+	Inventory Inventory          `json:"inventory"`
+	Locations []MimsLocationItem `json:"locations"`
 }
 
 type MimsScanLog struct {

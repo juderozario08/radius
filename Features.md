@@ -66,7 +66,6 @@ Welcome to the comprehensive feature guide for **Radius**, a full-stack retail, 
 - **Rich Product Detail Screen**: Multi-tab product overview showing:
   - **Details**: Full specifications, pricing, brand info, and store-specific stock breakdown.
   - **Locations**: Active sales floor and backroom bin assignments with quantities.
-  - **Planogram**: Merchandising placements, facing allocations, and aisle mappings.
 
 ---
 
@@ -192,6 +191,5 @@ Welcome to the comprehensive feature guide for **Radius**, a full-stack retail, 
 
 - **Outbound Stock Transfer Creation**: Picking, packing, and dispatching outbound stock transfers to neighboring store locations.
 - **Customer Returns & RMA Pipeline**: Dedicated return authorization flow with item inspection, damage dispositioning, and Return-to-Vendor (RTV) processing.
-- **Visual Planogram Builder & Shelf Compliance**: Graphical planogram rendering and photo-based shelf compliance validation.
 - **Sales Floor Activities Stream**: Centralized associate task feed for shift assignments and customer assistance alerts.
 - **Real-Time Push Notifications**: In-app and push notifications for urgent curbside arrivals, receiving dock notices, and approval requests.

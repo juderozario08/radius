@@ -33,7 +33,6 @@ type Handlers struct {
 	InventoryHandler   *handler.InventoryHandler
 	OnlineOrderHandler *handler.OnlineOrderHandler
 	OutOfStockHandler  *handler.OutOfStockHandler
-	PlanogramHandler   *handler.PlanogramHandler
 	PricingHandler     *handler.PricingHandler
 	ProductHandler     *handler.ProductHandler
 	ReceivingHandler   *handler.ReceivingHandler

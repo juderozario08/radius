@@ -3,27 +3,6 @@ package models
 
 import "time"
 
-type Planogram struct {
-	PlanogramId int        `json:"planogram_id"`
-	StoreId     int        `json:"store_id"`
-	Name        string     `json:"name"`
-	Description *string    `json:"description"`
-	Aisle       *string    `json:"aisle"`
-	ValidFrom   time.Time  `json:"valid_from"`
-	IsActive    bool       `json:"is_active"`
-	CreatedBy   int        `json:"created_by"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   *time.Time `json:"updated_at"`
-}
-
-type PlanogramProduct struct {
-	PlanogramItemId int `json:"planogram_item_id"`
-	PlanogramId     int `json:"planogram_id"`
-	StoreId         int `json:"store_id"`
-	ProductId       int `json:"product_id"`
-	Facings         int `json:"facings"`
-}
-
 type FillReportStatus string
 
 const (

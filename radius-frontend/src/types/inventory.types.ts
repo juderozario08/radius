@@ -52,24 +52,10 @@ export interface MimsLocationItem {
     location_type: string;
 }
 
-export interface Planogram {
-    planogram_id: number;
-    store_id: number;
-    name: string;
-    description: string | null;
-    aisle: string | null;
-    valid_from: string;
-    is_active: boolean;
-    created_by: number;
-    created_at: string;
-    updated_at: string | null;
-}
-
 export interface ProductScreenDetails {
     product: Product;
     inventory: Inventory;
     locations: MimsLocationItem[];
-    planogram_info: Planogram | null;
 }
 
 export interface MimsProductInventory extends Product {

@@ -48,19 +48,6 @@ export default function AppLayout() {
                 }}
             />
             <Tabs.Screen
-                name="price_tags"
-                options={{
-                    headerTitleAlign: "center",
-                    title: "Price Tags",
-                    tabBarIcon: ({ focused }) =>
-                        getIcon(
-                            focused,
-                            require("@/assets/images/barcode-active.png"),
-                            require("@/assets/images/barcode-inactive.png")
-                        ),
-                }}
-            />
-            <Tabs.Screen
                 name="inventory"
                 options={{
                     headerTitleAlign: "center",

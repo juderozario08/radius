@@ -10,12 +10,11 @@ import { callApi } from "@/utils/helpers";
 import { ProductScreenDetails, MimsLocationItem } from "@/types/inventory.types";
 import { ProductDetails } from "@/components/inventory/ProductDetails";
 import { ProductLocations } from "@/components/inventory/ProductLocations";
-import { ProductPlanogram } from "@/components/inventory/ProductPlanogram";
 import { useAuth } from "@/hooks/useAuth";
 import { COLORS } from "@/constants/colors";
 import { globalStyles } from "@/constants/styles";
 
-type TabName = "Details" | "Protection" | "Locations" | "Planogram";
+type TabName = "Details" | "Protection" | "Locations";
 
 export default function ProductScreen() {
     const { productId } = useLocalSearchParams();
@@ -85,8 +84,6 @@ export default function ProductScreen() {
                     productId={details.product.product_id}
                     onSave={handleSaveLocations}
                 />;
-            case "Planogram":
-                return <ProductPlanogram planogram={details.planogram_info} />;
             case "Protection":
                 return <View style={globalStyles.centerElement}><Text>Protection info not available</Text></View>;
             default:
@@ -134,7 +131,7 @@ export default function ProductScreen() {
 
                     {/* Tabs */}
                     <View style={styles.tabsContainer}>
-                        {(["Details", "Protection", "Locations", "Planogram"] as TabName[]).map(tab => (
+                        {(["Details", "Protection", "Locations"] as TabName[]).map(tab => (
                             <TouchableOpacity 
                                 key={tab} 
                                 style={[styles.tab, activeTab === tab && styles.activeTab]}

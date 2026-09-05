@@ -56,7 +56,6 @@ func main() {
 	sessionRepo := repository.NewSessionRepo(db.DB)
 	storeRepo := repository.NewStoreRepo(db.DB)
 	inventoryRepo := repository.NewInventoryRepo(db.DB)
-	merchandisingRepo := repository.NewMerchandisingRepo(db.DB)
 	ordersRepo := repository.NewOrdersRepo(db.DB)
 	productsRepo := repository.NewProductRepo(db.DB)
 	categoryRepo := repository.NewCategoryRepo(db.DB)
@@ -75,7 +74,6 @@ func main() {
 	inventoryService := service.NewInventoryService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
 	onlineOrderService := service.NewOnlineOrderService(ordersRepo, productsRepo, inventoryRepo, sessionRepo, storeRepo, employeeRepo)
 	outOfStockService := service.NewOutOfStockService(productsRepo, inventoryRepo, sessionRepo, employeeRepo, storeRepo)
-	planogramService := service.NewPlanogramService(merchandisingRepo, employeeRepo, storeRepo, sessionRepo)
 	pricingService := service.NewPricingService(storeRepo, employeeRepo, sessionRepo, inventoryRepo)
 	productService := service.NewProductService(productsRepo, storeRepo, employeeRepo, sessionRepo, redisClient)
 	categoryService := service.NewCategoryService(categoryRepo, redisClient)
@@ -96,7 +94,6 @@ func main() {
 		InventoryHandler:   handler.NewInventoryHandler(inventoryService),
 		OnlineOrderHandler: handler.NewOnlineOrderHandler(onlineOrderService),
 		OutOfStockHandler:  handler.NewOutOfStockHandler(outOfStockService),
-		PlanogramHandler:   handler.NewPlanogramHandler(planogramService),
 		PricingHandler:     handler.NewPricingHandler(pricingService),
 		ProductHandler:     handler.NewProductHandler(productService),
 		ReceivingHandler:   handler.NewReceivingHandler(receivingService),

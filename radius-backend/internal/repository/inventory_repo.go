@@ -211,24 +211,6 @@ func (r *InventoryRepo) GetProductScreenDetails(ctx context.Context, storeID int
 		details.Locations = []models.MimsLocationItem{}
 	}
 
-	// 4. Get Planogram (Active one for the product at the store)
-	planogramQuery := `
-		SELECT p.planogram_id, p.store_id, p.name, p.description, p.aisle, p.valid_from, p.is_active, p.created_by, p.created_at, p.updated_at
-		FROM planograms p
-		JOIN planogram_products pp ON p.planogram_id = pp.planogram_id
-		WHERE pp.product_id = $1 AND p.store_id = $2 AND p.is_active = true
-		LIMIT 1`
-	var p models.Planogram
-	err = r.db.QueryRowContext(ctx, planogramQuery, productID, storeID).Scan(
-		&p.PlanogramId, &p.StoreId, &p.Name, &p.Description, &p.Aisle, &p.ValidFrom,
-		&p.IsActive, &p.CreatedBy, &p.CreatedAt, &p.UpdatedAt,
-	)
-	if err == nil {
-		details.PlanogramInfo = &p
-	} else if err != sql.ErrNoRows {
-		return nil, err
-	}
-
 	return &details, nil
 }
 

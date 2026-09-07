@@ -14,6 +14,7 @@ import (
 	"radius/internal/repository"
 	"radius/internal/router"
 	"radius/internal/service"
+	"radius/internal/websocket"
 	"syscall"
 	"time"
 )
@@ -65,24 +66,37 @@ func main() {
 	cycleCountRepo := repository.NewCycleCountRepo(db.DB)
 	fillReportRepo := repository.NewFillReportRepository(db.DB)
 
+	// WebSocket real-time event infrastructure
+	wsHub := websocket.NewHub()
+	go wsHub.Run()
+
 	employeeService := service.NewEmployeeService(employeeRepo)
 	sessionService := service.NewSessionService(sessionRepo, cfg.JWTSecretKey, redisClient)
 	authService := service.NewAuthService(employeeRepo, sessionService)
 	barcodeService := service.NewBarcodeService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
-	cycleCountService := service.NewCycleCountService(cycleCountRepo, employeeRepo, storeRepo, productsRepo, inventoryRepo, sessionRepo)
+	cycleCountService := service.NewCycleCountService(cycleCountRepo, employeeRepo, storeRepo, productsRepo, inventoryRepo, sessionRepo, wsHub)
 	fillReportService := service.NewFillReportService(fillReportRepo, storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo, redisClient)
 	inventoryService := service.NewInventoryService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
-	onlineOrderService := service.NewOnlineOrderService(ordersRepo, productsRepo, inventoryRepo, sessionRepo, storeRepo, employeeRepo)
+	onlineOrderService := service.NewOnlineOrderService(ordersRepo, productsRepo, inventoryRepo, sessionRepo, storeRepo, employeeRepo, wsHub)
 	outOfStockService := service.NewOutOfStockService(productsRepo, inventoryRepo, sessionRepo, employeeRepo, storeRepo)
 	pricingService := service.NewPricingService(storeRepo, employeeRepo, sessionRepo, inventoryRepo)
 	productService := service.NewProductService(productsRepo, storeRepo, employeeRepo, sessionRepo, redisClient)
 	categoryService := service.NewCategoryService(categoryRepo, redisClient)
 	storeService := service.NewStoreService(storeRepo, employeeRepo, productsRepo)
-	transactionService := service.NewTransactionService(salesRepo, employeeRepo, sessionRepo, fillReportRepo)
+	transactionService := service.NewTransactionService(salesRepo, employeeRepo, sessionRepo, fillReportRepo, wsHub)
 	transferService := service.NewTransferService(storeRepo, inventoryRepo, employeeRepo, sessionRepo)
 	receivingService := service.NewReceivingService(receivingRepo, employeeRepo)
 	auditService := service.NewAuditService(auditRepo, employeeRepo, productsRepo)
 	printOrderService := service.NewPrintOrderService(ordersRepo, employeeRepo)
+
+	upgrader := websocket.NewUpgrader()
+	wsHandler := handler.NewWSHandler(
+		wsHub,
+		cfg.JWTSecretKey,
+		authService,
+		employeeRepo,
+		upgrader,
+	)
 
 	appHandlers := router.Handlers{
 		AuditHandler:       handler.NewAuditHandler(auditService),
@@ -103,6 +117,7 @@ func main() {
 		SessionHandler:     handler.NewSessionHandler(sessionService),
 		EmployeeHandler:    handler.NewEmployeeHandler(employeeService),
 		PrintOrderHandler:  handler.NewPrintOrderHandler(printOrderService),
+		WSHandler:          wsHandler,
 	}
 
 
@@ -133,6 +148,9 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Shutting down server...")
+
+	// Gracefully shutdown WebSocket Hub
+	wsHub.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

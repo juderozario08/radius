@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"radius/internal/models"
+	"time"
 )
 
 type OrdersRepo struct {
@@ -196,6 +197,98 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 	}
 
 	return &o, items, nil
+}
+
+func (r *OrdersRepo) CreateOnlineOrder(ctx context.Context, order *models.OnlineOrder) (*models.OnlineOrder, error) {
+	if order == nil {
+		return nil, fmt.Errorf("order cannot be nil")
+	}
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	placedAt := order.PlacedAt
+	if placedAt.IsZero() {
+		placedAt = time.Now().UTC()
+	}
+
+	insertOrderQuery := `
+		INSERT INTO online_orders (
+			store_id, customer_email, customer_name, order_type, status,
+			subtotal, tax_amount, shipping_fee, total_amount, shipping_address,
+			placed_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		RETURNING order_id, placed_at
+	`
+
+	err = tx.QueryRowContext(
+		ctx,
+		insertOrderQuery,
+		order.StoreId,
+		order.CustomerEmail,
+		order.CustomerName,
+		order.OrderType,
+		order.Status,
+		order.Subtotal,
+		order.TaxAmount,
+		order.ShippingFee,
+		order.TotalAmount,
+		order.ShippingAddress,
+		placedAt,
+	).Scan(&order.OrderId, &order.PlacedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert online order header: %w", err)
+	}
+
+	if len(order.Items) > 0 {
+		insertItemQuery := `
+			INSERT INTO online_order_items (
+				order_id, product_id, quantity, unit_price, picked_qty, total_price
+			)
+			VALUES ($1, $2, $3, $4, $5, $6)
+			RETURNING order_item_id
+		`
+
+		for i := range order.Items {
+			item := &order.Items[i]
+			item.OrderId = order.OrderId
+
+			pickedQty := 0
+			if item.PickedQty != nil {
+				pickedQty = *item.PickedQty
+			}
+			totalPrice := float32(item.Quantity) * item.UnitPrice
+
+			var productID any
+			if item.ProductId > 0 {
+				productID = item.ProductId
+			}
+
+			err = tx.QueryRowContext(
+				ctx,
+				insertItemQuery,
+				order.OrderId,
+				productID,
+				item.Quantity,
+				item.UnitPrice,
+				pickedQty,
+				totalPrice,
+			).Scan(&item.OrderItemId)
+			if err != nil {
+				return nil, fmt.Errorf("failed to insert online order item at index %d: %w", i, err)
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return order, nil
 }
 
 func (r *OrdersRepo) GetAllPrintOrders(ctx context.Context, limit, offset int, storeID *int, criteria models.PrintOrderSearchCriteria) ([]models.PrintOrder, int, error) {

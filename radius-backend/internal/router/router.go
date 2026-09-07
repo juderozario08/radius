@@ -41,6 +41,7 @@ type Handlers struct {
 	TransferHandler    *handler.TransferHandler
 	SessionHandler     *handler.SessionHandler
 	PrintOrderHandler  *handler.PrintOrderHandler
+	WSHandler          *handler.WSHandler
 }
 
 func NewRouter(cfg Config) *gin.Engine {
@@ -92,6 +93,13 @@ func NewRouter(cfg Config) *gin.Engine {
 
 		public.POST("/login", cfg.Handlers.AuthHandler.Login)
 		public.POST("/api/refresh_token", cfg.Handlers.AuthHandler.RefreshToken)
+	}
+
+	// Real-Time WebSocket Handshake Routes
+	// Dual auth (?token= query parameter or Authorization: Bearer header) handled by WSHandler.
+	if cfg.Handlers.WSHandler != nil {
+		router.GET("/api/v1/ws", cfg.Handlers.WSHandler.HandleWebSocket)
+		router.GET("/ws", cfg.Handlers.WSHandler.HandleWebSocket)
 	}
 
 	api := router.Group("/api")
@@ -167,6 +175,7 @@ func NewRouter(cfg Config) *gin.Engine {
 		{
 			orders.GET("/online", cfg.Handlers.OnlineOrderHandler.GetAllOnlineOrders)
 			orders.GET("/online/get", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)
+			orders.POST("/online", cfg.Handlers.OnlineOrderHandler.CreateOnlineOrder)
 			orders.GET("/print", cfg.Handlers.PrintOrderHandler.GetAllPrintOrders)
 			orders.GET("/print/get", cfg.Handlers.PrintOrderHandler.GetPrintOrderByID)
 		}

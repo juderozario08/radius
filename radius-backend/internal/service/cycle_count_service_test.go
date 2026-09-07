@@ -407,3 +407,374 @@ func TestCycleCountService_TransferOwnership(t *testing.T) {
 		t.Fatalf("expected manager transfer to succeed, got: %v", err)
 	}
 }
+
+func TestCycleCountService_StartCount_BroadcastsEvent(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockCycleCountRepo := mocks.NewMockCycleCountRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockBroadcaster := mocks.NewMockEventBroadcaster(ctrl)
+
+	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil, mockBroadcaster)
+
+	email := "counter@store2.com"
+	storeID := 2
+	empID := 15
+	catID := 3
+
+	mockEmployeeRepo.EXPECT().
+		GetEmployeeByEmail(gomock.Any(), email).
+		Return(&models.Employee{
+			EmployeeId: empID,
+			EmployeeBase: models.EmployeeBase{
+				StoreId: storeID,
+				Role:    models.RoleSales,
+			},
+		}, nil)
+
+	mockCycleCountRepo.EXPECT().
+		StartCycleCount(gomock.Any(), storeID, catID, empID).
+		Return(&models.CycleCount{
+			CountId:           401,
+			StoreId:           storeID,
+			CategoryId:        catID,
+			CategoryName:      "Smartphones",
+			Status:            models.CycleCountStatusInProgress,
+			TotalItems:        60,
+			CountedItems:      0,
+			TotalVarianceCost: 0.0,
+		}, nil)
+
+	// Assert BroadcastToStore is called for Store 2 with EventCycleCountUpdated and action="started"
+	mockBroadcaster.EXPECT().
+		BroadcastToStore(storeID, gomock.Cond(func(x any) bool {
+			evt, ok := x.(models.WebSocketEvent)
+			if !ok {
+				return false
+			}
+			if evt.Type != models.EventCycleCountUpdated || evt.StoreId != storeID {
+				return false
+			}
+			payload, ok := evt.Payload.(models.CycleCountUpdatedPayload)
+			if !ok {
+				return false
+			}
+			return payload.CountId == 401 &&
+				payload.StoreId == storeID &&
+				payload.CategoryName == "Smartphones" &&
+				payload.Status == string(models.CycleCountStatusInProgress) &&
+				payload.Action == "started" &&
+				payload.TotalItems == 60
+		})).
+		Times(1)
+
+	count, err := svc.StartCount(context.Background(), email, catID)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if count.CountId != 401 {
+		t.Fatalf("expected count ID 401, got %d", count.CountId)
+	}
+}
+
+func TestCycleCountService_RecordScan_BroadcastsEvent(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockCycleCountRepo := mocks.NewMockCycleCountRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockBroadcaster := mocks.NewMockEventBroadcaster(ctrl)
+
+	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil, mockBroadcaster)
+
+	email := "counter@store2.com"
+	storeID := 2
+	empID := 15
+	countID := 401
+	prodID := 10
+
+	mockEmployeeRepo.EXPECT().
+		GetEmployeeByEmail(gomock.Any(), email).
+		Return(&models.Employee{
+			EmployeeId: empID,
+			EmployeeBase: models.EmployeeBase{
+				StoreId: storeID,
+				Role:    models.RoleSales,
+			},
+		}, nil)
+
+	mockCycleCountRepo.EXPECT().
+		GetCycleCountByID(gomock.Any(), countID, storeID).
+		Return(&models.CycleCount{
+			CountId:           countID,
+			StoreId:           storeID,
+			CategoryId:        3,
+			CategoryName:      "Smartphones",
+			Status:            models.CycleCountStatusInProgress,
+			CountedBy:         &empID,
+			TotalItems:        60,
+			CountedItems:      5,
+			TotalVarianceCost: 0.0,
+		}, nil)
+
+	qty := 2
+	req := models.RecordScanRequest{
+		CountId:    countID,
+		ProductId:  &prodID,
+		CountedQty: &qty,
+	}
+
+	mockCycleCountRepo.EXPECT().
+		RecordScan(gomock.Any(), storeID, req, empID).
+		Return(&models.CycleCountItemDetail{
+			CountItemId:  1,
+			CountId:      countID,
+			ProductId:    prodID,
+			ExpectedQty:  2,
+			CountedQty:   2,
+			Variance:     0,
+			VarianceCost: 0.0,
+		}, nil)
+
+	mockBroadcaster.EXPECT().
+		BroadcastToStore(storeID, gomock.Cond(func(x any) bool {
+			evt, ok := x.(models.WebSocketEvent)
+			if !ok || evt.Type != models.EventCycleCountUpdated || evt.StoreId != storeID {
+				return false
+			}
+			payload, ok := evt.Payload.(models.CycleCountUpdatedPayload)
+			return ok && payload.CountId == countID && payload.Action == "scanned"
+		})).
+		Times(1)
+
+	item, err := svc.RecordScan(context.Background(), email, req)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if item.CountItemId != 1 {
+		t.Errorf("expected count item ID 1, got %d", item.CountItemId)
+	}
+}
+
+func TestCycleCountService_SubmitForApproval_BroadcastsEvent(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockCycleCountRepo := mocks.NewMockCycleCountRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockBroadcaster := mocks.NewMockEventBroadcaster(ctrl)
+
+	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil, mockBroadcaster)
+
+	email := "counter@store2.com"
+	storeID := 2
+	empID := 15
+	countID := 401
+
+	mockEmployeeRepo.EXPECT().
+		GetEmployeeByEmail(gomock.Any(), email).
+		Return(&models.Employee{
+			EmployeeId: empID,
+			EmployeeBase: models.EmployeeBase{
+				StoreId: storeID,
+				Role:    models.RoleSales,
+			},
+		}, nil)
+
+	mockCycleCountRepo.EXPECT().
+		GetCycleCountByID(gomock.Any(), countID, storeID).
+		Return(&models.CycleCount{
+			CountId:      countID,
+			StoreId:      storeID,
+			CategoryId:   3,
+			CategoryName: "Smartphones",
+			Status:       models.CycleCountStatusInProgress,
+			CountedBy:    &empID,
+		}, nil)
+
+	notes := "Finished count"
+	mockCycleCountRepo.EXPECT().
+		SubmitForApproval(gomock.Any(), storeID, countID, &notes).
+		Return(nil)
+
+	mockBroadcaster.EXPECT().
+		BroadcastToStore(storeID, gomock.Cond(func(x any) bool {
+			evt, ok := x.(models.WebSocketEvent)
+			if !ok || evt.Type != models.EventCycleCountUpdated || evt.StoreId != storeID {
+				return false
+			}
+			payload, ok := evt.Payload.(models.CycleCountUpdatedPayload)
+			return ok && payload.CountId == countID && payload.Action == "submitted" && payload.Status == string(models.CycleCountStatusPendingApproval)
+		})).
+		Times(1)
+
+	err := svc.SubmitForApproval(context.Background(), email, models.SubmitCycleCountRequest{
+		CountId: countID,
+		Notes:   &notes,
+	})
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+}
+
+func TestCycleCountService_ApproveCount_BroadcastsEvent(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockCycleCountRepo := mocks.NewMockCycleCountRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockBroadcaster := mocks.NewMockEventBroadcaster(ctrl)
+
+	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil, mockBroadcaster)
+
+	mgrEmail := "manager@store2.com"
+	storeID := 2
+	empID := 2
+	countID := 401
+
+	mockEmployeeRepo.EXPECT().
+		GetEmployeeByEmail(gomock.Any(), mgrEmail).
+		Return(&models.Employee{
+			EmployeeId: empID,
+			EmployeeBase: models.EmployeeBase{
+				StoreId: storeID,
+				Role:    models.RoleManager,
+			},
+		}, nil)
+
+	mockCycleCountRepo.EXPECT().
+		ApproveCycleCount(gomock.Any(), storeID, countID, empID).
+		Return(nil)
+
+	mockCycleCountRepo.EXPECT().
+		GetCycleCountByID(gomock.Any(), countID, storeID).
+		Return(&models.CycleCount{
+			CountId:      countID,
+			StoreId:      storeID,
+			CategoryId:   3,
+			CategoryName: "Smartphones",
+			Status:       models.CycleCountStatusApproved,
+			TotalItems:   60,
+			CountedItems: 60,
+		}, nil)
+
+	mockBroadcaster.EXPECT().
+		BroadcastToStore(storeID, gomock.Cond(func(x any) bool {
+			evt, ok := x.(models.WebSocketEvent)
+			if !ok || evt.Type != models.EventCycleCountUpdated || evt.StoreId != storeID {
+				return false
+			}
+			payload, ok := evt.Payload.(models.CycleCountUpdatedPayload)
+			return ok && payload.CountId == countID &&
+				payload.StoreId == storeID &&
+				payload.Status == string(models.CycleCountStatusApproved) &&
+				payload.Action == "approved"
+		})).
+		Times(1)
+
+	err := svc.ApproveCount(context.Background(), mgrEmail, models.ApproveCycleCountRequest{CountId: countID})
+	if err != nil {
+		t.Fatalf("expected manager approval to succeed, got: %v", err)
+	}
+}
+
+func TestCycleCountService_TransferOwnership_BroadcastsEvent(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockCycleCountRepo := mocks.NewMockCycleCountRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockBroadcaster := mocks.NewMockEventBroadcaster(ctrl)
+
+	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil, mockBroadcaster)
+
+	mgrEmail := "mgr@store2.com"
+	storeID := 2
+	countID := 15
+	targetEmpID := 105
+
+	mgr := &models.Employee{
+		EmployeeId: 2,
+		EmployeeBase: models.EmployeeBase{
+			StoreId: storeID,
+			Role:    models.RoleManager,
+		},
+	}
+	isTerminated := false
+	isActive := true
+	targetEmp := &models.Employee{
+		EmployeeId: targetEmpID,
+		EmployeeBase: models.EmployeeBase{
+			StoreId:      storeID,
+			IsTerminated: &isTerminated,
+			IsActive:     &isActive,
+		},
+	}
+
+	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), mgrEmail).Return(mgr, nil)
+	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), countID, storeID).Return(&models.CycleCount{
+		CountId:      countID,
+		StoreId:      storeID,
+		CategoryId:   3,
+		CategoryName: "Smartphones",
+		Status:       models.CycleCountStatusInProgress,
+	}, nil)
+	mockEmployeeRepo.EXPECT().GetEmployeeById(gomock.Any(), targetEmpID).Return(targetEmp, nil)
+	mockCycleCountRepo.EXPECT().TransferOwnership(gomock.Any(), storeID, countID, targetEmpID).Return(nil)
+
+	mockBroadcaster.EXPECT().
+		BroadcastToStore(storeID, gomock.Cond(func(x any) bool {
+			evt, ok := x.(models.WebSocketEvent)
+			if !ok || evt.Type != models.EventCycleCountUpdated || evt.StoreId != storeID {
+				return false
+			}
+			payload, ok := evt.Payload.(models.CycleCountUpdatedPayload)
+			return ok && payload.CountId == countID && payload.Action == "transferred"
+		})).
+		Times(1)
+
+	err := svc.TransferOwnership(context.Background(), mgrEmail, models.TransferCycleCountOwnershipRequest{
+		CountId:    countID,
+		EmployeeId: targetEmpID,
+	})
+	if err != nil {
+		t.Fatalf("expected manager transfer to succeed, got: %v", err)
+	}
+}
+
+func TestCycleCountService_NilBroadcasterSafe(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockCycleCountRepo := mocks.NewMockCycleCountRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+
+	// No broadcaster supplied
+	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil)
+
+	mgrEmail := "manager@store2.com"
+	storeID := 2
+	empID := 2
+	countID := 402
+
+	mockEmployeeRepo.EXPECT().
+		GetEmployeeByEmail(gomock.Any(), mgrEmail).
+		Return(&models.Employee{
+			EmployeeId: empID,
+			EmployeeBase: models.EmployeeBase{
+				StoreId: storeID,
+				Role:    models.RoleManager,
+			},
+		}, nil)
+
+	mockCycleCountRepo.EXPECT().
+		ApproveCycleCount(gomock.Any(), storeID, countID, empID).
+		Return(nil)
+
+	// Must succeed without nil pointer panic when broadcaster is nil
+	err := svc.ApproveCount(context.Background(), mgrEmail, models.ApproveCycleCountRequest{CountId: countID})
+	if err != nil {
+		t.Fatalf("expected manager approval to succeed with nil broadcaster, got: %v", err)
+	}
+}

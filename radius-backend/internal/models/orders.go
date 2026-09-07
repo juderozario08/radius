@@ -90,6 +90,7 @@ type OnlineOrder struct {
 	ShippingFee     float32           `json:"shipping_fee"`
 	TotalAmount     float32           `json:"total_amount"`
 	ShippingAddress string            `json:"shipping_address"`
+	Items           []OnlineOrderItem `json:"items,omitempty"`
 }
 
 type OnlineOrderItem struct {

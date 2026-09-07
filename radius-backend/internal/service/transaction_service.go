@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"radius/internal/models"
+	"time"
 )
 
 type TransactionService struct {
@@ -12,6 +13,7 @@ type TransactionService struct {
 	employeeRepo   EmployeeRepository
 	sessionRepo    SessionRepository
 	fillReportRepo FillReportRepository
+	broadcaster    EventBroadcaster
 }
 
 func NewTransactionService(
@@ -19,13 +21,23 @@ func NewTransactionService(
 	employeeRepo EmployeeRepository,
 	sessionRepo SessionRepository,
 	fillReportRepo FillReportRepository,
+	broadcaster ...EventBroadcaster,
 ) *TransactionService {
-	return &TransactionService{
+	svc := &TransactionService{
 		salesRepo:      salesRepo,
 		employeeRepo:   employeeRepo,
 		sessionRepo:    sessionRepo,
 		fillReportRepo: fillReportRepo,
 	}
+	if len(broadcaster) > 0 && broadcaster[0] != nil {
+		svc.broadcaster = broadcaster[0]
+	}
+	return svc
+}
+
+// SetBroadcaster allows setting or replacing the real-time event broadcaster.
+func (s *TransactionService) SetBroadcaster(broadcaster EventBroadcaster) {
+	s.broadcaster = broadcaster
 }
 
 func (s *TransactionService) CreateTransaction(ctx context.Context, email string, role models.EmployeeRole, req models.CreateTransactionRequest) (*models.Transaction, error) {
@@ -57,6 +69,37 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, email string
 	// 2. Automatically report sold items to the store's active Fill Report
 	if s.fillReportRepo != nil && len(items) > 0 {
 		_ = s.fillReportRepo.AddSoldItems(ctx, storeID, items)
+	}
+
+	// 3. Broadcast real-time store activity event
+	if s.broadcaster != nil && tx != nil {
+		now := time.Now().UTC()
+		metadata := map[string]any{
+			"transaction_id": tx.TransactionId,
+			"register_id":    tx.RegisterId,
+			"total_amount":   float64(tx.TotalAmount),
+			"items_count":    len(items),
+		}
+		if employeeID != nil {
+			metadata["employee_id"] = *employeeID
+		}
+
+		payload := models.StoreActivityPayload{
+			ActivityId:   fmt.Sprintf("tx-%d", tx.TransactionId),
+			StoreId:      storeID,
+			ActivityType: "TRANSACTION_COMPLETED",
+			Title:        fmt.Sprintf("POS Sale #%d", tx.TransactionId),
+			Description:  fmt.Sprintf("Completed sale of %d item(s) for $%.2f at register %s", len(items), tx.TotalAmount, tx.RegisterId),
+			Timestamp:    now,
+			Metadata:     metadata,
+		}
+
+		s.broadcaster.BroadcastToStore(storeID, models.WebSocketEvent{
+			Type:      models.EventStoreActivity,
+			StoreId:   storeID,
+			Timestamp: now,
+			Payload:   payload,
+		})
 	}
 
 	return tx, nil

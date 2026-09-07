@@ -444,6 +444,21 @@ func (mr *MockOrdersRepositoryMockRecorder) GetPrintOrderByID(ctx, id, storeID a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrintOrderByID", reflect.TypeOf((*MockOrdersRepository)(nil).GetPrintOrderByID), ctx, id, storeID)
 }
 
+// CreateOnlineOrder mocks base method.
+func (m *MockOrdersRepository) CreateOnlineOrder(ctx context.Context, order *models.OnlineOrder) (*models.OnlineOrder, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateOnlineOrder", ctx, order)
+	ret0, _ := ret[0].(*models.OnlineOrder)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateOnlineOrder indicates an expected call of CreateOnlineOrder.
+func (mr *MockOrdersRepositoryMockRecorder) CreateOnlineOrder(ctx, order any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOnlineOrder", reflect.TypeOf((*MockOrdersRepository)(nil).CreateOnlineOrder), ctx, order)
+}
+
 // MockInventoryRepository is a mock of InventoryRepository interface.
 type MockInventoryRepository struct {
 	ctrl     *gomock.Controller
@@ -1481,4 +1496,53 @@ func (mr *MockFillReportRepositoryMockRecorder) AddSoldItems(ctx, storeID, items
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSoldItems", reflect.TypeOf((*MockFillReportRepository)(nil).AddSoldItems), ctx, storeID, items)
 }
+
+// MockEventBroadcaster is a mock of EventBroadcaster interface.
+type MockEventBroadcaster struct {
+	ctrl     *gomock.Controller
+	recorder *MockEventBroadcasterMockRecorder
+	isgomock struct{}
+}
+
+// MockEventBroadcasterMockRecorder is the mock recorder for MockEventBroadcaster.
+type MockEventBroadcasterMockRecorder struct {
+	mock *MockEventBroadcaster
+}
+
+// NewMockEventBroadcaster creates a new mock instance.
+func NewMockEventBroadcaster(ctrl *gomock.Controller) *MockEventBroadcaster {
+	mock := &MockEventBroadcaster{ctrl: ctrl}
+	mock.recorder = &MockEventBroadcasterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockEventBroadcaster) EXPECT() *MockEventBroadcasterMockRecorder {
+	return m.recorder
+}
+
+// Broadcast mocks base method.
+func (m *MockEventBroadcaster) Broadcast(event models.WebSocketEvent) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Broadcast", event)
+}
+
+// Broadcast indicates an expected call of Broadcast.
+func (mr *MockEventBroadcasterMockRecorder) Broadcast(event any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Broadcast", reflect.TypeOf((*MockEventBroadcaster)(nil).Broadcast), event)
+}
+
+// BroadcastToStore mocks base method.
+func (m *MockEventBroadcaster) BroadcastToStore(storeID int, event models.WebSocketEvent) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "BroadcastToStore", storeID, event)
+}
+
+// BroadcastToStore indicates an expected call of BroadcastToStore.
+func (mr *MockEventBroadcasterMockRecorder) BroadcastToStore(storeID, event any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastToStore", reflect.TypeOf((*MockEventBroadcaster)(nil).BroadcastToStore), storeID, event)
+}
+
 

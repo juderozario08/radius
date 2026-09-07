@@ -16,6 +16,7 @@ type CycleCountService struct {
 	productsRepo   ProductRepository
 	inventoryRepo  InventoryRepository
 	sessionRepo    SessionRepository
+	broadcaster    EventBroadcaster
 }
 
 func NewCycleCountService(
@@ -25,8 +26,9 @@ func NewCycleCountService(
 	productsRepo ProductRepository,
 	inventoryRepo InventoryRepository,
 	sessionRepo SessionRepository,
+	broadcaster ...EventBroadcaster,
 ) *CycleCountService {
-	return &CycleCountService{
+	svc := &CycleCountService{
 		cycleCountRepo: cycleCountRepo,
 		employeeRepo:   employeeRepo,
 		storeRepo:      storeRepo,
@@ -34,6 +36,15 @@ func NewCycleCountService(
 		inventoryRepo:  inventoryRepo,
 		sessionRepo:    sessionRepo,
 	}
+	if len(broadcaster) > 0 && broadcaster[0] != nil {
+		svc.broadcaster = broadcaster[0]
+	}
+	return svc
+}
+
+// SetBroadcaster allows setting or replacing the real-time event broadcaster.
+func (s *CycleCountService) SetBroadcaster(broadcaster EventBroadcaster) {
+	s.broadcaster = broadcaster
 }
 
 // GetWeeklyCycleCounts retrieves all cycle counts for current week for the employee's store
@@ -140,7 +151,33 @@ func (s *CycleCountService) StartCount(ctx context.Context, email string, catego
 		return nil, errors.New("employee not found")
 	}
 
-	return s.cycleCountRepo.StartCycleCount(ctx, employee.StoreId, categoryID, employee.EmployeeId)
+	count, err := s.cycleCountRepo.StartCycleCount(ctx, employee.StoreId, categoryID, employee.EmployeeId)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.broadcaster != nil && count != nil {
+		payload := models.CycleCountUpdatedPayload{
+			CountId:           count.CountId,
+			StoreId:           count.StoreId,
+			CategoryId:        count.CategoryId,
+			CategoryName:      count.CategoryName,
+			Status:            string(count.Status),
+			Action:            "started",
+			TotalItems:        count.TotalItems,
+			CountedItems:      count.CountedItems,
+			TotalVarianceCost: count.TotalVarianceCost,
+			UpdatedAt:         time.Now().UTC(),
+		}
+		s.broadcaster.BroadcastToStore(count.StoreId, models.WebSocketEvent{
+			Type:      models.EventCycleCountUpdated,
+			StoreId:   count.StoreId,
+			Timestamp: time.Now().UTC(),
+			Payload:   payload,
+		})
+	}
+
+	return count, nil
 }
 
 // RecordScan updates a product's counted quantity
@@ -171,7 +208,49 @@ func (s *CycleCountService) RecordScan(ctx context.Context, email string, req mo
 		}
 	}
 
-	return s.cycleCountRepo.RecordScan(ctx, employee.StoreId, req, employee.EmployeeId)
+	item, err := s.cycleCountRepo.RecordScan(ctx, employee.StoreId, req, employee.EmployeeId)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.broadcaster != nil {
+		statusStr := string(count.Status)
+		if count.Status == models.CycleCountStatusNotStarted {
+			statusStr = string(models.CycleCountStatusInProgress)
+		}
+
+		payload := models.CycleCountUpdatedPayload{
+			CountId:           count.CountId,
+			StoreId:           count.StoreId,
+			CategoryId:        count.CategoryId,
+			CategoryName:      count.CategoryName,
+			Status:            statusStr,
+			Action:            "scanned",
+			TotalItems:        count.TotalItems,
+			CountedItems:      count.CountedItems,
+			TotalVarianceCost: count.TotalVarianceCost,
+			UpdatedAt:         time.Now().UTC(),
+		}
+
+		if item != nil {
+			if item.ExpectedQty == 0 && item.CountedQty > 0 {
+				payload.TotalItems = count.TotalItems + 1
+			}
+			if count.CountedItems < payload.TotalItems {
+				payload.CountedItems = count.CountedItems + 1
+			}
+			payload.TotalVarianceCost = count.TotalVarianceCost + item.VarianceCost
+		}
+
+		s.broadcaster.BroadcastToStore(count.StoreId, models.WebSocketEvent{
+			Type:      models.EventCycleCountUpdated,
+			StoreId:   count.StoreId,
+			Timestamp: time.Now().UTC(),
+			Payload:   payload,
+		})
+	}
+
+	return item, nil
 }
 
 // SubmitForApproval submits the completed count for manager review
@@ -202,7 +281,33 @@ func (s *CycleCountService) SubmitForApproval(ctx context.Context, email string,
 		}
 	}
 
-	return s.cycleCountRepo.SubmitForApproval(ctx, employee.StoreId, req.CountId, req.Notes)
+	err = s.cycleCountRepo.SubmitForApproval(ctx, employee.StoreId, req.CountId, req.Notes)
+	if err != nil {
+		return err
+	}
+
+	if s.broadcaster != nil {
+		payload := models.CycleCountUpdatedPayload{
+			CountId:           count.CountId,
+			StoreId:           count.StoreId,
+			CategoryId:        count.CategoryId,
+			CategoryName:      count.CategoryName,
+			Status:            string(models.CycleCountStatusPendingApproval),
+			Action:            "submitted",
+			TotalItems:        count.TotalItems,
+			CountedItems:      count.CountedItems,
+			TotalVarianceCost: count.TotalVarianceCost,
+			UpdatedAt:         time.Now().UTC(),
+		}
+		s.broadcaster.BroadcastToStore(count.StoreId, models.WebSocketEvent{
+			Type:      models.EventCycleCountUpdated,
+			StoreId:   count.StoreId,
+			Timestamp: time.Now().UTC(),
+			Payload:   payload,
+		})
+	}
+
+	return nil
 }
 
 // ApproveCount allows a store manager or admin to approve the count, updating inventory & audit trail
@@ -220,7 +325,36 @@ func (s *CycleCountService) ApproveCount(ctx context.Context, email string, req 
 		return errors.New("unauthorized: only managers and admins can approve cycle counts")
 	}
 
-	return s.cycleCountRepo.ApproveCycleCount(ctx, employee.StoreId, req.CountId, employee.EmployeeId)
+	err = s.cycleCountRepo.ApproveCycleCount(ctx, employee.StoreId, req.CountId, employee.EmployeeId)
+	if err != nil {
+		return err
+	}
+
+	if s.broadcaster != nil {
+		count, _ := s.cycleCountRepo.GetCycleCountByID(ctx, req.CountId, employee.StoreId)
+		payload := models.CycleCountUpdatedPayload{
+			CountId:   req.CountId,
+			StoreId:   employee.StoreId,
+			Status:    string(models.CycleCountStatusApproved),
+			Action:    "approved",
+			UpdatedAt: time.Now().UTC(),
+		}
+		if count != nil {
+			payload.CategoryId = count.CategoryId
+			payload.CategoryName = count.CategoryName
+			payload.TotalItems = count.TotalItems
+			payload.CountedItems = count.CountedItems
+			payload.TotalVarianceCost = count.TotalVarianceCost
+		}
+		s.broadcaster.BroadcastToStore(employee.StoreId, models.WebSocketEvent{
+			Type:      models.EventCycleCountUpdated,
+			StoreId:   employee.StoreId,
+			Timestamp: time.Now().UTC(),
+			Payload:   payload,
+		})
+	}
+
+	return nil
 }
 
 // TransferOwnership allows a store manager or admin to reassign a count to another employee
@@ -254,7 +388,33 @@ func (s *CycleCountService) TransferOwnership(ctx context.Context, email string,
 		return errors.New("target employee not found or not active in this store")
 	}
 
-	return s.cycleCountRepo.TransferOwnership(ctx, manager.StoreId, req.CountId, req.EmployeeId)
+	err = s.cycleCountRepo.TransferOwnership(ctx, manager.StoreId, req.CountId, req.EmployeeId)
+	if err != nil {
+		return err
+	}
+
+	if s.broadcaster != nil {
+		payload := models.CycleCountUpdatedPayload{
+			CountId:           count.CountId,
+			StoreId:           count.StoreId,
+			CategoryId:        count.CategoryId,
+			CategoryName:      count.CategoryName,
+			Status:            string(count.Status),
+			Action:            "transferred",
+			TotalItems:        count.TotalItems,
+			CountedItems:      count.CountedItems,
+			TotalVarianceCost: count.TotalVarianceCost,
+			UpdatedAt:         time.Now().UTC(),
+		}
+		s.broadcaster.BroadcastToStore(count.StoreId, models.WebSocketEvent{
+			Type:      models.EventCycleCountUpdated,
+			StoreId:   count.StoreId,
+			Timestamp: time.Now().UTC(),
+			Payload:   payload,
+		})
+	}
+
+	return nil
 }
 
 // SearchCycleCounts searches cycle counts with query / filters

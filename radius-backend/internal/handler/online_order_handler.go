@@ -8,6 +8,7 @@ import (
 	"radius/internal/service"
 	"radius/internal/utils"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -87,3 +88,32 @@ func (h *OnlineOrderHandler) GetOnlineOrderByID(ctx *gin.Context) {
 		Items:       items,
 	})
 }
+
+// CreateOnlineOrder handles POST /api/sales_floor/orders/online
+func (h *OnlineOrderHandler) CreateOnlineOrder(ctx *gin.Context) {
+	email := ctx.GetString("email")
+	role := models.EmployeeRole(ctx.GetString("role"))
+
+	var order models.OnlineOrder
+	if err := ctx.ShouldBindJSON(&order); err != nil {
+		log.Printf("[ERROR] OnlineOrderHandler.CreateOnlineOrder (BindJSON): %v", err)
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid request payload: " + err.Error()})
+		return
+	}
+
+	createdOrder, err := h.onlineOrderService.CreateOnlineOrder(ctx.Request.Context(), email, role, &order)
+	if err != nil {
+		log.Printf("[ERROR] OnlineOrderHandler.CreateOnlineOrder (Service): %v", err)
+		if strings.Contains(err.Error(), "invalid status") ||
+			strings.Contains(err.Error(), "required") ||
+			strings.Contains(err.Error(), "cannot be nil") {
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, createdOrder)
+}
+

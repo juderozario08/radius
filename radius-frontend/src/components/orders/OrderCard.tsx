@@ -24,6 +24,8 @@ export interface OrderCardData {
     placed_at?: string;
     created_at?: string;
     items_count?: number;
+    assigned_to?: number | null;
+    assigned_to_name?: string | null;
 }
 
 export interface OrderCardProps {
@@ -131,7 +133,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 onPress={onPress}
                 disabled={!onPress}
             >
-                {/* Top row: Order ID, Type Badge, New Indicator, and Status Badge */}
+                {/* Top row: Order ID, Type Badge, New Indicator, Status Badge, and Chevron */}
                 <View style={styles.headerRow}>
                     <View style={styles.orderIdGroup}>
                         <Text style={styles.orderIdText}>Order #{order.order_id}</Text>
@@ -146,7 +148,27 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                             </View>
                         )}
                     </View>
-                    <OrderStatusBadge status={order.status} />
+                    <View style={styles.headerRightGroup}>
+                        <OrderStatusBadge status={order.status} />
+                        <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+                    </View>
+                </View>
+
+                {/* Assignment status badge row */}
+                <View style={styles.assignmentRow}>
+                    {order.assigned_to_name ? (
+                        <View style={styles.assigneeBadge}>
+                            <Ionicons name="person" size={11} color="#1565C0" />
+                            <Text style={styles.assigneeText} numberOfLines={1}>
+                                In Progress: {order.assigned_to_name}
+                            </Text>
+                        </View>
+                    ) : (
+                        <View style={styles.unassignedBadge}>
+                            <Ionicons name="hand-right-outline" size={11} color="#E65100" />
+                            <Text style={styles.unassignedText}>Unassigned • Tap to open & claim</Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* Middle row: Customer Name */}
@@ -281,5 +303,43 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: "700",
         color: COLORS.textPrimary,
+    },
+    headerRightGroup: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+    },
+    assignmentRow: {
+        marginBottom: 8,
+    },
+    assigneeBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        alignSelf: "flex-start",
+        gap: 4,
+        backgroundColor: "#E3F2FD",
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+    },
+    assigneeText: {
+        fontSize: 11,
+        fontWeight: "600",
+        color: "#1565C0",
+    },
+    unassignedBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        alignSelf: "flex-start",
+        gap: 4,
+        backgroundColor: "#FFF3E0",
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+    },
+    unassignedText: {
+        fontSize: 11,
+        fontWeight: "600",
+        color: "#E65100",
     },
 });

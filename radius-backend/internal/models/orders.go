@@ -46,19 +46,24 @@ const (
 )
 
 const (
-	OnlineOrderStatusReadyForPickup         OnlineOrderStatus = "READY FOR PICKUP"
-	OnlineOrderStatusAwaitingPickup         OnlineOrderStatus = "AWAITING PICKUP"
-	OnlineOrderStatusReleased                 OnlineOrderStatus = "RELEASED"
-	OnlineOrderStatusWorkInProgress           OnlineOrderStatus = "WORK IN PROGRESS"
-	OnlineOrderStatusShipped                  OnlineOrderStatus = "SHIPPED"
-	OnlineOrderStatusDelivering               OnlineOrderStatus = "DELIVERING"
-	OnlineOrderStatusDelivered                OnlineOrderStatus = "DELIVERED"
+	OnlineOrderStatusReadyForPickup OnlineOrderStatus = "READY FOR PICKUP"
+	OnlineOrderStatusAwaitingPickup OnlineOrderStatus = "AWAITING PICKUP"
+	OnlineOrderStatusReleased       OnlineOrderStatus = "RELEASED"
+	OnlineOrderStatusWorkInProgress OnlineOrderStatus = "WORK IN PROGRESS"
+	OnlineOrderStatusShipped        OnlineOrderStatus = "SHIPPED"
+	OnlineOrderStatusDelivering     OnlineOrderStatus = "DELIVERING"
+	OnlineOrderStatusDelivered      OnlineOrderStatus = "DELIVERED"
+	OnlineOrderStatusCancelled      OnlineOrderStatus = "CANCELLED"
 )
 
 func (o *OnlineOrder) ValidateStatus() error {
+	if o.Status == OnlineOrderStatusCancelled {
+		return nil
+	}
 	switch o.OrderType {
 	case OnlineOrderTypeBOPIS:
-		if o.Status != OnlineOrderStatusReadyForPickup &&
+		if o.Status != OnlineOrderStatusWorkInProgress &&
+			o.Status != OnlineOrderStatusReadyForPickup &&
 			o.Status != OnlineOrderStatusAwaitingPickup &&
 			o.Status != OnlineOrderStatusReleased {
 			return fmt.Errorf("invalid status %s for BOPIS order", o.Status)
@@ -77,20 +82,23 @@ func (o *OnlineOrder) ValidateStatus() error {
 }
 
 type OnlineOrder struct {
-	OrderId         int               `json:"order_id"`
-	StoreId         int               `json:"store_id"`
-	CustomerEmail   string            `json:"customer_email"`
-	CustomerName    string            `json:"customer_name"`
-	OrderType       OnlineOrderType   `json:"order_type"`
-	Status          OnlineOrderStatus `json:"status"`
-	PlacedAt        time.Time         `json:"placed_at"`
-	FulfilledAt     *time.Time        `json:"fulfilled_at"`
-	Subtotal        float32           `json:"subtotal"`
-	TaxAmount       float32           `json:"tax_amount"`
-	ShippingFee     float32           `json:"shipping_fee"`
-	TotalAmount     float32           `json:"total_amount"`
-	ShippingAddress string            `json:"shipping_address"`
-	Items           []OnlineOrderItem `json:"items,omitempty"`
+	OrderId            int               `json:"order_id"`
+	StoreId            int               `json:"store_id"`
+	CustomerEmail      string            `json:"customer_email"`
+	CustomerName       string            `json:"customer_name"`
+	OrderType          OnlineOrderType   `json:"order_type"`
+	Status             OnlineOrderStatus `json:"status"`
+	PlacedAt           time.Time         `json:"placed_at"`
+	FulfilledAt        *time.Time        `json:"fulfilled_at"`
+	Subtotal           float32           `json:"subtotal"`
+	TaxAmount          float32           `json:"tax_amount"`
+	ShippingFee        float32           `json:"shipping_fee"`
+	TotalAmount        float32           `json:"total_amount"`
+	ShippingAddress    string            `json:"shipping_address"`
+	AssignedTo         *int              `json:"assigned_to,omitempty"`
+	AssignedToName     *string           `json:"assigned_to_name,omitempty"`
+	CancellationReason *string           `json:"cancellation_reason,omitempty"`
+	Items              []OnlineOrderItem `json:"items,omitempty"`
 }
 
 type OnlineOrderItem struct {
@@ -101,6 +109,25 @@ type OnlineOrderItem struct {
 	Quantity    int     `json:"quantity"`
 	UnitPrice   float32 `json:"unit_price"`
 	PickedQty   *int    `json:"picked_qty"`
+	Status      string  `json:"status"` // ACTIVE, CANCELLED, REMOVED
+	Reason      *string `json:"reason,omitempty"`
+}
+
+type UpdateOnlineOrderItemRequest struct {
+	OrderID     int     `json:"order_id" binding:"required"`
+	OrderItemID int     `json:"order_item_id" binding:"required"`
+	PickedQty   *int    `json:"picked_qty"`
+	Status      string  `json:"status"` // ACTIVE, CANCELLED, REMOVED
+	Reason      *string `json:"reason"`
+}
+
+type CancelOnlineOrderRequest struct {
+	OrderID int    `json:"order_id" binding:"required"`
+	Reason  string `json:"reason" binding:"required"`
+}
+
+type CompletePickRequest struct {
+	OrderID int `json:"order_id" binding:"required"`
 }
 
 type GetAllOnlineOrdersResponse struct {
@@ -113,6 +140,11 @@ type GetOnlineOrderResponse struct {
 	Items       any `json:"items"`
 }
 
+type AssignOnlineOrderRequest struct {
+	OrderID    int  `json:"order_id" binding:"required"`
+	EmployeeID *int `json:"employee_id"`
+}
+
 type OrderSearchCriteria struct {
 	OrderType         string
 	OrderID           *int
@@ -123,6 +155,8 @@ type OrderSearchCriteria struct {
 	PaymentCard       string
 	SKU               string
 	Status            string
+	AssignedTo        *int
+	DashboardOnly     bool
 }
 
 // Print Order Types & Statuses

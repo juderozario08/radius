@@ -176,6 +176,10 @@ func NewRouter(cfg Config) *gin.Engine {
 			orders.GET("/online", cfg.Handlers.OnlineOrderHandler.GetAllOnlineOrders)
 			orders.GET("/online/get", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)
 			orders.POST("/online", cfg.Handlers.OnlineOrderHandler.CreateOnlineOrder)
+			orders.PUT("/online/assign", cfg.Handlers.OnlineOrderHandler.AssignOnlineOrder)
+			orders.PUT("/online/items", cfg.Handlers.OnlineOrderHandler.UpdateOnlineOrderItem)
+			orders.POST("/online/complete_pick", cfg.Handlers.OnlineOrderHandler.CompleteOrderPicking)
+			orders.POST("/online/cancel", cfg.Handlers.OnlineOrderHandler.CancelOnlineOrder)
 			orders.GET("/print", cfg.Handlers.PrintOrderHandler.GetAllPrintOrders)
 			orders.GET("/print/get", cfg.Handlers.PrintOrderHandler.GetPrintOrderByID)
 		}

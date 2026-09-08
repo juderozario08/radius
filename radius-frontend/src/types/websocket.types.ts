@@ -51,6 +51,8 @@ export interface OrderCreatedPayload {
     total_amount: number;
     items_count: number;
     placed_at: string;
+    assigned_to?: number | null;
+    assigned_to_name?: string | null;
 }
 
 /**
@@ -66,6 +68,8 @@ export interface OrderStatusUpdatedPayload {
     new_status: OrderStatus | string;
     total_amount: number;
     updated_at: string;
+    assigned_to?: number | null;
+    assigned_to_name?: string | null;
 }
 
 /**
@@ -94,6 +98,8 @@ export interface CycleCountUpdatedPayload {
     counted_items: number;
     total_variance_cost: number;
     updated_at: string;
+    counted_by?: number | null;
+    counted_by_name?: string | null;
 }
 
 /**

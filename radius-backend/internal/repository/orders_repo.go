@@ -71,6 +71,18 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 		baseConditions += fmt.Sprintf(" AND o.status = %s", addArg(criteria.Status))
 	}
 
+	if criteria.AssignedTo != nil {
+		baseConditions += fmt.Sprintf(" AND o.assigned_to = %s", addArg(*criteria.AssignedTo))
+	}
+
+	if criteria.DashboardOnly {
+		baseConditions += ` AND (
+			(o.order_type = 'STS' AND o.status IN ('SHIPPED', 'DELIVERING', 'DELIVERED'))
+			OR
+			(o.order_type = 'BOPIS' AND o.status = 'WORK IN PROGRESS')
+		)`
+	}
+
 	if criteria.SKU != "" {
 		baseConditions += fmt.Sprintf(` AND EXISTS (
 			SELECT 1 FROM online_order_items ooi
@@ -89,8 +101,12 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 	args = append(args, limit, offset)
 
 	query = `
-		SELECT o.order_id, o.store_id, o.customer_email, o.customer_name, o.order_type, o.status, o.placed_at, o.fulfilled_at, o.subtotal, o.tax_amount, o.shipping_fee, o.total_amount, o.shipping_address
+		SELECT o.order_id, o.store_id, o.customer_email, o.customer_name, o.order_type, o.status,
+		       o.placed_at, o.fulfilled_at, o.subtotal, o.tax_amount, o.shipping_fee, o.total_amount, o.shipping_address,
+		       o.assigned_to,
+		       CASE WHEN e_assign.employee_id IS NOT NULL THEN e_assign.first_name || ' ' || e_assign.last_name ELSE NULL END AS assigned_to_name
 		FROM online_orders o
+		LEFT JOIN employees e_assign ON o.assigned_to = e_assign.employee_id
 		WHERE ` + baseConditions + fmt.Sprintf(`
 		ORDER BY o.order_id DESC
 		LIMIT %s OFFSET %s`, limitPlaceholder, offsetPlaceholder)
@@ -113,6 +129,7 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 			&o.OrderId, &o.StoreId, &o.CustomerEmail, &o.CustomerName, &o.OrderType,
 			&o.Status, &o.PlacedAt, &o.FulfilledAt, &o.Subtotal, &o.TaxAmount,
 			&o.ShippingFee, &o.TotalAmount, &o.ShippingAddress,
+			&o.AssignedTo, &o.AssignedToName,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -122,8 +139,6 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 	if err := rows.Err(); err != nil {
 		return nil, 0, err
 	}
-
-
 
 	if orders == nil {
 		orders = []models.OnlineOrder{}
@@ -138,16 +153,26 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 
 	if storeID != nil {
 		query = `
-			SELECT order_id, store_id, customer_email, customer_name, order_type, status, placed_at, fulfilled_at, subtotal, tax_amount, shipping_fee, total_amount, shipping_address
-			FROM online_orders
-			WHERE order_id = $1 AND store_id = $2
+			SELECT o.order_id, o.store_id, o.customer_email, o.customer_name, o.order_type, o.status,
+			       o.placed_at, o.fulfilled_at, o.subtotal, o.tax_amount, o.shipping_fee, o.total_amount, o.shipping_address,
+			       o.assigned_to,
+			       CASE WHEN e_assign.employee_id IS NOT NULL THEN e_assign.first_name || ' ' || e_assign.last_name ELSE NULL END AS assigned_to_name,
+			       o.cancellation_reason
+			FROM online_orders o
+			LEFT JOIN employees e_assign ON o.assigned_to = e_assign.employee_id
+			WHERE o.order_id = $1 AND o.store_id = $2
 		`
 		args = []any{id, *storeID}
 	} else {
 		query = `
-			SELECT order_id, store_id, customer_email, customer_name, order_type, status, placed_at, fulfilled_at, subtotal, tax_amount, shipping_fee, total_amount, shipping_address
-			FROM online_orders
-			WHERE order_id = $1
+			SELECT o.order_id, o.store_id, o.customer_email, o.customer_name, o.order_type, o.status,
+			       o.placed_at, o.fulfilled_at, o.subtotal, o.tax_amount, o.shipping_fee, o.total_amount, o.shipping_address,
+			       o.assigned_to,
+			       CASE WHEN e_assign.employee_id IS NOT NULL THEN e_assign.first_name || ' ' || e_assign.last_name ELSE NULL END AS assigned_to_name,
+			       o.cancellation_reason
+			FROM online_orders o
+			LEFT JOIN employees e_assign ON o.assigned_to = e_assign.employee_id
+			WHERE o.order_id = $1
 		`
 		args = []any{id}
 	}
@@ -157,6 +182,7 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 		&o.OrderId, &o.StoreId, &o.CustomerEmail, &o.CustomerName, &o.OrderType,
 		&o.Status, &o.PlacedAt, &o.FulfilledAt, &o.Subtotal, &o.TaxAmount,
 		&o.ShippingFee, &o.TotalAmount, &o.ShippingAddress,
+		&o.AssignedTo, &o.AssignedToName, &o.CancellationReason,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -166,10 +192,12 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 	}
 
 	itemQuery := `
-		SELECT ooi.order_item_id, ooi.order_id, ooi.product_id, p.sku as product_sku, ooi.quantity, ooi.unit_price, ooi.picked_qty
+		SELECT ooi.order_item_id, ooi.order_id, ooi.product_id, p.sku as product_sku, ooi.quantity, ooi.unit_price, ooi.picked_qty,
+		       COALESCE(ooi.status, 'ACTIVE') as status, ooi.reason
 		FROM online_order_items ooi
 		LEFT JOIN products p ON ooi.product_id = p.product_id
 		WHERE ooi.order_id = $1
+		ORDER BY ooi.order_item_id ASC
 	`
 	rows, err := r.db.QueryContext(ctx, itemQuery, id)
 	if err != nil {
@@ -182,6 +210,7 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 		var i models.OnlineOrderItem
 		if err := rows.Scan(
 			&i.OrderItemId, &i.OrderId, &i.ProductId, &i.ProductSku, &i.Quantity, &i.UnitPrice, &i.PickedQty,
+			&i.Status, &i.Reason,
 		); err != nil {
 			return nil, nil, err
 		}
@@ -471,3 +500,111 @@ func (r *OrdersRepo) GetPrintOrderByID(ctx context.Context, id int, storeID *int
 
 	return &o, items, nil
 }
+
+func (r *OrdersRepo) AssignOnlineOrder(ctx context.Context, orderID int, employeeID *int, storeID *int, force bool) (*models.OnlineOrder, bool, error) {
+	var query string
+	var args []any
+
+	if force {
+		query = `
+			UPDATE online_orders
+			SET assigned_to = $1
+			WHERE order_id = $2
+		`
+		args = []any{employeeID, orderID}
+		if storeID != nil {
+			query += " AND store_id = $3"
+			args = append(args, *storeID)
+		}
+	} else {
+		query = `
+			UPDATE online_orders
+			SET assigned_to = $1
+			WHERE order_id = $2 AND (assigned_to IS NULL OR assigned_to = $1)
+		`
+		args = []any{employeeID, orderID}
+		if storeID != nil {
+			query += " AND store_id = $3"
+			args = append(args, *storeID)
+		}
+	}
+
+	res, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return nil, false, err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return nil, false, err
+	}
+
+	order, _, err := r.GetOnlineOrderByID(ctx, orderID, storeID)
+	if err != nil {
+		return nil, false, err
+	}
+	if order == nil {
+		return nil, false, fmt.Errorf("order %d not found", orderID)
+	}
+
+	wasAssigned := rowsAffected > 0
+	return order, wasAssigned, nil
+}
+
+func (r *OrdersRepo) UpdateOnlineOrderItem(ctx context.Context, orderID, itemID int, pickedQty *int, status string, reason *string) error {
+	query := `
+		UPDATE online_order_items
+		SET picked_qty = COALESCE($1, picked_qty),
+		    status = CASE WHEN $2 != '' THEN $2 ELSE status END,
+		    reason = CASE WHEN $3 IS NOT NULL THEN $3 ELSE reason END
+		WHERE order_id = $4 AND order_item_id = $5
+	`
+	_, err := r.db.ExecContext(ctx, query, pickedQty, status, reason, orderID, itemID)
+	return err
+}
+
+func (r *OrdersRepo) UpdateOnlineOrderStatus(ctx context.Context, orderID int, status models.OnlineOrderStatus, cancellationReason *string) (*models.OnlineOrder, error) {
+	query := `
+		UPDATE online_orders
+		SET status = $1,
+		    cancellation_reason = CASE WHEN $2 IS NOT NULL THEN $2 ELSE cancellation_reason END,
+		    fulfilled_at = CASE WHEN $1 IN ('READY FOR PICKUP', 'AWAITING PICKUP', 'DELIVERED') AND fulfilled_at IS NULL THEN NOW() ELSE fulfilled_at END
+		WHERE order_id = $3
+	`
+	_, err := r.db.ExecContext(ctx, query, status, cancellationReason, orderID)
+	if err != nil {
+		return nil, err
+	}
+
+	order, _, err := r.GetOnlineOrderByID(ctx, orderID, nil)
+	return order, err
+}
+
+func (r *OrdersRepo) AutoCancelExpiredBOPISOrders(ctx context.Context, olderThan time.Duration) ([]models.OnlineOrder, error) {
+	threshold := time.Now().UTC().Add(-olderThan)
+	query := `
+		UPDATE online_orders
+		SET status = 'CANCELLED', cancellation_reason = 'Pickup window expired (5 days)'
+		WHERE order_type = 'BOPIS'
+		  AND status IN ('WORK IN PROGRESS', 'READY FOR PICKUP', 'AWAITING PICKUP')
+		  AND placed_at <= $1
+		RETURNING order_id, store_id, customer_email, customer_name, order_type, status, placed_at, total_amount
+	`
+	rows, err := r.db.QueryContext(ctx, query, threshold)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var cancelled []models.OnlineOrder
+	for rows.Next() {
+		var o models.OnlineOrder
+		if err := rows.Scan(&o.OrderId, &o.StoreId, &o.CustomerEmail, &o.CustomerName, &o.OrderType, &o.Status, &o.PlacedAt, &o.TotalAmount); err != nil {
+			return nil, err
+		}
+		cancelled = append(cancelled, o)
+	}
+	return cancelled, rows.Err()
+}
+
+

@@ -1,5 +1,5 @@
 // radius-frontend/app/(app)/(tabs)/home/dashboard/index.tsx
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
     StyleSheet,
     View,
@@ -11,6 +11,7 @@ import {
     Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import LogoutComponent from "@/components/common/Logout";
@@ -30,14 +31,49 @@ import {
     StoreActivityPayload,
 } from "@/types/websocket.types";
 import { GetAllOnlineOrdersResponse } from "@/types/order.types";
+import { CycleCountSummary } from "@/types/cyclecount.types";
 
 type TabView = "overview" | "orders" | "cycle_counts" | "activities";
+type ScopeView = "my_tasks" | "store_wide";
+
+/**
+ * Dashboard Order Eligibility Rules:
+ * - BOPIS: Only unpicked BOPIS orders (WORK IN PROGRESS, PENDING, PLACED).
+ *   Already-picked orders (READY FOR PICKUP, AWAITING PICKUP, RELEASED) are excluded from active dashboard queue.
+ * - STS: Only SHIPPED STS orders that are 1 step away from READY FOR PICKUP (SHIPPED, DELIVERING, DELIVERED).
+ *   Warehouse backlog (WORK IN PROGRESS) and already-staged/ready-for-pickup orders (READY FOR PICKUP, AWAITING PICKUP, RELEASED) are excluded.
+ */
+export const isDashboardEligibleOrder = (order: { order_type?: string; status?: string }): boolean => {
+    const type = (order.order_type || "").toUpperCase();
+    const status = (order.status || "").toUpperCase();
+
+    if (type === "STS") {
+        // Only SHIPPED STS that are 1 step away from READY for PICKUP
+        return ["SHIPPED", "DELIVERING", "DELIVERED"].includes(status);
+    }
+    if (type === "BOPIS") {
+        // Only unpicked BOPIS
+        return ["WORK IN PROGRESS", "PENDING", "PLACED"].includes(status);
+    }
+    return false;
+};
 
 export default function RealTimeDashboard() {
     const { user, logout } = useAuth();
     const [activeTab, setActiveTab] = useState<TabView>("overview");
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
+
+    // Role-aware scoping: Associates default to 'my_tasks', Managers/Admins default to 'store_wide'
+    const isAssociate = user?.role === "SALES" || user?.role === "SERVICE";
+    const [viewScope, setViewScope] = useState<ScopeView>(isAssociate ? "my_tasks" : "store_wide");
+
+    useEffect(() => {
+        if (user?.role) {
+            const isReg = user.role === "SALES" || user.role === "SERVICE";
+            setViewScope(isReg ? "my_tasks" : "store_wide");
+        }
+    }, [user?.role]);
 
     // Live state collections (updated immediately over WebSocket without page refresh)
     const [liveOrders, setLiveOrders] = useState<OrderCreatedPayload[]>([]);
@@ -77,7 +113,11 @@ export default function RealTimeDashboard() {
         autoConnect: true,
         maxHistorySize: 100,
         onOrderCreated: (payload) => {
-            // Immediate real-time prepend without manual refresh (R2)
+            // Only show orders that satisfy dashboard eligibility rules
+            if (!isDashboardEligibleOrder(payload)) {
+                return;
+            }
+
             setLiveOrders((prev) => {
                 const exists = prev.some((o) => o.order_id === payload.order_id);
                 if (exists) return prev;
@@ -95,36 +135,96 @@ export default function RealTimeDashboard() {
                     title: `New Online Order #${payload.order_id}`,
                     description: `${payload.customer_name} placed ${payload.order_type} order with ${payload.items_count} item(s)`,
                     timestamp: payload.placed_at || new Date().toISOString(),
+                    metadata: {
+                        order_id: payload.order_id,
+                        order_type: payload.order_type,
+                        assigned_to: payload.assigned_to,
+                    },
                 },
                 ...prev,
             ]);
         },
         onOrderStatusUpdated: (payload) => {
-            // In-place status transition update without page refresh (R2)
-            setLiveOrders((prev) =>
-                prev.map((o) =>
-                    o.order_id === payload.order_id
-                        ? { ...o, status: payload.new_status }
-                        : o
-                )
-            );
-            showToast(`🔄 Order #${payload.order_id} status changed to ${payload.new_status}`);
+            const isEligible = isDashboardEligibleOrder({
+                order_type: payload.order_type,
+                status: payload.new_status,
+            });
+
+            setLiveOrders((prev) => {
+                const exists = prev.some((o) => o.order_id === payload.order_id);
+
+                // If transitioned to RELEASED or no longer eligible: remove from active queue
+                if (!isEligible) {
+                    return prev.filter((o) => o.order_id !== payload.order_id);
+                }
+
+                // If already in queue, update status and assignment in place
+                if (exists) {
+                    return prev.map((o) =>
+                        o.order_id === payload.order_id
+                            ? {
+                                  ...o,
+                                  status: payload.new_status,
+                                  assigned_to: payload.assigned_to !== undefined ? payload.assigned_to : o.assigned_to,
+                                  assigned_to_name: payload.assigned_to_name !== undefined ? payload.assigned_to_name : o.assigned_to_name,
+                              }
+                            : o
+                    );
+                }
+
+                // E.g. STS transitioned to SHIPPED: add into active store queue
+                return [
+                    {
+                        order_id: payload.order_id,
+                        store_id: payload.store_id,
+                        customer_name: payload.customer_name || "Customer",
+                        customer_email: "",
+                        order_type: payload.order_type,
+                        status: payload.new_status,
+                        total_amount: payload.total_amount || 0,
+                        items_count: 1,
+                        placed_at: new Date().toISOString(),
+                        assigned_to: payload.assigned_to,
+                        assigned_to_name: payload.assigned_to_name,
+                    },
+                    ...prev,
+                ];
+            });
+
+            if (payload.assigned_to_name) {
+                showToast(`👤 Order #${payload.order_id} assigned to ${payload.assigned_to_name}`);
+            } else {
+                showToast(`🔄 Order #${payload.order_id} status changed to ${payload.new_status}`);
+            }
 
             setLiveActivities((prev) => [
                 {
                     activity_id: `act-status-${payload.order_id}-${Date.now()}`,
                     store_id: payload.store_id,
                     activity_type: "ORDER_STATUS_CHANGED",
-                    title: `Order #${payload.order_id} Status Updated`,
-                    description: `Moved from ${payload.previous_status} to ${payload.new_status}`,
+                    title: `Order #${payload.order_id} Updated`,
+                    description: payload.assigned_to_name
+                        ? `Assigned to ${payload.assigned_to_name} (${payload.new_status})`
+                        : `Moved from ${payload.previous_status} to ${payload.new_status}`,
                     timestamp: payload.updated_at || new Date().toISOString(),
+                    metadata: {
+                        order_id: payload.order_id,
+                        assigned_to: payload.assigned_to,
+                        assigned_to_name: payload.assigned_to_name,
+                    },
                 },
                 ...prev,
             ]);
         },
         onCycleCountUpdated: (payload) => {
-            // Live cycle count mutation without manual refresh (R2)
+            const s = (payload.status || "").toUpperCase();
+            const isInProgress = s === "IN PROGRESS" || s === "IN_PROGRESS";
+
             setLiveCycleCounts((prev) => {
+                // Only in progress cycle counts should be shown on the dashboard
+                if (!isInProgress) {
+                    return prev.filter((c) => c.count_id !== payload.count_id);
+                }
                 const index = prev.findIndex((c) => c.count_id === payload.count_id);
                 if (index >= 0) {
                     const updated = [...prev];
@@ -133,7 +233,10 @@ export default function RealTimeDashboard() {
                 }
                 return [payload, ...prev];
             });
-            showToast(`📊 Cycle Count #${payload.count_id} Updated: ${payload.category_name} (${payload.action})`);
+
+            if (isInProgress) {
+                showToast(`📊 Cycle Count #${payload.count_id} Updated: ${payload.category_name} (${payload.action})`);
+            }
 
             setLiveActivities((prev) => [
                 {
@@ -143,11 +246,20 @@ export default function RealTimeDashboard() {
                     title: `Cycle Count #${payload.count_id} - ${payload.category_name}`,
                     description: `Action: ${payload.action} | Progress: ${payload.counted_items}/${payload.total_items} items`,
                     timestamp: payload.updated_at || new Date().toISOString(),
+                    metadata: { count_id: payload.count_id },
                 },
                 ...prev,
             ]);
         },
         onStoreActivity: (payload) => {
+            // Exclude checkout/POS transactions from dashboard activity stream
+            if (
+                payload.activity_type.includes("POS") ||
+                payload.activity_type.includes("TRANSACTION") ||
+                payload.activity_type.includes("CHECKOUT")
+            ) {
+                return;
+            }
             setLiveActivities((prev) => [payload, ...prev]);
             showToast(`🔔 Store Activity: ${payload.title}`);
         },
@@ -156,110 +268,95 @@ export default function RealTimeDashboard() {
     // Initial data fetch to populate dashboard on startup
     const loadInitialData = useCallback(async () => {
         try {
-            // Fetch initial online orders
+            // Fetch initial online orders with dashboard_only=true filter
             const ordersRes = await callApi<GetAllOnlineOrdersResponse>(
-                `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=10`,
+                `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=40&dashboard_only=true`,
                 { method: "GET" },
                 logout
             );
             if (ordersRes && ordersRes.online_orders && Array.isArray(ordersRes.online_orders)) {
-                const mapped: OrderCreatedPayload[] = ordersRes.online_orders.map((o) => ({
-                    order_id: o.order_id,
-                    store_id: o.store_id,
-                    customer_name: o.customer_name || "Customer",
-                    customer_email: o.customer_email || "",
-                    order_type: o.order_type || "BOPIS",
-                    status: o.status || "PENDING",
-                    total_amount: Number(o.total_amount) || 0,
-                    items_count: 1,
-                    placed_at: o.placed_at || new Date().toISOString(),
-                }));
+                const mapped: OrderCreatedPayload[] = ordersRes.online_orders
+                    .filter(isDashboardEligibleOrder)
+                    .map((o) => ({
+                        order_id: o.order_id,
+                        store_id: o.store_id,
+                        customer_name: o.customer_name || "Customer",
+                        customer_email: o.customer_email || "",
+                        order_type: o.order_type || "BOPIS",
+                        status: o.status || "PENDING",
+                        total_amount: Number(o.total_amount) || 0,
+                        items_count: 1,
+                        placed_at: o.placed_at || new Date().toISOString(),
+                        assigned_to: o.assigned_to,
+                        assigned_to_name: o.assigned_to_name,
+                    }));
                 setLiveOrders(mapped);
             }
         } catch {
-            // Fallback default mock items if DB is unseeded in demo environment
-            if (liveOrders.length === 0) {
-                setLiveOrders([
-                    {
-                        order_id: 101,
-                        store_id: user?.store_id ?? 2,
-                        customer_name: "Sarah Jenkins",
-                        customer_email: "sarah.j@example.com",
-                        order_type: "BOPIS",
-                        status: "READY FOR PICKUP",
-                        total_amount: 45.99,
-                        items_count: 3,
-                        placed_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
-                    },
-                    {
-                        order_id: 102,
-                        store_id: user?.store_id ?? 2,
-                        customer_name: "Marcus Vance",
-                        customer_email: "m.vance@example.com",
-                        order_type: "STS",
-                        status: "AWAITING PICKUP",
-                        total_amount: 112.50,
-                        items_count: 5,
-                        placed_at: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-                    },
-                ]);
+            // Keep existing orders if API call fails
+        }
+
+        // Fetch real active cycle counts for current store
+        try {
+            const countsRes = await callApi<CycleCountSummary[]>(
+                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly,
+                { method: "GET" },
+                logout
+            );
+            if (countsRes && Array.isArray(countsRes)) {
+                // Only in progress cycle counts should be shown on the dashboard
+                const mappedCounts: CycleCountUpdatedPayload[] = countsRes
+                    .filter((c) => {
+                        const s = (c.status || "").toUpperCase();
+                        return s === "IN PROGRESS" || s === "IN_PROGRESS";
+                    })
+                    .slice(0, 10)
+                    .map((c) => ({
+                        count_id: c.count_id,
+                        store_id: c.store_id,
+                        category_id: c.category_id,
+                        category_name: c.category_name,
+                        status: "IN PROGRESS",
+                        action: "scanned",
+                        total_items: c.total_items,
+                        counted_items: c.counted_items,
+                        total_variance_cost: Number(c.total_variance_cost) || 0,
+                        updated_at: c.count_date || new Date().toISOString(),
+                        counted_by: (c as any).counted_by,
+                        counted_by_name: c.counted_by_name,
+                    }));
+                setLiveCycleCounts(mappedCounts);
             }
+        } catch {
+            // Keep existing cycle counts if API call fails
         }
 
-        // Initialize active cycle counts
-        if (liveCycleCounts.length === 0) {
-            setLiveCycleCounts([
-                {
-                    count_id: 401,
-                    store_id: user?.store_id ?? 2,
-                    category_id: 3,
-                    category_name: "Dairy & Refrigerated",
-                    status: "IN_PROGRESS",
-                    action: "scanned",
-                    total_items: 48,
-                    counted_items: 34,
-                    total_variance_cost: -12.40,
-                    updated_at: new Date(Date.now() - 1000 * 60 * 4).toISOString(),
-                },
-                {
-                    count_id: 402,
-                    store_id: user?.store_id ?? 2,
-                    category_id: 7,
-                    category_name: "Electronics & Audio",
-                    status: "SUBMITTED",
-                    action: "submitted",
-                    total_items: 25,
-                    counted_items: 25,
-                    total_variance_cost: 0.00,
-                    updated_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
-                },
-            ]);
-        }
-
-        // Initialize recent activities
+        // Initialize recent operational activities if empty (no POS checkout or bay tracking)
         if (liveActivities.length === 0) {
             setLiveActivities([
                 {
                     activity_id: "act-init-1",
                     store_id: user?.store_id ?? 2,
-                    activity_type: "POS_TRANSACTION",
-                    title: "Register #4 Checkout Completed",
-                    description: "Transaction #5492 for $68.42 paid via Visa",
+                    activity_type: "INVENTORY_FILL",
+                    title: "Shelf Restock Completed",
+                    description: "Aisle 4 Beverage top-stock replenishment finished",
                     timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
+                    metadata: {},
                 },
                 {
                     activity_id: "act-init-2",
                     store_id: user?.store_id ?? 2,
                     activity_type: "RECEIVING_DOCK",
-                    title: "PO #8920 Carrier Check-in",
-                    description: "Supplier US Foods arrived at Bay 2",
+                    title: "PO #8920 Carrier Arrived",
+                    description: "Supplier US Foods shipment ready for receiving",
                     timestamp: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
+                    metadata: { po_id: 8920 },
                 },
             ]);
         }
 
         setInitialLoading(false);
-    }, [user?.store_id, liveOrders.length, liveCycleCounts.length, liveActivities.length, logout]);
+    }, [user?.store_id, liveActivities.length, logout]);
 
     useEffect(() => {
         loadInitialData();
@@ -271,105 +368,182 @@ export default function RealTimeDashboard() {
         setIsRefreshing(false);
     };
 
-    // Agent-as-Judge Simulation Triggers (AC3 Verification)
-    const handleSimulateOrder = async (orderType: "BOPIS" | "STS" | "SHIPPING") => {
-        const fakeId = Math.floor(1000 + Math.random() * 9000);
-        const customers = ["Emma Watson", "Alex Rivera", "David Chen", "Olivia Taylor", "Liam Smith"];
-        const randomCustomer = customers[Math.floor(Math.random() * customers.length)];
-        const randomAmount = Number((20 + Math.random() * 150).toFixed(2));
-        const randomCount = Math.floor(1 + Math.random() * 6);
+    // Auto-Assignment and Real-Time Interaction for Orders
+    const handleOrderPress = async (order: OrderCreatedPayload) => {
+        const currentEmpId = user?.employee_id;
+        const isManagerOrAdmin = user?.role === "MANAGER" || user?.role === "ADMIN";
 
-        // First attempt real backend POST if available
-        try {
-            const res = await callApi<{ order_id: number }>(
-                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll,
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        store_id: user?.store_id ?? 2,
-                        customer_name: randomCustomer,
-                        customer_email: `${randomCustomer.toLowerCase().replace(/\s+/g, ".")}@example.com`,
-                        order_type: orderType,
-                        status: "PENDING",
-                        total_amount: randomAmount,
-                        items_count: randomCount,
-                    }),
-                },
-                logout
-            );
-            if (res && res.order_id) {
-                // If backend processed it, the WebSocket event will fire automatically!
+        // 1. If assigned to someone else
+        if (order.assigned_to && order.assigned_to !== currentEmpId) {
+            const assignee = order.assigned_to_name || "another associate";
+            if (!isManagerOrAdmin) {
+                showToast(`⚠️ Order #${order.order_id} is currently being worked on by ${assignee}!`);
+                return;
+            } else {
+                showToast(`ℹ️ Order #${order.order_id} is currently assigned to ${assignee}.`);
+                router.push({
+                    pathname: `/(app)/(tabs)/home/actions/sales_floor/Orders/${order.order_id}`,
+                    params: { from: "dashboard" },
+                } as any);
                 return;
             }
-        } catch {
-            // Demo fallback: inject directly to live state simulation
         }
 
-        // Direct real-time payload dispatch
-        const simulatedPayload: OrderCreatedPayload = {
-            order_id: fakeId,
-            store_id: user?.store_id ?? 2,
-            customer_name: randomCustomer,
-            customer_email: `${randomCustomer.toLowerCase().replace(/\s+/g, ".")}@example.com`,
-            order_type: orderType,
-            status: "PENDING",
-            total_amount: randomAmount,
-            items_count: randomCount,
-            placed_at: new Date().toISOString(),
-        };
+        // 2. If unassigned: auto-claim for this associate
+        if (!order.assigned_to) {
+            const empName = user?.last_name ? `Associate ${user.last_name}` : "You";
+            showToast(`⚡ Claiming Order #${order.order_id} for you...`);
 
-        setLiveOrders((prev) => [simulatedPayload, ...prev]);
-        setNewOrderIds((prev) => new Set(prev).add(fakeId));
-        showToast(`⚡ [AC3 Verified] Live Order #${fakeId} (${orderType}) Rendered without reload!`);
+            // Optimistically update local state immediately
+            setLiveOrders((prev) =>
+                prev.map((o) =>
+                    o.order_id === order.order_id
+                        ? { ...o, assigned_to: currentEmpId, assigned_to_name: empName }
+                        : o
+                )
+            );
 
-        setLiveActivities((prev) => [
-            {
-                activity_id: `sim-order-${fakeId}-${Date.now()}`,
-                store_id: user?.store_id ?? 2,
-                activity_type: "ORDER_PLACED",
-                title: `Simulated Live Order #${fakeId}`,
-                description: `${randomCustomer} placed ${orderType} order for $${randomAmount.toFixed(2)}`,
-                timestamp: new Date().toISOString(),
-            },
-            ...prev,
-        ]);
+            try {
+                await callApi(
+                    ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign,
+                    {
+                        method: "PUT",
+                        body: JSON.stringify({
+                            order_id: order.order_id,
+                            employee_id: currentEmpId,
+                        }),
+                    },
+                    logout
+                );
+            } catch (err: any) {
+                // If conflict error (e.g. someone else claimed right before)
+                if (err?.assigned_to && err.assigned_to !== currentEmpId) {
+                    showToast(`⚠️ Order #${order.order_id} was just claimed by ${err.assigned_to_name || "another associate"}!`);
+                    setLiveOrders((prev) =>
+                        prev.map((o) =>
+                            o.order_id === order.order_id
+                                ? { ...o, assigned_to: err.assigned_to, assigned_to_name: err.assigned_to_name }
+                                : o
+                        )
+                    );
+                    return;
+                }
+            }
+        }
+
+        // Navigate directly to Order Detail
+        router.push({
+            pathname: `/(app)/(tabs)/home/actions/sales_floor/Orders/${order.order_id}`,
+            params: { from: "dashboard" },
+        } as any);
     };
 
-    const handleSimulateCycleCount = () => {
-        const categories = ["Produce & Floral", "Beverages", "Snacks & Candy", "Bakery", "Frozen Goods"];
-        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-        const countId = Math.floor(500 + Math.random() * 500);
-        const total = Math.floor(30 + Math.random() * 50);
-        const counted = Math.floor(total * 0.7);
-
-        const simulatedCount: CycleCountUpdatedPayload = {
-            count_id: countId,
-            store_id: user?.store_id ?? 2,
-            category_id: Math.floor(1 + Math.random() * 10),
-            category_name: randomCategory,
-            status: "IN_PROGRESS",
-            action: "scanned",
-            total_items: total,
-            counted_items: counted,
-            total_variance_cost: Number((-5 + Math.random() * 10).toFixed(2)),
-            updated_at: new Date().toISOString(),
-        };
-
-        setLiveCycleCounts((prev) => [simulatedCount, ...prev]);
-        showToast(`📊 [AC3 Verified] Live Cycle Count #${countId} (${randomCategory}) Updated without reload!`);
-
-        setLiveActivities((prev) => [
-            {
-                activity_id: `sim-count-${countId}-${Date.now()}`,
-                store_id: user?.store_id ?? 2,
-                activity_type: "CYCLE_COUNT_UPDATED",
-                title: `Cycle Count #${countId} Progress`,
-                description: `Category: ${randomCategory} | Progress: ${counted}/${total} items`,
-                timestamp: new Date().toISOString(),
-            },
-            ...prev,
-        ]);
+    // Direct Navigation for Cycle Counts
+    const handleCycleCountPress = (count: CycleCountUpdatedPayload) => {
+        router.push({
+            pathname: "/(app)/(tabs)/home/actions/back_room/CycleCountDetail",
+            params: { id: count.count_id, from: "dashboard" },
+        } as any);
     };
+
+    // Direct Navigation for Store Activity Stream Items
+    const handleActivityPress = (act: StoreActivityPayload) => {
+        const meta = act.metadata as Record<string, any> | undefined;
+        const orderId = meta?.order_id || (act.title.match(/#(\d+)/) ? Number(act.title.match(/#(\d+)/)![1]) : null);
+        const countId = meta?.count_id || (act.title.match(/Count #(\d+)/) ? Number(act.title.match(/Count #(\d+)/)![1]) : null);
+        const poId = meta?.po_id || (act.title.match(/PO #(\d+)/) ? Number(act.title.match(/PO #(\d+)/)![1]) : null);
+
+        if (act.activity_type.includes("ORDER") && orderId) {
+            router.push({
+                pathname: `/(app)/(tabs)/home/actions/sales_floor/Orders/${orderId}`,
+                params: { from: "dashboard" },
+            } as any);
+            return;
+        }
+        if (act.activity_type.includes("CYCLE") && countId) {
+            router.push({
+                pathname: "/(app)/(tabs)/home/actions/back_room/CycleCountDetail",
+                params: { id: String(countId), from: "dashboard" },
+            } as any);
+            return;
+        }
+        if (act.activity_type.includes("POS") || act.activity_type.includes("TRANSACTION")) {
+            router.push({
+                pathname: "/(app)/(tabs)/home/actions/sales_floor/Transactions",
+                params: { from: "dashboard" },
+            } as any);
+            return;
+        }
+        if (act.activity_type.includes("RECEIVING") || act.activity_type.includes("PO")) {
+            if (poId) {
+                router.push({
+                    pathname: "/(app)/(tabs)/home/actions/back_room/ReceivePO",
+                    params: { po_id: String(poId), from: "dashboard" },
+                } as any);
+            } else {
+                router.push({
+                    pathname: "/(app)/(tabs)/home/actions/back_room/Receiving",
+                    params: { from: "dashboard" },
+                } as any);
+            }
+            return;
+        }
+        if (act.activity_type.includes("IS4TC") || act.activity_type.includes("FILL")) {
+            router.push({
+                pathname: "/(app)/(tabs)/home/actions/sales_floor/IS4TC",
+                params: { from: "dashboard" },
+            } as any);
+            return;
+        }
+
+        router.push("/(app)/(tabs)/home/actions" as any);
+    };
+
+    // Scoped Data Collections: My Tasks vs Store-Wide
+    const currentEmpId = user?.employee_id;
+    // In "My Tasks", associates see orders assigned to them PLUS unassigned orders available to be claimed/worked on!
+    const myOrders = useMemo(
+        () => liveOrders.filter((o) => o.assigned_to === currentEmpId || !o.assigned_to),
+        [liveOrders, currentEmpId]
+    );
+
+    const displayedOrders = useMemo(
+        () => (viewScope === "my_tasks" ? myOrders : liveOrders),
+        [viewScope, myOrders, liveOrders]
+    );
+
+    // Only in-progress cycle counts should be shown on the dashboard
+    const displayedCycleCounts = useMemo(() => {
+        const inProgress = liveCycleCounts.filter((c) => {
+            const s = (c.status || "").toUpperCase();
+            return s === "IN PROGRESS" || s === "IN_PROGRESS";
+        });
+        return viewScope === "my_tasks"
+            ? inProgress.filter(
+                  (c) =>
+                      (c.counted_by && c.counted_by === currentEmpId) ||
+                      !c.counted_by_name
+              )
+            : inProgress;
+    }, [viewScope, liveCycleCounts, currentEmpId]);
+
+    // Exclude checkout/POS transactions from dashboard activity stream
+    const displayedActivities = useMemo(() => {
+        const nonCheckout = liveActivities.filter(
+            (a) =>
+                !a.activity_type.includes("POS") &&
+                !a.activity_type.includes("TRANSACTION") &&
+                !a.activity_type.includes("CHECKOUT")
+        );
+        return viewScope === "my_tasks"
+            ? nonCheckout.filter(
+                  (a) =>
+                      a.metadata?.employee_id === currentEmpId ||
+                      a.metadata?.assigned_to === currentEmpId ||
+                      !a.metadata?.assigned_to
+              )
+            : nonCheckout;
+    }, [viewScope, liveActivities, currentEmpId]);
 
     return (
         <TopSafeAreaView>
@@ -384,7 +558,7 @@ export default function RealTimeDashboard() {
             {toastMessage && (
                 <Animated.View style={[styles.toastBanner, { opacity: toastOpacity }]}>
                     <Ionicons name="flash" size={16} color="#FFFFFF" />
-                    <Text style={styles.toastText} numberOfLines={1}>
+                    <Text style={styles.toastText} numberOfLines={2}>
                         {toastMessage}
                     </Text>
                 </Animated.View>
@@ -401,9 +575,9 @@ export default function RealTimeDashboard() {
                 <View style={styles.dashboardHeader}>
                     <View style={styles.titleColumn}>
                         <Text style={styles.welcomeText}>
-                            Store #{user?.store_id ?? 2} Operations
+                            Store #{user?.store_id ?? 2} • {user?.role || "Associate"} View
                         </Text>
-                        <Text style={styles.headerTitle}>Real-Time Dashboard</Text>
+                        <Text style={styles.headerTitle}>Operational Dashboard</Text>
                     </View>
                     <View style={styles.statusColumn}>
                         <ConnectionStatusBadge
@@ -421,78 +595,122 @@ export default function RealTimeDashboard() {
                     </View>
                 </View>
 
-                {/* Key Real-Time Metrics Strip */}
+                {/* Scope Switcher: My Tasks vs Store-Wide */}
+                <View style={styles.scopeSwitcherContainer}>
+                    <TouchableOpacity
+                        style={[styles.scopeButton, viewScope === "my_tasks" && styles.scopeButtonActive]}
+                        onPress={() => {
+                            setViewScope("my_tasks");
+                            showToast("Showing your assigned tasks and personal activities");
+                        }}
+                    >
+                        <Ionicons
+                            name="person"
+                            size={14}
+                            color={viewScope === "my_tasks" ? COLORS.primaryText : COLORS.textSecondary}
+                        />
+                        <Text style={[styles.scopeText, viewScope === "my_tasks" && styles.scopeTextActive]}>
+                            My Tasks
+                        </Text>
+                        {myOrders.length > 0 && (
+                            <View style={styles.scopeCountBadge}>
+                                <Text style={styles.scopeCountText}>{myOrders.length}</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.scopeButton, viewScope === "store_wide" && styles.scopeButtonActive]}
+                        onPress={() => {
+                            setViewScope("store_wide");
+                            showToast("Showing store-wide operational activity stream");
+                        }}
+                    >
+                        <Ionicons
+                            name="business"
+                            size={14}
+                            color={viewScope === "store_wide" ? COLORS.primaryText : COLORS.textSecondary}
+                        />
+                        <Text style={[styles.scopeText, viewScope === "store_wide" && styles.scopeTextActive]}>
+                            Store-Wide
+                        </Text>
+                        <View style={[styles.scopeCountBadge, { backgroundColor: COLORS.inactiveBg }]}>
+                            <Text style={[styles.scopeCountText, { color: COLORS.textPrimary }]}>
+                                {liveOrders.length}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Key Real-Time Metrics Strip (Interactive Buttons) */}
                 <View style={styles.metricsRow}>
                     <TouchableOpacity
                         style={[styles.metricCard, activeTab === "orders" && styles.metricCardActive]}
-                        onPress={() => setActiveTab("orders")}
+                        onPress={() => {
+                            if (activeTab === "orders") {
+                                router.push({
+                                    pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders",
+                                    params: { from: "dashboard" },
+                                } as any);
+                            } else {
+                                setActiveTab("orders");
+                            }
+                        }}
                     >
                         <View style={styles.metricIconRow}>
                             <Ionicons name="cart" size={20} color={COLORS.primary} />
-                            <Text style={styles.metricValue}>{liveOrders.length}</Text>
+                            <Text style={styles.metricValue}>{displayedOrders.length}</Text>
                         </View>
-                        <Text style={styles.metricLabel}>Live Orders</Text>
+                        <View style={styles.metricLabelRow}>
+                            <Text style={styles.metricLabel}>
+                                {viewScope === "my_tasks" ? "My Orders" : "Live Orders"}
+                            </Text>
+                            <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
+                        </View>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={[styles.metricCard, activeTab === "cycle_counts" && styles.metricCardActive]}
-                        onPress={() => setActiveTab("cycle_counts")}
+                        onPress={() => {
+                            if (activeTab === "cycle_counts") {
+                                router.push({
+                                    pathname: "/(app)/(tabs)/home/actions/back_room/CycleCount",
+                                    params: { from: "dashboard" },
+                                } as any);
+                            } else {
+                                setActiveTab("cycle_counts");
+                            }
+                        }}
                     >
                         <View style={styles.metricIconRow}>
                             <Ionicons name="barcode" size={20} color={COLORS.accent} />
-                            <Text style={styles.metricValue}>{liveCycleCounts.length}</Text>
+                            <Text style={styles.metricValue}>{displayedCycleCounts.length}</Text>
                         </View>
-                        <Text style={styles.metricLabel}>Cycle Counts</Text>
+                        <View style={styles.metricLabelRow}>
+                            <Text style={styles.metricLabel}>Cycle Counts</Text>
+                            <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
+                        </View>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={[styles.metricCard, activeTab === "activities" && styles.metricCardActive]}
-                        onPress={() => setActiveTab("activities")}
+                        onPress={() => {
+                            if (activeTab === "activities") {
+                                router.push("/(app)/(tabs)/home/actions" as any);
+                            } else {
+                                setActiveTab("activities");
+                            }
+                        }}
                     >
                         <View style={styles.metricIconRow}>
                             <Ionicons name="pulse" size={20} color={COLORS.success} />
-                            <Text style={styles.metricValue}>{liveActivities.length}</Text>
+                            <Text style={styles.metricValue}>{displayedActivities.length}</Text>
                         </View>
-                        <Text style={styles.metricLabel}>Activities</Text>
+                        <View style={styles.metricLabelRow}>
+                            <Text style={styles.metricLabel}>Activities</Text>
+                            <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
+                        </View>
                     </TouchableOpacity>
-                </View>
-
-                {/* Agent-as-Judge Instant Trigger Bar (AC3 Verification) */}
-                <View style={styles.agentJudgeCard}>
-                    <View style={styles.agentJudgeHeader}>
-                        <View style={styles.judgeTitleRow}>
-                            <Ionicons name="hardware-chip" size={16} color={COLORS.accent} />
-                            <Text style={styles.judgeTitle}>Agent-as-Judge Live Simulation Bar (AC3)</Text>
-                        </View>
-                        <Text style={styles.judgeSubtitle}>
-                            Test instant zero-reload updates over WebSockets
-                        </Text>
-                    </View>
-                    <View style={styles.judgeButtonGroup}>
-                        <TouchableOpacity
-                            style={[styles.judgeButton, { backgroundColor: COLORS.primary }]}
-                            onPress={() => handleSimulateOrder("BOPIS")}
-                        >
-                            <Ionicons name="add-circle" size={14} color="#FFFFFF" />
-                            <Text style={styles.judgeButtonText}>+ BOPIS Order</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.judgeButton, { backgroundColor: COLORS.accent }]}
-                            onPress={() => handleSimulateOrder("SHIPPING")}
-                        >
-                            <Ionicons name="airplane" size={14} color="#FFFFFF" />
-                            <Text style={styles.judgeButtonText}>+ Ship Order</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.judgeButton, { backgroundColor: COLORS.success }]}
-                            onPress={handleSimulateCycleCount}
-                        >
-                            <Ionicons name="scan" size={14} color="#FFFFFF" />
-                            <Text style={styles.judgeButtonText}>+ Cycle Count</Text>
-                        </TouchableOpacity>
-                    </View>
                 </View>
 
                 {/* Tab Navigation Controls */}
@@ -511,7 +729,7 @@ export default function RealTimeDashboard() {
                         onPress={() => setActiveTab("orders")}
                     >
                         <Text style={[styles.tabText, activeTab === "orders" && styles.tabTextActive]}>
-                            Live Orders ({liveOrders.length})
+                            Live Orders ({displayedOrders.length})
                         </Text>
                     </TouchableOpacity>
 
@@ -520,7 +738,7 @@ export default function RealTimeDashboard() {
                         onPress={() => setActiveTab("cycle_counts")}
                     >
                         <Text style={[styles.tabText, activeTab === "cycle_counts" && styles.tabTextActive]}>
-                            Cycle Counts ({liveCycleCounts.length})
+                            Cycle Counts ({displayedCycleCounts.length})
                         </Text>
                     </TouchableOpacity>
 
@@ -547,22 +765,53 @@ export default function RealTimeDashboard() {
                                 <View style={styles.sectionHeader}>
                                     <View style={styles.sectionTitleRow}>
                                         <Ionicons name="cart-outline" size={18} color={COLORS.textPrimary} />
-                                        <Text style={styles.sectionHeading}>Live Incoming Orders</Text>
+                                        <Text style={styles.sectionHeading}>
+                                            {viewScope === "my_tasks" ? "My Assigned Orders" : "Store Actionable Orders"}
+                                        </Text>
                                     </View>
-                                    <Text style={styles.sectionBadge}>{liveOrders.length} Live</Text>
+                                    <TouchableOpacity
+                                        style={styles.headerActionBtn}
+                                        onPress={() =>
+                                            router.push({
+                                                pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders",
+                                                params: { from: "dashboard" },
+                                            } as any)
+                                        }
+                                    >
+                                        <Text style={styles.headerActionText}>View Orders →</Text>
+                                    </TouchableOpacity>
                                 </View>
 
-                                {liveOrders.length === 0 ? (
+                                {displayedOrders.length === 0 ? (
                                     <View style={styles.emptyCard}>
-                                        <Ionicons name="cloud-download-outline" size={32} color={COLORS.textSecondary} />
-                                        <Text style={styles.emptyCardText}>Listening for incoming orders...</Text>
+                                        <Ionicons
+                                            name={viewScope === "my_tasks" ? "person-outline" : "cloud-download-outline"}
+                                            size={32}
+                                            color={COLORS.textSecondary}
+                                        />
+                                        <Text style={styles.emptyCardText}>
+                                            {viewScope === "my_tasks"
+                                                ? "No orders assigned to you yet."
+                                                : "No unpicked BOPIS or shipped STS orders found."}
+                                        </Text>
+                                        {viewScope === "my_tasks" && liveOrders.length > 0 && (
+                                            <TouchableOpacity
+                                                style={styles.emptyCardAction}
+                                                onPress={() => setViewScope("store_wide")}
+                                            >
+                                                <Text style={styles.emptyCardActionText}>
+                                                    View {liveOrders.length} Store Orders to Claim →
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
                                     </View>
                                 ) : (
-                                    liveOrders.slice(0, activeTab === "overview" ? 4 : 20).map((order) => (
+                                    displayedOrders.slice(0, activeTab === "overview" ? 4 : 25).map((order) => (
                                         <OrderCard
                                             key={`order-${order.order_id}`}
                                             order={order}
                                             isNew={newOrderIds.has(order.order_id)}
+                                            onPress={() => handleOrderPress(order)}
                                             style={styles.cardSpacing}
                                         />
                                     ))
@@ -576,45 +825,83 @@ export default function RealTimeDashboard() {
                                 <View style={styles.sectionHeader}>
                                     <View style={styles.sectionTitleRow}>
                                         <Ionicons name="barcode-outline" size={18} color={COLORS.textPrimary} />
-                                        <Text style={styles.sectionHeading}>Active Cycle Counts</Text>
+                                        <Text style={styles.sectionHeading}>
+                                            {viewScope === "my_tasks" ? "My In-Progress Cycle Counts" : "In-Progress Cycle Counts"}
+                                        </Text>
                                     </View>
-                                    <Text style={styles.sectionBadge}>{liveCycleCounts.length} Active</Text>
+                                    <TouchableOpacity
+                                        style={styles.headerActionBtn}
+                                        onPress={() =>
+                                            router.push({
+                                                pathname: "/(app)/(tabs)/home/actions/back_room/CycleCount",
+                                                params: { from: "dashboard" },
+                                            } as any)
+                                        }
+                                    >
+                                        <Text style={styles.headerActionText}>View All →</Text>
+                                    </TouchableOpacity>
                                 </View>
 
-                                {liveCycleCounts.length === 0 ? (
+                                {displayedCycleCounts.length === 0 ? (
                                     <View style={styles.emptyCard}>
                                         <Ionicons name="checkmark-done-circle-outline" size={32} color={COLORS.textSecondary} />
                                         <Text style={styles.emptyCardText}>No cycle counts in progress</Text>
                                     </View>
                                 ) : (
-                                    liveCycleCounts.slice(0, activeTab === "overview" ? 3 : 20).map((count) => {
-                                        const progress = count.total_items > 0 ? (count.counted_items / count.total_items) : 0;
+                                    displayedCycleCounts.slice(0, activeTab === "overview" ? 3 : 20).map((count) => {
+                                        const progress = count.total_items > 0 ? count.counted_items / count.total_items : 0;
                                         return (
-                                            <View key={`cycle-${count.count_id}`} style={[globalStyles.card, styles.cycleCountCard]}>
+                                            <TouchableOpacity
+                                                key={`cycle-${count.count_id}`}
+                                                activeOpacity={0.7}
+                                                onPress={() => handleCycleCountPress(count)}
+                                                style={[globalStyles.card, styles.cycleCountCard]}
+                                            >
                                                 <View style={styles.cycleCardHeader}>
                                                     <View style={styles.cycleInfoColumn}>
                                                         <Text style={styles.cycleCategory}>{count.category_name}</Text>
-                                                        <Text style={styles.cycleSubtext}>Count #{count.count_id} • Action: {count.action}</Text>
+                                                        <Text style={styles.cycleSubtext}>
+                                                            Count #{count.count_id} • Action: {count.action}
+                                                        </Text>
                                                     </View>
-                                                    <View style={styles.cycleBadge}>
-                                                        <Text style={styles.cycleBadgeText}>{count.status}</Text>
+                                                    <View style={styles.cycleBadgeRow}>
+                                                        <View style={styles.cycleBadge}>
+                                                            <Text style={styles.cycleBadgeText}>{count.status}</Text>
+                                                        </View>
+                                                        <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
                                                     </View>
                                                 </View>
 
                                                 {/* Progress Bar */}
                                                 <View style={styles.progressBarBackground}>
-                                                    <View style={[styles.progressBarFill, { width: `${Math.min(100, Math.round(progress * 100))}%` }]} />
+                                                    <View
+                                                        style={[
+                                                            styles.progressBarFill,
+                                                            { width: `${Math.min(100, Math.round(progress * 100))}%` },
+                                                        ]}
+                                                    />
                                                 </View>
 
                                                 <View style={styles.cycleStatsRow}>
                                                     <Text style={styles.cycleStatLabel}>
-                                                        Counted: <Text style={styles.cycleStatBold}>{count.counted_items} / {count.total_items}</Text> ({Math.round(progress * 100)}%)
+                                                        Counted:{" "}
+                                                        <Text style={styles.cycleStatBold}>
+                                                            {count.counted_items} / {count.total_items}
+                                                        </Text>{" "}
+                                                        ({Math.round(progress * 100)}%)
                                                     </Text>
-                                                    <Text style={[styles.cycleStatLabel, count.total_variance_cost < 0 ? styles.varianceNeg : styles.variancePos]}>
+                                                    <Text
+                                                        style={[
+                                                            styles.cycleStatLabel,
+                                                            count.total_variance_cost < 0
+                                                                ? styles.varianceNeg
+                                                                : styles.variancePos,
+                                                        ]}
+                                                    >
                                                         Variance: ${count.total_variance_cost.toFixed(2)}
                                                     </Text>
                                                 </View>
-                                            </View>
+                                            </TouchableOpacity>
                                         );
                                     })
                                 )}
@@ -627,19 +914,31 @@ export default function RealTimeDashboard() {
                                 <View style={styles.sectionHeader}>
                                     <View style={styles.sectionTitleRow}>
                                         <Ionicons name="flash-outline" size={18} color={COLORS.textPrimary} />
-                                        <Text style={styles.sectionHeading}>Store Activity Stream</Text>
+                                        <Text style={styles.sectionHeading}>
+                                            {viewScope === "my_tasks" ? "My Activity Stream" : "Store Activity Stream"}
+                                        </Text>
                                     </View>
-                                    <Text style={styles.sectionBadge}>Real-Time</Text>
+                                    <TouchableOpacity
+                                        style={styles.headerActionBtn}
+                                        onPress={() => router.push("/(app)/(tabs)/home/actions" as any)}
+                                    >
+                                        <Text style={styles.headerActionText}>Actions →</Text>
+                                    </TouchableOpacity>
                                 </View>
 
-                                {liveActivities.length === 0 ? (
+                                {displayedActivities.length === 0 ? (
                                     <View style={styles.emptyCard}>
                                         <Ionicons name="pulse-outline" size={32} color={COLORS.textSecondary} />
                                         <Text style={styles.emptyCardText}>No activity recorded yet</Text>
                                     </View>
                                 ) : (
-                                    liveActivities.slice(0, activeTab === "overview" ? 4 : 25).map((act) => (
-                                        <View key={act.activity_id} style={[globalStyles.card, styles.activityCard]}>
+                                    displayedActivities.slice(0, activeTab === "overview" ? 4 : 30).map((act) => (
+                                        <TouchableOpacity
+                                            key={act.activity_id}
+                                            activeOpacity={0.7}
+                                            onPress={() => handleActivityPress(act)}
+                                            style={[globalStyles.card, styles.activityCard]}
+                                        >
                                             <View style={styles.activityIconCircle}>
                                                 <Ionicons
                                                     name={
@@ -647,6 +946,8 @@ export default function RealTimeDashboard() {
                                                             ? "cart"
                                                             : act.activity_type.includes("CYCLE")
                                                             ? "barcode"
+                                                            : act.activity_type.includes("RECEIVING") || act.activity_type.includes("PO")
+                                                            ? "cube"
                                                             : "cash"
                                                     }
                                                     size={16}
@@ -656,13 +957,19 @@ export default function RealTimeDashboard() {
                                             <View style={styles.activityContent}>
                                                 <View style={styles.activityHeaderRow}>
                                                     <Text style={styles.activityTitle}>{act.title}</Text>
-                                                    <Text style={styles.activityTime}>
-                                                        {new Date(act.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                                    </Text>
+                                                    <View style={styles.activityTimeGroup}>
+                                                        <Text style={styles.activityTime}>
+                                                            {new Date(act.timestamp).toLocaleTimeString([], {
+                                                                hour: "2-digit",
+                                                                minute: "2-digit",
+                                                            })}
+                                                        </Text>
+                                                        <Ionicons name="chevron-forward" size={14} color={COLORS.textSecondary} />
+                                                    </View>
                                                 </View>
                                                 <Text style={styles.activityDescription}>{act.description}</Text>
                                             </View>
-                                        </View>
+                                        </TouchableOpacity>
                                     ))
                                 )}
                             </View>
@@ -730,6 +1037,48 @@ const styles = StyleSheet.create({
         color: COLORS.textPrimary,
         marginTop: 2,
     },
+    scopeSwitcherContainer: {
+        flexDirection: "row",
+        paddingHorizontal: 16,
+        gap: 10,
+        marginBottom: 12,
+    },
+    scopeButton: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: COLORS.surface,
+        borderRadius: 10,
+        paddingVertical: 9,
+        paddingHorizontal: 12,
+        borderWidth: 1.5,
+        borderColor: COLORS.border,
+        gap: 6,
+    },
+    scopeButtonActive: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    scopeText: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: COLORS.textSecondary,
+    },
+    scopeTextActive: {
+        color: COLORS.primaryText,
+    },
+    scopeCountBadge: {
+        backgroundColor: "#FFFFFF",
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+        borderRadius: 10,
+    },
+    scopeCountText: {
+        fontSize: 11,
+        fontWeight: "800",
+        color: COLORS.primary,
+    },
     metricsRow: {
         flexDirection: "row",
         paddingHorizontal: 16,
@@ -764,56 +1113,15 @@ const styles = StyleSheet.create({
         fontWeight: "800",
         color: COLORS.textPrimary,
     },
+    metricLabelRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
     metricLabel: {
         fontSize: 12,
         fontWeight: "600",
         color: COLORS.textSecondary,
-    },
-    agentJudgeCard: {
-        marginHorizontal: 16,
-        marginBottom: 16,
-        backgroundColor: "#F0F4F8",
-        borderRadius: 12,
-        padding: 12,
-        borderWidth: 1,
-        borderColor: "#D0DCE8",
-    },
-    agentJudgeHeader: {
-        marginBottom: 8,
-    },
-    judgeTitleRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-    },
-    judgeTitle: {
-        fontSize: 13,
-        fontWeight: "700",
-        color: COLORS.accent,
-    },
-    judgeSubtitle: {
-        fontSize: 11,
-        color: COLORS.textSecondary,
-        marginTop: 2,
-    },
-    judgeButtonGroup: {
-        flexDirection: "row",
-        gap: 8,
-    },
-    judgeButton: {
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 8,
-        paddingHorizontal: 6,
-        borderRadius: 8,
-        gap: 4,
-    },
-    judgeButtonText: {
-        color: "#FFFFFF",
-        fontSize: 11,
-        fontWeight: "700",
     },
     tabsContainer: {
         flexDirection: "row",
@@ -870,14 +1178,14 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
-    sectionBadge: {
-        fontSize: 11,
+    headerActionBtn: {
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+    },
+    headerActionText: {
+        fontSize: 12,
         fontWeight: "700",
         color: COLORS.primary,
-        backgroundColor: COLORS.inactiveBg,
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 10,
     },
     cardSpacing: {
         marginBottom: 10,
@@ -896,6 +1204,21 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: COLORS.textSecondary,
         fontWeight: "500",
+        textAlign: "center",
+    },
+    emptyCardAction: {
+        marginTop: 6,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        backgroundColor: "#FFF5F5",
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+    },
+    emptyCardActionText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: COLORS.primary,
     },
     cycleCountCard: {
         marginBottom: 10,
@@ -920,6 +1243,11 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: COLORS.textSecondary,
         marginTop: 2,
+    },
+    cycleBadgeRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
     },
     cycleBadge: {
         backgroundColor: "#E3F2FD",
@@ -995,6 +1323,11 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "700",
         color: COLORS.textPrimary,
+    },
+    activityTimeGroup: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
     },
     activityTime: {
         fontSize: 11,

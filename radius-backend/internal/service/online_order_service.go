@@ -73,6 +73,83 @@ func (s *OnlineOrderService) GetOnlineOrderByID(ctx context.Context, email strin
 	return s.ordersRepo.GetOnlineOrderByID(ctx, id, nil)
 }
 
+// AssignOnlineOrder assigns an online order to an employee.
+// If the order is already assigned to a different employee and force is false (e.g. non-manager associate),
+// it returns the current order and false indicating conflict ("already assigned to someone else").
+// When successfully assigned, it broadcasts EventOrderStatusUpdated and EventStoreActivity over WebSocket.
+func (s *OnlineOrderService) AssignOnlineOrder(ctx context.Context, email string, role models.EmployeeRole, orderID int, employeeID *int) (*models.OnlineOrder, bool, error) {
+	var currentEmp *models.Employee
+	if email != "" && s.employeeRepo != nil {
+		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
+		if err == nil {
+			currentEmp = emp
+		}
+	}
+
+	targetEmpID := employeeID
+	if targetEmpID == nil && currentEmp != nil {
+		targetEmpID = &currentEmp.EmployeeId
+	}
+
+	force := role == models.RoleAdmin || role == models.RoleManager
+
+	var storeID *int
+	if role != models.RoleAdmin && currentEmp != nil {
+		storeID = &currentEmp.StoreId
+	}
+
+	order, wasAssigned, err := s.ordersRepo.AssignOnlineOrder(ctx, orderID, targetEmpID, storeID, force)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if wasAssigned && s.broadcaster != nil && order != nil {
+		s.broadcaster.BroadcastToStore(order.StoreId, models.WebSocketEvent{
+			Type:      models.EventOrderStatusUpdated,
+			StoreId:   order.StoreId,
+			Timestamp: time.Now().UTC(),
+			Payload: models.OrderStatusUpdatedPayload{
+				OrderId:        order.OrderId,
+				StoreId:        order.StoreId,
+				CustomerName:   order.CustomerName,
+				OrderType:      order.OrderType,
+				PreviousStatus: order.Status,
+				NewStatus:      order.Status,
+				TotalAmount:    float64(order.TotalAmount),
+				UpdatedAt:      time.Now().UTC(),
+				AssignedTo:     order.AssignedTo,
+				AssignedToName: order.AssignedToName,
+			},
+		})
+
+		assigneeName := "an associate"
+		if order.AssignedToName != nil && *order.AssignedToName != "" {
+			assigneeName = *order.AssignedToName
+		}
+		s.broadcaster.BroadcastToStore(order.StoreId, models.WebSocketEvent{
+			Type:      models.EventStoreActivity,
+			StoreId:   order.StoreId,
+			Timestamp: time.Now().UTC(),
+			Payload: models.StoreActivityPayload{
+				ActivityId:   fmt.Sprintf("act-assign-%d-%d", order.OrderId, time.Now().UnixMilli()),
+				StoreId:      order.StoreId,
+				ActivityType: "ORDER_ASSIGNED",
+				Title:        fmt.Sprintf("Order #%d Claimed", order.OrderId),
+				Description:  fmt.Sprintf("%s is working on Order #%d (%s)", assigneeName, order.OrderId, order.OrderType),
+				Timestamp:    time.Now().UTC(),
+				Metadata: map[string]any{
+					"order_id":         order.OrderId,
+					"assigned_to":      order.AssignedTo,
+					"assigned_to_name": order.AssignedToName,
+				},
+			},
+		})
+	}
+
+	return order, wasAssigned, nil
+}
+
+
 // CreateOnlineOrder validates, computes totals, persists the order, and broadcasts an EventOrderCreated WebSocket frame.
 func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, email string, role models.EmployeeRole, order *models.OnlineOrder) (*models.OnlineOrder, error) {
 	if order == nil {
@@ -179,5 +256,155 @@ func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, email string
 	}
 
 	return createdOrder, nil
+}
+
+// UpdateOrderItem updates the picked quantity, status, and reason for an order item.
+func (s *OnlineOrderService) UpdateOrderItem(ctx context.Context, email string, role models.EmployeeRole, orderID, itemID int, pickedQty *int, status string, reason *string) error {
+	return s.ordersRepo.UpdateOnlineOrderItem(ctx, orderID, itemID, pickedQty, status, reason)
+}
+
+// CompleteOrderPicking updates the order status to AWAITING PICKUP and broadcasts real-time events.
+func (s *OnlineOrderService) CompleteOrderPicking(ctx context.Context, email string, role models.EmployeeRole, orderID int) (*models.OnlineOrder, error) {
+	updatedOrder, err := s.ordersRepo.UpdateOnlineOrderStatus(ctx, orderID, models.OnlineOrderStatusAwaitingPickup, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.broadcaster != nil && updatedOrder != nil {
+		s.broadcaster.BroadcastToStore(updatedOrder.StoreId, models.WebSocketEvent{
+			Type:      models.EventOrderStatusUpdated,
+			StoreId:   updatedOrder.StoreId,
+			Timestamp: time.Now().UTC(),
+			Payload: models.OrderStatusUpdatedPayload{
+				OrderId:        updatedOrder.OrderId,
+				StoreId:        updatedOrder.StoreId,
+				CustomerName:   updatedOrder.CustomerName,
+				OrderType:      updatedOrder.OrderType,
+				PreviousStatus: models.OnlineOrderStatusWorkInProgress,
+				NewStatus:      updatedOrder.Status,
+				TotalAmount:    float64(updatedOrder.TotalAmount),
+				UpdatedAt:      time.Now().UTC(),
+				AssignedTo:     updatedOrder.AssignedTo,
+				AssignedToName: updatedOrder.AssignedToName,
+			},
+		})
+
+		s.broadcaster.BroadcastToStore(updatedOrder.StoreId, models.WebSocketEvent{
+			Type:      models.EventStoreActivity,
+			StoreId:   updatedOrder.StoreId,
+			Timestamp: time.Now().UTC(),
+			Payload: models.StoreActivityPayload{
+				ActivityId:   fmt.Sprintf("act-picked-%d-%d", updatedOrder.OrderId, time.Now().UnixMilli()),
+				StoreId:      updatedOrder.StoreId,
+				ActivityType: "ORDER_PICKED",
+				Title:        fmt.Sprintf("Order #%d Picked", updatedOrder.OrderId),
+				Description:  fmt.Sprintf("Order #%d picking completed. Awaiting customer pickup.", updatedOrder.OrderId),
+				Timestamp:    time.Now().UTC(),
+				Metadata: map[string]any{
+					"order_id": updatedOrder.OrderId,
+					"status":   updatedOrder.Status,
+				},
+			},
+		})
+	}
+
+	return updatedOrder, nil
+}
+
+// CancelOnlineOrder cancels an order with a specified reason and broadcasts real-time events.
+func (s *OnlineOrderService) CancelOnlineOrder(ctx context.Context, email string, role models.EmployeeRole, orderID int, reason string) (*models.OnlineOrder, error) {
+	if reason == "" {
+		return nil, fmt.Errorf("cancellation reason is required")
+	}
+
+	updatedOrder, err := s.ordersRepo.UpdateOnlineOrderStatus(ctx, orderID, models.OnlineOrderStatusCancelled, &reason)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.broadcaster != nil && updatedOrder != nil {
+		s.broadcaster.BroadcastToStore(updatedOrder.StoreId, models.WebSocketEvent{
+			Type:      models.EventOrderStatusUpdated,
+			StoreId:   updatedOrder.StoreId,
+			Timestamp: time.Now().UTC(),
+			Payload: models.OrderStatusUpdatedPayload{
+				OrderId:        updatedOrder.OrderId,
+				StoreId:        updatedOrder.StoreId,
+				CustomerName:   updatedOrder.CustomerName,
+				OrderType:      updatedOrder.OrderType,
+				PreviousStatus: models.OnlineOrderStatusWorkInProgress,
+				NewStatus:      models.OnlineOrderStatusCancelled,
+				TotalAmount:    float64(updatedOrder.TotalAmount),
+				UpdatedAt:      time.Now().UTC(),
+				AssignedTo:     updatedOrder.AssignedTo,
+				AssignedToName: updatedOrder.AssignedToName,
+			},
+		})
+
+		s.broadcaster.BroadcastToStore(updatedOrder.StoreId, models.WebSocketEvent{
+			Type:      models.EventStoreActivity,
+			StoreId:   updatedOrder.StoreId,
+			Timestamp: time.Now().UTC(),
+			Payload: models.StoreActivityPayload{
+				ActivityId:   fmt.Sprintf("act-cancel-%d-%d", updatedOrder.OrderId, time.Now().UnixMilli()),
+				StoreId:      updatedOrder.StoreId,
+				ActivityType: "ORDER_CANCELLED",
+				Title:        fmt.Sprintf("Order #%d Cancelled", updatedOrder.OrderId),
+				Description:  fmt.Sprintf("Order #%d was cancelled. Reason: %s", updatedOrder.OrderId, reason),
+				Timestamp:    time.Now().UTC(),
+				Metadata: map[string]any{
+					"order_id": updatedOrder.OrderId,
+					"reason":   reason,
+				},
+			},
+		})
+	}
+
+	return updatedOrder, nil
+}
+
+// AutoCancelExpiredBOPISOrders finds and cancels BOPIS orders waiting > 5 days.
+func (s *OnlineOrderService) AutoCancelExpiredBOPISOrders(ctx context.Context) (int, error) {
+	cancelled, err := s.ordersRepo.AutoCancelExpiredBOPISOrders(ctx, 5*24*time.Hour)
+	if err != nil {
+		return 0, err
+	}
+
+	if s.broadcaster != nil {
+		for _, o := range cancelled {
+			s.broadcaster.BroadcastToStore(o.StoreId, models.WebSocketEvent{
+				Type:      models.EventOrderStatusUpdated,
+				StoreId:   o.StoreId,
+				Timestamp: time.Now().UTC(),
+				Payload: models.OrderStatusUpdatedPayload{
+					OrderId:      o.OrderId,
+					StoreId:      o.StoreId,
+					CustomerName: o.CustomerName,
+					OrderType:    o.OrderType,
+					NewStatus:    models.OnlineOrderStatusCancelled,
+					TotalAmount:  float64(o.TotalAmount),
+					UpdatedAt:    time.Now().UTC(),
+				},
+			})
+		}
+	}
+
+	return len(cancelled), nil
+}
+
+// StartBOPISAutoCancelWorker periodically runs auto-cancellation in the background.
+func (s *OnlineOrderService) StartBOPISAutoCancelWorker(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				ticker.Stop()
+				return
+			case <-ticker.C:
+				_, _ = s.AutoCancelExpiredBOPISOrders(context.Background())
+			}
+		}
+	}()
 }
 

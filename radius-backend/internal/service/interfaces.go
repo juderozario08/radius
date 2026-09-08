@@ -37,6 +37,10 @@ type OrdersRepository interface {
 	GetAllOnlineOrders(ctx context.Context, limit, offset int, storeID *int, criteria models.OrderSearchCriteria) ([]models.OnlineOrder, int, error)
 	GetOnlineOrderByID(ctx context.Context, id int, storeID *int) (*models.OnlineOrder, []models.OnlineOrderItem, error)
 	CreateOnlineOrder(ctx context.Context, order *models.OnlineOrder) (*models.OnlineOrder, error)
+	AssignOnlineOrder(ctx context.Context, orderID int, employeeID *int, storeID *int, force bool) (*models.OnlineOrder, bool, error)
+	UpdateOnlineOrderItem(ctx context.Context, orderID, itemID int, pickedQty *int, status string, reason *string) error
+	UpdateOnlineOrderStatus(ctx context.Context, orderID int, status models.OnlineOrderStatus, cancellationReason *string) (*models.OnlineOrder, error)
+	AutoCancelExpiredBOPISOrders(ctx context.Context, olderThan time.Duration) ([]models.OnlineOrder, error)
 	GetAllPrintOrders(ctx context.Context, limit, offset int, storeID *int, criteria models.PrintOrderSearchCriteria) ([]models.PrintOrder, int, error)
 	GetPrintOrderByID(ctx context.Context, id int, storeID *int) (*models.PrintOrder, []models.PrintOrderItem, error)
 }

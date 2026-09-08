@@ -39,15 +39,17 @@ type WSMessage = WebSocketEvent
 
 // OrderCreatedPayload represents the payload for EventOrderCreated.
 type OrderCreatedPayload struct {
-	OrderId       int               `json:"order_id"`
-	StoreId       int               `json:"store_id"`
-	CustomerName  string            `json:"customer_name"`
-	CustomerEmail string            `json:"customer_email"`
-	OrderType     OnlineOrderType   `json:"order_type"`
-	Status        OnlineOrderStatus `json:"status"`
-	TotalAmount   float64           `json:"total_amount"`
-	ItemsCount    int               `json:"items_count"`
-	PlacedAt      time.Time         `json:"placed_at"`
+	OrderId        int               `json:"order_id"`
+	StoreId        int               `json:"store_id"`
+	CustomerName   string            `json:"customer_name"`
+	CustomerEmail  string            `json:"customer_email"`
+	OrderType      OnlineOrderType   `json:"order_type"`
+	Status         OnlineOrderStatus `json:"status"`
+	TotalAmount    float64           `json:"total_amount"`
+	ItemsCount     int               `json:"items_count"`
+	PlacedAt       time.Time         `json:"placed_at"`
+	AssignedTo     *int              `json:"assigned_to,omitempty"`
+	AssignedToName *string           `json:"assigned_to_name,omitempty"`
 }
 
 // OrderStatusUpdatedPayload represents the payload for EventOrderStatusUpdated.
@@ -60,6 +62,8 @@ type OrderStatusUpdatedPayload struct {
 	NewStatus      OnlineOrderStatus `json:"new_status"`
 	TotalAmount    float64           `json:"total_amount"`
 	UpdatedAt      time.Time         `json:"updated_at"`
+	AssignedTo     *int              `json:"assigned_to,omitempty"`
+	AssignedToName *string           `json:"assigned_to_name,omitempty"`
 }
 
 // CycleCountUpdatedPayload represents the payload for EventCycleCountUpdated.

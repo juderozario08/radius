@@ -198,3 +198,177 @@ func TestOnlineOrderService_CreateOnlineOrder_NilBroadcasterSafe(t *testing.T) {
 		t.Fatalf("expected order ID %d, got %d", orderID, created.OrderId)
 	}
 }
+
+func TestOnlineOrderService_AssignOnlineOrder(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockOrdersRepo := mocks.NewMockOrdersRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	svc := service.NewOnlineOrderService(mockOrdersRepo, nil, nil, nil, nil, mockEmployeeRepo)
+
+	orderID := 101
+	empID := 5
+	storeID := 2
+	empName := "Marcus Vance"
+
+	// Case 1: Successful assignment by associate
+	mockEmployeeRepo.EXPECT().
+		GetEmployeeByEmail(gomock.Any(), "sales@test.com").
+		Return(&models.Employee{
+			EmployeeId: empID,
+			EmployeeBase: models.EmployeeBase{
+				StoreId:   storeID,
+				FirstName: "Marcus",
+				LastName:  "Vance",
+			},
+		}, nil)
+
+	mockOrdersRepo.EXPECT().
+		AssignOnlineOrder(gomock.Any(), orderID, &empID, &storeID, false).
+		Return(&models.OnlineOrder{
+			OrderId:        orderID,
+			StoreId:        storeID,
+			AssignedTo:     &empID,
+			AssignedToName: &empName,
+		}, true, nil)
+
+	order, wasAssigned, err := svc.AssignOnlineOrder(context.Background(), "sales@test.com", models.RoleSales, orderID, &empID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !wasAssigned {
+		t.Fatalf("expected wasAssigned to be true")
+	}
+	if order.AssignedTo == nil || *order.AssignedTo != empID {
+		t.Fatalf("expected assigned_to to be %d", empID)
+	}
+
+	// Case 2: Conflict when order already assigned to another employee
+	otherEmpID := 8
+	otherEmpName := "Sarah Jenkins"
+	mockEmployeeRepo.EXPECT().
+		GetEmployeeByEmail(gomock.Any(), "sales2@test.com").
+		Return(&models.Employee{
+			EmployeeId: otherEmpID,
+			EmployeeBase: models.EmployeeBase{
+				StoreId: storeID,
+			},
+		}, nil)
+
+	mockOrdersRepo.EXPECT().
+		AssignOnlineOrder(gomock.Any(), orderID, &otherEmpID, &storeID, false).
+		Return(&models.OnlineOrder{
+			OrderId:        orderID,
+			StoreId:        storeID,
+			AssignedTo:     &empID,
+			AssignedToName: &otherEmpName,
+		}, false, nil)
+
+	conflictOrder, wasAssigned2, err := svc.AssignOnlineOrder(context.Background(), "sales2@test.com", models.RoleSales, orderID, &otherEmpID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if wasAssigned2 {
+		t.Fatalf("expected wasAssigned to be false for conflict")
+	}
+	if conflictOrder.AssignedTo == nil || *conflictOrder.AssignedTo != empID {
+		t.Fatalf("expected conflictOrder.AssignedTo to be %d, got %v", empID, conflictOrder.AssignedTo)
+	}
+}
+
+func TestOnlineOrderService_UpdateOrderItem(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockOrdersRepo := mocks.NewMockOrdersRepository(ctrl)
+	svc := service.NewOnlineOrderService(mockOrdersRepo, nil, nil, nil, nil, nil)
+
+	pickedQty := 3
+	status := "ACTIVE"
+	reason := "NONE"
+
+	mockOrdersRepo.EXPECT().
+		UpdateOnlineOrderItem(gomock.Any(), 100, 200, &pickedQty, status, &reason).
+		Return(nil)
+
+	err := svc.UpdateOrderItem(context.Background(), "emp@test.com", models.RoleSales, 100, 200, &pickedQty, status, &reason)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestOnlineOrderService_CompleteOrderPicking(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockOrdersRepo := mocks.NewMockOrdersRepository(ctrl)
+	svc := service.NewOnlineOrderService(mockOrdersRepo, nil, nil, nil, nil, nil)
+
+	mockOrdersRepo.EXPECT().
+		UpdateOnlineOrderStatus(gomock.Any(), 100, models.OnlineOrderStatusAwaitingPickup, nil).
+		Return(&models.OnlineOrder{
+			OrderId: 100,
+			StoreId: 1,
+			Status:  models.OnlineOrderStatusAwaitingPickup,
+		}, nil)
+
+	order, err := svc.CompleteOrderPicking(context.Background(), "emp@test.com", models.RoleSales, 100)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if order.Status != models.OnlineOrderStatusAwaitingPickup {
+		t.Fatalf("expected status %s, got %s", models.OnlineOrderStatusAwaitingPickup, order.Status)
+	}
+}
+
+func TestOnlineOrderService_CancelOnlineOrder(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockOrdersRepo := mocks.NewMockOrdersRepository(ctrl)
+	svc := service.NewOnlineOrderService(mockOrdersRepo, nil, nil, nil, nil, nil)
+
+	reason := "Customer Requested Cancellation"
+	mockOrdersRepo.EXPECT().
+		UpdateOnlineOrderStatus(gomock.Any(), 100, models.OnlineOrderStatusCancelled, &reason).
+		Return(&models.OnlineOrder{
+			OrderId:            100,
+			StoreId:            1,
+			Status:             models.OnlineOrderStatusCancelled,
+			CancellationReason: &reason,
+		}, nil)
+
+	order, err := svc.CancelOnlineOrder(context.Background(), "emp@test.com", models.RoleSales, 100, reason)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if order.Status != models.OnlineOrderStatusCancelled {
+		t.Fatalf("expected status %s, got %s", models.OnlineOrderStatusCancelled, order.Status)
+	}
+}
+
+func TestOnlineOrderService_AutoCancelExpiredBOPISOrders(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockOrdersRepo := mocks.NewMockOrdersRepository(ctrl)
+	svc := service.NewOnlineOrderService(mockOrdersRepo, nil, nil, nil, nil, nil)
+
+	mockOrdersRepo.EXPECT().
+		AutoCancelExpiredBOPISOrders(gomock.Any(), 5*24*time.Hour).
+		Return([]models.OnlineOrder{
+			{OrderId: 101, StoreId: 1, Status: models.OnlineOrderStatusCancelled},
+			{OrderId: 102, StoreId: 1, Status: models.OnlineOrderStatusCancelled},
+		}, nil)
+
+	count, err := svc.AutoCancelExpiredBOPISOrders(context.Background())
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if count != 2 {
+		t.Fatalf("expected 2 cancelled orders, got %d", count)
+	}
+}
+
+

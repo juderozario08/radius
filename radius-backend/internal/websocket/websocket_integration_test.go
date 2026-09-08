@@ -310,6 +310,22 @@ func (r *testOrdersRepo) CreateOnlineOrder(ctx context.Context, order *models.On
 	return order, nil
 }
 
+func (r *testOrdersRepo) AssignOnlineOrder(ctx context.Context, orderID int, employeeID *int, storeID *int, force bool) (*models.OnlineOrder, bool, error) {
+	return nil, true, nil
+}
+
+func (r *testOrdersRepo) UpdateOnlineOrderItem(ctx context.Context, orderID, itemID int, pickedQty *int, status string, reason *string) error {
+	return nil
+}
+
+func (r *testOrdersRepo) UpdateOnlineOrderStatus(ctx context.Context, orderID int, status models.OnlineOrderStatus, cancellationReason *string) (*models.OnlineOrder, error) {
+	return &models.OnlineOrder{OrderId: orderID, Status: status}, nil
+}
+
+func (r *testOrdersRepo) AutoCancelExpiredBOPISOrders(ctx context.Context, olderThan time.Duration) ([]models.OnlineOrder, error) {
+	return nil, nil
+}
+
 func (r *testOrdersRepo) GetAllPrintOrders(ctx context.Context, limit, offset int, storeID *int, criteria models.PrintOrderSearchCriteria) ([]models.PrintOrder, int, error) {
 	return nil, 0, nil
 }

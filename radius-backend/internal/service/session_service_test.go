@@ -188,3 +188,39 @@ func TestValidateSession_NotFound(t *testing.T) {
 		t.Errorf("Expected an error for non-existent session")
 	}
 }
+
+func TestGetAllSessions_CurrentSession(t *testing.T) {
+	mockRepo := &MockSessionRepo{}
+	secret := []byte("testsecret")
+	db := setupSessionTestRedis()
+	sessionService := NewSessionService(mockRepo, secret, db)
+
+	token, _ := utils.GenerateAccessToken(1, "admin@test.com", models.RoleAdmin, secret)
+	hashedToken := utils.HashTokenForDB(token)
+
+	// Set in redis
+	_ = db.Set(context.Background(), "session:"+hashedToken, 42, 1*time.Hour).Err()
+
+	mockRepo.GetAllSessionsFunc = func(ctx context.Context, limit, offset int) ([]models.GetAllSessions, int, error) {
+		return []models.GetAllSessions{
+			{SessionId: 10, EmployeeId: 2, Email: "other@test.com"},
+			{SessionId: 42, EmployeeId: 1, Email: "admin@test.com"},
+		}, 2, nil
+	}
+
+	res, err := sessionService.GetAllSessions(context.Background(), 1, 10, token)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if res.CurrentSessionId == nil || *res.CurrentSessionId != 42 {
+		t.Errorf("Expected CurrentSessionId to be 42, got %v", res.CurrentSessionId)
+	}
+
+	if res.Sessions[0].IsCurrent {
+		t.Errorf("Expected session 10 to not be marked current")
+	}
+	if !res.Sessions[1].IsCurrent {
+		t.Errorf("Expected session 42 to be marked current")
+	}
+}

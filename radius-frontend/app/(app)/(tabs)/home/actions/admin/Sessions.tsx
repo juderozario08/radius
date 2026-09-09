@@ -10,12 +10,19 @@ import { callApi, capitalize, showToast } from "@/utils/helpers";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState, useCallback } from "react";
 import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import Pagination from "@/components/common/Pagination";
 
-const SessionDetailModal: React.FC<{ session: Session | null; visible: boolean; onClose: () => void; onTerminated: () => void }> = ({ session, visible, onClose, onTerminated }) => {
+const SessionDetailModal: React.FC<{
+    session: Session | null;
+    isCurrent: boolean;
+    visible: boolean;
+    onClose: () => void;
+    onTerminated: () => void;
+}> = ({ session, isCurrent, visible, onClose, onTerminated }) => {
     const { logout } = useAuth();
     const [isTerminating, setIsTerminating] = useState(false);
 
@@ -30,13 +37,21 @@ const SessionDetailModal: React.FC<{ session: Session | null; visible: boolean; 
             showToast("success", "Session terminated");
             onTerminated();
             onClose();
+            if (isCurrent) {
+                await logout();
+            }
         }
     };
 
     const handleTerminatePress = () => {
-        Alert.alert("Terminate Session", `Are you sure you want to terminate this session for ${session.first_name}?`, [
+        const title = isCurrent ? "Terminate Your Active Session?" : "Terminate Session";
+        const message = isCurrent
+            ? "Warning: Terminating this session will immediately log you out of this device. Do you wish to proceed?"
+            : `Are you sure you want to terminate this session for ${session.first_name}?`;
+
+        Alert.alert(title, message, [
             { text: "Cancel", style: "cancel" },
-            { text: "Terminate", style: "destructive", onPress: confirmTerminate },
+            { text: isCurrent ? "Log Out & Terminate" : "Terminate", style: "destructive", onPress: confirmTerminate },
         ]);
     };
 
@@ -45,12 +60,25 @@ const SessionDetailModal: React.FC<{ session: Session | null; visible: boolean; 
             <View style={globalStyles.modalOverlay}>
                 <View style={globalStyles.modalContentWrapper}>
                     <View style={globalStyles.modalCardContainer}>
+                        {isCurrent && (
+                            <View style={styles.currentBanner}>
+                                <Ionicons name="phone-portrait" size={16} color="#1B5E20" />
+                                <Text style={styles.currentBannerText}>This is your active session on this device</Text>
+                            </View>
+                        )}
                         <View style={globalStyles.modalHeader}>
                             <View>
                                 <Text style={globalStyles.modalName}>{session.first_name} {session.last_name}</Text>
                                 <Text style={globalStyles.modalRole}>{capitalize(session.role)}</Text>
                             </View>
-                            <StatusBadge isActive={session.is_active} />
+                            <View style={styles.badgesRow}>
+                                {isCurrent && (
+                                    <View style={styles.currentBadgeSmall}>
+                                        <Text style={styles.currentBadgeSmallText}>Your Session</Text>
+                                    </View>
+                                )}
+                                <StatusBadge isActive={session.is_active} />
+                            </View>
                         </View>
                         <View style={globalStyles.divider} />
                         <View style={globalStyles.section}>
@@ -67,7 +95,7 @@ const SessionDetailModal: React.FC<{ session: Session | null; visible: boolean; 
                     </View>
                     <ActionButtonRow buttons={[
                         { key: "close", label: "Close", kind: "neutral", onPress: onClose, disabled: isTerminating },
-                        { key: "terminate", label: "Terminate", kind: "danger", onPress: handleTerminatePress, loading: isTerminating },
+                        { key: "terminate", label: isCurrent ? "Log Out This Device" : "Terminate", kind: "danger", onPress: handleTerminatePress, loading: isTerminating },
                     ]} />
                 </View>
             </View>
@@ -76,8 +104,9 @@ const SessionDetailModal: React.FC<{ session: Session | null; visible: boolean; 
 };
 
 export default function Sessions() {
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
     const [sessions, setSessions] = useState<Session[]>([]);
+    const [currentSessionId, setCurrentSessionId] = useState<number | null>(user?.session_id ?? null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -96,6 +125,9 @@ export default function Sessions() {
         if (data) {
             setSessions(data.sessions || []);
             setTotalLength(data.total_length || 0);
+            if (data.current_session_id) {
+                setCurrentSessionId(data.current_session_id);
+            }
             showToast("success", data.message);
         } else {
             setError("Could not load sessions. Please try again.");
@@ -108,20 +140,46 @@ export default function Sessions() {
         setPageNumber(1);
     };
 
-    const renderSessionCard = useCallback(({ item }: { item: Session }) => (
-        <TouchableOpacity style={globalStyles.card} activeOpacity={0.7} onPress={() => { setSelectedSession(item); setDetailModalVisible(true); }}>
-            <View style={globalStyles.cardHeader}>
-                <Text style={styles.name}>{item.first_name} {item.last_name}</Text>
-                <StatusBadge isActive={item.is_active} />
-            </View>
-            <View style={styles.detailsContainer}>
-                <DetailRow layout="inline" label="Role: " value={capitalize(item.role)} />
-                <DetailRow layout="inline" label="Email: " value={item.email} />
-                <DetailRow layout="inline" label="IP Address: " value={item.ip_address} />
-                <DetailRow layout="inline" label="Store ID: " value={item.store_id} />
-            </View>
-        </TouchableOpacity>
-    ), []);
+    const isCurrentSession = (item: Session) => {
+        return Boolean(
+            item.is_current ||
+            (currentSessionId && item.session_id === currentSessionId) ||
+            (user?.session_id && item.session_id === user.session_id)
+        );
+    };
+
+    const renderSessionCard = useCallback(({ item }: { item: Session }) => {
+        const isCurrent = isCurrentSession(item);
+        return (
+            <TouchableOpacity
+                style={[globalStyles.card, isCurrent && styles.currentCardHighlight]}
+                activeOpacity={0.7}
+                onPress={() => {
+                    setSelectedSession(item);
+                    setDetailModalVisible(true);
+                }}
+            >
+                <View style={globalStyles.cardHeader}>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={styles.name}>{item.first_name} {item.last_name}</Text>
+                        {isCurrent && (
+                            <View style={styles.currentBadge}>
+                                <Ionicons name="phone-portrait" size={12} color="#FFFFFF" />
+                                <Text style={styles.currentBadgeText}>Current Session (This Device)</Text>
+                            </View>
+                        )}
+                    </View>
+                    <StatusBadge isActive={item.is_active} />
+                </View>
+                <View style={styles.detailsContainer}>
+                    <DetailRow layout="inline" label="Role: " value={capitalize(item.role)} />
+                    <DetailRow layout="inline" label="Email: " value={item.email} />
+                    <DetailRow layout="inline" label="IP Address: " value={item.ip_address} />
+                    <DetailRow layout="inline" label="Store ID: " value={item.store_id} />
+                </View>
+            </TouchableOpacity>
+        );
+    }, [currentSessionId, user?.session_id]);
 
     const totalPages = Math.max(1, Math.ceil(totalLength / pageSize));
 
@@ -137,13 +195,16 @@ export default function Sessions() {
                     <Text style={globalStyles.emptyText}>No sessions found.</Text>
                 ) : (
                     <>
-                        {sessions.length === 0 ? (
-                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                                <Text style={globalStyles.emptyText}>No sessions found.</Text>
-                            </View>
-                        ) : (
-                            <FlatList data={sessions} keyExtractor={(item) => item.session_id.toString()} renderItem={renderSessionCard} contentContainerStyle={globalStyles.listContainer} showsVerticalScrollIndicator={false} initialNumToRender={10} windowSize={5} maxToRenderPerBatch={10} />
-                        )}
+                        <FlatList
+                            data={sessions}
+                            keyExtractor={(item) => item.session_id.toString()}
+                            renderItem={renderSessionCard}
+                            contentContainerStyle={globalStyles.listContainer}
+                            showsVerticalScrollIndicator={false}
+                            initialNumToRender={10}
+                            windowSize={5}
+                            maxToRenderPerBatch={10}
+                        />
                         <Pagination
                             currentPage={pageNumber}
                             totalPages={totalPages}
@@ -156,7 +217,13 @@ export default function Sessions() {
                     </>
                 )}
             </View>
-            <SessionDetailModal session={selectedSession} visible={detailModalVisible} onClose={() => setDetailModalVisible(false)} onTerminated={() => fetchSessions(pageNumber, pageSize)} />
+            <SessionDetailModal
+                session={selectedSession}
+                isCurrent={selectedSession ? isCurrentSession(selectedSession) : false}
+                visible={detailModalVisible}
+                onClose={() => setDetailModalVisible(false)}
+                onTerminated={() => fetchSessions(pageNumber, pageSize)}
+            />
         </TopSafeAreaView>
     );
 }
@@ -168,4 +235,60 @@ const styles = StyleSheet.create({
     },
     name: { fontSize: 18, fontWeight: "700", color: COLORS.textPrimary },
     detailsContainer: { gap: 6 },
+    currentCardHighlight: {
+        borderColor: COLORS.primary,
+        borderWidth: 2,
+        backgroundColor: "#F6FBF7",
+    },
+    currentBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#2E7D32",
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+        alignSelf: "flex-start",
+        marginTop: 4,
+        gap: 4,
+    },
+    currentBadgeText: {
+        color: "#FFFFFF",
+        fontSize: 11,
+        fontWeight: "700",
+        letterSpacing: 0.2,
+    },
+    currentBanner: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#E8F5E9",
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        marginBottom: 12,
+        gap: 8,
+        borderWidth: 1,
+        borderColor: "#A5D6A7",
+    },
+    currentBannerText: {
+        color: "#1B5E20",
+        fontSize: 12,
+        fontWeight: "700",
+        flex: 1,
+    },
+    badgesRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+    },
+    currentBadgeSmall: {
+        backgroundColor: "#2E7D32",
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    currentBadgeSmallText: {
+        color: "#FFFFFF",
+        fontSize: 10,
+        fontWeight: "700",
+    },
 });

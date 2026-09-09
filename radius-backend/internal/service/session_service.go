@@ -202,7 +202,23 @@ func (s *SessionService) TerminateSessionById(ctx context.Context, sessionId int
 	return &models.APIMessage{Message: "Session deleted successfully"}, nil
 }
 
-func (s *SessionService) GetAllSessions(ctx context.Context, pageNumber int, pageSize int) (*models.GetAllSessionsResponse, error) {
+func (s *SessionService) GetSessionIdByToken(ctx context.Context, tokenString string) (*int, error) {
+	if tokenString == "" {
+		return nil, nil
+	}
+	hashedToken := utils.HashTokenForDB(tokenString)
+	val, err := s.redisClient.Get(ctx, "session:"+hashedToken).Int()
+	if err == nil && val > 0 {
+		return &val, nil
+	}
+	session, err := s.sessionRepo.GetSessionByAccessTokenHash(ctx, hashedToken)
+	if err == nil && session != nil {
+		return &session.SessionId, nil
+	}
+	return nil, nil
+}
+
+func (s *SessionService) GetAllSessions(ctx context.Context, pageNumber int, pageSize int, tokenString string) (*models.GetAllSessionsResponse, error) {
 	limit := pageSize
 	offset := (pageNumber - 1) * pageSize
 
@@ -210,10 +226,25 @@ func (s *SessionService) GetAllSessions(ctx context.Context, pageNumber int, pag
 	if err != nil {
 		return nil, err
 	}
+
+	var currentSessionID *int
+	if tokenString != "" {
+		currentSessionID, _ = s.GetSessionIdByToken(ctx, tokenString)
+	}
+
+	if currentSessionID != nil {
+		for i := range sessions {
+			if sessions[i].SessionId == *currentSessionID {
+				sessions[i].IsCurrent = true
+			}
+		}
+	}
+
 	return &models.GetAllSessionsResponse{
-		Sessions:    sessions,
-		TotalLength: totalLength,
-		Message:     "Retrieved all existing sessions",
+		Sessions:         sessions,
+		TotalLength:      totalLength,
+		Message:          "Retrieved all existing sessions",
+		CurrentSessionId: currentSessionID,
 	}, nil
 }
 

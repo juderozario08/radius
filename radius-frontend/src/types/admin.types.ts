@@ -37,12 +37,14 @@ export interface Session {
     province: string;
     postal_code: string;
     is_active: boolean;
+    is_current?: boolean;
 }
 
 export interface GetAllSessionsResponse {
     sessions: Session[];
     total_length: number;
     message: string;
+    current_session_id?: number;
 }
 
 export interface Store {
@@ -76,4 +78,18 @@ export interface CreateStoreResponse {
 
 export interface MessageResponse {
     message: string;
+}
+
+export interface StoreOperationSummary {
+    store_id: number;
+    name: string;
+    address: string;
+    city: string;
+    province: string;
+    is_active: boolean;
+    is_head_office: boolean;
+    active_orders_count: number;
+    active_counts_count: number;
+    pending_pos_count: number;
+    has_active_operations: boolean;
 }

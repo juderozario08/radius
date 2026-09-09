@@ -51,9 +51,10 @@ type SessionsResponse struct {
 }
 
 type GetAllSessionsResponse struct {
-	Message     string           `json:"message"`
-	TotalLength int              `json:"total_length"`
-	Sessions    []GetAllSessions `json:"sessions"`
+	Message          string           `json:"message"`
+	TotalLength      int              `json:"total_length"`
+	Sessions         []GetAllSessions `json:"sessions"`
+	CurrentSessionId *int             `json:"current_session_id,omitempty"`
 }
 
 type GetAllSessions struct {
@@ -71,6 +72,7 @@ type GetAllSessions struct {
 	Province   string       `json:"province"`
 	PostalCode string       `json:"postal_code"`
 	IsActive   bool         `json:"is_active"`
+	IsCurrent  bool         `json:"is_current"`
 }
 
 type TerminateSessionRequest struct {

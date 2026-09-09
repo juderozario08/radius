@@ -133,10 +133,8 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 		return
 	}
 
-	// Extract email
 	email, _ := claims["email"].(string)
 
-	// Extract role
 	var role models.EmployeeRole
 	if roleStr, ok := claims["role"].(string); ok && roleStr != "" {
 		role = models.EmployeeRole(roleStr)

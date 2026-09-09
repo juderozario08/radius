@@ -6,7 +6,6 @@ import { getToken } from "@/utils/token";
 import {
     ConnectionStatus,
     WSMessage,
-    WSEvent,
     WSEventType,
     TypedWSEvent,
     OrderCreatedPayload,
@@ -41,63 +40,37 @@ export function calculateBackoffDelay(attempt: number): number {
 }
 
 export interface UseWebSocketOptions {
-    /** Override default API URL */
     url?: string;
-    /** Override target store ID (defaults to user.store_id) */
     storeId?: number;
-    /** Automatically connect on mount when authenticated (default: true) */
     autoConnect?: boolean;
-    /** Maximum number of events to retain in reactive history (default: 50) */
     maxHistorySize?: number;
-    /** Catch-all listener for every received typed event */
     onEvent?: (event: TypedWSEvent) => void;
-    /** Dedicated listener for order created events */
     onOrderCreated?: (payload: OrderCreatedPayload, raw: OrderCreatedEvent) => void;
-    /** Dedicated listener for order status changes */
     onOrderStatusUpdated?: (payload: OrderStatusUpdatedPayload, raw: OrderStatusUpdatedEvent) => void;
-    /** Dedicated listener for cycle count progress and state changes */
     onCycleCountUpdated?: (payload: CycleCountUpdatedPayload, raw: CycleCountUpdatedEvent) => void;
-    /** Dedicated listener for store activity events */
     onStoreActivity?: (payload: StoreActivityPayload, raw: StoreActivityEvent) => void;
-    /** Listener for connection status transitions */
     onStatusChange?: (status: ConnectionStatus) => void;
 }
 
 export interface UseWebSocketReturn {
-    /** Current real-time connection status */
     connectionStatus: ConnectionStatus;
-    /** Alias for connectionStatus */
     status: ConnectionStatus;
-    /** Boolean shorthand: true when status === 'connected' */
     isConnected: boolean;
-    /** Array of recent events (bounded by maxHistorySize, newest first) */
     events: TypedWSEvent[];
-    /** The single most recent event received */
     lastEvent: TypedWSEvent | null;
-    /** The most recent OrderCreated payload */
     latestOrderCreated: OrderCreatedPayload | null;
-    /** The most recent OrderStatusUpdated payload */
     latestOrderStatusUpdated: OrderStatusUpdatedPayload | null;
-    /** The most recent CycleCountUpdated payload */
     latestCycleCountUpdated: CycleCountUpdatedPayload | null;
-    /** The most recent StoreActivity payload */
     latestStoreActivity: StoreActivityPayload | null;
-    /** Manually initiate or force-reconnect the WebSocket */
     reconnect: () => void;
-    /** Manually close and disconnect the WebSocket */
     disconnect: () => void;
-    /** Send arbitrary payload or raw message over the socket */
     sendMessage: (data: unknown) => boolean;
-    /** Alias for sendMessage */
     send: (data: unknown) => boolean;
-    /** Send an application-level ping frame */
     sendPing: () => boolean;
-    /** Subscribe dynamically to a specific event type with auto-cleanup */
-    subscribe: <T = unknown>(
-        eventType: WSEventType | "*",
-        handler: (event: WSMessage<T>) => void
-    ) => () => void;
-    /** Clear the in-memory event history buffer */
+    subscribe: {
+        <T = unknown>(handler: (event: WSMessage<T>) => void): () => void;
+        <T = unknown>(eventType: WSEventType | "*", handler: (event: WSMessage<T>) => void): () => void;
+    };
     clearHistory: () => void;
 }
 
@@ -111,7 +84,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
 
     const { token: authContextToken, user, isAuthenticated } = useAuth();
 
-    // Reactive states
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
     const [events, setEvents] = useState<TypedWSEvent[]>([]);
     const [lastEvent, setLastEvent] = useState<TypedWSEvent | null>(null);
@@ -120,7 +92,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     const [latestCycleCountUpdated, setLatestCycleCountUpdated] = useState<CycleCountUpdatedPayload | null>(null);
     const [latestStoreActivity, setLatestStoreActivity] = useState<StoreActivityPayload | null>(null);
 
-    // Refs to keep track of mutable socket lifecycle without triggering unneeded re-renders
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectAttemptRef = useRef<number>(0);
     const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -130,10 +101,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     const optionsRef = useRef<UseWebSocketOptions>(options);
     optionsRef.current = options;
 
-    // Subscriptions registry for dynamic listener registration: eventType -> Set of handlers
     const listenersRef = useRef<Map<WSEventType | "*", Set<(event: TypedWSEvent) => void>>>(new Map());
 
-    // Update connection status helper with callback notification
     const updateStatus = useCallback((newStatus: ConnectionStatus) => {
         if (!isMountedRef.current) return;
         setConnectionStatus((prev) => {
@@ -144,7 +113,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         });
     }, []);
 
-    // Cleanly cancel any pending reconnect timeout
     const clearReconnectTimeout = useCallback(() => {
         if (reconnectTimeoutRef.current) {
             clearTimeout(reconnectTimeoutRef.current);
@@ -152,7 +120,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         }
     }, []);
 
-    // Send payload helper
     const sendMessage = useCallback((data: unknown): boolean => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
             try {
@@ -167,7 +134,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         return false;
     }, []);
 
-    // Ping helper
     const sendPing = useCallback((): boolean => {
         const storeId = customStoreId ?? user?.store_id ?? 2;
         return sendMessage({
@@ -177,33 +143,40 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         });
     }, [customStoreId, user?.store_id, sendMessage]);
 
-    // Dynamic subscription handler
     const subscribe = useCallback(<T = unknown>(
-        eventType: WSEventType | "*",
-        handler: (event: WSMessage<T>) => void
+        eventTypeOrHandler: WSEventType | "*" | ((event: WSMessage<T>) => void),
+        maybeHandler?: (event: WSMessage<T>) => void
     ): (() => void) => {
+        let eventType: WSEventType | "*";
+        let handler: (event: TypedWSEvent) => void;
+
+        if (typeof eventTypeOrHandler === "function") {
+            eventType = "*";
+            handler = eventTypeOrHandler as (event: TypedWSEvent) => void;
+        } else {
+            eventType = eventTypeOrHandler;
+            handler = (maybeHandler || (() => {})) as (event: TypedWSEvent) => void;
+        }
+
         if (!listenersRef.current.has(eventType)) {
             listenersRef.current.set(eventType, new Set());
         }
         const set = listenersRef.current.get(eventType)!;
-        const castedHandler = handler as (event: TypedWSEvent) => void;
-        set.add(castedHandler);
+        set.add(handler);
 
         return () => {
-            set.delete(castedHandler);
+            set.delete(handler);
             if (set.size === 0) {
                 listenersRef.current.delete(eventType);
             }
         };
-    }, []);
+    }, []) as UseWebSocketReturn["subscribe"];
 
-    // Clear history helper
     const clearHistory = useCallback(() => {
         setEvents([]);
         setLastEvent(null);
     }, []);
 
-    // Disconnect method
     const disconnect = useCallback(() => {
         isIntentionallyClosedRef.current = true;
         clearReconnectTimeout();
@@ -214,15 +187,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         updateStatus("disconnected");
     }, [clearReconnectTimeout, updateStatus]);
 
-    // Primary Connect method
     const connect = useCallback(async () => {
-        // Guard: check authentication
         if (!isAuthenticated) {
             updateStatus("disconnected");
             return;
         }
 
-        // Resolve token from context or fallback to SecureStore
         let activeToken = authContextToken;
         if (!activeToken) {
             activeToken = await getToken();
@@ -235,7 +205,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
             return;
         }
 
-        // Avoid duplicate concurrent connections
         if (
             wsRef.current &&
             (wsRef.current.readyState === WebSocket.OPEN ||
@@ -247,7 +216,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         isIntentionallyClosedRef.current = false;
         clearReconnectTimeout();
 
-        // Status update: reconnecting vs connecting
         updateStatus(reconnectAttemptRef.current > 0 ? "reconnecting" : "connecting");
 
         const baseUrl = customUrl || process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
@@ -289,11 +257,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
                         return;
                     }
 
-                    // Update history states
                     setLastEvent(parsed);
                     setEvents((prev) => [parsed, ...prev].slice(0, maxHistorySize));
 
-                    // Dispatch to specialized state hooks & options callbacks
                     switch (parsed.type) {
                         case "order_created": {
                             const p = parsed.payload as OrderCreatedPayload;
@@ -321,10 +287,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
                         }
                     }
 
-                    // Dispatch to generic onEvent callback
                     optionsRef.current.onEvent?.(parsed);
 
-                    // Dispatch to dynamic imperative listeners
                     const specificListeners = listenersRef.current.get(parsed.type);
                     specificListeners?.forEach((fn) => fn(parsed));
 
@@ -343,19 +307,16 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
                 wsRef.current = null;
                 if (!isMountedRef.current) return;
 
-                // If closure was intentional (unmount, logout, backgrounded, or code 1000), do not reconnect
                 if (isIntentionallyClosedRef.current || e.code === 1000) {
                     updateStatus("disconnected");
                     return;
                 }
 
-                // If app is currently suspended, mark disconnected and wait for foreground resume
                 if (isSuspendedRef.current) {
                     updateStatus("disconnected");
                     return;
                 }
 
-                // Schedule auto-reconnect with exponential backoff (1s, 2s, 4s, 8s, max 15s)
                 updateStatus("reconnecting");
                 const delay = calculateBackoffDelay(reconnectAttemptRef.current);
                 reconnectAttemptRef.current += 1;
@@ -382,7 +343,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         updateStatus,
     ]);
 
-    // Force-reconnect wrapper (resets attempt counter)
     const reconnect = useCallback(() => {
         reconnectAttemptRef.current = 0;
         if (wsRef.current) {
@@ -393,12 +353,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         connect();
     }, [connect]);
 
-    // AppState lifecycle listener (active -> reconnect, background -> clean disconnect/suspend)
     useEffect(() => {
         const handleAppStateChange = (nextAppState: AppStateStatus) => {
             if (nextAppState === "active") {
                 isSuspendedRef.current = false;
-                // Reconnect if currently disconnected or socket is null
                 if (
                     isAuthenticated &&
                     (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED)
@@ -423,7 +381,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         };
     }, [isAuthenticated, connect, clearReconnectTimeout, updateStatus]);
 
-    // Reconnect when customStoreId changes dynamically
     const prevStoreIdRef = useRef<number | undefined>(customStoreId);
     useEffect(() => {
         if (prevStoreIdRef.current !== undefined && prevStoreIdRef.current !== customStoreId) {
@@ -434,7 +391,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         }
     }, [customStoreId, reconnect]);
 
-    // Auto-connect on mount and cleanup on unmount
     useEffect(() => {
         isMountedRef.current = true;
         if (autoConnect && isAuthenticated) {

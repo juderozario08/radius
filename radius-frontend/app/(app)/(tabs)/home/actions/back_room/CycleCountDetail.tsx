@@ -75,15 +75,23 @@ export default function CycleCountDetail() {
             if (data) {
                 setDetail(data);
             } else {
-                router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
+                if (params.from === "dashboard") {
+                    router.replace("/(app)/(tabs)/home/dashboard" as any);
+                } else {
+                    router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
+                }
             }
         } catch (err: any) {
             setError(err.message || "Failed to load cycle count details");
-            router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
+            if (params.from === "dashboard") {
+                router.replace("/(app)/(tabs)/home/dashboard" as any);
+            } else {
+                router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
+            }
         } finally {
             setIsLoading(false);
         }
-    }, [countId, logout]);
+    }, [countId, logout, params.from]);
 
     useFocusEffect(
         useCallback(() => {
@@ -95,8 +103,9 @@ export default function CycleCountDetail() {
         setReassignModalVisible(true);
         setSelectedEmployeeId(detail?.count.counted_by || null);
         setIsLoadingEmployees(true);
+        const storeParam = detail?.count.store_id ? `&store_id=${detail.count.store_id}` : "";
         const data = await callApi<GetAllEmployeeResponse>(
-            `${ENDPOINTS.MANAGER.EMPLOYEES.getAll}?page_size=100&page_number=1`,
+            `${ENDPOINTS.MANAGER.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`,
             { method: "GET" },
             logout
         );

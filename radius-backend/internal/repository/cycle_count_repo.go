@@ -19,7 +19,7 @@ func NewCycleCountRepo(db *sql.DB) *CycleCountRepo {
 	return &CycleCountRepo{db: db}
 }
 
-// GetWeeklyCycleCounts fetches cycle counts for the current week (or all recent counts for the store)
+// GetWeeklyCycleCounts fetches cycle counts for the current week (or all recent counts for the store, or all stores if storeID <= 0)
 func (r *CycleCountRepo) GetWeeklyCycleCounts(ctx context.Context, storeID int) ([]models.CycleCountSummary, error) {
 	query := `
 		SELECT 
@@ -29,7 +29,7 @@ func (r *CycleCountRepo) GetWeeklyCycleCounts(ctx context.Context, storeID int) 
 		FROM cycle_counts cc
 		JOIN categories c ON cc.category_id = c.category_id
 		LEFT JOIN employees e ON cc.counted_by = e.employee_id
-		WHERE cc.store_id = $1
+		WHERE ($1 <= 0 OR cc.store_id = $1)
 		ORDER BY 
 			CASE cc.status 
 				WHEN 'IN PROGRESS' THEN 1 
@@ -67,7 +67,7 @@ func (r *CycleCountRepo) GetWeeklyCycleCounts(ctx context.Context, storeID int) 
 	return summaries, rows.Err()
 }
 
-// GetCycleCountByID retrieves a single count by ID for a store
+// GetCycleCountByID retrieves a single count by ID for a store (or any store if storeID <= 0)
 func (r *CycleCountRepo) GetCycleCountByID(ctx context.Context, countID int, storeID int) (*models.CycleCount, error) {
 	query := `
 		SELECT 
@@ -82,7 +82,7 @@ func (r *CycleCountRepo) GetCycleCountByID(ctx context.Context, countID int, sto
 		JOIN categories c ON cc.category_id = c.category_id
 		LEFT JOIN employees e ON cc.counted_by = e.employee_id
 		LEFT JOIN employees ae ON cc.approved_by = ae.employee_id
-		WHERE cc.count_id = $1 AND cc.store_id = $2
+		WHERE cc.count_id = $1 AND ($2 <= 0 OR cc.store_id = $2)
 	`
 
 	var cc models.CycleCount
@@ -237,7 +237,7 @@ func (r *CycleCountRepo) AutoAssignCycleCount(ctx context.Context, countID int, 
 		SET counted_by = $1,
 			started_at = COALESCE(started_at, NOW()),
 			status = CASE WHEN status = 'NOT STARTED' THEN 'IN PROGRESS'::cycle_count_status ELSE status END
-		WHERE count_id = $2 AND store_id = $3 AND (counted_by IS NULL OR counted_by = $1)
+		WHERE count_id = $2 AND ($3 <= 0 OR store_id = $3) AND (counted_by IS NULL OR counted_by = $1)
 	`
 	_, err := r.db.ExecContext(ctx, query, employeeID, countID, storeID)
 	if err != nil {
@@ -572,7 +572,7 @@ func (r *CycleCountRepo) SearchCycleCounts(ctx context.Context, storeID int, cri
 		FROM cycle_counts cc
 		JOIN categories c ON cc.category_id = c.category_id
 		LEFT JOIN employees e ON cc.counted_by = e.employee_id
-		WHERE cc.store_id = $1
+		WHERE ($1 <= 0 OR cc.store_id = $1)
 	`
 	args := []any{storeID}
 	paramIdx := 2
@@ -651,7 +651,7 @@ func (r *CycleCountRepo) GetSchedule(ctx context.Context, storeID int, fromDate 
 		JOIN categories c ON ccs.category_id = c.category_id
 		LEFT JOIN employees e ON ccs.created_by = e.employee_id
 		LEFT JOIN cycle_counts cc ON ccs.cycle_count_id = cc.count_id
-		WHERE ccs.store_id = $1 AND ccs.scheduled_date >= $2 AND ccs.scheduled_date <= $3
+		WHERE ($1 <= 0 OR ccs.store_id = $1) AND ccs.scheduled_date >= $2 AND ccs.scheduled_date <= $3
 		ORDER BY ccs.scheduled_date ASC
 	`
 

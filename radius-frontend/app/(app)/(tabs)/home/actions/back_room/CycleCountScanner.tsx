@@ -55,15 +55,23 @@ export default function CycleCountScanner() {
             if (data) {
                 setDetail(data);
             } else {
-                router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
+                if (params.from === "dashboard") {
+                    router.replace("/(app)/(tabs)/home/dashboard" as any);
+                } else {
+                    router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
+                }
             }
         } catch (err: any) {
             Alert.alert("Error", err.message || "Failed to load count data");
-            router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
+            if (params.from === "dashboard") {
+                router.replace("/(app)/(tabs)/home/dashboard" as any);
+            } else {
+                router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
+            }
         } finally {
             setIsLoading(false);
         }
-    }, [countId, logout]);
+    }, [countId, logout, params.from]);
 
     useEffect(() => {
         fetchDetail();

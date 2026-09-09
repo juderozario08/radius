@@ -26,7 +26,6 @@ import { callApi } from "@/utils/helpers";
 import { ENDPOINTS } from "@/constants/routes";
 import {
     OrderCreatedPayload,
-    OrderStatusUpdatedPayload,
     CycleCountUpdatedPayload,
     StoreActivityPayload,
 } from "@/types/websocket.types";
@@ -51,11 +50,9 @@ export const isDashboardEligibleOrder = (order: { order_type?: string; status?: 
     const status = (order.status || "").toUpperCase();
 
     if (type === "STS") {
-        // Only SHIPPED STS that are 1 step away from READY for PICKUP
         return ["SHIPPED", "DELIVERING", "DELIVERED"].includes(status);
     }
     if (type === "BOPIS") {
-        // Only unpicked BOPIS
         return ["WORK IN PROGRESS", "PENDING", "PLACED"].includes(status);
     }
     return false;
@@ -72,7 +69,6 @@ export default function RealTimeDashboard() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
 
-    // Role-aware scoping: Associates default to 'my_tasks', Managers/Admins default to 'store_wide'
     const isAssociate = user?.role === "SALES" || user?.role === "SERVICE";
     const [viewScope, setViewScope] = useState<ScopeView>(isAssociate ? "my_tasks" : "store_wide");
 
@@ -98,19 +94,16 @@ export default function RealTimeDashboard() {
                 setStoreOperations(res);
             }
         } catch {
-            // Keep existing
         } finally {
             setLoadingStores(false);
         }
     }, [isAdmin, logout]);
 
-    // Live state collections (updated immediately over WebSocket without page refresh)
     const [liveOrders, setLiveOrders] = useState<OrderCreatedPayload[]>([]);
     const [newOrderIds, setNewOrderIds] = useState<Set<number>>(new Set());
     const [liveCycleCounts, setLiveCycleCounts] = useState<CycleCountUpdatedPayload[]>([]);
     const [liveActivities, setLiveActivities] = useState<StoreActivityPayload[]>([]);
 
-    // Toast feedback state for agent-as-judge live verification banner
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const toastOpacity = useRef(new Animated.Value(0)).current;
 
@@ -131,7 +124,6 @@ export default function RealTimeDashboard() {
         ]).start(() => setToastMessage(null));
     }, [toastOpacity]);
 
-    // WebSocket real-time hook
     const {
         connectionStatus,
         isConnected,
@@ -145,7 +137,6 @@ export default function RealTimeDashboard() {
             if (isAdmin && !selectedStore) {
                 loadStoreOperations();
             }
-            // Only show orders that satisfy dashboard eligibility rules
             if (!isDashboardEligibleOrder(payload)) {
                 return;
             }
@@ -158,23 +149,19 @@ export default function RealTimeDashboard() {
             setNewOrderIds((prev) => new Set(prev).add(payload.order_id));
             showToast(`⚡ Live Order #${payload.order_id} Received (${payload.order_type} - $${payload.total_amount.toFixed(2)})`);
 
-            // Add to activity stream
-            setLiveActivities((prev) => [
-                {
-                    activity_id: `act-order-${payload.order_id}-${Date.now()}`,
-                    store_id: payload.store_id,
-                    activity_type: "ORDER_PLACED",
-                    title: `New Online Order #${payload.order_id}`,
-                    description: `${payload.customer_name} placed ${payload.order_type} order with ${payload.items_count} item(s)`,
-                    timestamp: payload.placed_at || new Date().toISOString(),
-                    metadata: {
-                        order_id: payload.order_id,
-                        order_type: payload.order_type,
-                        assigned_to: payload.assigned_to,
-                    },
+            setLiveActivities((prev) => [{
+                activity_id: `act-order-${payload.order_id}-${Date.now()}`,
+                store_id: payload.store_id,
+                activity_type: "ORDER_PLACED",
+                title: `New Online Order #${payload.order_id}`,
+                description: `${payload.customer_name} placed ${payload.order_type} order with ${payload.items_count} item(s)`,
+                timestamp: payload.placed_at || new Date().toISOString(),
+                metadata: {
+                    order_id: payload.order_id,
+                    order_type: payload.order_type,
+                    assigned_to: payload.assigned_to,
                 },
-                ...prev,
-            ]);
+            }, ...prev]);
         },
         onOrderStatusUpdated: (payload) => {
             if (isAdmin && !selectedStore) {
@@ -575,14 +562,12 @@ export default function RealTimeDashboard() {
             }
         }
 
-        // Navigate directly to Order Detail
         router.push({
             pathname: `/(app)/(tabs)/home/actions/sales_floor/Orders/${order.order_id}`,
             params: { from: "dashboard" },
         } as any);
     };
 
-    // Direct Navigation for Cycle Counts
     const handleCycleCountPress = (count: CycleCountUpdatedPayload) => {
         router.push({
             pathname: "/(app)/(tabs)/home/actions/back_room/CycleCountDetail",
@@ -590,7 +575,6 @@ export default function RealTimeDashboard() {
         } as any);
     };
 
-    // Direct Navigation for Store Activity Stream Items
     const handleActivityPress = (act: StoreActivityPayload) => {
         const meta = act.metadata as Record<string, any> | undefined;
         const orderId = meta?.order_id || (act.title.match(/#(\d+)/) ? Number(act.title.match(/#(\d+)/)![1]) : null);
@@ -700,7 +684,6 @@ export default function RealTimeDashboard() {
                 ]}
             />
 
-            {/* Real-time Toast Feedback Banner */}
             {toastMessage && (
                 <Animated.View style={[styles.toastBanner, { opacity: toastOpacity }]}>
                     <Ionicons name="flash" size={16} color="#FFFFFF" />
@@ -711,7 +694,6 @@ export default function RealTimeDashboard() {
             )}
 
             {isAdmin && !selectedStore ? (
-                /* Admin Multi-Store Hub View */
                 <ScrollView
                     style={globalStyles.container}
                     contentContainerStyle={styles.scrollContent}
@@ -719,7 +701,6 @@ export default function RealTimeDashboard() {
                         <RefreshControl refreshing={isRefreshing || loadingStores} onRefresh={handleRefresh} colors={[COLORS.primary]} />
                     }
                 >
-                    {/* Header Title & Connection Status Bar */}
                     <View style={styles.dashboardHeader}>
                         <View style={styles.titleColumn}>
                             <Text style={styles.welcomeText}>Admin Operations Control</Text>
@@ -741,7 +722,6 @@ export default function RealTimeDashboard() {
                         </View>
                     </View>
 
-                    {/* Network Summary Statistics Cards */}
                     <View style={styles.networkStatsRow}>
                         <View style={styles.networkStatCard}>
                             <View style={[styles.networkStatIconCircle, { backgroundColor: "#FFEBEE" }]}>
@@ -784,7 +764,6 @@ export default function RealTimeDashboard() {
                         </View>
                     </View>
 
-                    {/* Hub Instruction Banner */}
                     <View style={styles.hubInstructionBanner}>
                         <Ionicons name="information-circle-outline" size={18} color="#283593" />
                         <Text style={styles.hubInstructionText}>
@@ -792,13 +771,11 @@ export default function RealTimeDashboard() {
                         </Text>
                     </View>
 
-                    {/* Section Heading */}
                     <View style={styles.sectionHeaderRow}>
                         <Text style={globalStyles.sectionTitle}>All Store Branches ({storeOperations.length})</Text>
                         <Text style={styles.sectionSubtext}>Pull to refresh</Text>
                     </View>
 
-                    {/* List of Store Cards */}
                     <View style={styles.storeListContainer}>
                         {loadingStores && storeOperations.length === 0 ? (
                             <View style={styles.loadingContainer}>
@@ -832,7 +809,6 @@ export default function RealTimeDashboard() {
                         <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />
                     }
                 >
-                    {/* Admin Store Selected Return Banner */}
                     {isAdmin && selectedStore && (
                         <View style={styles.storeSelectedBanner}>
                             <View style={styles.storeSelectedInfo}>
@@ -859,7 +835,6 @@ export default function RealTimeDashboard() {
                         </View>
                     )}
 
-                    {/* Header Title & Connection Status Bar */}
                     <View style={styles.dashboardHeader}>
                         <View style={styles.titleColumn}>
                             <Text style={styles.welcomeText}>
@@ -869,405 +844,398 @@ export default function RealTimeDashboard() {
                             </Text>
                             <Text style={styles.headerTitle}>Operational Dashboard</Text>
                         </View>
-                    <View style={styles.statusColumn}>
-                        <ConnectionStatusBadge
-                            status={connectionStatus}
+                        <View style={styles.statusColumn}>
+                            <ConnectionStatusBadge
+                                status={connectionStatus}
+                                onPress={() => {
+                                    if (!isConnected) {
+                                        reconnect();
+                                        showToast("Reconnecting to WebSocket server...");
+                                    } else {
+                                        sendPing();
+                                        showToast("Ping heartbeat sent to backend!");
+                                    }
+                                }}
+                            />
+                        </View>
+                    </View>
+
+                    <View style={styles.scopeSwitcherContainer}>
+                        <TouchableOpacity
+                            style={[styles.scopeButton, viewScope === "my_tasks" && styles.scopeButtonActive]}
                             onPress={() => {
-                                if (!isConnected) {
-                                    reconnect();
-                                    showToast("Reconnecting to WebSocket server...");
+                                setViewScope("my_tasks");
+                            }}
+                        >
+                            <Ionicons
+                                name="person"
+                                size={14}
+                                color={viewScope === "my_tasks" ? COLORS.primaryText : COLORS.textSecondary}
+                            />
+                            <Text style={[styles.scopeText, viewScope === "my_tasks" && styles.scopeTextActive]}>
+                                My Tasks
+                            </Text>
+                            {myOrders.length > 0 && (
+                                <View style={styles.scopeCountBadge}>
+                                    <Text style={styles.scopeCountText}>{myOrders.length}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.scopeButton, viewScope === "store_wide" && styles.scopeButtonActive]}
+                            onPress={() => {
+                                setViewScope("store_wide");
+                            }}
+                        >
+                            <Ionicons
+                                name="business"
+                                size={14}
+                                color={viewScope === "store_wide" ? COLORS.primaryText : COLORS.textSecondary}
+                            />
+                            <Text style={[styles.scopeText, viewScope === "store_wide" && styles.scopeTextActive]}>
+                                Store-Wide
+                            </Text>
+                            <View style={[styles.scopeCountBadge, { backgroundColor: COLORS.inactiveBg }]}>
+                                <Text style={[styles.scopeCountText, { color: COLORS.textPrimary }]}>
+                                    {liveOrders.length}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.metricsRow}>
+                        <TouchableOpacity
+                            style={[styles.metricCard, activeTab === "orders" && styles.metricCardActive]}
+                            onPress={() => {
+                                if (activeTab === "orders") {
+                                    router.push({
+                                        pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders",
+                                        params: { from: "dashboard" },
+                                    } as any);
                                 } else {
-                                    sendPing();
-                                    showToast("Ping heartbeat sent to backend!");
+                                    setActiveTab("orders");
                                 }
                             }}
-                        />
-                    </View>
-                </View>
-
-                {/* Scope Switcher: My Tasks vs Store-Wide */}
-                <View style={styles.scopeSwitcherContainer}>
-                    <TouchableOpacity
-                        style={[styles.scopeButton, viewScope === "my_tasks" && styles.scopeButtonActive]}
-                        onPress={() => {
-                            setViewScope("my_tasks");
-                        }}
-                    >
-                        <Ionicons
-                            name="person"
-                            size={14}
-                            color={viewScope === "my_tasks" ? COLORS.primaryText : COLORS.textSecondary}
-                        />
-                        <Text style={[styles.scopeText, viewScope === "my_tasks" && styles.scopeTextActive]}>
-                            My Tasks
-                        </Text>
-                        {myOrders.length > 0 && (
-                            <View style={styles.scopeCountBadge}>
-                                <Text style={styles.scopeCountText}>{myOrders.length}</Text>
+                        >
+                            <View style={styles.metricIconRow}>
+                                <Ionicons name="cart" size={20} color={COLORS.primary} />
+                                <Text style={styles.metricValue}>{displayedOrders.length}</Text>
                             </View>
-                        )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.scopeButton, viewScope === "store_wide" && styles.scopeButtonActive]}
-                        onPress={() => {
-                            setViewScope("store_wide");
-                        }}
-                    >
-                        <Ionicons
-                            name="business"
-                            size={14}
-                            color={viewScope === "store_wide" ? COLORS.primaryText : COLORS.textSecondary}
-                        />
-                        <Text style={[styles.scopeText, viewScope === "store_wide" && styles.scopeTextActive]}>
-                            Store-Wide
-                        </Text>
-                        <View style={[styles.scopeCountBadge, { backgroundColor: COLORS.inactiveBg }]}>
-                            <Text style={[styles.scopeCountText, { color: COLORS.textPrimary }]}>
-                                {liveOrders.length}
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Key Real-Time Metrics Strip (Interactive Buttons) */}
-                <View style={styles.metricsRow}>
-                    <TouchableOpacity
-                        style={[styles.metricCard, activeTab === "orders" && styles.metricCardActive]}
-                        onPress={() => {
-                            if (activeTab === "orders") {
-                                router.push({
-                                    pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders",
-                                    params: { from: "dashboard" },
-                                } as any);
-                            } else {
-                                setActiveTab("orders");
-                            }
-                        }}
-                    >
-                        <View style={styles.metricIconRow}>
-                            <Ionicons name="cart" size={20} color={COLORS.primary} />
-                            <Text style={styles.metricValue}>{displayedOrders.length}</Text>
-                        </View>
-                        <View style={styles.metricLabelRow}>
-                            <Text style={styles.metricLabel}>
-                                {viewScope === "my_tasks" ? "My Orders" : "Live Orders"}
-                            </Text>
-                            <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
-                        </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.metricCard, activeTab === "cycle_counts" && styles.metricCardActive]}
-                        onPress={() => {
-                            if (activeTab === "cycle_counts") {
-                                router.push({
-                                    pathname: "/(app)/(tabs)/home/actions/back_room/CycleCount",
-                                    params: { from: "dashboard" },
-                                } as any);
-                            } else {
-                                setActiveTab("cycle_counts");
-                            }
-                        }}
-                    >
-                        <View style={styles.metricIconRow}>
-                            <Ionicons name="barcode" size={20} color={COLORS.accent} />
-                            <Text style={styles.metricValue}>{displayedCycleCounts.length}</Text>
-                        </View>
-                        <View style={styles.metricLabelRow}>
-                            <Text style={styles.metricLabel}>Cycle Counts</Text>
-                            <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
-                        </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.metricCard, activeTab === "activities" && styles.metricCardActive]}
-                        onPress={() => {
-                            if (activeTab === "activities") {
-                                router.push("/(app)/(tabs)/home/actions" as any);
-                            } else {
-                                setActiveTab("activities");
-                            }
-                        }}
-                    >
-                        <View style={styles.metricIconRow}>
-                            <Ionicons name="pulse" size={20} color={COLORS.success} />
-                            <Text style={styles.metricValue}>{displayedActivities.length}</Text>
-                        </View>
-                        <View style={styles.metricLabelRow}>
-                            <Text style={styles.metricLabel}>Activities</Text>
-                            <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
-                        </View>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Tab Navigation Controls */}
-                <View style={styles.tabsContainer}>
-                    <TouchableOpacity
-                        style={[styles.tabButton, activeTab === "overview" && styles.tabButtonActive]}
-                        onPress={() => setActiveTab("overview")}
-                    >
-                        <Text style={[styles.tabText, activeTab === "overview" && styles.tabTextActive]}>
-                            Overview
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.tabButton, activeTab === "orders" && styles.tabButtonActive]}
-                        onPress={() => setActiveTab("orders")}
-                    >
-                        <Text style={[styles.tabText, activeTab === "orders" && styles.tabTextActive]}>
-                            Live Orders ({displayedOrders.length})
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.tabButton, activeTab === "cycle_counts" && styles.tabButtonActive]}
-                        onPress={() => setActiveTab("cycle_counts")}
-                    >
-                        <Text style={[styles.tabText, activeTab === "cycle_counts" && styles.tabTextActive]}>
-                            Cycle Counts ({displayedCycleCounts.length})
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.tabButton, activeTab === "activities" && styles.tabButtonActive]}
-                        onPress={() => setActiveTab("activities")}
-                    >
-                        <Text style={[styles.tabText, activeTab === "activities" && styles.tabTextActive]}>
-                            Feed
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                {initialLoading ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={COLORS.primary} />
-                        <Text style={styles.loadingText}>Connecting to store data feeds...</Text>
-                    </View>
-                ) : (
-                    <>
-                        {/* Tab Content: Overview or Orders */}
-                        {(activeTab === "overview" || activeTab === "orders") && (
-                            <View style={styles.sectionContainer}>
-                                <View style={styles.sectionHeader}>
-                                    <View style={styles.sectionTitleRow}>
-                                        <Ionicons name="cart-outline" size={18} color={COLORS.textPrimary} />
-                                        <Text style={styles.sectionHeading}>
-                                            {viewScope === "my_tasks" ? "My Assigned Orders" : "Store Actionable Orders"}
-                                        </Text>
-                                    </View>
-                                    <TouchableOpacity
-                                        style={styles.headerActionBtn}
-                                        onPress={() =>
-                                            router.push({
-                                                pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders",
-                                                params: { from: "dashboard" },
-                                            } as any)
-                                        }
-                                    >
-                                        <Text style={styles.headerActionText}>View Orders →</Text>
-                                    </TouchableOpacity>
-                                </View>
-
-                                {displayedOrders.length === 0 ? (
-                                    <View style={styles.emptyCard}>
-                                        <Ionicons
-                                            name={viewScope === "my_tasks" ? "person-outline" : "cloud-download-outline"}
-                                            size={32}
-                                            color={COLORS.textSecondary}
-                                        />
-                                        <Text style={styles.emptyCardText}>
-                                            {viewScope === "my_tasks"
-                                                ? "No orders assigned to you yet."
-                                                : "No unpicked BOPIS or shipped STS orders found."}
-                                        </Text>
-                                        {viewScope === "my_tasks" && liveOrders.length > 0 && (
-                                            <TouchableOpacity
-                                                style={styles.emptyCardAction}
-                                                onPress={() => setViewScope("store_wide")}
-                                            >
-                                                <Text style={styles.emptyCardActionText}>
-                                                    View {liveOrders.length} Store Orders to Claim →
-                                                </Text>
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
-                                ) : (
-                                    displayedOrders.slice(0, activeTab === "overview" ? 4 : 25).map((order) => (
-                                        <OrderCard
-                                            key={`order-${order.order_id}`}
-                                            order={order}
-                                            isNew={newOrderIds.has(order.order_id)}
-                                            onPress={() => handleOrderPress(order)}
-                                            style={styles.cardSpacing}
-                                        />
-                                    ))
-                                )}
+                            <View style={styles.metricLabelRow}>
+                                <Text style={styles.metricLabel}>
+                                    {viewScope === "my_tasks" ? "My Orders" : "Live Orders"}
+                                </Text>
+                                <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
                             </View>
-                        )}
+                        </TouchableOpacity>
 
-                        {/* Tab Content: Overview or Cycle Counts */}
-                        {(activeTab === "overview" || activeTab === "cycle_counts") && (
-                            <View style={styles.sectionContainer}>
-                                <View style={styles.sectionHeader}>
-                                    <View style={styles.sectionTitleRow}>
-                                        <Ionicons name="barcode-outline" size={18} color={COLORS.textPrimary} />
-                                        <Text style={styles.sectionHeading}>
-                                            {viewScope === "my_tasks" ? "My In-Progress Cycle Counts" : "In-Progress Cycle Counts"}
-                                        </Text>
+                        <TouchableOpacity
+                            style={[styles.metricCard, activeTab === "cycle_counts" && styles.metricCardActive]}
+                            onPress={() => {
+                                if (activeTab === "cycle_counts") {
+                                    router.push({
+                                        pathname: "/(app)/(tabs)/home/actions/back_room/CycleCount",
+                                        params: { from: "dashboard" },
+                                    } as any);
+                                } else {
+                                    setActiveTab("cycle_counts");
+                                }
+                            }}
+                        >
+                            <View style={styles.metricIconRow}>
+                                <Ionicons name="barcode" size={20} color={COLORS.accent} />
+                                <Text style={styles.metricValue}>{displayedCycleCounts.length}</Text>
+                            </View>
+                            <View style={styles.metricLabelRow}>
+                                <Text style={styles.metricLabel}>Cycle Counts</Text>
+                                <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.metricCard, activeTab === "activities" && styles.metricCardActive]}
+                            onPress={() => {
+                                if (activeTab === "activities") {
+                                    router.push("/(app)/(tabs)/home/actions" as any);
+                                } else {
+                                    setActiveTab("activities");
+                                }
+                            }}
+                        >
+                            <View style={styles.metricIconRow}>
+                                <Ionicons name="pulse" size={20} color={COLORS.success} />
+                                <Text style={styles.metricValue}>{displayedActivities.length}</Text>
+                            </View>
+                            <View style={styles.metricLabelRow}>
+                                <Text style={styles.metricLabel}>Activities</Text>
+                                <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.tabsContainer}>
+                        <TouchableOpacity
+                            style={[styles.tabButton, activeTab === "overview" && styles.tabButtonActive]}
+                            onPress={() => setActiveTab("overview")}
+                        >
+                            <Text style={[styles.tabText, activeTab === "overview" && styles.tabTextActive]}>
+                                Overview
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.tabButton, activeTab === "orders" && styles.tabButtonActive]}
+                            onPress={() => setActiveTab("orders")}
+                        >
+                            <Text style={[styles.tabText, activeTab === "orders" && styles.tabTextActive]}>
+                                Live Orders ({displayedOrders.length})
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.tabButton, activeTab === "cycle_counts" && styles.tabButtonActive]}
+                            onPress={() => setActiveTab("cycle_counts")}
+                        >
+                            <Text style={[styles.tabText, activeTab === "cycle_counts" && styles.tabTextActive]}>
+                                Cycle Counts ({displayedCycleCounts.length})
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.tabButton, activeTab === "activities" && styles.tabButtonActive]}
+                            onPress={() => setActiveTab("activities")}
+                        >
+                            <Text style={[styles.tabText, activeTab === "activities" && styles.tabTextActive]}>
+                                Feed
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {initialLoading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color={COLORS.primary} />
+                            <Text style={styles.loadingText}>Connecting to store data feeds...</Text>
+                        </View>
+                    ) : (
+                        <>
+                            {(activeTab === "overview" || activeTab === "orders") && (
+                                <View style={styles.sectionContainer}>
+                                    <View style={styles.sectionHeader}>
+                                        <View style={styles.sectionTitleRow}>
+                                            <Ionicons name="cart-outline" size={18} color={COLORS.textPrimary} />
+                                            <Text style={styles.sectionHeading}>
+                                                {viewScope === "my_tasks" ? "My Assigned Orders" : "Store Actionable Orders"}
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={styles.headerActionBtn}
+                                            onPress={() =>
+                                                router.push({
+                                                    pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders",
+                                                    params: { from: "dashboard" },
+                                                } as any)
+                                            }
+                                        >
+                                            <Text style={styles.headerActionText}>View Orders →</Text>
+                                        </TouchableOpacity>
                                     </View>
-                                    <TouchableOpacity
-                                        style={styles.headerActionBtn}
-                                        onPress={() =>
-                                            router.push({
-                                                pathname: "/(app)/(tabs)/home/actions/back_room/CycleCount",
-                                                params: { from: "dashboard" },
-                                            } as any)
-                                        }
-                                    >
-                                        <Text style={styles.headerActionText}>View All →</Text>
-                                    </TouchableOpacity>
+
+                                    {displayedOrders.length === 0 ? (
+                                        <View style={styles.emptyCard}>
+                                            <Ionicons
+                                                name={viewScope === "my_tasks" ? "person-outline" : "cloud-download-outline"}
+                                                size={32}
+                                                color={COLORS.textSecondary}
+                                            />
+                                            <Text style={styles.emptyCardText}>
+                                                {viewScope === "my_tasks"
+                                                    ? "No orders assigned to you yet."
+                                                    : "No unpicked BOPIS or shipped STS orders found."}
+                                            </Text>
+                                            {viewScope === "my_tasks" && liveOrders.length > 0 && (
+                                                <TouchableOpacity
+                                                    style={styles.emptyCardAction}
+                                                    onPress={() => setViewScope("store_wide")}
+                                                >
+                                                    <Text style={styles.emptyCardActionText}>
+                                                        View {liveOrders.length} Store Orders to Claim →
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                    ) : (
+                                        displayedOrders.slice(0, activeTab === "overview" ? 4 : 25).map((order) => (
+                                            <OrderCard
+                                                key={`order-${order.order_id}`}
+                                                order={order}
+                                                isNew={newOrderIds.has(order.order_id)}
+                                                onPress={() => handleOrderPress(order)}
+                                                style={styles.cardSpacing}
+                                            />
+                                        ))
+                                    )}
                                 </View>
+                            )}
 
-                                {displayedCycleCounts.length === 0 ? (
-                                    <View style={styles.emptyCard}>
-                                        <Ionicons name="checkmark-done-circle-outline" size={32} color={COLORS.textSecondary} />
-                                        <Text style={styles.emptyCardText}>No cycle counts in progress</Text>
+                            {(activeTab === "overview" || activeTab === "cycle_counts") && (
+                                <View style={styles.sectionContainer}>
+                                    <View style={styles.sectionHeader}>
+                                        <View style={styles.sectionTitleRow}>
+                                            <Ionicons name="barcode-outline" size={18} color={COLORS.textPrimary} />
+                                            <Text style={styles.sectionHeading}>
+                                                {viewScope === "my_tasks" ? "My In-Progress Cycle Counts" : "In-Progress Cycle Counts"}
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={styles.headerActionBtn}
+                                            onPress={() =>
+                                                router.push({
+                                                    pathname: "/(app)/(tabs)/home/actions/back_room/CycleCount",
+                                                    params: { from: "dashboard" },
+                                                } as any)
+                                            }
+                                        >
+                                            <Text style={styles.headerActionText}>View All →</Text>
+                                        </TouchableOpacity>
                                     </View>
-                                ) : (
-                                    displayedCycleCounts.slice(0, activeTab === "overview" ? 3 : 20).map((count) => {
-                                        const progress = count.total_items > 0 ? count.counted_items / count.total_items : 0;
-                                        return (
-                                            <TouchableOpacity
-                                                key={`cycle-${count.count_id}`}
-                                                activeOpacity={0.7}
-                                                onPress={() => handleCycleCountPress(count)}
-                                                style={[globalStyles.card, styles.cycleCountCard]}
-                                            >
-                                                <View style={styles.cycleCardHeader}>
-                                                    <View style={styles.cycleInfoColumn}>
-                                                        <Text style={styles.cycleCategory}>{count.category_name}</Text>
-                                                        <Text style={styles.cycleSubtext}>
-                                                            Count #{count.count_id} • Action: {count.action}
+
+                                    {displayedCycleCounts.length === 0 ? (
+                                        <View style={styles.emptyCard}>
+                                            <Ionicons name="checkmark-done-circle-outline" size={32} color={COLORS.textSecondary} />
+                                            <Text style={styles.emptyCardText}>No cycle counts in progress</Text>
+                                        </View>
+                                    ) : (
+                                        displayedCycleCounts.slice(0, activeTab === "overview" ? 3 : 20).map((count) => {
+                                            const progress = count.total_items > 0 ? count.counted_items / count.total_items : 0;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={`cycle-${count.count_id}`}
+                                                    activeOpacity={0.7}
+                                                    onPress={() => handleCycleCountPress(count)}
+                                                    style={[globalStyles.card, styles.cycleCountCard]}
+                                                >
+                                                    <View style={styles.cycleCardHeader}>
+                                                        <View style={styles.cycleInfoColumn}>
+                                                            <Text style={styles.cycleCategory}>{count.category_name}</Text>
+                                                            <Text style={styles.cycleSubtext}>
+                                                                Count #{count.count_id} • Action: {count.action}
+                                                            </Text>
+                                                        </View>
+                                                        <View style={styles.cycleBadgeRow}>
+                                                            <View style={styles.cycleBadge}>
+                                                                <Text style={styles.cycleBadgeText}>{count.status}</Text>
+                                                            </View>
+                                                            <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+                                                        </View>
+                                                    </View>
+
+                                                    <View style={styles.progressBarBackground}>
+                                                        <View
+                                                            style={[
+                                                                styles.progressBarFill,
+                                                                { width: `${Math.min(100, Math.round(progress * 100))}%` },
+                                                            ]}
+                                                        />
+                                                    </View>
+
+                                                    <View style={styles.cycleStatsRow}>
+                                                        <Text style={styles.cycleStatLabel}>
+                                                            Counted:{" "}
+                                                            <Text style={styles.cycleStatBold}>
+                                                                {count.counted_items} / {count.total_items}
+                                                            </Text>{" "}
+                                                            ({Math.round(progress * 100)}%)
+                                                        </Text>
+                                                        <Text
+                                                            style={[
+                                                                styles.cycleStatLabel,
+                                                                count.total_variance_cost < 0
+                                                                    ? styles.varianceNeg
+                                                                    : styles.variancePos,
+                                                            ]}
+                                                        >
+                                                            Variance: ${count.total_variance_cost.toFixed(2)}
                                                         </Text>
                                                     </View>
-                                                    <View style={styles.cycleBadgeRow}>
-                                                        <View style={styles.cycleBadge}>
-                                                            <Text style={styles.cycleBadgeText}>{count.status}</Text>
-                                                        </View>
-                                                        <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
-                                                    </View>
-                                                </View>
+                                                </TouchableOpacity>
+                                            );
+                                        })
+                                    )}
+                                </View>
+                            )}
 
-                                                {/* Progress Bar */}
-                                                <View style={styles.progressBarBackground}>
-                                                    <View
-                                                        style={[
-                                                            styles.progressBarFill,
-                                                            { width: `${Math.min(100, Math.round(progress * 100))}%` },
-                                                        ]}
+                            {(activeTab === "overview" || activeTab === "activities") && (
+                                <View style={styles.sectionContainer}>
+                                    <View style={styles.sectionHeader}>
+                                        <View style={styles.sectionTitleRow}>
+                                            <Ionicons name="flash-outline" size={18} color={COLORS.textPrimary} />
+                                            <Text style={styles.sectionHeading}>
+                                                {viewScope === "my_tasks" ? "My Activity Stream" : "Store Activity Stream"}
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={styles.headerActionBtn}
+                                            onPress={() => router.push("/(app)/(tabs)/home/actions" as any)}
+                                        >
+                                            <Text style={styles.headerActionText}>Actions →</Text>
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    {displayedActivities.length === 0 ? (
+                                        <View style={styles.emptyCard}>
+                                            <Ionicons name="pulse-outline" size={32} color={COLORS.textSecondary} />
+                                            <Text style={styles.emptyCardText}>No activity recorded yet</Text>
+                                        </View>
+                                    ) : (
+                                        displayedActivities.slice(0, activeTab === "overview" ? 4 : 30).map((act) => (
+                                            <TouchableOpacity
+                                                key={act.activity_id}
+                                                activeOpacity={0.7}
+                                                onPress={() => handleActivityPress(act)}
+                                                style={[globalStyles.card, styles.activityCard]}
+                                            >
+                                                <View style={styles.activityIconCircle}>
+                                                    <Ionicons
+                                                        name={
+                                                            act.activity_type.includes("TIMEOUT") || act.activity_type.includes("CANCEL")
+                                                                ? "time-outline"
+                                                                : act.activity_type.includes("ORDER")
+                                                                    ? "cart"
+                                                                    : act.activity_type.includes("CYCLE")
+                                                                        ? "barcode"
+                                                                        : act.activity_type.includes("RECEIVING") || act.activity_type.includes("PO")
+                                                                            ? "cube"
+                                                                            : "notifications-outline"
+                                                        }
+                                                        size={16}
+                                                        color={COLORS.primary}
                                                     />
                                                 </View>
-
-                                                <View style={styles.cycleStatsRow}>
-                                                    <Text style={styles.cycleStatLabel}>
-                                                        Counted:{" "}
-                                                        <Text style={styles.cycleStatBold}>
-                                                            {count.counted_items} / {count.total_items}
-                                                        </Text>{" "}
-                                                        ({Math.round(progress * 100)}%)
-                                                    </Text>
-                                                    <Text
-                                                        style={[
-                                                            styles.cycleStatLabel,
-                                                            count.total_variance_cost < 0
-                                                                ? styles.varianceNeg
-                                                                : styles.variancePos,
-                                                        ]}
-                                                    >
-                                                        Variance: ${count.total_variance_cost.toFixed(2)}
-                                                    </Text>
+                                                <View style={styles.activityContent}>
+                                                    <View style={styles.activityHeaderRow}>
+                                                        <Text style={styles.activityTitle}>{act.title}</Text>
+                                                        <View style={styles.activityTimeGroup}>
+                                                            <Text style={styles.activityTime}>
+                                                                {new Date(act.timestamp).toLocaleTimeString([], {
+                                                                    hour: "2-digit",
+                                                                    minute: "2-digit",
+                                                                })}
+                                                            </Text>
+                                                            <Ionicons name="chevron-forward" size={14} color={COLORS.textSecondary} />
+                                                        </View>
+                                                    </View>
+                                                    <Text style={styles.activityDescription}>{act.description}</Text>
                                                 </View>
                                             </TouchableOpacity>
-                                        );
-                                    })
-                                )}
-                            </View>
-                        )}
-
-                        {/* Tab Content: Overview or Activities */}
-                        {(activeTab === "overview" || activeTab === "activities") && (
-                            <View style={styles.sectionContainer}>
-                                <View style={styles.sectionHeader}>
-                                    <View style={styles.sectionTitleRow}>
-                                        <Ionicons name="flash-outline" size={18} color={COLORS.textPrimary} />
-                                        <Text style={styles.sectionHeading}>
-                                            {viewScope === "my_tasks" ? "My Activity Stream" : "Store Activity Stream"}
-                                        </Text>
-                                    </View>
-                                    <TouchableOpacity
-                                        style={styles.headerActionBtn}
-                                        onPress={() => router.push("/(app)/(tabs)/home/actions" as any)}
-                                    >
-                                        <Text style={styles.headerActionText}>Actions →</Text>
-                                    </TouchableOpacity>
+                                        ))
+                                    )}
                                 </View>
-
-                                {displayedActivities.length === 0 ? (
-                                    <View style={styles.emptyCard}>
-                                        <Ionicons name="pulse-outline" size={32} color={COLORS.textSecondary} />
-                                        <Text style={styles.emptyCardText}>No activity recorded yet</Text>
-                                    </View>
-                                ) : (
-                                    displayedActivities.slice(0, activeTab === "overview" ? 4 : 30).map((act) => (
-                                        <TouchableOpacity
-                                            key={act.activity_id}
-                                            activeOpacity={0.7}
-                                            onPress={() => handleActivityPress(act)}
-                                            style={[globalStyles.card, styles.activityCard]}
-                                        >
-                                            <View style={styles.activityIconCircle}>
-                                                <Ionicons
-                                                    name={
-                                                        act.activity_type.includes("TIMEOUT") || act.activity_type.includes("CANCEL")
-                                                            ? "time-outline"
-                                                            : act.activity_type.includes("ORDER")
-                                                                ? "cart"
-                                                                : act.activity_type.includes("CYCLE")
-                                                                    ? "barcode"
-                                                                    : act.activity_type.includes("RECEIVING") || act.activity_type.includes("PO")
-                                                                        ? "cube"
-                                                                        : "notifications-outline"
-                                                    }
-                                                    size={16}
-                                                    color={COLORS.primary}
-                                                />
-                                            </View>
-                                            <View style={styles.activityContent}>
-                                                <View style={styles.activityHeaderRow}>
-                                                    <Text style={styles.activityTitle}>{act.title}</Text>
-                                                    <View style={styles.activityTimeGroup}>
-                                                        <Text style={styles.activityTime}>
-                                                            {new Date(act.timestamp).toLocaleTimeString([], {
-                                                                hour: "2-digit",
-                                                                minute: "2-digit",
-                                                            })}
-                                                        </Text>
-                                                        <Ionicons name="chevron-forward" size={14} color={COLORS.textSecondary} />
-                                                    </View>
-                                                </View>
-                                                <Text style={styles.activityDescription}>{act.description}</Text>
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))
-                                )}
-                            </View>
-                        )}
-                    </>
-                )}
-            </ScrollView>
-        )}
+                            )}
+                        </>
+                    )}
+                </ScrollView>
+            )}
         </TopSafeAreaView>
     );
 }

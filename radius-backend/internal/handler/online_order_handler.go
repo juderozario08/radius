@@ -54,6 +54,12 @@ func (h *OnlineOrderHandler) GetAllOnlineOrders(ctx *gin.Context) {
 		}
 	}
 
+	if storeIdStr := ctx.Query("store_id"); storeIdStr != "" {
+		if sid, err := strconv.Atoi(storeIdStr); err == nil {
+			criteria.StoreID = &sid
+		}
+	}
+
 	orders, totalLength, err := h.onlineOrderService.GetAllOnlineOrders(ctx.Request.Context(), email, role, pageNumber, pageSize, criteria)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.GetAllOnlineOrders (Service): %v", err)

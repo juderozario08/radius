@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"radius/internal/models"
 	"time"
@@ -131,4 +132,21 @@ func (s *FillReportService) LogEmptyHole(ctx context.Context, storeID int, produ
 
 func (s *FillReportService) LogSoldItems(ctx context.Context, storeID int, items []models.TransactionItem) error {
 	return s.fillReportRepo.AddSoldItems(ctx, storeID, items)
+}
+
+func (s *FillReportService) GetEmployeeStoreID(ctx context.Context, email string) (int, error) {
+	if s.employeeRepo == nil {
+		return 0, errors.New("employee repository is not configured")
+	}
+	if email == "" {
+		return 0, errors.New("email is empty")
+	}
+	emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
+	if err != nil {
+		return 0, err
+	}
+	if emp == nil {
+		return 0, errors.New("employee not found")
+	}
+	return emp.StoreId, nil
 }

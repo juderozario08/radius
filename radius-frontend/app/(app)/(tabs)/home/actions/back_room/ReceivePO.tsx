@@ -216,6 +216,18 @@ export default function ReceivePO() {
         );
     }
 
+    if (!isLoading && !po) {
+        return (
+            <TopSafeAreaView>
+                <HeaderComponent headerLeft={<BackButton />} headerCenter={<View><Text style={styles.headerTitle}>Purchase Order</Text></View>} />
+                <View style={[globalStyles.centerElement, { padding: 24 }]}>
+                    <Text style={[styles.headerTitle, { color: COLORS.error, marginBottom: 8 }]}>PO Not Found</Text>
+                    <Text style={globalStyles.emptyText}>Purchase Order #{po_id} could not be found or is not accessible.</Text>
+                </View>
+            </TopSafeAreaView>
+        );
+    }
+
     const poNumber = po?.po_id.toString().padStart(8, '0') || '';
 
     return (

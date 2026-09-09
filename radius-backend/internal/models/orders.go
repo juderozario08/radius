@@ -157,6 +157,7 @@ type OrderSearchCriteria struct {
 	Status            string
 	AssignedTo        *int
 	DashboardOnly     bool
+	StoreID           *int
 }
 
 // Print Order Types & Statuses

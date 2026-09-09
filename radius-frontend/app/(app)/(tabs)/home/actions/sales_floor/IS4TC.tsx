@@ -15,7 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { MimsProductInventory, ScanProductResponse } from '@/types/inventory.types';
 
 export default function IS4TCScanScreen() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const router = useRouter();
   const scannerRef = useRef<BarcodeScannerRef>(null);
   
@@ -30,7 +30,10 @@ export default function IS4TCScanScreen() {
 
   const fetchSession = async () => {
     try {
-      const response = await callApi<{status: string, items: MimsProductInventory[]}>(ENDPOINTS.SALES_FLOOR.IS4TC.session, { method: "GET" }, logout);
+      const url = user?.store_id
+        ? `${ENDPOINTS.SALES_FLOOR.IS4TC.session}?store_id=${user.store_id}`
+        : ENDPOINTS.SALES_FLOOR.IS4TC.session;
+      const response = await callApi<{status: string, items: MimsProductInventory[]}>(url, { method: "GET" }, logout);
       if (response && response.items) {
         setScannedItems(response.items);
       }
@@ -45,7 +48,10 @@ export default function IS4TCScanScreen() {
       { text: "Clear", style: "destructive", onPress: async () => {
           setIsProcessing(true);
           try {
-            await callApi(ENDPOINTS.SALES_FLOOR.IS4TC.clearSession, { method: "DELETE" }, logout);
+            const url = user?.store_id
+              ? `${ENDPOINTS.SALES_FLOOR.IS4TC.clearSession}?store_id=${user.store_id}`
+              : ENDPOINTS.SALES_FLOOR.IS4TC.clearSession;
+            await callApi(url, { method: "DELETE" }, logout);
             setScannedItems([]);
             Toast.show({ type: "success", text1: "Cleared", text2: "IS4TC session cleared." });
           } catch (error) {
@@ -71,7 +77,10 @@ export default function IS4TCScanScreen() {
 
       if (response?.product) {
         // Add to Redis session
-        const addResp = await callApi<{status: string, items: MimsProductInventory[]}>(ENDPOINTS.SALES_FLOOR.IS4TC.addToSession, {
+        const addUrl = user?.store_id
+          ? `${ENDPOINTS.SALES_FLOOR.IS4TC.addToSession}?store_id=${user.store_id}`
+          : ENDPOINTS.SALES_FLOOR.IS4TC.addToSession;
+        const addResp = await callApi<{status: string, items: MimsProductInventory[]}>(addUrl, {
           method: "POST",
           body: { product: response.product }
         }, logout);

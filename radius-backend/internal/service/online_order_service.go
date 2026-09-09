@@ -56,7 +56,9 @@ func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, email strin
 		criteria.SKU != ""
 
 	var storeID *int
-	if role != models.RoleAdmin && !isTargetedSearch {
+	if role == models.RoleAdmin && criteria.StoreID != nil {
+		storeID = criteria.StoreID
+	} else if role != models.RoleAdmin && !isTargetedSearch {
 		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 		if err != nil {
 			return nil, 0, err

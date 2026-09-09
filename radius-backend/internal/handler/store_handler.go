@@ -124,3 +124,13 @@ func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, res)
 }
+
+func (h *StoreHandler) GetStoreOperations(ctx *gin.Context) {
+	operations, err := h.storeService.GetStoreOperations(ctx.Request.Context())
+	if err != nil {
+		log.Printf("[ERROR] StoreHandler.GetStoreOperations (Service): %v", err)
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve store operations"})
+		return
+	}
+	ctx.JSON(http.StatusOK, operations)
+}

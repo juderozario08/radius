@@ -186,3 +186,74 @@ func (r *StoreRepo) GetStore(ctx context.Context, storeId int) (*models.Store, e
 	}
 	return &store, nil
 }
+
+func (r *StoreRepo) GetStoreOperationsSummaries(ctx context.Context) ([]models.StoreOperationSummary, error) {
+	query := `
+		SELECT
+			s.store_id,
+			s.name,
+			s.address,
+			s.city,
+			s.province,
+			s.is_active,
+			(s.store_id = 1) AS is_head_office,
+			COALESCE(ord.cnt, 0) AS active_orders_count,
+			COALESCE(cc.cnt, 0) AS active_counts_count,
+			COALESCE(po.cnt, 0) AS pending_pos_count
+		FROM stores s
+		LEFT JOIN (
+			SELECT store_id, COUNT(*) AS cnt
+			FROM online_orders
+			WHERE (order_type = 'STS' AND status::text IN ('SHIPPED', 'DELIVERING', 'DELIVERED'))
+			   OR (order_type = 'BOPIS' AND status::text IN ('WORK IN PROGRESS', 'READY FOR PICKUP', 'AWAITING PICKUP'))
+			GROUP BY store_id
+		) ord ON s.store_id = ord.store_id
+		LEFT JOIN (
+			SELECT store_id, COUNT(*) AS cnt
+			FROM cycle_counts
+			WHERE status::text IN ('IN PROGRESS', 'NOT STARTED', 'PENDING APPROVAL')
+			GROUP BY store_id
+		) cc ON s.store_id = cc.store_id
+		LEFT JOIN (
+			SELECT store_id, COUNT(*) AS cnt
+			FROM purchase_orders
+			WHERE status::text IN ('SHIPPED', 'DELIVERING', 'DELIVERED', 'PARTIAL')
+			GROUP BY store_id
+		) po ON s.store_id = po.store_id
+		ORDER BY s.store_id ASC;
+	`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var summaries []models.StoreOperationSummary
+	for rows.Next() {
+		var s models.StoreOperationSummary
+		err := rows.Scan(
+			&s.StoreID,
+			&s.Name,
+			&s.Address,
+			&s.City,
+			&s.Province,
+			&s.IsActive,
+			&s.IsHeadOffice,
+			&s.ActiveOrdersCount,
+			&s.ActiveCountsCount,
+			&s.PendingPosCount,
+		)
+		if err != nil {
+			return nil, err
+		}
+		s.HasActiveOperations = s.ActiveOrdersCount > 0 || s.ActiveCountsCount > 0 || s.PendingPosCount > 0
+		summaries = append(summaries, s)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return summaries, nil
+}

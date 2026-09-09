@@ -130,6 +130,7 @@ func NewRouter(cfg Config) *gin.Engine {
 		stores := admin.Group("/stores")
 		{
 			stores.GET("", cfg.Handlers.StoreHandler.GetAllStores)
+			stores.GET("/operations", cfg.Handlers.StoreHandler.GetStoreOperations)
 			stores.PUT("/update", cfg.Handlers.StoreHandler.UpdateStore)
 			stores.POST("/create", cfg.Handlers.StoreHandler.CreateStore)
 			stores.POST("/activate", cfg.Handlers.StoreHandler.ActivateStore)

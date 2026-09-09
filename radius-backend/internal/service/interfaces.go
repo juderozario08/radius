@@ -24,6 +24,7 @@ type StoreRepository interface {
 	ActivateStore(ctx context.Context, storeId int) error
 	DeactivateStore(ctx context.Context, storeId int) error
 	GetStore(ctx context.Context, storeId int) (*models.Store, error)
+	GetStoreOperationsSummaries(ctx context.Context) ([]models.StoreOperationSummary, error)
 }
 
 type SalesRepository interface {

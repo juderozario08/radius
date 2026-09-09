@@ -272,6 +272,21 @@ func (mr *MockStoreRepositoryMockRecorder) UpdateStore(ctx, body any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStore", reflect.TypeOf((*MockStoreRepository)(nil).UpdateStore), ctx, body)
 }
 
+// GetStoreOperationsSummaries mocks base method.
+func (m *MockStoreRepository) GetStoreOperationsSummaries(ctx context.Context) ([]models.StoreOperationSummary, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStoreOperationsSummaries", ctx)
+	ret0, _ := ret[0].([]models.StoreOperationSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStoreOperationsSummaries indicates an expected call of GetStoreOperationsSummaries.
+func (mr *MockStoreRepositoryMockRecorder) GetStoreOperationsSummaries(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStoreOperationsSummaries", reflect.TypeOf((*MockStoreRepository)(nil).GetStoreOperationsSummaries), ctx)
+}
+
 // MockSalesRepository is a mock of SalesRepository interface.
 type MockSalesRepository struct {
 	ctrl     *gomock.Controller

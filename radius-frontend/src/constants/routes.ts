@@ -20,6 +20,7 @@ export const ENDPOINTS = {
         },
         STORES: {
             getAll: "/api/admin/stores",
+            operations: "/api/admin/stores/operations",
             update: "/api/admin/stores/update",
             create: "/api/admin/stores/create",
             activate: "/api/admin/stores/activate",

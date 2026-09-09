@@ -32,6 +32,9 @@ import {
 } from "@/types/websocket.types";
 import { GetAllOnlineOrdersResponse } from "@/types/order.types";
 import { CycleCountSummary } from "@/types/cyclecount.types";
+import { PurchaseOrderSummary } from "@/types/receiving.types";
+import { StoreOperationsCard } from "@/components/store/StoreOperationsCard";
+import { StoreOperationSummary } from "@/types/admin.types";
 
 type TabView = "overview" | "orders" | "cycle_counts" | "activities";
 type ScopeView = "my_tasks" | "store_wide";
@@ -60,6 +63,11 @@ export const isDashboardEligibleOrder = (order: { order_type?: string; status?: 
 
 export default function RealTimeDashboard() {
     const { user, logout } = useAuth();
+    const isAdmin = user?.role === "ADMIN";
+    const [selectedStore, setSelectedStore] = useState<StoreOperationSummary | null>(null);
+    const [storeOperations, setStoreOperations] = useState<StoreOperationSummary[]>([]);
+    const [loadingStores, setLoadingStores] = useState(false);
+
     const [activeTab, setActiveTab] = useState<TabView>("overview");
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
@@ -74,6 +82,27 @@ export default function RealTimeDashboard() {
             setViewScope(isReg ? "my_tasks" : "store_wide");
         }
     }, [user?.role]);
+
+    const activeStoreId = isAdmin && selectedStore ? selectedStore.store_id : (user?.store_id ?? 2);
+
+    const loadStoreOperations = useCallback(async () => {
+        if (!isAdmin) return;
+        setLoadingStores(true);
+        try {
+            const res = await callApi<StoreOperationSummary[]>(
+                ENDPOINTS.ADMIN.STORES.operations,
+                { method: "GET" },
+                logout
+            );
+            if (res && Array.isArray(res)) {
+                setStoreOperations(res);
+            }
+        } catch {
+            // Keep existing
+        } finally {
+            setLoadingStores(false);
+        }
+    }, [isAdmin, logout]);
 
     // Live state collections (updated immediately over WebSocket without page refresh)
     const [liveOrders, setLiveOrders] = useState<OrderCreatedPayload[]>([]);
@@ -109,10 +138,13 @@ export default function RealTimeDashboard() {
         reconnect,
         sendPing,
     } = useWebSocket({
-        storeId: user?.store_id ?? 2,
+        storeId: activeStoreId,
         autoConnect: true,
         maxHistorySize: 100,
         onOrderCreated: (payload) => {
+            if (isAdmin && !selectedStore) {
+                loadStoreOperations();
+            }
             // Only show orders that satisfy dashboard eligibility rules
             if (!isDashboardEligibleOrder(payload)) {
                 return;
@@ -145,6 +177,9 @@ export default function RealTimeDashboard() {
             ]);
         },
         onOrderStatusUpdated: (payload) => {
+            if (isAdmin && !selectedStore) {
+                loadStoreOperations();
+            }
             const isEligible = isDashboardEligibleOrder({
                 order_type: payload.order_type,
                 status: payload.new_status,
@@ -163,11 +198,11 @@ export default function RealTimeDashboard() {
                     return prev.map((o) =>
                         o.order_id === payload.order_id
                             ? {
-                                  ...o,
-                                  status: payload.new_status,
-                                  assigned_to: payload.assigned_to !== undefined ? payload.assigned_to : o.assigned_to,
-                                  assigned_to_name: payload.assigned_to_name !== undefined ? payload.assigned_to_name : o.assigned_to_name,
-                              }
+                                ...o,
+                                status: payload.new_status,
+                                assigned_to: payload.assigned_to !== undefined ? payload.assigned_to : o.assigned_to,
+                                assigned_to_name: payload.assigned_to_name !== undefined ? payload.assigned_to_name : o.assigned_to_name,
+                            }
                             : o
                     );
                 }
@@ -217,6 +252,9 @@ export default function RealTimeDashboard() {
             ]);
         },
         onCycleCountUpdated: (payload) => {
+            if (isAdmin && !selectedStore) {
+                loadStoreOperations();
+            }
             const s = (payload.status || "").toUpperCase();
             const isInProgress = s === "IN PROGRESS" || s === "IN_PROGRESS";
 
@@ -252,11 +290,16 @@ export default function RealTimeDashboard() {
             ]);
         },
         onStoreActivity: (payload) => {
-            // Exclude checkout/POS transactions from dashboard activity stream
+            if (isAdmin && !selectedStore) {
+                loadStoreOperations();
+            }
+            // Exclude checkout/POS transactions and store stocking from dashboard activity stream
             if (
                 payload.activity_type.includes("POS") ||
                 payload.activity_type.includes("TRANSACTION") ||
-                payload.activity_type.includes("CHECKOUT")
+                payload.activity_type.includes("CHECKOUT") ||
+                payload.activity_type.includes("FILL") ||
+                payload.activity_type.includes("STOCK")
             ) {
                 return;
             }
@@ -265,51 +308,116 @@ export default function RealTimeDashboard() {
         },
     });
 
-    // Initial data fetch to populate dashboard on startup
-    const loadInitialData = useCallback(async () => {
+    // Initial data fetch to populate dashboard on startup with 100% real operational data
+    const loadInitialData = useCallback(async (storeIdOverride?: number) => {
+        const activities: StoreActivityPayload[] = [];
+        const effectiveStoreId = storeIdOverride !== undefined
+            ? storeIdOverride
+            : (isAdmin && selectedStore ? selectedStore.store_id : user?.store_id);
+        const storeParam = effectiveStoreId ? `&store_id=${effectiveStoreId}` : "";
+        const storeQueryOnly = effectiveStoreId ? `?store_id=${effectiveStoreId}` : "";
+
+        // 1. Fetch real active online orders (unpicked BOPIS and in-transit STS)
         try {
-            // Fetch initial online orders with dashboard_only=true filter
             const ordersRes = await callApi<GetAllOnlineOrdersResponse>(
-                `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=40&dashboard_only=true`,
+                `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=40&dashboard_only=true${storeParam}`,
                 { method: "GET" },
                 logout
             );
             if (ordersRes && ordersRes.online_orders && Array.isArray(ordersRes.online_orders)) {
-                const mapped: OrderCreatedPayload[] = ordersRes.online_orders
-                    .filter(isDashboardEligibleOrder)
-                    .map((o) => ({
-                        order_id: o.order_id,
-                        store_id: o.store_id,
-                        customer_name: o.customer_name || "Customer",
-                        customer_email: o.customer_email || "",
-                        order_type: o.order_type || "BOPIS",
-                        status: o.status || "PENDING",
-                        total_amount: Number(o.total_amount) || 0,
-                        items_count: 1,
-                        placed_at: o.placed_at || new Date().toISOString(),
-                        assigned_to: o.assigned_to,
-                        assigned_to_name: o.assigned_to_name,
-                    }));
+                const eligible = ordersRes.online_orders.filter(isDashboardEligibleOrder);
+                const mapped: OrderCreatedPayload[] = eligible.map((o) => ({
+                    order_id: o.order_id,
+                    store_id: o.store_id,
+                    customer_name: o.customer_name || "Customer",
+                    customer_email: o.customer_email || "",
+                    order_type: o.order_type || "BOPIS",
+                    status: o.status || "PENDING",
+                    total_amount: Number(o.total_amount) || 0,
+                    items_count: 1,
+                    placed_at: o.placed_at || new Date().toISOString(),
+                    assigned_to: o.assigned_to,
+                    assigned_to_name: o.assigned_to_name,
+                }));
                 setLiveOrders(mapped);
+
+                for (const o of eligible) {
+                    if (o.order_type === "BOPIS") {
+                        activities.push({
+                            activity_id: `act-bopis-${o.order_id}`,
+                            store_id: o.store_id,
+                            activity_type: "ORDER_PLACED",
+                            title: `BOPIS Order #${o.order_id}`,
+                            description: `${o.customer_name} placed order (${o.status}) • ${o.assigned_to_name ? `Assigned to ${o.assigned_to_name}` : "Unassigned"}`,
+                            timestamp: o.placed_at || new Date().toISOString(),
+                            metadata: {
+                                order_id: o.order_id,
+                                order_type: o.order_type,
+                                assigned_to: o.assigned_to,
+                                assigned_to_name: o.assigned_to_name,
+                            },
+                        });
+                    } else if (o.order_type === "STS") {
+                        activities.push({
+                            activity_id: `act-sts-${o.order_id}`,
+                            store_id: o.store_id,
+                            activity_type: "ORDER_STATUS_CHANGED",
+                            title: `STS Order #${o.order_id} In Transit`,
+                            description: `Ship-to-Store package (${o.status}) for ${o.customer_name}`,
+                            timestamp: o.placed_at || new Date().toISOString(),
+                            metadata: {
+                                order_id: o.order_id,
+                                order_type: o.order_type,
+                            },
+                        });
+                    }
+                }
             }
         } catch {
             // Keep existing orders if API call fails
         }
 
-        // Fetch real active cycle counts for current store
+        // 2. Fetch real timed-out / cancelled BOPIS orders
+        try {
+            const cancelRes = await callApi<GetAllOnlineOrdersResponse>(
+                `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=10&status=CANCELLED${storeParam}`,
+                { method: "GET" },
+                logout
+            );
+            if (cancelRes && cancelRes.online_orders && Array.isArray(cancelRes.online_orders)) {
+                for (const o of cancelRes.online_orders) {
+                    activities.push({
+                        activity_id: `act-cancel-${o.order_id}`,
+                        store_id: o.store_id,
+                        activity_type: "ORDER_TIMEOUT",
+                        title: `BOPIS Order #${o.order_id} Timed Out`,
+                        description: `Pickup expired • Auto-cancelled for ${o.customer_name}`,
+                        timestamp: o.fulfilled_at || o.placed_at || new Date().toISOString(),
+                        metadata: {
+                            order_id: o.order_id,
+                            order_type: o.order_type,
+                        },
+                    });
+                }
+            }
+        } catch {
+            // Ignore if cancel query fails
+        }
+
+        // 3. Fetch real active cycle counts for current store (IN PROGRESS)
         try {
             const countsRes = await callApi<CycleCountSummary[]>(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly,
+                `${ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly}${storeQueryOnly}`,
                 { method: "GET" },
                 logout
             );
             if (countsRes && Array.isArray(countsRes)) {
-                // Only in progress cycle counts should be shown on the dashboard
-                const mappedCounts: CycleCountUpdatedPayload[] = countsRes
-                    .filter((c) => {
-                        const s = (c.status || "").toUpperCase();
-                        return s === "IN PROGRESS" || s === "IN_PROGRESS";
-                    })
+                const inProgressCounts = countsRes.filter((c) => {
+                    const s = (c.status || "").toUpperCase();
+                    return s === "IN PROGRESS" || s === "IN_PROGRESS";
+                });
+
+                const mappedCounts: CycleCountUpdatedPayload[] = inProgressCounts
                     .slice(0, 10)
                     .map((c) => ({
                         count_id: c.count_id,
@@ -326,45 +434,81 @@ export default function RealTimeDashboard() {
                         counted_by_name: c.counted_by_name,
                     }));
                 setLiveCycleCounts(mappedCounts);
+
+                for (const c of inProgressCounts) {
+                    activities.push({
+                        activity_id: `act-cycle-${c.count_id}`,
+                        store_id: c.store_id,
+                        activity_type: "CYCLE_COUNT_UPDATED",
+                        title: `Cycle Count #${c.count_id} - ${c.category_name}`,
+                        description: `Progress: ${c.counted_items}/${c.total_items} items counted${c.counted_by_name ? ` by ${c.counted_by_name}` : ""}`,
+                        timestamp: c.count_date || new Date().toISOString(),
+                        metadata: { count_id: c.count_id },
+                    });
+                }
             }
         } catch {
             // Keep existing cycle counts if API call fails
         }
 
-        // Initialize recent operational activities if empty (no POS checkout or bay tracking)
-        if (liveActivities.length === 0) {
-            setLiveActivities([
-                {
-                    activity_id: "act-init-1",
-                    store_id: user?.store_id ?? 2,
-                    activity_type: "INVENTORY_FILL",
-                    title: "Shelf Restock Completed",
-                    description: "Aisle 4 Beverage top-stock replenishment finished",
-                    timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
-                    metadata: {},
-                },
-                {
-                    activity_id: "act-init-2",
-                    store_id: user?.store_id ?? 2,
-                    activity_type: "RECEIVING_DOCK",
-                    title: "PO #8920 Carrier Arrived",
-                    description: "Supplier US Foods shipment ready for receiving",
-                    timestamp: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
-                    metadata: { po_id: 8920 },
-                },
-            ]);
+        // 4. Fetch real incoming purchase orders that have not been received yet
+        try {
+            const posRes = await callApi<PurchaseOrderSummary[]>(
+                `${ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrders}${storeQueryOnly}`,
+                { method: "GET" },
+                logout
+            );
+            if (posRes && Array.isArray(posRes)) {
+                const pendingPOs = posRes.filter(
+                    (po) => po.status !== "RECEIVED" && po.status !== "CANCELLED"
+                );
+                for (const po of pendingPOs) {
+                    activities.push({
+                        activity_id: `act-po-${po.po_id}`,
+                        store_id: po.store_id,
+                        activity_type: "RECEIVING_DOCK",
+                        title: `PO #${po.po_id} (${po.supplier_name})`,
+                        description: `${po.item_count} item(s) • Status: ${po.status}${po.has_lprs ? " (LPR Pallet)" : ""}`,
+                        timestamp: po.arrived_at || po.expected_at || po.ordered_at || new Date().toISOString(),
+                        metadata: { po_id: po.po_id },
+                    });
+                }
+            }
+        } catch {
+            // Ignore if PO query fails
         }
 
+        // Sort all real operational activities by timestamp descending (newest first)
+        activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        setLiveActivities(activities);
+
         setInitialLoading(false);
-    }, [user?.store_id, liveActivities.length, logout]);
+    }, [isAdmin, selectedStore, user?.store_id, logout]);
 
     useEffect(() => {
-        loadInitialData();
-    }, [loadInitialData]);
+        if (isAdmin) {
+            loadStoreOperations();
+        }
+    }, [isAdmin, loadStoreOperations]);
+
+    useEffect(() => {
+        if (isAdmin) {
+            if (selectedStore) {
+                setInitialLoading(true);
+                loadInitialData(selectedStore.store_id);
+            }
+        } else {
+            loadInitialData(user?.store_id);
+        }
+    }, [isAdmin, selectedStore, user?.store_id, loadInitialData]);
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
-        await loadInitialData();
+        if (isAdmin && !selectedStore) {
+            await loadStoreOperations();
+        } else {
+            await loadInitialData(selectedStore ? selectedStore.store_id : user?.store_id);
+        }
         setIsRefreshing(false);
     };
 
@@ -520,29 +664,31 @@ export default function RealTimeDashboard() {
         });
         return viewScope === "my_tasks"
             ? inProgress.filter(
-                  (c) =>
-                      (c.counted_by && c.counted_by === currentEmpId) ||
-                      !c.counted_by_name
-              )
+                (c) =>
+                    (c.counted_by && c.counted_by === currentEmpId) ||
+                    !c.counted_by_name
+            )
             : inProgress;
     }, [viewScope, liveCycleCounts, currentEmpId]);
 
-    // Exclude checkout/POS transactions from dashboard activity stream
+    // Exclude checkout/POS transactions and store stocking from dashboard activity stream
     const displayedActivities = useMemo(() => {
-        const nonCheckout = liveActivities.filter(
+        const filtered = liveActivities.filter(
             (a) =>
                 !a.activity_type.includes("POS") &&
                 !a.activity_type.includes("TRANSACTION") &&
-                !a.activity_type.includes("CHECKOUT")
+                !a.activity_type.includes("CHECKOUT") &&
+                !a.activity_type.includes("FILL") &&
+                !a.activity_type.includes("STOCK")
         );
         return viewScope === "my_tasks"
-            ? nonCheckout.filter(
-                  (a) =>
-                      a.metadata?.employee_id === currentEmpId ||
-                      a.metadata?.assigned_to === currentEmpId ||
-                      !a.metadata?.assigned_to
-              )
-            : nonCheckout;
+            ? filtered.filter(
+                (a) =>
+                    a.metadata?.employee_id === currentEmpId ||
+                    a.metadata?.assigned_to === currentEmpId ||
+                    !a.metadata?.assigned_to
+            )
+            : filtered;
     }, [viewScope, liveActivities, currentEmpId]);
 
     return (
@@ -564,21 +710,165 @@ export default function RealTimeDashboard() {
                 </Animated.View>
             )}
 
-            <ScrollView
-                style={globalStyles.container}
-                contentContainerStyle={styles.scrollContent}
-                refreshControl={
-                    <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />
-                }
-            >
-                {/* Header Title & Connection Status Bar */}
-                <View style={styles.dashboardHeader}>
-                    <View style={styles.titleColumn}>
-                        <Text style={styles.welcomeText}>
-                            Store #{user?.store_id ?? 2} • {user?.role || "Associate"} View
-                        </Text>
-                        <Text style={styles.headerTitle}>Operational Dashboard</Text>
+            {isAdmin && !selectedStore ? (
+                /* Admin Multi-Store Hub View */
+                <ScrollView
+                    style={globalStyles.container}
+                    contentContainerStyle={styles.scrollContent}
+                    refreshControl={
+                        <RefreshControl refreshing={isRefreshing || loadingStores} onRefresh={handleRefresh} colors={[COLORS.primary]} />
+                    }
+                >
+                    {/* Header Title & Connection Status Bar */}
+                    <View style={styles.dashboardHeader}>
+                        <View style={styles.titleColumn}>
+                            <Text style={styles.welcomeText}>Admin Operations Control</Text>
+                            <Text style={styles.headerTitle}>Store Operations Hub</Text>
+                        </View>
+                        <View style={styles.statusColumn}>
+                            <ConnectionStatusBadge
+                                status={connectionStatus}
+                                onPress={() => {
+                                    if (!isConnected) {
+                                        reconnect();
+                                        showToast("Reconnecting to WebSocket server...");
+                                    } else {
+                                        sendPing();
+                                        showToast("Ping heartbeat sent to backend!");
+                                    }
+                                }}
+                            />
+                        </View>
                     </View>
+
+                    {/* Network Summary Statistics Cards */}
+                    <View style={styles.networkStatsRow}>
+                        <View style={styles.networkStatCard}>
+                            <View style={[styles.networkStatIconCircle, { backgroundColor: "#FFEBEE" }]}>
+                                <Ionicons name="business" size={15} color={COLORS.primary} />
+                            </View>
+                            <Text style={styles.networkStatValue}>
+                                {storeOperations.filter((s) => s.has_active_operations).length}/{storeOperations.length}
+                            </Text>
+                            <Text style={styles.networkStatLabel}>Active</Text>
+                        </View>
+
+                        <View style={styles.networkStatCard}>
+                            <View style={[styles.networkStatIconCircle, { backgroundColor: "#FFF3E0" }]}>
+                                <Ionicons name="cart" size={15} color="#E65100" />
+                            </View>
+                            <Text style={styles.networkStatValue}>
+                                {storeOperations.reduce((sum, s) => sum + s.active_orders_count, 0)}
+                            </Text>
+                            <Text style={styles.networkStatLabel}>Orders</Text>
+                        </View>
+
+                        <View style={styles.networkStatCard}>
+                            <View style={[styles.networkStatIconCircle, { backgroundColor: "#E3F2FD" }]}>
+                                <Ionicons name="clipboard" size={15} color="#1565C0" />
+                            </View>
+                            <Text style={styles.networkStatValue}>
+                                {storeOperations.reduce((sum, s) => sum + s.active_counts_count, 0)}
+                            </Text>
+                            <Text style={styles.networkStatLabel}>Counts</Text>
+                        </View>
+
+                        <View style={styles.networkStatCard}>
+                            <View style={[styles.networkStatIconCircle, { backgroundColor: "#E8F5E9" }]}>
+                                <Ionicons name="cube" size={15} color="#2E7D32" />
+                            </View>
+                            <Text style={styles.networkStatValue}>
+                                {storeOperations.reduce((sum, s) => sum + s.pending_pos_count, 0)}
+                            </Text>
+                            <Text style={styles.networkStatLabel}>POs</Text>
+                        </View>
+                    </View>
+
+                    {/* Hub Instruction Banner */}
+                    <View style={styles.hubInstructionBanner}>
+                        <Ionicons name="information-circle-outline" size={18} color="#283593" />
+                        <Text style={styles.hubInstructionText}>
+                            Tap any store branch below to monitor and manage its real-time orders, cycle counts, and dock receiving.
+                        </Text>
+                    </View>
+
+                    {/* Section Heading */}
+                    <View style={styles.sectionHeaderRow}>
+                        <Text style={globalStyles.sectionTitle}>All Store Branches ({storeOperations.length})</Text>
+                        <Text style={styles.sectionSubtext}>Pull to refresh</Text>
+                    </View>
+
+                    {/* List of Store Cards */}
+                    <View style={styles.storeListContainer}>
+                        {loadingStores && storeOperations.length === 0 ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="large" color={COLORS.primary} />
+                                <Text style={styles.loadingText}>Loading store operational summaries...</Text>
+                            </View>
+                        ) : storeOperations.length === 0 ? (
+                            <View style={styles.emptyCard}>
+                                <Ionicons name="business-outline" size={36} color={COLORS.textSecondary} />
+                                <Text style={styles.emptyCardText}>No store locations found.</Text>
+                            </View>
+                        ) : (
+                            storeOperations.map((store) => (
+                                <StoreOperationsCard
+                                    key={store.store_id}
+                                    store={store}
+                                    onSelect={(st) => {
+                                        setSelectedStore(st);
+                                    }}
+                                />
+                            ))
+                        )}
+                    </View>
+                </ScrollView>
+            ) : (
+                /* Regular Single Store Operations View */
+                <ScrollView
+                    style={globalStyles.container}
+                    contentContainerStyle={styles.scrollContent}
+                    refreshControl={
+                        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />
+                    }
+                >
+                    {/* Admin Store Selected Return Banner */}
+                    {isAdmin && selectedStore && (
+                        <View style={styles.storeSelectedBanner}>
+                            <View style={styles.storeSelectedInfo}>
+                                <View style={styles.storeSelectedTitleRow}>
+                                    <Ionicons name="storefront" size={16} color={COLORS.primary} />
+                                    <Text style={styles.storeSelectedName}>{selectedStore.name}</Text>
+                                    {selectedStore.is_head_office && (
+                                        <View style={styles.hqBadge}>
+                                            <Text style={styles.hqText}>HQ</Text>
+                                        </View>
+                                    )}
+                                </View>
+                                <Text style={styles.storeSelectedSub}>
+                                    Store #{selectedStore.store_id} • {selectedStore.city}, {selectedStore.province}
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.allStoresButton}
+                                onPress={() => setSelectedStore(null)}
+                            >
+                                <Ionicons name="arrow-back" size={14} color={COLORS.primary} />
+                                <Text style={styles.allStoresButtonText}>All Stores</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
+                    {/* Header Title & Connection Status Bar */}
+                    <View style={styles.dashboardHeader}>
+                        <View style={styles.titleColumn}>
+                            <Text style={styles.welcomeText}>
+                                {selectedStore
+                                    ? `${selectedStore.name} • Admin View`
+                                    : `Store #${user?.store_id ?? 2} • ${user?.role || "Associate"} View`}
+                            </Text>
+                            <Text style={styles.headerTitle}>Operational Dashboard</Text>
+                        </View>
                     <View style={styles.statusColumn}>
                         <ConnectionStatusBadge
                             status={connectionStatus}
@@ -601,7 +891,6 @@ export default function RealTimeDashboard() {
                         style={[styles.scopeButton, viewScope === "my_tasks" && styles.scopeButtonActive]}
                         onPress={() => {
                             setViewScope("my_tasks");
-                            showToast("Showing your assigned tasks and personal activities");
                         }}
                     >
                         <Ionicons
@@ -623,7 +912,6 @@ export default function RealTimeDashboard() {
                         style={[styles.scopeButton, viewScope === "store_wide" && styles.scopeButtonActive]}
                         onPress={() => {
                             setViewScope("store_wide");
-                            showToast("Showing store-wide operational activity stream");
                         }}
                     >
                         <Ionicons
@@ -942,13 +1230,15 @@ export default function RealTimeDashboard() {
                                             <View style={styles.activityIconCircle}>
                                                 <Ionicons
                                                     name={
-                                                        act.activity_type.includes("ORDER")
-                                                            ? "cart"
-                                                            : act.activity_type.includes("CYCLE")
-                                                            ? "barcode"
-                                                            : act.activity_type.includes("RECEIVING") || act.activity_type.includes("PO")
-                                                            ? "cube"
-                                                            : "cash"
+                                                        act.activity_type.includes("TIMEOUT") || act.activity_type.includes("CANCEL")
+                                                            ? "time-outline"
+                                                            : act.activity_type.includes("ORDER")
+                                                                ? "cart"
+                                                                : act.activity_type.includes("CYCLE")
+                                                                    ? "barcode"
+                                                                    : act.activity_type.includes("RECEIVING") || act.activity_type.includes("PO")
+                                                                        ? "cube"
+                                                                        : "notifications-outline"
                                                     }
                                                     size={16}
                                                     color={COLORS.primary}
@@ -977,6 +1267,7 @@ export default function RealTimeDashboard() {
                     </>
                 )}
             </ScrollView>
+        )}
         </TopSafeAreaView>
     );
 }
@@ -1336,5 +1627,135 @@ const styles = StyleSheet.create({
     activityDescription: {
         fontSize: 12,
         color: COLORS.textSecondary,
+    },
+    networkStatsRow: {
+        flexDirection: "row",
+        gap: 8,
+        marginHorizontal: 16,
+        marginTop: 10,
+        marginBottom: 14,
+    },
+    networkStatCard: {
+        flex: 1,
+        backgroundColor: COLORS.surface,
+        borderRadius: 10,
+        padding: 10,
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    networkStatIconCircle: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 6,
+    },
+    networkStatValue: {
+        fontSize: 16,
+        fontWeight: "800",
+        color: COLORS.textPrimary,
+        marginBottom: 2,
+    },
+    networkStatLabel: {
+        fontSize: 10,
+        fontWeight: "600",
+        color: COLORS.textSecondary,
+        textAlign: "center",
+    },
+    hubInstructionBanner: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#E8EAF6",
+        borderRadius: 8,
+        padding: 10,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        gap: 8,
+    },
+    hubInstructionText: {
+        fontSize: 12,
+        color: "#283593",
+        flex: 1,
+        lineHeight: 16,
+    },
+    storeListContainer: {
+        paddingHorizontal: 16,
+    },
+    sectionHeaderRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: 16,
+        marginBottom: 12,
+    },
+    sectionSubtext: {
+        fontSize: 12,
+        color: COLORS.textSecondary,
+    },
+    storeSelectedBanner: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        backgroundColor: "#FFF8F8",
+        borderWidth: 1,
+        borderColor: "#FFCDD2",
+        borderRadius: 10,
+        padding: 12,
+        marginHorizontal: 16,
+        marginTop: 10,
+        marginBottom: 14,
+    },
+    storeSelectedInfo: {
+        flex: 1,
+        marginRight: 8,
+    },
+    storeSelectedTitleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+    },
+    storeSelectedName: {
+        fontSize: 15,
+        fontWeight: "700",
+        color: COLORS.textPrimary,
+    },
+    storeSelectedSub: {
+        fontSize: 12,
+        color: COLORS.textSecondary,
+        marginTop: 2,
+    },
+    hqBadge: {
+        backgroundColor: "#EDE7F6",
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+        borderRadius: 4,
+    },
+    hqText: {
+        fontSize: 10,
+        fontWeight: "700",
+        color: "#5E35B1",
+    },
+    allStoresButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFFFFF",
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+        gap: 4,
+    },
+    allStoresButtonText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: COLORS.primary,
     },
 });

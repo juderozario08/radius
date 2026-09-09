@@ -423,6 +423,17 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         };
     }, [isAuthenticated, connect, clearReconnectTimeout, updateStatus]);
 
+    // Reconnect when customStoreId changes dynamically
+    const prevStoreIdRef = useRef<number | undefined>(customStoreId);
+    useEffect(() => {
+        if (prevStoreIdRef.current !== undefined && prevStoreIdRef.current !== customStoreId) {
+            prevStoreIdRef.current = customStoreId;
+            reconnect();
+        } else {
+            prevStoreIdRef.current = customStoreId;
+        }
+    }, [customStoreId, reconnect]);
+
     // Auto-connect on mount and cleanup on unmount
     useEffect(() => {
         isMountedRef.current = true;

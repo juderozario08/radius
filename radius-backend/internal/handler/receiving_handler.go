@@ -23,8 +23,16 @@ func NewReceivingHandler(receivingService *service.ReceivingService) *ReceivingH
 
 func (h *ReceivingHandler) GetPurchaseOrders(ctx *gin.Context) {
 	email := ctx.GetString("email")
+	role := ctx.GetString("role")
 
-	results, err := h.receivingService.GetPurchaseOrders(ctx.Request.Context(), email)
+	var storeIDOverride *int
+	if storeIDStr := ctx.Query("store_id"); storeIDStr != "" {
+		if sid, err := strconv.Atoi(storeIDStr); err == nil {
+			storeIDOverride = &sid
+		}
+	}
+
+	results, err := h.receivingService.GetPurchaseOrders(ctx.Request.Context(), email, role, storeIDOverride)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.GetPurchaseOrders: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})

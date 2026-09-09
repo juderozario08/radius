@@ -23,8 +23,9 @@ func NewSessionHandler(sessionService *service.SessionService) *SessionHandler {
 
 func (h *SessionHandler) GetAllSessions(ctx *gin.Context) {
 	pageNumber, pageSize := utils.ParsePagination(ctx)
+	tokenString := ctx.GetString("token_string")
 
-	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context(), pageNumber, pageSize)
+	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context(), pageNumber, pageSize, tokenString)
 	if err != nil {
 		log.Printf("[ERROR] SessionHandler.GetAllSessions (Service): %v", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})

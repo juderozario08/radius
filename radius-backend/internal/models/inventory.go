@@ -227,10 +227,12 @@ type CycleCountSearchCriteria struct {
 	CategoryId *int    `json:"category_id"`
 	DateFrom   *string `json:"date_from"`
 	DateTo     *string `json:"date_to"`
+	StoreId    *int    `json:"store_id,omitempty"`
 }
 
 type StartCycleCountRequest struct {
-	CategoryId int `json:"category_id" binding:"required"`
+	StoreId    *int `json:"store_id,omitempty"`
+	CategoryId int  `json:"category_id" binding:"required"`
 }
 
 type RecordScanRequest struct {
@@ -256,6 +258,7 @@ type TransferCycleCountOwnershipRequest struct {
 }
 
 type CreateScheduleRequest struct {
+	StoreId       *int   `json:"store_id,omitempty"`
 	CategoryId    int    `json:"category_id" binding:"required"`
 	ScheduledDate string `json:"scheduled_date" binding:"required"`
 }

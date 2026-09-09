@@ -139,3 +139,7 @@ func (s *StoreService) GetStore(ctx context.Context, storeId string) (*models.St
 		Message: "Successfully retrieved store",
 	}, nil
 }
+
+func (s *StoreService) GetStoreOperations(ctx context.Context) ([]models.StoreOperationSummary, error) {
+	return s.storeRepo.GetStoreOperationsSummaries(ctx)
+}

@@ -18,17 +18,25 @@ func NewFillReportHandler(s *service.FillReportService) *FillReportHandler {
 	return &FillReportHandler{service: s}
 }
 
-func (h *FillReportHandler) GetFillReport(c *gin.Context) {
-	storeID := c.GetInt("store_id")
-
-	// Allow overriding store_id via query param for managers/admins
+func (h *FillReportHandler) resolveStoreID(c *gin.Context) (int, error) {
 	if storeParam := c.Query("store_id"); storeParam != "" {
 		if parsed, err := strconv.Atoi(storeParam); err == nil && parsed > 0 {
-			storeID = parsed
+			return parsed, nil
 		}
 	}
+	if storeID := c.GetInt("store_id"); storeID > 0 {
+		return storeID, nil
+	}
+	email := c.GetString("email")
+	if email != "" {
+		return h.service.GetEmployeeStoreID(c.Request.Context(), email)
+	}
+	return 0, http.ErrNoCookie
+}
 
-	if storeID <= 0 {
+func (h *FillReportHandler) GetFillReport(c *gin.Context) {
+	storeID, err := h.resolveStoreID(c)
+	if err != nil || storeID <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
 		return
 	}
@@ -50,8 +58,8 @@ func (h *FillReportHandler) GetFillReport(c *gin.Context) {
 }
 
 func (h *FillReportHandler) ScanEmptyHole(c *gin.Context) {
-	storeID := c.GetInt("store_id")
-	if storeID <= 0 {
+	storeID, err := h.resolveStoreID(c)
+	if err != nil || storeID <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
 		return
 	}
@@ -77,8 +85,8 @@ func (h *FillReportHandler) ScanEmptyHole(c *gin.Context) {
 }
 
 func (h *FillReportHandler) GetIS4TCSession(c *gin.Context) {
-	storeID := c.GetInt("store_id")
-	if storeID <= 0 {
+	storeID, err := h.resolveStoreID(c)
+	if err != nil || storeID <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
 		return
 	}
@@ -92,8 +100,8 @@ func (h *FillReportHandler) GetIS4TCSession(c *gin.Context) {
 }
 
 func (h *FillReportHandler) AddToIS4TCSession(c *gin.Context) {
-	storeID := c.GetInt("store_id")
-	if storeID <= 0 {
+	storeID, err := h.resolveStoreID(c)
+	if err != nil || storeID <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
 		return
 	}
@@ -121,13 +129,13 @@ func (h *FillReportHandler) AddToIS4TCSession(c *gin.Context) {
 }
 
 func (h *FillReportHandler) ClearIS4TCSession(c *gin.Context) {
-	storeID := c.GetInt("store_id")
-	if storeID <= 0 {
+	storeID, err := h.resolveStoreID(c)
+	if err != nil || storeID <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
 		return
 	}
 
-	err := h.service.ClearIS4TCSession(c.Request.Context(), storeID)
+	err = h.service.ClearIS4TCSession(c.Request.Context(), storeID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear session"})
 		return

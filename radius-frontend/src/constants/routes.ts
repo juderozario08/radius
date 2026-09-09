@@ -20,6 +20,7 @@ export const ENDPOINTS = {
         },
         STORES: {
             getAll: "/api/admin/stores",
+            operations: "/api/admin/stores/operations",
             update: "/api/admin/stores/update",
             create: "/api/admin/stores/create",
             activate: "/api/admin/stores/activate",
@@ -50,6 +51,10 @@ export const ENDPOINTS = {
             ONLINE: {
                 getAll: "/api/sales_floor/orders/online",
                 get: "/api/sales_floor/orders/online/get",
+                assign: "/api/sales_floor/orders/online/assign",
+                updateItem: "/api/sales_floor/orders/online/items",
+                completePick: "/api/sales_floor/orders/online/complete_pick",
+                cancel: "/api/sales_floor/orders/online/cancel",
             },
             PRINT: {
                 getAll: "/api/sales_floor/orders/print",

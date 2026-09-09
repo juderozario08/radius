@@ -65,3 +65,48 @@ func TestStoreService_UpdateStore_Success(t *testing.T) {
 		t.Fatalf("expected success message")
 	}
 }
+
+func TestStoreService_GetStoreOperations(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStoreRepo := mocks.NewMockStoreRepository(ctrl)
+	svc := service.NewStoreService(mockStoreRepo, nil, nil)
+
+	mockStoreRepo.EXPECT().
+		GetStoreOperationsSummaries(gomock.Any()).
+		Return([]models.StoreOperationSummary{
+			{
+				StoreID:             1,
+				Name:                "Head Office",
+				IsHeadOffice:        true,
+				ActiveOrdersCount:   0,
+				ActiveCountsCount:   0,
+				PendingPosCount:     0,
+				HasActiveOperations: false,
+			},
+			{
+				StoreID:             2,
+				Name:                "Toronto Flagship",
+				IsHeadOffice:        false,
+				ActiveOrdersCount:   4,
+				ActiveCountsCount:   1,
+				PendingPosCount:     2,
+				HasActiveOperations: true,
+			},
+		}, nil)
+
+	summaries, err := svc.GetStoreOperations(context.Background())
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(summaries) != 2 {
+		t.Fatalf("expected 2 store operation summaries, got %d", len(summaries))
+	}
+	if !summaries[0].IsHeadOffice {
+		t.Errorf("expected Store 1 to be Head Office")
+	}
+	if summaries[1].ActiveOrdersCount != 4 || !summaries[1].HasActiveOperations {
+		t.Errorf("expected Store 2 to have active operations with 4 orders")
+	}
+}

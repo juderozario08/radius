@@ -25,8 +25,16 @@ func NewCycleCountHandler(cycleCountService *service.CycleCountService) *CycleCo
 // GetWeeklyCycleCounts handles GET /api/sales_floor/cycle_counts
 func (h *CycleCountHandler) GetWeeklyCycleCounts(ctx *gin.Context) {
 	email := ctx.GetString("email")
+	role := ctx.GetString("role")
 
-	counts, err := h.cycleCountService.GetWeeklyCycleCounts(ctx.Request.Context(), email)
+	var storeIDOverride *int
+	if storeIDStr := ctx.Query("store_id"); storeIDStr != "" {
+		if sid, err := strconv.Atoi(storeIDStr); err == nil {
+			storeIDOverride = &sid
+		}
+	}
+
+	counts, err := h.cycleCountService.GetWeeklyCycleCounts(ctx.Request.Context(), email, role, storeIDOverride)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.GetWeeklyCycleCounts: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
@@ -56,6 +64,8 @@ func (h *CycleCountHandler) GetCycleCountDetail(ctx *gin.Context) {
 		log.Printf("[ERROR] CycleCountHandler.GetCycleCountDetail: %v", err)
 		if strings.Contains(err.Error(), "currently assigned to") || strings.HasPrefix(err.Error(), "unauthorized") {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
+		} else if strings.Contains(err.Error(), "not found") {
+			ctx.JSON(http.StatusNotFound, models.APIError{Error: err.Error()})
 		} else {
 			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		}
@@ -85,6 +95,8 @@ func (h *CycleCountHandler) GetCycleCountItems(ctx *gin.Context) {
 		log.Printf("[ERROR] CycleCountHandler.GetCycleCountItems: %v", err)
 		if strings.Contains(err.Error(), "currently assigned to") || strings.HasPrefix(err.Error(), "unauthorized") {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
+		} else if strings.Contains(err.Error(), "not found") {
+			ctx.JSON(http.StatusNotFound, models.APIError{Error: err.Error()})
 		} else {
 			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
 		}
@@ -104,7 +116,7 @@ func (h *CycleCountHandler) StartCycleCount(ctx *gin.Context) {
 		return
 	}
 
-	count, err := h.cycleCountService.StartCount(ctx.Request.Context(), email, req.CategoryId)
+	count, err := h.cycleCountService.StartCount(ctx.Request.Context(), email, req.CategoryId, req.StoreId)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.StartCycleCount: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
@@ -226,6 +238,11 @@ func (h *CycleCountHandler) SearchCycleCounts(ctx *gin.Context) {
 	if to := ctx.Query("date_to"); to != "" {
 		criteria.DateTo = &to
 	}
+	if storeIDStr := ctx.Query("store_id"); storeIDStr != "" {
+		if sid, err := strconv.Atoi(storeIDStr); err == nil {
+			criteria.StoreId = &sid
+		}
+	}
 
 	results, err := h.cycleCountService.SearchCycleCounts(ctx.Request.Context(), email, criteria)
 	if err != nil {
@@ -243,7 +260,14 @@ func (h *CycleCountHandler) GetSchedule(ctx *gin.Context) {
 	from := ctx.Query("from")
 	to := ctx.Query("to")
 
-	schedule, err := h.cycleCountService.GetSchedule(ctx.Request.Context(), email, from, to)
+	var storeIDOverride *int
+	if storeIDStr := ctx.Query("store_id"); storeIDStr != "" {
+		if sid, err := strconv.Atoi(storeIDStr); err == nil {
+			storeIDOverride = &sid
+		}
+	}
+
+	schedule, err := h.cycleCountService.GetSchedule(ctx.Request.Context(), email, from, to, storeIDOverride)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.GetSchedule: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})

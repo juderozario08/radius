@@ -35,7 +35,10 @@ func (s *ReceivingService) getEmployeeAndStoreID(ctx context.Context, email stri
 	return employee, &employee.StoreId, nil
 }
 
-func (s *ReceivingService) GetPurchaseOrders(ctx context.Context, email string) ([]models.PurchaseOrderSummary, error) {
+func (s *ReceivingService) GetPurchaseOrders(ctx context.Context, email string, role string, storeIDOverride *int) ([]models.PurchaseOrderSummary, error) {
+	if role == string(models.RoleAdmin) && storeIDOverride != nil {
+		return s.receivingRepo.GetPurchaseOrders(ctx, storeIDOverride)
+	}
 	_, storeID, err := s.getEmployeeAndStoreID(ctx, email)
 	if err != nil {
 		return nil, err

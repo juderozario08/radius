@@ -80,7 +80,6 @@ export default function BackRoomFillReportsScreen() {
                     </View>
                 ) : (
                     <>
-                        {/* Summary Status Banner */}
                         <View style={styles.heroCard}>
                             <View style={styles.heroHeader}>
                                 <MaterialCommunityIcons name="dolly" size={28} color="#FFFFFF" />
@@ -118,7 +117,6 @@ export default function BackRoomFillReportsScreen() {
                             </View>
                         </View>
 
-                        {/* Action Navigation Cards */}
                         <View style={styles.actionsSection}>
                             <Text style={styles.subHeading}>Restock Actions</Text>
 

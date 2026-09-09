@@ -61,7 +61,6 @@ export default function CycleCountSearch() {
         [logout]
     );
 
-    // Initial search and debounced query effect
     useEffect(() => {
         const timer = setTimeout(() => {
             performSearch(query, statusFilter);
@@ -69,7 +68,6 @@ export default function CycleCountSearch() {
         return () => clearTimeout(timer);
     }, [query, statusFilter, performSearch]);
 
-    // Calculate aggregated report numbers across results
     const totalNetVariance = results.reduce(
         (sum, item) => sum + (item.total_variance_cost || 0),
         0
@@ -166,7 +164,6 @@ export default function CycleCountSearch() {
             />
 
             <View style={styles.container}>
-                {/* Search Bar Input */}
                 <View style={styles.searchSection}>
                     <View style={styles.searchInputContainer}>
                         <Ionicons name="search" size={20} color={COLORS.textSecondary} />
@@ -186,7 +183,6 @@ export default function CycleCountSearch() {
                         )}
                     </View>
 
-                    {/* Filter Pills */}
                     <FlatList
                         horizontal
                         data={STATUS_FILTERS}
@@ -217,7 +213,6 @@ export default function CycleCountSearch() {
                     />
                 </View>
 
-                {/* Aggregated Report Strip */}
                 {results.length > 0 && (
                     <View style={styles.reportSummaryStrip}>
                         <View style={styles.reportSummaryCol}>
@@ -252,7 +247,6 @@ export default function CycleCountSearch() {
                     </View>
                 )}
 
-                {/* Results List */}
                 {isLoading ? (
                     <View style={globalStyles.centerElement}>
                         <ActivityIndicator size="large" color={COLORS.primary} />

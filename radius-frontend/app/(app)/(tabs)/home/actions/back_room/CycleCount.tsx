@@ -48,7 +48,6 @@ export default function CycleCountDashboard() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Modal state for starting a count
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
     const [isStarting, setIsStarting] = useState(false);
@@ -198,7 +197,6 @@ export default function CycleCountDashboard() {
                     )}
                 </View>
 
-                {/* Progress bar */}
                 <View style={styles.progressContainer}>
                     <View style={styles.progressLabelRow}>
                         <Text style={styles.progressLabel}>
@@ -222,7 +220,6 @@ export default function CycleCountDashboard() {
                     </View>
                 </View>
 
-                {/* Financial Variance summary tag if variance is present */}
                 {item.total_variance_cost !== 0 && (
                     <View style={styles.varianceSummaryRow}>
                         <Text style={styles.varianceSummaryLabel}>Variance Cost:</Text>
@@ -294,7 +291,6 @@ export default function CycleCountDashboard() {
                     />
                 )}
 
-                {/* FAB to Start Count */}
                 <TouchableOpacity
                     style={styles.fab}
                     activeOpacity={0.85}
@@ -305,7 +301,6 @@ export default function CycleCountDashboard() {
                 </TouchableOpacity>
             </View>
 
-            {/* Modal: Category Selector to start count */}
             <Modal
                 visible={modalVisible}
                 animationType="slide"

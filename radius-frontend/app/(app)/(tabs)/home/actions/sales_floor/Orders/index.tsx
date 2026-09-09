@@ -26,18 +26,18 @@ import { Ionicons } from "@expo/vector-icons";
 const getStatusColor = (status: string) => {
     switch (status) {
         case "READY FOR PICKUP":
-            return { bg: "#FFF3E0", text: "#E65100" }; // Orange
+            return { bg: "#FFF3E0", text: "#E65100" };
         case "AWAITING PICKUP":
-            return { bg: "#FFF8E1", text: "#F57F17" }; // Amber
+            return { bg: "#FFF8E1", text: "#F57F17" };
         case "RELEASED":
         case "DELIVERED":
-            return { bg: "#E8F5E9", text: "#2E7D32" }; // Green
+            return { bg: "#E8F5E9", text: "#2E7D32" };
         case "WORK IN PROGRESS":
-            return { bg: "#E3F2FD", text: "#1565C0" }; // Blue
+            return { bg: "#E3F2FD", text: "#1565C0" };
         case "SHIPPED":
-            return { bg: "#F3E5F5", text: "#6A1B9A" }; // Purple
+            return { bg: "#F3E5F5", text: "#6A1B9A" };
         case "DELIVERING":
-            return { bg: "#E0F7FA", text: "#006064" }; // Cyan
+            return { bg: "#E0F7FA", text: "#006064" };
         default:
             return { bg: COLORS.surface, text: COLORS.textSecondary };
     }
@@ -68,20 +68,17 @@ export default function OnlineOrdersList() {
         billing_phone: params.billing_phone as string || "",
         payment_card: params.payment_card as string || "",
         status: params.status as string || "",
-        order_type: params.order_type as string || "", // For filtering
+        order_type: params.order_type as string || "",
     };
 
     useEffect(() => {
-        // Initial load only
         loadAll();
     }, [JSON.stringify(params)]);
 
-    // Fetch when page size changes
     useEffect(() => {
         loadAll();
     }, [pageSize]);
 
-    // Fetch individual pages when page numbers change
     useEffect(() => {
         if (!isLoading) fetchOrders("BOPIS", bopisPage, pageSize);
     }, [bopisPage]);

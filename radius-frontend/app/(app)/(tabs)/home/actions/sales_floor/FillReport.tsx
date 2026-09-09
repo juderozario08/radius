@@ -99,7 +99,6 @@ export default function FillReportScreen() {
 
     return (
         <TopSafeAreaView style={[globalStyles.container, { backgroundColor: COLORS.background }]}>
-            {/* Header */}
             <HeaderComponent
                 headerLeft={<BackButton />}
                 headerCenter={<Text style={globalStyles.headerTitle}>Fill Report</Text>}
@@ -123,7 +122,6 @@ export default function FillReportScreen() {
                 }
             />
 
-            {/* Metrics Header Summary Bar */}
             <View style={styles.metricsBar}>
                 <View style={styles.metricCard}>
                     <Text style={styles.metricLabel}>Items to Fill</Text>
@@ -149,7 +147,6 @@ export default function FillReportScreen() {
                 </View>
             </View>
 
-            {/* Search Input Bar */}
             <View style={styles.searchContainer}>
                 <Ionicons name="search" size={18} color={COLORS.textSecondary} style={styles.searchIcon} />
                 <TextInput
@@ -168,7 +165,6 @@ export default function FillReportScreen() {
                 )}
             </View>
 
-            {/* Filter Tabs Scroll */}
             <View style={styles.filtersWrapper}>
                 <ScrollView
                     horizontal
@@ -197,7 +193,6 @@ export default function FillReportScreen() {
                 </ScrollView>
             </View>
 
-            {/* Active Sort Order Indicator */}
             <View style={styles.activeSortRow}>
                 <Text style={styles.activeSortText}>
                     Sorted by:{' '}
@@ -214,7 +209,6 @@ export default function FillReportScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* List Content */}
             {loading && !refreshing ? (
                 <View style={globalStyles.centerElement}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
@@ -255,7 +249,6 @@ export default function FillReportScreen() {
                 />
             )}
 
-            {/* Sort Options Modal */}
             <Modal visible={sortModalVisible} transparent animationType="fade">
                 <TouchableOpacity
                     style={globalStyles.modalOverlay}

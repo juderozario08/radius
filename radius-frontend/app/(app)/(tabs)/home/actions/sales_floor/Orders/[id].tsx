@@ -91,7 +91,6 @@ export default function OnlineOrderDetail() {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Scanner state
     const [manualBarcode, setManualBarcode] = useState("");
     const [scanBanner, setScanBanner] = useState<{ type: "success" | "error"; message: string } | null>(null);
     const [scannedItem, setScannedItem] = useState<{
@@ -99,14 +98,12 @@ export default function OnlineOrderDetail() {
         tempPickedQty: number;
     } | null>(null);
 
-    // Modals
     const [isOrderMenuVisible, setIsOrderMenuVisible] = useState(false);
     const [isCancelOrderModalVisible, setIsCancelOrderModalVisible] = useState(false);
     const [selectedCancelOrderReason, setSelectedCancelOrderReason] = useState(CANCEL_ORDER_REASONS[0]);
 
     const [isFinancialsModalVisible, setIsFinancialsModalVisible] = useState(false);
 
-    // Item Action Modal
     const [selectedItemForAction, setSelectedItemForAction] = useState<OnlineOrderItem | null>(null);
     const [itemActionType, setItemActionType] = useState<"MENU" | "CANCEL" | "REMOVE" | "INVALID_QTY" | null>(null);
     const [selectedItemReason, setSelectedItemReason] = useState<string>("");
@@ -153,12 +150,10 @@ export default function OnlineOrderDetail() {
         setIsLoading(false);
     };
 
-    // Barcode lookup handler
     const handleBarcodeLookup = (barcode: string) => {
         const cleaned = barcode.trim().toUpperCase();
         if (!cleaned) return;
 
-        // Check if item exists in order
         const matchedItem = items.find((it) => {
             const skuMatch = it.product_sku && it.product_sku.toUpperCase() === cleaned;
             const idMatch = it.product_id.toString() === cleaned;
@@ -175,7 +170,6 @@ export default function OnlineOrderDetail() {
             return;
         }
 
-        // Found in order
         setScanBanner({
             type: "success",
             message: `Product Found: ${matchedItem.product_sku || "Item #" + matchedItem.product_id}`,
@@ -189,7 +183,6 @@ export default function OnlineOrderDetail() {
         setManualBarcode("");
     };
 
-    // Save picked quantity for scanned item
     const handleSaveScannedQuantity = async () => {
         if (!scannedItem || !order) return;
         setIsSaving(true);
@@ -225,7 +218,6 @@ export default function OnlineOrderDetail() {
         }
     };
 
-    // Item-level exception submission
     const handleItemExceptionSubmit = async (status: OrderItemStatus, reason: string, pickedQty?: number) => {
         if (!selectedItemForAction || !order) return;
         setIsSaving(true);
@@ -263,7 +255,6 @@ export default function OnlineOrderDetail() {
         }
     };
 
-    // Complete order picking
     const handleConfirmOrderPickedUp = async () => {
         if (!order) return;
         setIsSaving(true);
@@ -293,7 +284,6 @@ export default function OnlineOrderDetail() {
         }
     };
 
-    // Cancel entire order
     const handleCancelOrderSubmit = async () => {
         if (!order) return;
         setIsSaving(true);
@@ -392,7 +382,6 @@ export default function OnlineOrderDetail() {
             />
 
             <View style={globalStyles.container}>
-                {/* Notice banner if assigned to someone else */}
                 {isAssignedToOther && !isManagerOrAdmin && (
                     <View style={styles.warningBanner}>
                         <Ionicons name="alert-circle" size={18} color="#C62828" />
@@ -402,7 +391,6 @@ export default function OnlineOrderDetail() {
                     </View>
                 )}
 
-                {/* Top Customer & Order Info Card */}
                 <View style={styles.customerInfoCard}>
                     <View style={styles.customerHeaderRow}>
                         <View style={{ flex: 1 }}>
@@ -433,7 +421,6 @@ export default function OnlineOrderDetail() {
                     )}
                 </View>
 
-                {/* Tabs: Scanner | Products */}
                 <View style={styles.tabContainer}>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === "SCANNER" && styles.tabActive]}
@@ -469,7 +456,6 @@ export default function OnlineOrderDetail() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Scan Result Feedback Banner */}
                 {scanBanner && (
                     <View
                         style={[
@@ -493,10 +479,8 @@ export default function OnlineOrderDetail() {
                     </View>
                 )}
 
-                {/* TAB CONTENT */}
                 {activeTab === "SCANNER" ? (
                     <View style={styles.scannerTabContent}>
-                        {/* Camera Scanner */}
                         <BarcodeScanner
                             ref={scannerRef}
                             height={220}
@@ -504,7 +488,6 @@ export default function OnlineOrderDetail() {
                             onBarcodeScanned={(barcode) => handleBarcodeLookup(barcode)}
                         />
 
-                        {/* Manual Barcode / SKU Entry */}
                         <View style={styles.manualEntrySection}>
                             <Text style={styles.manualEntryLabel}>Manual Barcode / SKU Entry</Text>
                             <View style={styles.manualInputRow}>
@@ -530,7 +513,6 @@ export default function OnlineOrderDetail() {
                             </View>
                         </View>
 
-                        {/* Bottom Scanned Product Card Pop-up */}
                         {scannedItem ? (
                             <View style={styles.scannedCardPopup}>
                                 <View style={styles.scannedCardHeader}>
@@ -666,7 +648,6 @@ export default function OnlineOrderDetail() {
                                                 </Text>
                                             </View>
 
-                                            {/* Item 3-dot Exception Menu */}
                                             <TouchableOpacity
                                                 style={styles.itemActionBtn}
                                                 onPress={() => {
@@ -679,7 +660,6 @@ export default function OnlineOrderDetail() {
                                             </TouchableOpacity>
                                         </View>
 
-                                        {/* Pick Progress Row */}
                                         <View style={styles.progressRow}>
                                             <Text style={styles.progressLabel}>
                                                 Picked: {item.picked_qty} / {item.quantity}
@@ -703,7 +683,6 @@ export default function OnlineOrderDetail() {
                                             </View>
                                         </View>
 
-                                        {/* Reason Display */}
                                         {item.reason && (
                                             <View style={styles.itemReasonRow}>
                                                 <Ionicons name="information-circle-outline" size={14} color={COLORS.textSecondary} />
@@ -716,7 +695,6 @@ export default function OnlineOrderDetail() {
                             ListEmptyComponent={<Text style={globalStyles.emptyText}>No items found in this order.</Text>}
                         />
 
-                        {/* Persistent Bottom Action Button on Products Tab */}
                         <View style={styles.bottomBarContainer}>
                             <TouchableOpacity
                                 style={[
@@ -747,7 +725,6 @@ export default function OnlineOrderDetail() {
                 )}
             </View>
 
-            {/* ORDER HEADER 3-DOT ACTIONS MODAL */}
             <Modal
                 visible={isOrderMenuVisible}
                 transparent={true}
@@ -802,7 +779,6 @@ export default function OnlineOrderDetail() {
                 </TouchableOpacity>
             </Modal>
 
-            {/* CANCEL ORDER REASON MODAL */}
             <Modal
                 visible={isCancelOrderModalVisible}
                 transparent={true}
@@ -866,7 +842,6 @@ export default function OnlineOrderDetail() {
                 </View>
             </Modal>
 
-            {/* FINANCIALS & SHIPPING DETAILS MODAL */}
             <Modal
                 visible={isFinancialsModalVisible}
                 transparent={true}
@@ -913,7 +888,6 @@ export default function OnlineOrderDetail() {
                 </View>
             </Modal>
 
-            {/* ITEM ACTION MODAL */}
             <Modal
                 visible={itemActionType !== null}
                 transparent={true}
@@ -935,7 +909,6 @@ export default function OnlineOrderDetail() {
                                         </Text>
                                         <View style={globalStyles.divider} />
 
-                                        {/* Action 1: Cancel Item */}
                                         <TouchableOpacity
                                             style={styles.menuItem}
                                             onPress={() => {
@@ -950,7 +923,6 @@ export default function OnlineOrderDetail() {
                                             </View>
                                         </TouchableOpacity>
 
-                                        {/* Action 2: Remove Item */}
                                         <TouchableOpacity
                                             style={styles.menuItem}
                                             onPress={() => {
@@ -965,7 +937,6 @@ export default function OnlineOrderDetail() {
                                             </View>
                                         </TouchableOpacity>
 
-                                        {/* Action 3: Invalid Quantity */}
                                         <TouchableOpacity
                                             style={styles.menuItem}
                                             onPress={() => {
@@ -981,7 +952,6 @@ export default function OnlineOrderDetail() {
                                             </View>
                                         </TouchableOpacity>
 
-                                        {/* Action 4: Restore / Reactivate if cancelled or removed */}
                                         {(selectedItemForAction.status === "CANCELLED" || selectedItemForAction.status === "REMOVED") && (
                                             <TouchableOpacity
                                                 style={styles.menuItem}
@@ -1250,7 +1220,6 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 
-    // Tabs
     tabContainer: {
         flexDirection: "row",
         backgroundColor: COLORS.surface,
@@ -1278,7 +1247,6 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
     },
 
-    // Scan Banner
     bannerContainer: {
         flexDirection: "row",
         alignItems: "center",
@@ -1307,7 +1275,6 @@ const styles = StyleSheet.create({
         color: "#2E7D32",
     },
 
-    // Scanner Tab Content
     scannerTabContent: {
         flex: 1,
     },
@@ -1346,7 +1313,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
 
-    // Scanned Card Popup
     scannedCardPopup: {
         margin: 16,
         backgroundColor: COLORS.surface,
@@ -1422,7 +1388,6 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
 
-    // Products List
     productsList: {
         padding: 16,
         gap: 12,
@@ -1505,7 +1470,6 @@ const styles = StyleSheet.create({
         fontStyle: "italic",
     },
 
-    // Bottom Persistent Bar
     bottomBarContainer: {
         position: "absolute",
         bottom: 0,
@@ -1545,7 +1509,6 @@ const styles = StyleSheet.create({
         color: "#8E8E8E",
     },
 
-    // Modals
     modalBody: {
         padding: 20,
     },

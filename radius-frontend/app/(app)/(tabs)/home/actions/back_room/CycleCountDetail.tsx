@@ -44,16 +44,13 @@ export default function CycleCountDetail() {
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Edit item modal state
     const [editingItem, setEditingItem] = useState<CycleCountItemDetail | null>(null);
     const [editQty, setEditQty] = useState<number>(0);
     const [editReason, setEditReason] = useState<string>("");
 
-    // Submit notes modal
     const [submitModalVisible, setSubmitModalVisible] = useState(false);
     const [submitNotes, setSubmitNotes] = useState("");
 
-    // Transfer ownership modal (Manager only)
     const [reassignModalVisible, setReassignModalVisible] = useState(false);
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
@@ -140,7 +137,6 @@ export default function CycleCountDetail() {
         }
     };
 
-    // Filter items based on activeTab
     const getFilteredItems = () => {
         if (!detail?.items) return [];
         switch (activeTab) {
@@ -278,12 +274,10 @@ export default function CycleCountDetail() {
                     }
                 }}
             >
-                {/* Product Icon */}
                 <View style={styles.productIconWrapper}>
                     <Ionicons name="cube-outline" size={22} color={COLORS.textSecondary} />
                 </View>
 
-                {/* Product Info */}
                 <View style={styles.itemDetails}>
                     <Text style={styles.itemTitle} numberOfLines={2}>
                         {item.product_name}
@@ -296,7 +290,6 @@ export default function CycleCountDetail() {
                     )}
                 </View>
 
-                {/* Prominent Expected vs Scanned Column */}
                 <View style={styles.metricsCol}>
                     <View style={styles.metricPairRow}>
                         <View style={styles.metricBox}>
@@ -382,7 +375,6 @@ export default function CycleCountDetail() {
             />
 
             <View style={styles.container}>
-                {/* Header Summary Section */}
                 <View style={styles.summaryCard}>
                     <View style={styles.summaryTopRow}>
                         <Text style={styles.batchTitle}>Count #{count.count_id}</Text>
@@ -397,7 +389,6 @@ export default function CycleCountDetail() {
                         Category: <Text style={{ fontWeight: "700", color: COLORS.textPrimary }}>{count.category_name}</Text>
                     </Text>
 
-                    {/* Assignee & Reassign Row */}
                     <View style={styles.assigneeRow}>
                         <View style={styles.assigneeInfo}>
                             <Ionicons name="person-outline" size={16} color={COLORS.textSecondary} />
@@ -448,7 +439,6 @@ export default function CycleCountDetail() {
                         </View>
                     </View>
 
-                    {/* Financial impact if any */}
                     {count.total_variance_cost !== 0 && (
                         <View style={styles.varianceRow}>
                             <Text style={styles.varianceLabel}>Total Discrepancy Cost:</Text>
@@ -467,7 +457,6 @@ export default function CycleCountDetail() {
                     )}
                 </View>
 
-                {/* Filter Tabs (Full Count, Partial, No Count) */}
                 <View style={styles.tabBar}>
                     <TouchableOpacity
                         style={[styles.tabButton, activeTab === "FULL" && styles.tabButtonActive]}
@@ -512,7 +501,6 @@ export default function CycleCountDetail() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Items List */}
                 <FlatList
                     data={filteredItems}
                     keyExtractor={(item) => item.count_item_id.toString()}
@@ -525,7 +513,6 @@ export default function CycleCountDetail() {
                     }
                 />
 
-                {/* Bottom Action Area */}
                 <View style={styles.bottomBar}>
                     {count.status === "IN PROGRESS" || count.status === "NOT STARTED" ? (
                         <View style={styles.actionRow}>
@@ -591,7 +578,6 @@ export default function CycleCountDetail() {
                 </View>
             </View>
 
-            {/* Modal: Edit Counted Quantity Stepper */}
             <Modal
                 visible={!!editingItem}
                 animationType="fade"
@@ -615,7 +601,6 @@ export default function CycleCountDetail() {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Stepper */}
                             <View style={styles.stepperContainer}>
                                 <TouchableOpacity
                                     style={styles.stepperButton}
@@ -634,7 +619,6 @@ export default function CycleCountDetail() {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Discrepancy Note */}
                             {editQty !== editingItem?.expected_qty && (
                                 <View style={styles.reasonInputContainer}>
                                     <Text style={styles.reasonLabel}>Discrepancy Reason (Optional):</Text>
@@ -668,7 +652,6 @@ export default function CycleCountDetail() {
                 </View>
             </Modal>
 
-            {/* Modal: Submit for Approval with optional Notes */}
             <Modal
                 visible={submitModalVisible}
                 animationType="fade"
@@ -722,7 +705,6 @@ export default function CycleCountDetail() {
                 </View>
             </Modal>
 
-            {/* Modal: Manager Reassign / Transfer Ownership */}
             <Modal
                 visible={reassignModalVisible}
                 animationType="fade"

@@ -114,8 +114,6 @@ export default function IS4TCScanScreen() {
     scannerRef.current?.resetScanner();
   };
 
-  // Removed local addScannedItem as it is now handled by the Redis endpoint
-
   return (
     <TopSafeAreaView style={[globalStyles.container, { backgroundColor: COLORS.headerBackground }]}>
       <HeaderComponent
@@ -133,7 +131,6 @@ export default function IS4TCScanScreen() {
         }
       />
 
-      {/* Top Half: Reusable Barcode Scanner Component */}
       <BarcodeScanner
           ref={scannerRef}
           onBarcodeScanned={handleBarcodeScanned}
@@ -145,7 +142,6 @@ export default function IS4TCScanScreen() {
         </View>
       )}
 
-      {/* Bottom Half: Scanned Products List */}
       <View style={styles.listSection}>
         <Text style={[globalStyles.sectionTitle, { marginBottom: 10 }]}>
           Scanned Empty Holes ({scannedItems.length})
@@ -174,7 +170,6 @@ export default function IS4TCScanScreen() {
         />
       </View>
 
-      {/* Manual Entry Modal */}
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={globalStyles.modalOverlay}>
           <View style={[globalStyles.modalContentWrapper, { padding: 20 }]}>

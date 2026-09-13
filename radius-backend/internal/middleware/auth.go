@@ -1,4 +1,3 @@
-// radius-backend/internal/middleware/auth.go
 package middleware
 
 import (
@@ -55,7 +54,6 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 			return
 		}
 
-		// Reject refresh tokens used as access tokens
 		tokenType, exists := claims["token_type"]
 		if !exists || tokenType != "access" {
 			log.Printf("[UNAUTHORIZED] RequireAuth: Rejected non-access token used in Authorization header")

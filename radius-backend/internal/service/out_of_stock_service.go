@@ -1,4 +1,3 @@
-// radius-backend/internal/service/out_of_stock_service.go
 package service
 
 type OutOfStockService struct {

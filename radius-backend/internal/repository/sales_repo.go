@@ -1,4 +1,3 @@
-// radius-backend/internal/repository/sales_repo.go
 package repository
 
 import (
@@ -139,14 +138,12 @@ func (r *SalesRepo) CreateTransaction(ctx context.Context, storeID int, employee
 			return nil, nil, fmt.Errorf("failed to insert transaction item (product %d): %w", itemReq.ProductId, err)
 		}
 
-		// Update on_hand_qty in inventory
 		if itemReq.Quantity > 0 {
 			_, err = updateInventoryStmt.ExecContext(ctx, itemReq.Quantity, storeID, itemReq.ProductId)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to update inventory for product %d: %w", itemReq.ProductId, err)
 			}
 
-			// Write to audit trail
 			unitPriceFloat := float64(itemReq.UnitPrice)
 			unitCostFloat := float64(itemReq.UnitCost)
 			_, err = insertAuditStmt.ExecContext(
@@ -173,7 +170,6 @@ func (r *SalesRepo) CreateTransaction(ctx context.Context, storeID int, employee
 
 	return &createdTx, createdItems, nil
 }
-
 
 func (r *SalesRepo) GetAllTransactions(ctx context.Context, limit, offset int, storeID *int) ([]models.Transaction, int, error) {
 	var countQuery string
@@ -269,7 +265,7 @@ func (r *SalesRepo) GetTransactionByID(ctx context.Context, id int, storeID *int
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil, nil // Not found
+			return nil, nil, nil
 		}
 		return nil, nil, err
 	}

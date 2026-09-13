@@ -1,4 +1,3 @@
-// radius-backend/internal/service/cycle_count_service.go
 package service
 
 import (
@@ -42,12 +41,10 @@ func NewCycleCountService(
 	return svc
 }
 
-// SetBroadcaster allows setting or replacing the real-time event broadcaster.
 func (s *CycleCountService) SetBroadcaster(broadcaster EventBroadcaster) {
 	s.broadcaster = broadcaster
 }
 
-// GetWeeklyCycleCounts retrieves all cycle counts for current week for the employee's store (or target store/all stores for Admin)
 func (s *CycleCountService) GetWeeklyCycleCounts(ctx context.Context, email string, role string, storeIDOverride *int) ([]models.CycleCountSummary, error) {
 	if role == string(models.RoleAdmin) {
 		if storeIDOverride != nil {
@@ -67,7 +64,6 @@ func (s *CycleCountService) GetWeeklyCycleCounts(ctx context.Context, email stri
 	return s.cycleCountRepo.GetWeeklyCycleCounts(ctx, employee.StoreId)
 }
 
-// GetCycleCountDetail retrieves full count details and items with auto-assignment and locking
 func (s *CycleCountService) GetCycleCountDetail(ctx context.Context, email string, countID int) (*models.CycleCountDetailResponse, error) {
 	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 	if err != nil {
@@ -90,7 +86,6 @@ func (s *CycleCountService) GetCycleCountDetail(ctx context.Context, email strin
 		return nil, fmt.Errorf("cycle count %d not found", countID)
 	}
 
-	// 1. Auto-assign unassigned count to the current employee (only regular store staff, not admins inspecting)
 	if count.CountedBy == nil && employee.Role != models.RoleAdmin {
 		updatedCount, err := s.cycleCountRepo.AutoAssignCycleCount(ctx, countID, count.StoreId, employee.EmployeeId)
 		if err != nil {
@@ -100,7 +95,6 @@ func (s *CycleCountService) GetCycleCountDetail(ctx context.Context, email strin
 			count = updatedCount
 		}
 	} else if count.CountedBy != nil && *count.CountedBy != employee.EmployeeId {
-		// 2. Concurrency lock check: non-manager cannot access someone else's active count
 		if employee.Role != models.RoleManager && employee.Role != models.RoleAdmin {
 			assignee := "another employee"
 			if count.CountedByName != nil && *count.CountedByName != "" {
@@ -121,7 +115,6 @@ func (s *CycleCountService) GetCycleCountDetail(ctx context.Context, email strin
 	}, nil
 }
 
-// GetCycleCountItems retrieves items for a count
 func (s *CycleCountService) GetCycleCountItems(ctx context.Context, email string, countID int) ([]models.CycleCountItemDetail, error) {
 	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 	if err != nil {
@@ -136,7 +129,6 @@ func (s *CycleCountService) GetCycleCountItems(ctx context.Context, email string
 		targetStoreID = 0
 	}
 
-	// Verify store ownership and access lock
 	count, err := s.cycleCountRepo.GetCycleCountByID(ctx, countID, targetStoreID)
 	if err != nil {
 		return nil, err
@@ -158,7 +150,6 @@ func (s *CycleCountService) GetCycleCountItems(ctx context.Context, email string
 	return s.cycleCountRepo.GetCycleCountItems(ctx, countID)
 }
 
-// StartCount initializes a count for a category snapshotting on-hand inventory
 func (s *CycleCountService) StartCount(ctx context.Context, email string, categoryID int, storeIDOverride ...*int) (*models.CycleCount, error) {
 	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 	if err != nil {
@@ -202,7 +193,6 @@ func (s *CycleCountService) StartCount(ctx context.Context, email string, catego
 	return count, nil
 }
 
-// RecordScan updates a product's counted quantity
 func (s *CycleCountService) RecordScan(ctx context.Context, email string, req models.RecordScanRequest) (*models.CycleCountItemDetail, error) {
 	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 	if err != nil {
@@ -280,7 +270,6 @@ func (s *CycleCountService) RecordScan(ctx context.Context, email string, req mo
 	return item, nil
 }
 
-// SubmitForApproval submits the completed count for manager review
 func (s *CycleCountService) SubmitForApproval(ctx context.Context, email string, req models.SubmitCycleCountRequest) error {
 	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 	if err != nil {
@@ -342,7 +331,6 @@ func (s *CycleCountService) SubmitForApproval(ctx context.Context, email string,
 	return nil
 }
 
-// ApproveCount allows a store manager or admin to approve the count, updating inventory & audit trail
 func (s *CycleCountService) ApproveCount(ctx context.Context, email string, req models.ApproveCycleCountRequest) error {
 	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 	if err != nil {
@@ -352,7 +340,6 @@ func (s *CycleCountService) ApproveCount(ctx context.Context, email string, req 
 		return errors.New("employee not found")
 	}
 
-	// Only managers and admins can approve cycle counts (managers can approve their own or employee counts)
 	if employee.Role != models.RoleManager && employee.Role != models.RoleAdmin {
 		return errors.New("unauthorized: only managers and admins can approve cycle counts")
 	}
@@ -401,7 +388,6 @@ func (s *CycleCountService) ApproveCount(ctx context.Context, email string, req 
 	return nil
 }
 
-// TransferOwnership allows a store manager or admin to reassign a count to another employee
 func (s *CycleCountService) TransferOwnership(ctx context.Context, email string, req models.TransferCycleCountOwnershipRequest) error {
 	manager, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 	if err != nil {
@@ -428,7 +414,6 @@ func (s *CycleCountService) TransferOwnership(ctx context.Context, email string,
 		return fmt.Errorf("cycle count %d not found", req.CountId)
 	}
 
-	// Validate target employee
 	targetEmployee, err := s.employeeRepo.GetEmployeeById(ctx, req.EmployeeId)
 	if err != nil {
 		return err
@@ -466,7 +451,6 @@ func (s *CycleCountService) TransferOwnership(ctx context.Context, email string,
 	return nil
 }
 
-// SearchCycleCounts searches cycle counts with query / filters
 func (s *CycleCountService) SearchCycleCounts(ctx context.Context, email string, criteria models.CycleCountSearchCriteria) ([]models.CycleCountSummary, error) {
 	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 	if err != nil {
@@ -488,7 +472,6 @@ func (s *CycleCountService) SearchCycleCounts(ctx context.Context, email string,
 	return s.cycleCountRepo.SearchCycleCounts(ctx, targetStoreID, criteria)
 }
 
-// GetSchedule returns scheduled cycle counts for calendar view
 func (s *CycleCountService) GetSchedule(ctx context.Context, email string, fromStr, toStr string, storeIDOverride ...*int) ([]models.CycleCountScheduleEntry, error) {
 	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 	if err != nil {
@@ -515,7 +498,6 @@ func (s *CycleCountService) GetSchedule(ctx context.Context, email string, fromS
 		}
 	}
 	if fromDate.IsZero() {
-		// Default from date: start of current month
 		now := time.Now()
 		fromDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
 	}
@@ -527,14 +509,12 @@ func (s *CycleCountService) GetSchedule(ctx context.Context, email string, fromS
 		}
 	}
 	if toDate.IsZero() {
-		// Default to date: 60 days in the future
 		toDate = fromDate.AddDate(0, 2, 0)
 	}
 
 	return s.cycleCountRepo.GetSchedule(ctx, targetStoreID, fromDate, toDate)
 }
 
-// CreateScheduleEntry schedules a count for a category on a given date
 func (s *CycleCountService) CreateScheduleEntry(ctx context.Context, email string, req models.CreateScheduleRequest) (*models.CycleCountScheduleEntry, error) {
 	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
 	if err != nil {

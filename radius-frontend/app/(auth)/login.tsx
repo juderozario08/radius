@@ -1,4 +1,3 @@
-//radius-frontend/app/(auth)/login.tsx
 import { apiFetch, ConflictError } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LoginResponse } from "@/types/auth.types";

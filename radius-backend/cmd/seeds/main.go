@@ -15,7 +15,6 @@ import (
 )
 
 func main() {
-	// Load environment variables
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Println("No .env file found, relying on existing environment variables")
@@ -26,7 +25,6 @@ func main() {
 		log.Fatal("DATABASE_URL is not set in the environment")
 	}
 
-	// 1. Execute python generator
 	fmt.Println("Running Python seed generator...")
 	cmd := exec.Command("python3", "seeds/generate_all.py")
 	if _, err := os.Stat("venv/bin/python3"); err == nil {
@@ -38,7 +36,6 @@ func main() {
 		log.Fatalf("Failed to run python generator: %v", err)
 	}
 
-	// Connect to the database
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -64,7 +61,6 @@ func main() {
 		}
 	}
 
-	// Sort files alphabetically to ensure numbered order execution
 	sort.Strings(sqlFiles)
 
 	if len(sqlFiles) == 0 {
@@ -83,15 +79,13 @@ func main() {
 			log.Fatalf("\nFailed to read file %s: %v", fileName, err)
 		}
 
-		// Execute the SQL file content
 		_, err = db.Exec(string(content))
 		if err != nil {
 			log.Fatalf("\nError executing %s: %v", fileName, err)
 		}
-		
+
 		fmt.Println("SUCCESS")
 
-		// 3. Delete the file after successful execution
 		if err := os.Remove(filePath); err != nil {
 			log.Printf("Warning: Failed to delete %s: %v\n", filePath, err)
 		}

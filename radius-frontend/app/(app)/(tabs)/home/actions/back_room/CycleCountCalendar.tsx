@@ -1,4 +1,3 @@
-// radius-frontend/app/(app)/home/actions/back_room/CycleCountCalendar.tsx
 import React, { useEffect, useState, useCallback } from "react";
 import {
     View,
@@ -35,7 +34,7 @@ interface WeekGroup {
 
 function getMondayOfWeek(d: Date): Date {
     const date = new Date(d);
-    const day = date.getDay(); // 0 is Sun, 1 is Mon...
+    const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(date.setDate(diff));
     monday.setHours(0, 0, 0, 0);
@@ -66,10 +65,9 @@ export default function CycleCountCalendar() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Schedule modal state
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedCatId, setSelectedCatId] = useState<number | null>(null);
-    const [selectedWeekOffset, setSelectedWeekOffset] = useState<number>(0); // 0 = this week, 1 = next week, etc.
+    const [selectedWeekOffset, setSelectedWeekOffset] = useState<number>(0);
     const [isSaving, setIsSaving] = useState(false);
 
     const isManagerOrAdmin = user?.role === "MANAGER" || user?.role === "ADMIN";
@@ -150,7 +148,6 @@ export default function CycleCountCalendar() {
         }
     };
 
-    // Group schedule entries into Week Groups
     const currentWeekMonday = getMondayOfWeek(new Date()).toISOString().split("T")[0];
 
     const weekMap = new Map<string, WeekGroup>();
@@ -178,7 +175,6 @@ export default function CycleCountCalendar() {
         (a, b) => a.startDate.getTime() - b.startDate.getTime()
     );
 
-    // Helper to generate selectable week options for modal
     const weekOptions = [0, 1, 2, 3, 4].map((offset) => {
         const d = new Date();
         const monday = getMondayOfWeek(d);
@@ -195,7 +191,6 @@ export default function CycleCountCalendar() {
     const renderWeekGroup = ({ item: week }: { item: WeekGroup }) => {
         return (
             <View style={styles.weekGroupCard}>
-                {/* Week Header */}
                 <View style={styles.weekHeaderRow}>
                     <View style={styles.weekTitleCol}>
                         <View style={styles.weekIconRow}>
@@ -211,7 +206,6 @@ export default function CycleCountCalendar() {
                     )}
                 </View>
 
-                {/* Categories scheduled for this week */}
                 <View style={styles.entriesContainer}>
                     {week.entries.map((entry) => {
                         const hasStarted = !!entry.cycle_count_id;
@@ -354,7 +348,6 @@ export default function CycleCountCalendar() {
                 )}
             </View>
 
-            {/* Modal: Schedule a weekly count */}
             <Modal
                 visible={modalVisible}
                 animationType="slide"

@@ -51,12 +51,10 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
     const [committedLocs, setCommittedLocs] = useState<MimsLocationItem[]>(ensureUnbinned(locations || [], onHandQty));
     const [activeFromIndex, setActiveFromIndex] = useState<number | null>(null);
 
-    // Add Location Modal
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [newLocationId, setNewLocationId] = useState("");
     const scannerRef = useRef<BarcodeScannerRef>(null);
 
-    // Adjust Inventory
     const [isAdjusting, setIsAdjusting] = useState(false);
     const [adjustedQty, setAdjustedQty] = useState(onHandQty);
 
@@ -95,7 +93,6 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
         }
     };
 
-    // --- Add Location Modal Logic ---
     const formatLocationId = (raw: string): string => {
         const digits = raw.replace(/\D/g, '').slice(0, 9);
         if (digits.length !== 9) return '';
@@ -146,7 +143,6 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
         }
     };
 
-    // --- Adjust Inventory Logic ---
     const handleAdjustSubmit = async () => {
         if (adjustedQty === onHandQty) {
             setIsAdjusting(false);
@@ -197,7 +193,6 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
                 <Text style={styles.listHeaderText}>Level/Bin</Text>
             </View>
 
-            {/* FROM SECTION */}
             {locsState.map((loc, i) => {
                 const isActive = activeFromIndex === i;
                 return (
@@ -231,7 +226,6 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
                 </Text>
             </View>
 
-            {/* TO SECTION */}
             {locsState.map((loc, i) => {
                 const isSame = i === activeFromIndex;
                 const isDisabled = activeFromIndex === null || isSame;
@@ -271,12 +265,10 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
                 );
             })}
 
-            {/* ADD LOCATION BUTTON */}
             <TouchableOpacity style={styles.addLocationButton} onPress={() => setIsModalVisible(true)}>
                 <Text style={styles.addLocationText}>+ Add New Location</Text>
             </TouchableOpacity>
 
-            {/* BOTTOM BAR */}
             <View style={styles.bottomBar}>
                 {isAdjusting ? (
                     <View style={styles.adjustContainer}>
@@ -323,7 +315,6 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
                 )}
             </View>
 
-            {/* ADD LOCATION MODAL */}
             <Modal
                 visible={isModalVisible}
                 animationType="fade"
@@ -543,7 +534,6 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         fontSize: 15,
     },
-    // Adjust Inventory styles
     adjustContainer: {
         width: "100%",
         alignItems: "center",
@@ -579,5 +569,4 @@ const styles = StyleSheet.create({
         minWidth: 48,
         textAlign: "center",
     },
-    // Modal styles
 });

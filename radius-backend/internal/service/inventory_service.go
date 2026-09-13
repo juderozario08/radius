@@ -1,4 +1,3 @@
-// radius-backend/internal/service/inventory_service.go
 package service
 
 import (
@@ -170,7 +169,6 @@ func (s *InventoryService) BinItem(ctx context.Context, email string, req models
 		}
 	}
 
-	// Return updated product
 	return s.inventoryRepo.GetInventoryByBarcode(ctx, employee.StoreId, req.Barcode)
 }
 
@@ -206,7 +204,6 @@ func (s *InventoryService) SyncLocations(ctx context.Context, email string, req 
 		return errors.New("employee not found")
 	}
 
-	// Validate locations
 	for _, loc := range req.Locations {
 		if loc.MimsLocationId != nil {
 			exists, err := s.inventoryRepo.CheckLocationExists(ctx, employee.StoreId, *loc.MimsLocationId)

@@ -1,4 +1,3 @@
-// radius-backend/internal/handler/cycle_count_handler.go
 package handler
 
 import (
@@ -22,7 +21,6 @@ func NewCycleCountHandler(cycleCountService *service.CycleCountService) *CycleCo
 	}
 }
 
-// GetWeeklyCycleCounts handles GET /api/sales_floor/cycle_counts
 func (h *CycleCountHandler) GetWeeklyCycleCounts(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	role := ctx.GetString("role")
@@ -44,7 +42,6 @@ func (h *CycleCountHandler) GetWeeklyCycleCounts(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, counts)
 }
 
-// GetCycleCountDetail handles GET /api/sales_floor/cycle_counts/detail
 func (h *CycleCountHandler) GetCycleCountDetail(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	countIDStr := ctx.Query("id")
@@ -75,7 +72,6 @@ func (h *CycleCountHandler) GetCycleCountDetail(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, detail)
 }
 
-// GetCycleCountItems handles GET /api/sales_floor/cycle_counts/items
 func (h *CycleCountHandler) GetCycleCountItems(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	countIDStr := ctx.Query("id")
@@ -106,7 +102,6 @@ func (h *CycleCountHandler) GetCycleCountItems(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, items)
 }
 
-// StartCycleCount handles POST /api/sales_floor/cycle_counts/start
 func (h *CycleCountHandler) StartCycleCount(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
@@ -126,7 +121,6 @@ func (h *CycleCountHandler) StartCycleCount(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, count)
 }
 
-// RecordScan handles POST /api/sales_floor/cycle_counts/scan
 func (h *CycleCountHandler) RecordScan(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
@@ -150,7 +144,6 @@ func (h *CycleCountHandler) RecordScan(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, item)
 }
 
-// SubmitForApproval handles POST /api/sales_floor/cycle_counts/submit
 func (h *CycleCountHandler) SubmitForApproval(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
@@ -173,7 +166,6 @@ func (h *CycleCountHandler) SubmitForApproval(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Cycle count submitted for approval successfully"})
 }
 
-// ApproveCycleCount handles POST /api/sales_floor/cycle_counts/approve
 func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
@@ -196,7 +188,6 @@ func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Cycle count approved successfully and inventory reconciled"})
 }
 
-// TransferOwnership handles POST /api/sales_floor/cycle_counts/transfer
 func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
@@ -219,7 +210,6 @@ func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Cycle count ownership transferred successfully"})
 }
 
-// SearchCycleCounts handles GET /api/sales_floor/cycle_counts/search
 func (h *CycleCountHandler) SearchCycleCounts(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
@@ -254,7 +244,6 @@ func (h *CycleCountHandler) SearchCycleCounts(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, results)
 }
 
-// GetSchedule handles GET /api/sales_floor/cycle_counts/schedule
 func (h *CycleCountHandler) GetSchedule(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	from := ctx.Query("from")
@@ -277,7 +266,6 @@ func (h *CycleCountHandler) GetSchedule(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, schedule)
 }
 
-// CreateScheduleEntry handles POST /api/sales_floor/cycle_counts/schedule
 func (h *CycleCountHandler) CreateScheduleEntry(ctx *gin.Context) {
 	email := ctx.GetString("email")
 

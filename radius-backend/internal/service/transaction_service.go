@@ -1,4 +1,3 @@
-// radius-backend/internal/service/transaction_service.go
 package service
 
 import (
@@ -35,7 +34,6 @@ func NewTransactionService(
 	return svc
 }
 
-// SetBroadcaster allows setting or replacing the real-time event broadcaster.
 func (s *TransactionService) SetBroadcaster(broadcaster EventBroadcaster) {
 	s.broadcaster = broadcaster
 }
@@ -60,18 +58,15 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, email string
 		return nil, fmt.Errorf("store ID is required to create a transaction")
 	}
 
-	// 1. Create transaction header, items, update on_hand inventory, and audit trail
 	tx, items, err := s.salesRepo.CreateTransaction(ctx, storeID, employeeID, req)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Automatically report sold items to the store's active Fill Report
 	if s.fillReportRepo != nil && len(items) > 0 {
 		_ = s.fillReportRepo.AddSoldItems(ctx, storeID, items)
 	}
 
-	// 3. Broadcast real-time store activity event
 	if s.broadcaster != nil && tx != nil {
 		now := time.Now().UTC()
 		metadata := map[string]any{

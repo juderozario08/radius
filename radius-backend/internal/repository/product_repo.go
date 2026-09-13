@@ -1,4 +1,3 @@
-//radius-backend/internal/repository/product_repo.go
 package repository
 
 import (
@@ -30,7 +29,7 @@ func (r *ProductRepo) GetProductByID(ctx context.Context, id int) (*models.Produ
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // Not found
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -52,7 +51,7 @@ func (r *ProductRepo) GetProductByBarcode(ctx context.Context, barcode string) (
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // Not found
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -105,14 +104,12 @@ func (r *ProductRepo) SearchProducts(
 		argIdx++
 	}
 
-	// Count query
 	countQuery := "SELECT COUNT(*) FROM products " + baseWhere
 	var total int
 	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	// Data query
 	dataQuery := fmt.Sprintf(
 		`SELECT product_id, sku, upc, name, description, category_id, brand, unit_of_measure, units_per_case, weight, is_active, created_at
 		FROM products %s

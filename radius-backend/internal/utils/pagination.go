@@ -1,4 +1,3 @@
-// radius-backend/internal/utils/pagination.go
 package utils
 
 import (

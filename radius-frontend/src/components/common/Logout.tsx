@@ -1,4 +1,3 @@
-//radius-frontend/src/components/common/Logout.tsx
 import { apiFetch, UnauthorizedError } from "@/api/client";
 import { ENDPOINTS } from "@/constants/routes";
 import { globalStyles } from "@/constants/styles";

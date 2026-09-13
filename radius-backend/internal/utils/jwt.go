@@ -1,4 +1,3 @@
-//radius-backend/internal/utils/jwt.go
 package utils
 
 import (
@@ -10,8 +9,8 @@ import (
 
 const (
 	AccessTokenExpiry        = 15 * time.Minute
-	SessionInactivityTimeout = 24 * time.Hour     // sliding window — DB expires_at
-	MaxSessionLifetime       = 7 * 24 * time.Hour // hard ceiling — JWT exp
+	SessionInactivityTimeout = 24 * time.Hour
+	MaxSessionLifetime       = 7 * 24 * time.Hour
 )
 
 func generateToken(id int, email string, role models.EmployeeRole, tokenType string, expiry time.Duration, jwtSecret []byte) (string, error) {

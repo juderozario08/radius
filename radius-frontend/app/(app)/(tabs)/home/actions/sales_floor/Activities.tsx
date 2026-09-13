@@ -26,7 +26,6 @@ const Tab = createMaterialTopTabNavigator();
 export default function Activities() {
     const { user, logout } = useAuth();
     const isAdmin = user?.role === "ADMIN";
-    // For admin, we might need a selected store. Since this is an actions screen, it might only be accessible when a store is selected, or we default to user's store_id.
     const activeStoreId = user?.store_id ?? 2;
     const currentEmpId = user?.employee_id;
 
@@ -137,17 +136,14 @@ export default function Activities() {
         const storeQueryOnly = activeStoreId ? `?store_id=${activeStoreId}` : "";
 
         try {
-            // 1. Active Orders
             const activeRes = await callApi<GetAllOnlineOrdersResponse>(
                 `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=40&dashboard_only=true${storeParam}`,
                 { method: "GET" }, logout
             );
-            // 2. Completed Orders (Released)
             const releasedRes = await callApi<GetAllOnlineOrdersResponse>(
                 `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=20&status=RELEASED${storeParam}`,
                 { method: "GET" }, logout
             );
-            // 3. Completed Orders (Cancelled)
             const cancelledRes = await callApi<GetAllOnlineOrdersResponse>(
                 `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=10&status=CANCELLED${storeParam}`,
                 { method: "GET" }, logout
@@ -271,7 +267,6 @@ export default function Activities() {
         }
     };
 
-    // Derived Lists
     const isCompleted = (act: StoreActivityPayload) => {
         const t = act.description.toUpperCase();
         return t.includes("RELEASED") || t.includes("CANCELLED") || t.includes("DELIVERED") || t.includes("STATUS: RECEIVED") || t.includes("STATUS: APPROVED") || t.includes("STATUS: SUBMITTED");

@@ -1,5 +1,3 @@
-// radius-frontend/src/types/report.types.ts
-
 export type FillReportStatus = "OPEN" | "IN_PROGRESS" | "COMPLETED";
 
 export interface FillReport {

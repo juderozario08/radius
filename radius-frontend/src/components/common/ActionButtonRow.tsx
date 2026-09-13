@@ -1,4 +1,3 @@
-//radius-frontend/src/components/common/ActionButtonRow.tsx
 import React from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
 import { COLORS } from "@/constants/colors";

@@ -1,4 +1,3 @@
-// radius-frontend/src/constants/canada.ts
 export const CANADIAN_PROVINCES = [
     "Alberta",
     "British Columbia",

@@ -1,4 +1,3 @@
-// radius-backend/internal/handler/store_handler.go
 package handler
 
 import (
@@ -21,7 +20,6 @@ func NewStoreHandler(storeService *service.StoreService) *StoreHandler {
 }
 
 func (h *StoreHandler) GetAllStores(ctx *gin.Context) {
-
 
 	response, err := h.storeService.GetAllStores(
 		ctx.Request.Context(),

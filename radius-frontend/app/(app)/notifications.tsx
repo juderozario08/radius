@@ -1,4 +1,3 @@
-//radius-frontend/app/(app)/notifications.tsx
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { useEffect } from "react";
@@ -21,6 +20,5 @@ const Notifications = () => {
         </View>
     )
 }
-
 
 export default Notifications;

@@ -15,7 +15,6 @@ func NewAuditRepo(db *sql.DB) *AuditRepo {
 	return &AuditRepo{db: db}
 }
 
-// LogInventoryTransaction inserts a row into inventory_transactions
 func (r *AuditRepo) LogInventoryTransaction(ctx context.Context, tx *sql.Tx, entry models.InventoryTransaction) error {
 	query := `
 		INSERT INTO inventory_transactions
@@ -31,7 +30,6 @@ func (r *AuditRepo) LogInventoryTransaction(ctx context.Context, tx *sql.Tx, ent
 	return err
 }
 
-// GetProductAuditTrail fetches the enriched audit trail for a product
 func (r *AuditRepo) GetProductAuditTrail(ctx context.Context, productID int, storeID *int, filter models.AuditFilter, limit, offset int) ([]models.AuditTrailEntry, int, error) {
 	baseWhere := `WHERE it.product_id = $1`
 	args := []any{productID}
@@ -64,7 +62,6 @@ func (r *AuditRepo) GetProductAuditTrail(ctx context.Context, productID int, sto
 		paramIdx++
 	}
 
-	// Count query
 	countQuery := `SELECT COUNT(*) FROM inventory_transactions it ` + baseWhere
 	var total int
 	err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total)
@@ -72,7 +69,6 @@ func (r *AuditRepo) GetProductAuditTrail(ctx context.Context, productID int, sto
 		return nil, 0, err
 	}
 
-	// Data query with JOINs for enrichment
 	sortOrder := "DESC"
 	if filter.SortOrder == "ASC" {
 		sortOrder = "ASC"
@@ -94,7 +90,7 @@ func (r *AuditRepo) GetProductAuditTrail(ctx context.Context, productID int, sto
 		LEFT JOIN stores ts ON it.to_store_id = ts.store_id
 		%s
 		ORDER BY it.created_at %s LIMIT $%d OFFSET $%d`, baseWhere, sortOrder, paramIdx, paramIdx+1)
-	
+
 	args = append(args, limit, offset)
 
 	rows, err := r.db.QueryContext(ctx, dataQuery, args...)

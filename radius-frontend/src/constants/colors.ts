@@ -1,4 +1,3 @@
-//radius-frontend/src/constants/colors.ts
 export const COLORS = {
     activeDot: "#C70202",
     activeTint: "#C70202",

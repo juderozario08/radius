@@ -1,4 +1,3 @@
-// radius-backend/internal/router/router.go
 package router
 
 import (
@@ -56,7 +55,6 @@ func NewRouter(cfg Config) *gin.Engine {
 
 	router := gin.Default()
 
-	// Rate limiter: 5 requests per second, burst of 20
 	limiter := middleware.NewIPRateLimiter(5, 20)
 	router.Use(middleware.RateLimitMiddleware(limiter))
 
@@ -95,8 +93,6 @@ func NewRouter(cfg Config) *gin.Engine {
 		public.POST("/api/refresh_token", cfg.Handlers.AuthHandler.RefreshToken)
 	}
 
-	// Real-Time WebSocket Handshake Routes
-	// Dual auth (?token= query parameter or Authorization: Bearer header) handled by WSHandler.
 	if cfg.Handlers.WSHandler != nil {
 		router.GET("/api/v1/ws", cfg.Handlers.WSHandler.HandleWebSocket)
 		router.GET("/ws", cfg.Handlers.WSHandler.HandleWebSocket)

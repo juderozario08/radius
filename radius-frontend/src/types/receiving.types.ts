@@ -1,5 +1,3 @@
-//radius-frontend/src/types/receiving.types.ts
-
 export type PurchaseOrderStatus = 'DRAFT' | 'SHIPPED' | 'DELIVERING' | 'DELIVERED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED';
 export type TransferStatus = "PENDING" | "IN_TRANSIT" | "RECEIVED" | "CANCELLED";
 
@@ -92,7 +90,6 @@ export interface CheckProductInTransferResponse {
     item: StockTransferItemDetail | null;
 }
 
-// Request types
 export interface ReceivePOItemEntry {
     po_item_id: number;
     qty_received: number;

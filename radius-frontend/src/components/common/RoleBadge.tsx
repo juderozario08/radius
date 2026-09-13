@@ -5,10 +5,10 @@ import { EmployeeRole } from "@/types/auth.types";
 import { capitalize } from "@/utils/helpers";
 
 const ROLE_COLORS: Record<EmployeeRole, { bg: string, text: string }> = {
-    SALES: { bg: "#E3F2FD", text: "#1976D2" }, // Light Blue
-    SERVICE: { bg: "#F3E5F5", text: "#7B1FA2" }, // Light Purple
-    MANAGER: { bg: "#E8F5E9", text: "#388E3C" }, // Light Green
-    ADMIN: { bg: "#FFF3E0", text: "#F57C00" }, // Light Orange
+    SALES: { bg: "#E3F2FD", text: "#1976D2" },
+    SERVICE: { bg: "#F3E5F5", text: "#7B1FA2" },
+    MANAGER: { bg: "#E8F5E9", text: "#388E3C" },
+    ADMIN: { bg: "#FFF3E0", text: "#F57C00" },
 };
 
 export const RoleBadge: React.FC<{ role: EmployeeRole }> = ({ role }) => {

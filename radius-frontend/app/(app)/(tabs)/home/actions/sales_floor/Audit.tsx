@@ -56,7 +56,7 @@ export default function Audit() {
             if (user?.role === 'ADMIN' && filterStoreId.trim()) {
                 url += `&store_id=${filterStoreId.trim()}`;
             }
-            
+
             const res = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -90,7 +90,6 @@ export default function Audit() {
     };
 
     useEffect(() => {
-        // Trigger fetch only if we already have data (i.e., user changed sort/filter after initial search)
         if (data && barcode.trim()) {
             fetchAuditTrail(true);
         }
@@ -102,16 +101,14 @@ export default function Audit() {
         }
     };
 
-    // Helper function to format and extract routing info from reference_id
     const parseReference = (refId: string | null) => {
         if (!refId) return null;
-        
+
         const parts = refId.split(':');
         if (parts.length === 2) {
             const prefix = parts[0];
             const id = parts[1];
-            
-            // Format nice label
+
             let label = `${prefix.charAt(0) + prefix.slice(1).toLowerCase()} #${id}`;
             if (prefix === 'PO') label = `Purchase Order #${id}`;
             if (prefix === 'ADJUSTMENT') label = `Adjustment #${id}`;
@@ -122,7 +119,6 @@ export default function Audit() {
         return { prefix: 'UNKNOWN', id: '', label: refId, raw: refId };
     };
 
-    // Individual Event Component with Animation
     const EventCard = ({ item }: { item: AuditTrailEntry }) => {
         const [expanded, setExpanded] = useState(false);
         const isPositive = item.quantity > 0;
@@ -162,8 +158,6 @@ export default function Audit() {
                     );
                 case 'SALE':
                 case 'TRANSACTION':
-                    // We don't have a specific permission for Transactions, just let anyone view their own, 
-                    // or maybe it's protected inside the route.
                     return (
                         <TouchableOpacity 
                             style={[globalStyles.buttonSecondary, { marginTop: 10, paddingVertical: 8, paddingHorizontal: 12, alignSelf: 'flex-start' }]}
@@ -183,7 +177,6 @@ export default function Audit() {
                 onPress={toggleExpand}
                 activeOpacity={0.8}
             >
-                {/* Always visible overview (3 columns) */}
                 <View style={globalStyles.row}>
                     <Text style={[globalStyles.sectionTitle, { flex: 2, marginBottom: 0 }]}>{item.transaction_type}</Text>
                     <Text style={{ fontSize: 12, flex: 2, textAlign: 'center', color: COLORS.textSecondary }}>
@@ -194,7 +187,6 @@ export default function Audit() {
                     </Text>
                 </View>
 
-                {/* Expanded Details */}
                 {expanded && (
                     <View style={{ marginTop: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border }}>
                         <Text style={{ fontSize: 12 }}>Time: {new Date(item.created_at).toLocaleTimeString()}</Text>
@@ -203,7 +195,7 @@ export default function Audit() {
                         {item.reason_code && <Text style={{ fontSize: 12, marginTop: 4 }}>Reason: {item.reason_code}</Text>}
                         {item.from_store_name && <Text style={{ fontSize: 12, marginTop: 4 }}>From: {item.from_store_name}</Text>}
                         {item.to_store_name && <Text style={{ fontSize: 12, marginTop: 4 }}>To: {item.to_store_name}</Text>}
-                        
+
                         {renderActionButton()}
                     </View>
                 )}
@@ -240,7 +232,6 @@ export default function Audit() {
                     </View>
                 </View>
 
-                {/* Filter and Sort Dropdowns */}
                 {data && (
                     <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 15, gap: 10 }}>
                         <TouchableOpacity 
@@ -297,14 +288,13 @@ export default function Audit() {
                 )}
             </View>
 
-            {/* Sort Modal */}
             <Modal visible={showSortModal} transparent={true} animationType="fade">
                 <View style={globalStyles.modalOverlay}>
                     <View style={globalStyles.modalContentWrapper}>
                         <View style={globalStyles.modalCardContainer}>
                             <Text style={globalStyles.modalTitle}>Sort By Date</Text>
                             <View style={globalStyles.divider} />
-                            
+
                             <TouchableOpacity 
                                 style={{ paddingVertical: 12 }} 
                                 onPress={() => { setSortOrder('DESC'); setShowSortModal(false); }}
@@ -331,14 +321,13 @@ export default function Audit() {
                 </View>
             </Modal>
 
-            {/* Filter Modal */}
             <Modal visible={showFilterModal} transparent={true} animationType="fade">
                 <View style={globalStyles.modalOverlay}>
                     <View style={globalStyles.modalContentWrapper}>
                         <View style={globalStyles.modalCardContainer}>
                             <Text style={globalStyles.modalTitle}>Filter by Type</Text>
                             <View style={globalStyles.divider} />
-                            
+
                             {user?.role === 'ADMIN' && (
                                 <View style={{ marginBottom: 15 }}>
                                     <Text style={[globalStyles.modalInputLabel, { marginBottom: 4 }]}>Store ID (Admin Only)</Text>

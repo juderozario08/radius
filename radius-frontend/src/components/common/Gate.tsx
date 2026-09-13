@@ -1,4 +1,3 @@
-// radius-frontend/src/components/common/Gate.tsx
 import { useAuth } from "@/hooks/useAuth";
 import { hasPermission, Permission } from "@/utils/roles";
 import { ReactNode } from "react";

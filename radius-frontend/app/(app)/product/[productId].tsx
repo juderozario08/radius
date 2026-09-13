@@ -61,7 +61,7 @@ export default function ProductScreen() {
                     locations: updatedLocations,
                 }
             }, logout);
-            
+
             Toast.show({ type: "success", text1: "Locations updated successfully!" });
             await fetchProductDetails();
         } catch (err: any) {
@@ -106,7 +106,6 @@ export default function ProductScreen() {
                 </View>
             ) : (
                 <View style={styles.contentContainer}>
-                    {/* Header Details */}
                     <View style={styles.headerInfo}>
                         <View style={styles.headerTextContainer}>
                             <Text style={styles.headerSubtitle}>SKU:<Text style={{ fontWeight: "700" }}>{details.product.sku}</Text></Text>
@@ -119,7 +118,6 @@ export default function ProductScreen() {
                                 )}
                             </View>
                         </View>
-                        {/* Placeholder for Product Image */}
                         <View style={styles.imagePlaceholder}>
                             <Image 
                                 source={require('@/assets/images/favicon.png')} 
@@ -129,7 +127,6 @@ export default function ProductScreen() {
                         </View>
                     </View>
 
-                    {/* Tabs */}
                     <View style={styles.tabsContainer}>
                         {(["Details", "Protection", "Locations"] as TabName[]).map(tab => (
                             <TouchableOpacity 
@@ -142,7 +139,6 @@ export default function ProductScreen() {
                         ))}
                     </View>
 
-                    {/* Tab Content */}
                     <View style={styles.tabContentArea}>
                         {renderTabContent()}
                     </View>

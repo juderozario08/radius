@@ -1,4 +1,3 @@
-// radius-backend/internal/database/database.go
 package database
 
 import (
@@ -34,7 +33,6 @@ func ConnectDB(connectionString string) (*DB, error) {
 		return nil, err
 	}
 
-	// Connection pool settings
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(5 * time.Minute)

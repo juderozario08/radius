@@ -1,4 +1,3 @@
-// radius-backend/internal/repository/cycle_count_repo.go
 package repository
 
 import (
@@ -19,7 +18,6 @@ func NewCycleCountRepo(db *sql.DB) *CycleCountRepo {
 	return &CycleCountRepo{db: db}
 }
 
-// GetWeeklyCycleCounts fetches cycle counts for the current week (or all recent counts for the store, or all stores if storeID <= 0)
 func (r *CycleCountRepo) GetWeeklyCycleCounts(ctx context.Context, storeID int) ([]models.CycleCountSummary, error) {
 	query := `
 		SELECT 
@@ -67,7 +65,6 @@ func (r *CycleCountRepo) GetWeeklyCycleCounts(ctx context.Context, storeID int) 
 	return summaries, rows.Err()
 }
 
-// GetCycleCountByID retrieves a single count by ID for a store (or any store if storeID <= 0)
 func (r *CycleCountRepo) GetCycleCountByID(ctx context.Context, countID int, storeID int) (*models.CycleCount, error) {
 	query := `
 		SELECT 
@@ -103,7 +100,6 @@ func (r *CycleCountRepo) GetCycleCountByID(ctx context.Context, countID int, sto
 	return &cc, nil
 }
 
-// GetCycleCountItems retrieves all items belonging to a count
 func (r *CycleCountRepo) GetCycleCountItems(ctx context.Context, countID int) ([]models.CycleCountItemDetail, error) {
 	query := `
 		SELECT 
@@ -145,7 +141,6 @@ func (r *CycleCountRepo) GetCycleCountItems(ctx context.Context, countID int) ([
 	return items, rows.Err()
 }
 
-// StartCycleCount creates a new cycle count and populates items snapshot from inventory
 func (r *CycleCountRepo) StartCycleCount(ctx context.Context, storeID int, categoryID int, employeeID int) (*models.CycleCount, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -153,7 +148,6 @@ func (r *CycleCountRepo) StartCycleCount(ctx context.Context, storeID int, categ
 	}
 	defer tx.Rollback()
 
-	// Insert parent count
 	var countID int
 	insertCountQuery := `
 		INSERT INTO cycle_counts (
@@ -167,7 +161,6 @@ func (r *CycleCountRepo) StartCycleCount(ctx context.Context, storeID int, categ
 		return nil, fmt.Errorf("failed to insert cycle count: %w", err)
 	}
 
-	// Fetch all products in category and snapshot current on_hand_qty as expected_qty
 	fetchProductsQuery := `
 		SELECT p.product_id, COALESCE(i.on_hand_qty, 0) AS expected_qty
 		FROM products p
@@ -209,13 +202,11 @@ func (r *CycleCountRepo) StartCycleCount(ctx context.Context, storeID int, categ
 		}
 	}
 
-	// Update total_items on cycle_counts
 	_, err = tx.ExecContext(ctx, `UPDATE cycle_counts SET total_items = $1 WHERE count_id = $2`, len(products), countID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update total_items: %w", err)
 	}
 
-	// Link schedule entry if one exists for today
 	linkScheduleQuery := `
 		UPDATE cycle_count_schedule
 		SET cycle_count_id = $1
@@ -230,7 +221,6 @@ func (r *CycleCountRepo) StartCycleCount(ctx context.Context, storeID int, categ
 	return r.GetCycleCountByID(ctx, countID, storeID)
 }
 
-// AutoAssignCycleCount atomically assigns an unassigned cycle count to an employee
 func (r *CycleCountRepo) AutoAssignCycleCount(ctx context.Context, countID int, storeID int, employeeID int) (*models.CycleCount, error) {
 	query := `
 		UPDATE cycle_counts
@@ -247,7 +237,6 @@ func (r *CycleCountRepo) AutoAssignCycleCount(ctx context.Context, countID int, 
 	return r.GetCycleCountByID(ctx, countID, storeID)
 }
 
-// RecordScan updates or adds a counted product in a cycle count (supporting 0-qty and unlisted products)
 func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models.RecordScanRequest, employeeID int) (*models.CycleCountItemDetail, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -255,7 +244,6 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 	}
 	defer tx.Rollback()
 
-	// Verify count belongs to store
 	var countStatus models.CycleCountStatus
 	err = tx.QueryRowContext(ctx, `SELECT status FROM cycle_counts WHERE count_id = $1 AND store_id = $2`, req.CountId, storeID).Scan(&countStatus)
 	if err != nil {
@@ -265,7 +253,6 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 		return nil, err
 	}
 
-	// 1. Resolve Product ID
 	var productID int
 	if req.ProductId != nil && *req.ProductId > 0 {
 		productID = *req.ProductId
@@ -286,13 +273,11 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 		return nil, errors.New("must provide product_id or barcode")
 	}
 
-	// 2. Get primary cost price for calculating variance_cost
 	var costPrice float64
 	_ = tx.QueryRowContext(ctx, `
 		SELECT COALESCE(cost_price, 0) FROM product_suppliers WHERE product_id = $1 AND is_primary = true LIMIT 1
 	`, productID).Scan(&costPrice)
 
-	// 3. Check if item is already part of cycle_count_items
 	var expectedQty, currentCountedQty int
 	err = tx.QueryRowContext(ctx, `
 		SELECT expected_qty, counted_qty 
@@ -303,8 +288,6 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 	var targetQty int
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			// Product is not in initial count items snapshot (0 quantity or unlisted in category)
-			// Check if store has any existing on_hand_qty in inventory
 			var storeInvQty int
 			_ = tx.QueryRowContext(ctx, `
 				SELECT COALESCE(on_hand_qty, 0) FROM inventory WHERE store_id = $1 AND product_id = $2
@@ -325,7 +308,6 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 				reason = *req.ReasonCode
 			}
 
-			// Insert newly discovered product into cycle_count_items
 			insertQuery := `
 				INSERT INTO cycle_count_items (
 					count_id, product_id, expected_qty, counted_qty, variance_cost, reason_code, scanned_at, scanned_by
@@ -336,7 +318,6 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 				return nil, fmt.Errorf("failed to add new item to cycle count: %w", err)
 			}
 
-			// Increment total_items on parent count
 			_, err = tx.ExecContext(ctx, `UPDATE cycle_counts SET total_items = total_items + 1 WHERE count_id = $1`, req.CountId)
 			if err != nil {
 				return nil, fmt.Errorf("failed to increment total_items: %w", err)
@@ -345,7 +326,6 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 			return nil, err
 		}
 	} else {
-		// Existing item in count
 		if req.CountedQty != nil {
 			targetQty = *req.CountedQty
 		} else {
@@ -370,7 +350,6 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 		}
 	}
 
-	// 4. Recalculate counted_items and total_variance_cost on parent
 	updateParentQuery := `
 		UPDATE cycle_counts
 		SET counted_items = (SELECT COUNT(*) FROM cycle_count_items WHERE count_id = $1 AND counted_qty > 0),
@@ -388,7 +367,6 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 		return nil, err
 	}
 
-	// Fetch updated item
 	itemQuery := `
 		SELECT 
 			cci.count_item_id, cci.count_id, cci.product_id, p.name AS product_name,
@@ -414,7 +392,6 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 	return &item, nil
 }
 
-// SubmitForApproval transitions count to PENDING APPROVAL and sets completion metadata
 func (r *CycleCountRepo) SubmitForApproval(ctx context.Context, storeID int, countID int, notes *string) error {
 	query := `
 		UPDATE cycle_counts
@@ -438,7 +415,6 @@ func (r *CycleCountRepo) SubmitForApproval(ctx context.Context, storeID int, cou
 	return nil
 }
 
-// ApproveCycleCount marks count as APPROVED, updates store inventory, and logs to audit trail (inventory_transactions)
 func (r *CycleCountRepo) ApproveCycleCount(ctx context.Context, storeID int, countID int, approverID int) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -446,7 +422,6 @@ func (r *CycleCountRepo) ApproveCycleCount(ctx context.Context, storeID int, cou
 	}
 	defer tx.Rollback()
 
-	// Update cycle_counts status to APPROVED
 	updateCountQuery := `
 		UPDATE cycle_counts
 		SET status = 'APPROVED',
@@ -466,7 +441,6 @@ func (r *CycleCountRepo) ApproveCycleCount(ctx context.Context, storeID int, cou
 		return fmt.Errorf("cycle count %d not found for store %d", countID, storeID)
 	}
 
-	// Fetch all items for this count with their cost price
 	itemsQuery := `
 		SELECT 
 			cci.product_id, cci.expected_qty, cci.counted_qty, cci.variance,
@@ -503,7 +477,6 @@ func (r *CycleCountRepo) ApproveCycleCount(ctx context.Context, storeID int, cou
 		return err
 	}
 
-	// For each item, update inventory and insert audit transaction log
 	updateInvQuery := `
 		INSERT INTO inventory (store_id, product_id, new_qty, last_counted_at, updated_at)
 		VALUES ($1, $2, $3, NOW(), NOW())
@@ -523,13 +496,11 @@ func (r *CycleCountRepo) ApproveCycleCount(ctx context.Context, storeID int, cou
 	refID := fmt.Sprintf("CYCLE_COUNT:%d", countID)
 
 	for _, it := range items {
-		// Update inventory table
 		_, err = tx.ExecContext(ctx, updateInvQuery, storeID, it.productID, it.countedQty)
 		if err != nil {
 			return fmt.Errorf("failed to update inventory for product %d: %w", it.productID, err)
 		}
 
-		// Log to audit trail in inventory_transactions
 		_, err = tx.ExecContext(ctx, auditQuery,
 			it.productID, storeID, it.variance, it.costPrice, it.reasonCode, approverID, refID,
 		)
@@ -541,7 +512,6 @@ func (r *CycleCountRepo) ApproveCycleCount(ctx context.Context, storeID int, cou
 	return tx.Commit()
 }
 
-// TransferOwnership reassigns an active cycle count to another employee
 func (r *CycleCountRepo) TransferOwnership(ctx context.Context, storeID int, countID int, newEmployeeID int) error {
 	query := `
 		UPDATE cycle_counts
@@ -562,7 +532,6 @@ func (r *CycleCountRepo) TransferOwnership(ctx context.Context, storeID int, cou
 	return nil
 }
 
-// SearchCycleCounts allows searching cycle counts by free text, status, category, date range
 func (r *CycleCountRepo) SearchCycleCounts(ctx context.Context, storeID int, criteria models.CycleCountSearchCriteria) ([]models.CycleCountSummary, error) {
 	baseQuery := `
 		SELECT 
@@ -639,7 +608,6 @@ func (r *CycleCountRepo) SearchCycleCounts(ctx context.Context, storeID int, cri
 	return summaries, rows.Err()
 }
 
-// GetSchedule returns scheduled cycle counts for calendar view
 func (r *CycleCountRepo) GetSchedule(ctx context.Context, storeID int, fromDate time.Time, toDate time.Time) ([]models.CycleCountScheduleEntry, error) {
 	query := `
 		SELECT 
@@ -681,7 +649,6 @@ func (r *CycleCountRepo) GetSchedule(ctx context.Context, storeID int, fromDate 
 	return entries, rows.Err()
 }
 
-// CreateScheduleEntry inserts a new schedule item
 func (r *CycleCountRepo) CreateScheduleEntry(ctx context.Context, storeID int, categoryID int, scheduledDate time.Time, createdBy int) (*models.CycleCountScheduleEntry, error) {
 	query := `
 		INSERT INTO cycle_count_schedule (store_id, category_id, scheduled_date, created_by)
@@ -694,7 +661,6 @@ func (r *CycleCountRepo) CreateScheduleEntry(ctx context.Context, storeID int, c
 		return nil, err
 	}
 
-	// Return populated entry
 	fetchQuery := `
 		SELECT 
 			ccs.schedule_id, ccs.store_id, ccs.category_id, c.name AS category_name,

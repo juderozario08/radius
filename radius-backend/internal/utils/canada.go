@@ -1,4 +1,3 @@
-// radius-backend/internal/utils/canada.go
 package utils
 
 import (
@@ -45,7 +44,6 @@ func ValidateCanadianProvince(province string) error {
 	return nil
 }
 
-// SanitizeLocation validates the province and normalizes the postal code in one call.
 func SanitizeLocation(province string, postalCode string) (string, string, error) {
 	if err := ValidateCanadianProvince(province); err != nil {
 		return "", "", err

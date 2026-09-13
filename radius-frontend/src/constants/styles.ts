@@ -1,9 +1,7 @@
-//radius-frontend/src/constants/styles.ts
 import { StyleSheet } from "react-native";
 import { COLORS } from "./colors";
 
 export const globalStyles = StyleSheet.create({
-    // --- Layouts ---
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
@@ -52,7 +50,6 @@ export const globalStyles = StyleSheet.create({
         fontSize: 16,
     },
 
-    // --- Shared Modal Wrappers ---
     modalOverlay: {
         flex: 1,
         backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -130,8 +127,7 @@ export const globalStyles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
-    
-    // --- Added from Refactoring ---
+
     shadowLight: {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },

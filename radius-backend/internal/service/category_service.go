@@ -1,4 +1,3 @@
-// radius-backend/internal/service/category_service.go
 package service
 
 import (

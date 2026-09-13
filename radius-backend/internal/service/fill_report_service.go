@@ -58,25 +58,21 @@ func (s *FillReportService) GetActiveIS4TCSession(ctx context.Context, storeID i
 }
 
 func (s *FillReportService) AddToIS4TCSession(ctx context.Context, storeID int, product models.MimsProductInventory, employeeID *int) ([]models.MimsProductInventory, error) {
-	// 1. Automatically log empty hole to DB Fill Report
 	if s.fillReportRepo != nil {
 		_ = s.fillReportRepo.AddEmptyHole(ctx, storeID, product.ProductId, employeeID)
 	}
 
-	// 2. Add to active Redis session
 	items, err := s.GetActiveIS4TCSession(ctx, storeID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Avoid duplicates in memory session
 	for _, item := range items {
 		if item.ProductId == product.ProductId {
 			return items, nil
 		}
 	}
 
-	// Add to front of the list
 	items = append([]models.MimsProductInventory{product}, items...)
 
 	data, err := json.Marshal(items)
@@ -85,7 +81,6 @@ func (s *FillReportService) AddToIS4TCSession(ctx context.Context, storeID int, 
 	}
 
 	key := fmt.Sprintf("is4tc_session:%d", storeID)
-	// Expire after 24 hours of inactivity
 	err = s.redisClient.Set(ctx, key, data, 24*time.Hour).Err()
 	if err != nil {
 		return nil, err

@@ -11,7 +11,7 @@ import { router, useLocalSearchParams } from "expo-router";
 
 export default function OrderSearchScreen() {
     const params = useLocalSearchParams();
-    const activeTab = params.active_tab as string || "BOPIS"; // To preserve tab
+    const activeTab = params.active_tab as string || "BOPIS";
 
     const [orderType, setOrderType] = useState(params.order_type as string || "");
     const [orderId, setOrderId] = useState(params.order_id as string || "");
@@ -46,7 +46,6 @@ export default function OrderSearchScreen() {
         { label: "Released", value: "RELEASED" }
     ];
 
-    // Decide which statuses to show based on selected order type, or fallback to activeTab if no explicit filter
     const displayType = orderType || activeTab;
     const statusOptions = displayType === "STS" ? stsStatuses : bopisStatuses;
 
@@ -63,7 +62,7 @@ export default function OrderSearchScreen() {
                 payment_card: paymentCard,
                 status: status,
                 order_type: orderType,
-                filter: activeTab // preserve the tab
+                filter: activeTab
             }
         });
     };

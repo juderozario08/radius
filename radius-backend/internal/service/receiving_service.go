@@ -1,4 +1,3 @@
-// radius-backend/internal/service/receiving_service.go
 package service
 
 import (
@@ -28,7 +27,6 @@ func (s *ReceivingService) getEmployeeAndStoreID(ctx context.Context, email stri
 		return nil, nil, errors.New("employee not found")
 	}
 
-	// Admins see all stores (storeID = nil)
 	if employee.Role == "ADMIN" {
 		return employee, nil, nil
 	}
@@ -84,7 +82,6 @@ func (s *ReceivingService) ReceivePO(ctx context.Context, email string, req mode
 		return err
 	}
 
-	// Get PO detail to find the store_id
 	detail, err := s.receivingRepo.GetPurchaseOrderDetail(ctx, req.PoId)
 	if err != nil {
 		return err
@@ -93,7 +90,6 @@ func (s *ReceivingService) ReceivePO(ctx context.Context, email string, req mode
 		return errors.New("purchase order not found")
 	}
 
-	// Non-admins can only receive for their own store
 	if employee.Role != "ADMIN" && detail.StoreId != employee.StoreId {
 		return errors.New("cannot receive for a different store")
 	}
@@ -179,10 +175,7 @@ func (s *ReceivingService) ReceiveTransfer(ctx context.Context, email string, re
 		return errors.New("transfer is not in transit")
 	}
 
-	// Get the to_store_id from the transfer
 	var toStoreID int
-	// We need to look up the actual to_store_id from the transfers table
-	// Since the detail doesn't directly expose it, use the employee's store
 	toStoreID = employee.StoreId
 
 	return s.receivingRepo.ReceiveTransferItems(ctx, toStoreID, req.TransferId, employee.EmployeeId, req.Items)

@@ -1,4 +1,3 @@
-// radius-frontend/src/components/common/BackButton.tsx
 import React, { useEffect, useCallback } from "react";
 import { globalStyles } from "@/constants/styles";
 import { router, useLocalSearchParams } from "expo-router";
@@ -60,7 +59,6 @@ const BackButton: React.FC<BackButtonProps> = ({
         [onPress, from]
     );
 
-    // Hardware back button support for Android when a custom `from` target is active
     useEffect(() => {
         if (!from) return;
 

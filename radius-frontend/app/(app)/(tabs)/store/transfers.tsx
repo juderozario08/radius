@@ -1,4 +1,3 @@
-//radius-frontend/app/(app)/store/transfers.tsx
 import { View, Text } from 'react-native';
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 export default function Screen() {

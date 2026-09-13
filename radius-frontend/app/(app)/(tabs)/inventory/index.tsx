@@ -27,8 +27,6 @@ export default function MimsScreen() {
 
     const fetchProductByBarcode = async (barcode: string) => {
         setIsLoadingMims(true);
-        // Instead of relying solely on the scan endpoint (which returns basic inventory), 
-        // we hit the scan endpoint to find the product, then route to the rich product page.
         const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.scanProduct}?barcode=${encodeURIComponent(barcode)}`;
         const response = await callApi<ScanProductResponse>(endpoint, { method: "GET" }, logout);
 

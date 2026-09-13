@@ -7,6 +7,7 @@ Welcome to the Radius project. This file (`AGENTS.md`) contains the master set o
 1. **DO NOT DELETE CORE TABLES**: You must NEVER delete the `Stores` table or the `Employees` table in the database schema. These are critical components of the system.
 2. **Follow DRY Principles**: Always look for existing constants, styles, or functions before writing new ones. Do not duplicate logic or design tokens.
 3. **Respect the Theme**: Stick to the established theme and staples of the application when building UI components.
+4. **NO UNNECESSARY COMMENTS**: There should NOT be comments written for anything. The only time there should be comments is when something is very confusing or complex and we need to explain why we did that certain thing. Other than that, there should be NO comments at all (no file headers, no function/type docstrings, no JSX section markers, no step-by-step narration).
 
 ---
 
@@ -14,8 +15,8 @@ Welcome to the Radius project. This file (`AGENTS.md`) contains the master set o
 
 - **Backend**: Go (Gin, PostgreSQL, Redis). Layered clean architecture (Handlers -> Services -> Repositories).
 - **Frontend**: React Native (Expo v54, expo-router).
-- **Graphify**: This project uses a Graphify knowledge graph (`graphify-out/graph.json`). 
-  - For any codebase or architecture questions, you must **first run** `graphify query "<question>"` (CLI) or the `query_graph` MCP tool. 
+- **Graphify**: This project uses a Graphify knowledge graph (`graphify-out/graph.json`).
+  - For any codebase or architecture questions, you must **first run** `graphify query "<question>"` (CLI) or the `query_graph` MCP tool.
   - Use `graphify path` and `graphify explain` to navigate dependencies. Do not rely solely on `grep` or file reading for large architectural questions.
 
 ---
@@ -24,7 +25,7 @@ Welcome to the Radius project. This file (`AGENTS.md`) contains the master set o
 
 1. **Expo Version**: We are using **Expo v54**. Always refer to Expo v54 documentation (e.g., https://docs.expo.dev/versions/v54.0.0/) before writing or modifying API usage.
 2. **State Management & Data Fetching**: We use basic `fetch` requests for API communication. **Do not introduce** external state management libraries like Zustand or React Query unless explicitly instructed by the user. Keep it simple.
-3. **Styling**: 
+3. **Styling**:
    - Use standard `StyleSheet.create({})` for component styling.
    - **DRY Principle**: Global styles and colors are defined in `src/constants/styles.ts` and `src/constants/colors.ts`. You MUST import and use these constants rather than hardcoding hex codes or standard padding/margin rules.
 4. **Testing**: Frontend testing (Jest + React Native Testing Library) is not yet implemented but will be soon. Write modular, easily testable components.
@@ -34,13 +35,13 @@ Welcome to the Radius project. This file (`AGENTS.md`) contains the master set o
 
 ## ⚙️ Backend Guidelines (Go)
 
-1. **Database & Migrations**: 
+1. **Database & Migrations**:
    - We use PostgreSQL.
    - All schema modifications MUST be done via `golang-migrate` files in the `migrations/` directory. Do not instruct the user to run manual `ALTER TABLE` commands on the production DB.
-2. **Testing**: 
+2. **Testing**:
    - We use the standard Go `testing` package along with `go.uber.org/mock/gomock` for interface mocking, and `miniredis` for Redis mocking.
    - Follow the existing testing patterns (e.g., table-driven tests) found in `radius-backend/internal/service/*_test.go`.
-3. **Logging & Errors**: 
+3. **Logging & Errors**:
    - Stick to the industry standard, basic logging patterns currently used in the project. Return properly formatted errors up the stack.
 
 ---
@@ -55,7 +56,7 @@ Welcome to the Radius project. This file (`AGENTS.md`) contains the master set o
 
 1. **NO Temporary Files in Repository**: You must NEVER leave generated scratch scripts (e.g., `scaffold.py`, `.sh` scripts) or temporary files in the repository. If you must use a scratch script to perform multi-file edits, you must either:
    - Create it in the designated `scratch/` artifact directory outside the repository.
-   - Delete it immediately after execution. 
+   - Delete it immediately after execution.
    **Under no circumstances should an agent commit temporary scaffolding scripts to the codebase.**
 
 ---

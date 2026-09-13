@@ -1,4 +1,3 @@
-// radius-backend/internal/handler/session_handler.go
 package handler
 
 import (

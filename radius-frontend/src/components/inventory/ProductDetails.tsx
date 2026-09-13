@@ -29,7 +29,6 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ details }) => {
                     <Text style={styles.rowValue}>{inventory.on_hand_qty}</Text>
                 </View>
 
-                {/* Available for Selling Section */}
                 <TouchableOpacity 
                     style={[styles.row, styles.collapsibleRow]} 
                     onPress={() => setIsAvailableExpanded(!isAvailableExpanded)}
@@ -48,7 +47,6 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ details }) => {
                     </View>
                 )}
 
-                {/* Non Sellable Section */}
                 <TouchableOpacity 
                     style={[styles.row, styles.collapsibleRow]} 
                     onPress={() => setIsNonSellableExpanded(!isNonSellableExpanded)}
@@ -74,7 +72,6 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ details }) => {
                     </View>
                 )}
 
-                {/* On Order Section */}
                 <View style={styles.row}>
                     <View style={styles.rowLabelContainer}>
                         <Text style={styles.rowLabel}>On order</Text>
@@ -83,7 +80,6 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ details }) => {
                     <Text style={styles.rowValue}>{inventory.on_order_qty}</Text>
                 </View>
 
-                {/* Last Received */}
                 <View style={styles.row}>
                     <Text style={styles.rowLabel}>Last received</Text>
                     <View style={styles.lastReceivedValueContainer}>
@@ -165,7 +161,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     badge: {
-        backgroundColor: COLORS.error, // using error color as orange/red like in screenshot
+        backgroundColor: COLORS.error,
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 4,

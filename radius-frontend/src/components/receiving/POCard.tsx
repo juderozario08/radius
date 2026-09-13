@@ -13,11 +13,11 @@ interface POCardProps {
 
 const getStatusColor = (status: string) => {
     switch (status) {
-        case "SHIPPED": return COLORS.primary; // Blue
+        case "SHIPPED": return COLORS.primary;
         case "DELIVERING": return COLORS.primary; 
-        case "DELIVERED": return COLORS.textSecondary; // Grayish
-        case "PARTIAL": return "#F57C00"; // Yellow/Orange
-        case "RECEIVED": return "#388E3C"; // Green
+        case "DELIVERED": return COLORS.textSecondary;
+        case "PARTIAL": return "#F57C00";
+        case "RECEIVED": return "#388E3C";
         default: return COLORS.textSecondary;
     }
 };
@@ -26,7 +26,6 @@ export const POCard: React.FC<POCardProps> = ({ po, onPress }) => {
     const { user } = useAuth();
     const isAdmin = user?.role === "ADMIN";
 
-    // Format PO ID to 8 digits
     const poNumber = po.po_id.toString().padStart(8, '0');
     const orderedDate = new Date(po.ordered_at).toLocaleDateString();
     const expectedDate = po.expected_at ? new Date(po.expected_at).toLocaleDateString() : 'N/A';
@@ -53,13 +52,13 @@ export const POCard: React.FC<POCardProps> = ({ po, onPress }) => {
 
             <View style={styles.content}>
                 <Text style={styles.supplierText}>{po.supplier_name}</Text>
-                
+
                 <View style={styles.detailsRow}>
                     <View style={styles.detailItem}>
                         <Ionicons name="cube-outline" size={16} color={COLORS.textSecondary} />
                         <Text style={styles.detailText}>{po.item_count} items</Text>
                     </View>
-                    
+
                     <View style={styles.detailItem}>
                         <Ionicons name="calendar-outline" size={16} color={COLORS.textSecondary} />
                         <Text style={styles.detailText}>Expected: {expectedDate}</Text>

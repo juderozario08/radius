@@ -1,4 +1,3 @@
-// radius-backend/internal/handler/print_order_handler.go
 package handler
 
 import (

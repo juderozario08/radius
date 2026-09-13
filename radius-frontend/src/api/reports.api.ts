@@ -1,4 +1,3 @@
-// radius-frontend/src/api/reports.api.ts
 import { apiFetch } from "@/api/client";
 import { ENDPOINTS } from "@/constants/routes";
 import { FillReportFilter, FillReportResponse } from "@/types/report.types";

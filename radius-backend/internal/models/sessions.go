@@ -1,4 +1,3 @@
-// radius-backend/internal/models/sessions.go
 package models
 
 import (

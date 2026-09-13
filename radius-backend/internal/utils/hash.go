@@ -1,4 +1,3 @@
-//radius-backend/internal/utils/hash.go
 package utils
 
 import (

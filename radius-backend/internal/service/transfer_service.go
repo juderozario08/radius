@@ -1,4 +1,3 @@
-// radius-backend/internal/service/transfer_service.go
 package service
 
 type TransferService struct {

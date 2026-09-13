@@ -74,7 +74,6 @@ func TestTransactionService_CreateTransaction_AutoReportsToFillReport(t *testing
 			TotalAmount:   25.50,
 		}, expectedItems, nil)
 
-	// Verify that FillReport repo's AddSoldItems is automatically called with the sold items!
 	mockFillReportRepo.EXPECT().
 		AddSoldItems(gomock.Any(), storeId, expectedItems).
 		Return(nil)
@@ -97,7 +96,7 @@ func TestTransactionService_GetAllTransactions_Admin(t *testing.T) {
 	svc := service.NewTransactionService(mockSalesRepo, nil, nil, nil)
 
 	mockSalesRepo.EXPECT().
-		GetAllTransactions(gomock.Any(), 10, 0, nil). // storeID should be nil for Admin
+		GetAllTransactions(gomock.Any(), 10, 0, nil).
 		Return([]models.Transaction{
 			{TransactionId: 1},
 			{TransactionId: 2},
@@ -134,7 +133,7 @@ func TestTransactionService_GetAllTransactions_NonAdmin(t *testing.T) {
 		}, nil)
 
 	mockSalesRepo.EXPECT().
-		GetAllTransactions(gomock.Any(), 10, 0, &storeId). // storeID should be passed
+		GetAllTransactions(gomock.Any(), 10, 0, &storeId).
 		Return([]models.Transaction{
 			{TransactionId: 100},
 		}, 1, nil)

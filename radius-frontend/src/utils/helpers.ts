@@ -1,4 +1,3 @@
-//radius-frontend/src/utils/helpers.ts
 import { apiFetch, UnauthorizedError } from "@/api/client";
 import Toast from "react-native-toast-message";
 

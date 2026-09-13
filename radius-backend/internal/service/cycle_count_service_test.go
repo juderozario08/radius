@@ -1,4 +1,3 @@
-// radius-backend/internal/service/cycle_count_service_test.go
 package service_test
 
 import (
@@ -59,7 +58,6 @@ func TestCycleCountService_GetWeeklyCycleCounts(t *testing.T) {
 		t.Errorf("expected category Headphones, got %s", summaries[0].CategoryName)
 	}
 
-	// Test Admin storeID override
 	targetStore := 3
 	mockCycleCountRepo.EXPECT().
 		GetWeeklyCycleCounts(gomock.Any(), targetStore).
@@ -89,7 +87,6 @@ func TestCycleCountService_ApproveCount_ManagerOnly(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil)
 
-	// 1. Non-manager should be denied
 	salesEmail := "sales@radius.com"
 	mockEmployeeRepo.EXPECT().
 		GetEmployeeByEmail(gomock.Any(), salesEmail).
@@ -106,7 +103,6 @@ func TestCycleCountService_ApproveCount_ManagerOnly(t *testing.T) {
 		t.Fatalf("expected error for non-manager, got nil")
 	}
 
-	// 2. Manager should succeed
 	mgrEmail := "manager@radius.com"
 	mockEmployeeRepo.EXPECT().
 		GetEmployeeByEmail(gomock.Any(), mgrEmail).
@@ -300,12 +296,11 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 		},
 	}
 
-	// 1. Employee A opens an unassigned count -> Auto-assigned to Employee A
 	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), empAEmail).Return(empA, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), countID, storeID).Return(&models.CycleCount{
 		CountId:   countID,
 		StoreId:   storeID,
-		CountedBy: nil, // unassigned
+		CountedBy: nil,
 		Status:    models.CycleCountStatusNotStarted,
 	}, nil)
 	mockCycleCountRepo.EXPECT().AutoAssignCycleCount(gomock.Any(), countID, storeID, 101).Return(&models.CycleCount{
@@ -324,7 +319,6 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 		t.Errorf("expected count to be assigned to 101, got: %v", resA.Count.CountedBy)
 	}
 
-	// 2. Employee B tries to open count assigned to Employee A -> Locked / Rejected
 	nameA := "Employee A"
 	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), empBEmail).Return(empB, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), countID, storeID).Return(&models.CycleCount{
@@ -340,7 +334,6 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 		t.Fatalf("expected Employee B to be blocked by concurrency lock, got nil")
 	}
 
-	// 3. Manager opens count assigned to Employee A -> Manager is allowed access
 	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), mgrEmail).Return(mgr, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), countID, storeID).Return(&models.CycleCount{
 		CountId:       countID,
@@ -359,7 +352,6 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 		t.Fatalf("expected non-nil response for manager")
 	}
 
-	// 4. Admin opens count in another store (e.g. store 5) -> Admin allowed access with storeID=0, no auto-assignment
 	adminEmail := "admin@radius.com"
 	admin := &models.Employee{
 		EmployeeId: 1,
@@ -468,7 +460,6 @@ func TestCycleCountService_TransferOwnership(t *testing.T) {
 		},
 	}
 
-	// 1. Non-manager transfer rejected
 	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), salesEmail).Return(sales, nil)
 	err := svc.TransferOwnership(context.Background(), salesEmail, models.TransferCycleCountOwnershipRequest{
 		CountId:    countID,
@@ -478,7 +469,6 @@ func TestCycleCountService_TransferOwnership(t *testing.T) {
 		t.Fatalf("expected non-manager transfer to fail, got nil")
 	}
 
-	// 2. Manager transfer success
 	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), mgrEmail).Return(mgr, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), countID, storeID).Return(&models.CycleCount{
 		CountId: countID,
@@ -534,7 +524,6 @@ func TestCycleCountService_StartCount_BroadcastsEvent(t *testing.T) {
 			TotalVarianceCost: 0.0,
 		}, nil)
 
-	// Assert BroadcastToStore is called for Store 2 with EventCycleCountUpdated and action="started"
 	mockBroadcaster.EXPECT().
 		BroadcastToStore(storeID, gomock.Cond(func(x any) bool {
 			evt, ok := x.(models.WebSocketEvent)
@@ -838,7 +827,6 @@ func TestCycleCountService_NilBroadcasterSafe(t *testing.T) {
 	mockCycleCountRepo := mocks.NewMockCycleCountRepository(ctrl)
 	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
 
-	// No broadcaster supplied
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil)
 
 	mgrEmail := "manager@store2.com"
@@ -860,7 +848,6 @@ func TestCycleCountService_NilBroadcasterSafe(t *testing.T) {
 		ApproveCycleCount(gomock.Any(), storeID, countID, empID).
 		Return(nil)
 
-	// Must succeed without nil pointer panic when broadcaster is nil
 	err := svc.ApproveCount(context.Background(), mgrEmail, models.ApproveCycleCountRequest{CountId: countID})
 	if err != nil {
 		t.Fatalf("expected manager approval to succeed with nil broadcaster, got: %v", err)

@@ -10,7 +10,6 @@ import { COLORS } from "@/constants/colors";
 import { globalStyles as STYLES } from "@/constants/styles";
 import { Ionicons } from "@expo/vector-icons";
 
-// Mappings from the backend
 type AdjustmentStatus = "PENDING" | "APPROVED" | "REJECTED" | "WRITE_OFF";
 
 interface PendingAdjustmentDetail {
@@ -41,19 +40,16 @@ export default function ItemAdjust() {
     const [loading, setLoading] = useState(true);
     const [adjustments, setAdjustments] = useState<PendingAdjustmentDetail[]>([]);
 
-    // Local edits for quantity and reason, keyed by adjustment_id
     const [editedQty, setEditedQty] = useState<{ [key: number]: number }>({});
     const [editedReason, setEditedReason] = useState<{ [key: number]: string }>({});
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-    // Fetch pending adjustments
     const fetchAdjustments = async () => {
         setLoading(true);
         const res = await callApi<PendingAdjustmentDetail[]>(ENDPOINTS.SALES_FLOOR.INVENTORY.adjustments, { method: "GET" }, logout);
         if (res) {
             setAdjustments(res);
 
-            // Initialize local edits with the requested values
             const initialQty: { [key: number]: number } = {};
             const initialReason: { [key: number]: string } = {};
             res.forEach(item => {
@@ -71,7 +67,6 @@ export default function ItemAdjust() {
         fetchAdjustments();
     }, []);
 
-    // Handlers for local edits
     const toggleSelection = (id: number) => {
         const newSet = new Set(selectedIds);
         if (newSet.has(id)) newSet.delete(id);
@@ -81,9 +76,9 @@ export default function ItemAdjust() {
 
     const selectAll = () => {
         if (selectedIds.size === adjustments.length) {
-            setSelectedIds(new Set()); // Deselect all
+            setSelectedIds(new Set());
         } else {
-            setSelectedIds(new Set(adjustments.map(a => a.adjustment_id))); // Select all
+            setSelectedIds(new Set(adjustments.map(a => a.adjustment_id)));
         }
     };
 
@@ -102,7 +97,6 @@ export default function ItemAdjust() {
         setEditedReason(prev => ({ ...prev, [id]: reason }));
     };
 
-    // Review submission
     const submitReviews = async (reviews: ReviewAdjustmentItem[]) => {
         if (reviews.length === 0) return;
 
@@ -117,7 +111,6 @@ export default function ItemAdjust() {
         }
     };
 
-    // Individual actions
     const processSingle = (id: number, status: AdjustmentStatus) => {
         Alert.alert("Confirm Action", `Are you sure you want to mark this as ${status}?`, [
             { text: "Cancel", style: "cancel" },
@@ -133,7 +126,6 @@ export default function ItemAdjust() {
         ]);
     };
 
-    // Bulk actions
     const processBulk = (status: AdjustmentStatus) => {
         if (selectedIds.size === 0) {
             showToast("error", "No items selected");
@@ -282,7 +274,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         padding: 15,
-        paddingBottom: 100, // Space for bulk footer
+        paddingBottom: 100,
         gap: 15,
     },
     emptyText: {
@@ -379,7 +371,7 @@ const styles = StyleSheet.create({
         borderColor: "transparent",
     },
     reasonBadgeSelected: {
-        backgroundColor: COLORS.primary + '20', // 20% opacity
+        backgroundColor: COLORS.primary + '20',
         borderColor: COLORS.primary,
     },
     reasonText: {

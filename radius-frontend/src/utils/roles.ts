@@ -1,4 +1,3 @@
-//radius-frontend/src/utils/roles.ts
 import { EmployeeRole } from "@/types/auth.types";
 
 export type Permission =

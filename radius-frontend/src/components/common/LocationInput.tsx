@@ -24,7 +24,7 @@ export const LocationInput: React.FC<LocationInputProps> = ({ value, onChangeTex
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 keyboardType="numeric"
-                maxLength={9} // exactly 9 digits
+                maxLength={9}
                 placeholder="123456789"
                 placeholderTextColor={COLORS.placeholder}
             />

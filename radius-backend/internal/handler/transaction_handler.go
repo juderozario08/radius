@@ -1,4 +1,3 @@
-// radius-backend/internal/handler/transaction_handler.go
 package handler
 
 import (

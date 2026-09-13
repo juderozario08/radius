@@ -1,4 +1,3 @@
-//radius-backend/internal/handler/transfer_handler.go
 package handler
 
 import "radius/internal/service"

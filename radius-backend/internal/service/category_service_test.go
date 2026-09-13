@@ -21,7 +21,6 @@ func setupCategoryTestRedis() *redis.Client {
 	})
 }
 
-// MockCategoryRepo is a manual mock implementing CategoryRepository for testing.
 type MockCategoryRepo struct {
 	GetAllCategoriesFunc  func(ctx context.Context) ([]models.Category, error)
 	GetDistinctBrandsFunc func(ctx context.Context) ([]string, error)
@@ -60,7 +59,6 @@ func TestCategoryService_GetAllCategories_CacheMissAndHit(t *testing.T) {
 		return expectedCategories, nil
 	}
 
-	// 1. Cache Miss (queries repo)
 	cats1, err := categoryService.GetAllCategories(context.Background())
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -72,7 +70,6 @@ func TestCategoryService_GetAllCategories_CacheMissAndHit(t *testing.T) {
 		t.Errorf("Expected repo to be called once, got %d", callCount)
 	}
 
-	// 2. Cache Hit (should skip repo and read from miniredis)
 	cats2, err := categoryService.GetAllCategories(context.Background())
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -102,7 +99,6 @@ func TestCategoryService_GetDistinctBrands_CacheMissAndHit(t *testing.T) {
 		return expectedBrands, nil
 	}
 
-	// 1. Cache Miss
 	brands1, err := categoryService.GetDistinctBrands(context.Background())
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -114,7 +110,6 @@ func TestCategoryService_GetDistinctBrands_CacheMissAndHit(t *testing.T) {
 		t.Errorf("Expected repo to be called once, got %d", callCount)
 	}
 
-	// 2. Cache Hit
 	brands2, err := categoryService.GetDistinctBrands(context.Background())
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)

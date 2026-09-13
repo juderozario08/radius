@@ -1,4 +1,3 @@
-// radius-frontend/app/(app)/(tabs)/home/dashboard/index.tsx
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
     StyleSheet,
@@ -38,13 +37,6 @@ import { StoreOperationSummary } from "@/types/admin.types";
 type TabView = "overview" | "orders" | "cycle_counts" | "activities";
 type ScopeView = "my_tasks" | "store_wide";
 
-/**
- * Dashboard Order Eligibility Rules:
- * - BOPIS: Only unpicked BOPIS orders (WORK IN PROGRESS, PENDING, PLACED).
- *   Already-picked orders (READY FOR PICKUP, AWAITING PICKUP, RELEASED) are excluded from active dashboard queue.
- * - STS: Only SHIPPED STS orders that are 1 step away from READY FOR PICKUP (SHIPPED, DELIVERING, DELIVERED).
- *   Warehouse backlog (WORK IN PROGRESS) and already-staged/ready-for-pickup orders (READY FOR PICKUP, AWAITING PICKUP, RELEASED) are excluded.
- */
 export const isDashboardEligibleOrder = (order: { order_type?: string; status?: string }): boolean => {
     const type = (order.order_type || "").toUpperCase();
     const status = (order.status || "").toUpperCase();
@@ -175,12 +167,10 @@ export default function RealTimeDashboard() {
             setLiveOrders((prev) => {
                 const exists = prev.some((o) => o.order_id === payload.order_id);
 
-                // If transitioned to RELEASED or no longer eligible: remove from active queue
                 if (!isEligible) {
                     return prev.filter((o) => o.order_id !== payload.order_id);
                 }
 
-                // If already in queue, update status and assignment in place
                 if (exists) {
                     return prev.map((o) =>
                         o.order_id === payload.order_id
@@ -194,7 +184,6 @@ export default function RealTimeDashboard() {
                     );
                 }
 
-                // E.g. STS transitioned to SHIPPED: add into active store queue
                 return [
                     {
                         order_id: payload.order_id,
@@ -246,7 +235,6 @@ export default function RealTimeDashboard() {
             const isInProgress = s === "IN PROGRESS" || s === "IN_PROGRESS";
 
             setLiveCycleCounts((prev) => {
-                // Only in progress cycle counts should be shown on the dashboard
                 if (!isInProgress) {
                     return prev.filter((c) => c.count_id !== payload.count_id);
                 }
@@ -280,7 +268,6 @@ export default function RealTimeDashboard() {
             if (isAdmin && !selectedStore) {
                 loadStoreOperations();
             }
-            // Exclude checkout/POS transactions and store stocking from dashboard activity stream
             if (
                 payload.activity_type.includes("POS") ||
                 payload.activity_type.includes("TRANSACTION") ||
@@ -295,7 +282,6 @@ export default function RealTimeDashboard() {
         },
     });
 
-    // Initial data fetch to populate dashboard on startup with 100% real operational data
     const loadInitialData = useCallback(async (storeIdOverride?: number) => {
         const activities: StoreActivityPayload[] = [];
         const effectiveStoreId = storeIdOverride !== undefined
@@ -304,7 +290,6 @@ export default function RealTimeDashboard() {
         const storeParam = effectiveStoreId ? `&store_id=${effectiveStoreId}` : "";
         const storeQueryOnly = effectiveStoreId ? `?store_id=${effectiveStoreId}` : "";
 
-        // 1. Fetch real active online orders (unpicked BOPIS and in-transit STS)
         try {
             const ordersRes = await callApi<GetAllOnlineOrdersResponse>(
                 `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=40&dashboard_only=true${storeParam}`,
@@ -361,10 +346,8 @@ export default function RealTimeDashboard() {
                 }
             }
         } catch {
-            // Keep existing orders if API call fails
         }
 
-        // 2. Fetch real timed-out / cancelled BOPIS orders
         try {
             const cancelRes = await callApi<GetAllOnlineOrdersResponse>(
                 `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=10&status=CANCELLED${storeParam}`,
@@ -388,10 +371,8 @@ export default function RealTimeDashboard() {
                 }
             }
         } catch {
-            // Ignore if cancel query fails
         }
 
-        // 3. Fetch real active cycle counts for current store (IN PROGRESS)
         try {
             const countsRes = await callApi<CycleCountSummary[]>(
                 `${ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly}${storeQueryOnly}`,
@@ -435,10 +416,8 @@ export default function RealTimeDashboard() {
                 }
             }
         } catch {
-            // Keep existing cycle counts if API call fails
         }
 
-        // 4. Fetch real incoming purchase orders that have not been received yet
         try {
             const posRes = await callApi<PurchaseOrderSummary[]>(
                 `${ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrders}${storeQueryOnly}`,
@@ -462,10 +441,8 @@ export default function RealTimeDashboard() {
                 }
             }
         } catch {
-            // Ignore if PO query fails
         }
 
-        // Sort all real operational activities by timestamp descending (newest first)
         activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         setLiveActivities(activities);
 
@@ -499,12 +476,10 @@ export default function RealTimeDashboard() {
         setIsRefreshing(false);
     };
 
-    // Auto-Assignment and Real-Time Interaction for Orders
     const handleOrderPress = async (order: OrderCreatedPayload) => {
         const currentEmpId = user?.employee_id;
         const isManagerOrAdmin = user?.role === "MANAGER" || user?.role === "ADMIN";
 
-        // 1. If assigned to someone else
         if (order.assigned_to && order.assigned_to !== currentEmpId) {
             const assignee = order.assigned_to_name || "another associate";
             if (!isManagerOrAdmin) {
@@ -520,12 +495,10 @@ export default function RealTimeDashboard() {
             }
         }
 
-        // 2. If unassigned: auto-claim for this associate
         if (!order.assigned_to) {
             const empName = user?.last_name ? `Associate ${user.last_name}` : "You";
             showToast(`⚡ Claiming Order #${order.order_id} for you...`);
 
-            // Optimistically update local state immediately
             setLiveOrders((prev) =>
                 prev.map((o) =>
                     o.order_id === order.order_id
@@ -547,7 +520,6 @@ export default function RealTimeDashboard() {
                     logout
                 );
             } catch (err: any) {
-                // If conflict error (e.g. someone else claimed right before)
                 if (err?.assigned_to && err.assigned_to !== currentEmpId) {
                     showToast(`⚠️ Order #${order.order_id} was just claimed by ${err.assigned_to_name || "another associate"}!`);
                     setLiveOrders((prev) =>
@@ -627,9 +599,7 @@ export default function RealTimeDashboard() {
         router.push("/(app)/(tabs)/home/actions" as any);
     };
 
-    // Scoped Data Collections: My Tasks vs Store-Wide
     const currentEmpId = user?.employee_id;
-    // In "My Tasks", associates see orders assigned to them PLUS unassigned orders available to be claimed/worked on!
     const myOrders = useMemo(
         () => liveOrders.filter((o) => o.assigned_to === currentEmpId || !o.assigned_to),
         [liveOrders, currentEmpId]
@@ -640,7 +610,6 @@ export default function RealTimeDashboard() {
         [viewScope, myOrders, liveOrders]
     );
 
-    // Only in-progress cycle counts should be shown on the dashboard
     const displayedCycleCounts = useMemo(() => {
         const inProgress = liveCycleCounts.filter((c) => {
             const s = (c.status || "").toUpperCase();
@@ -655,7 +624,6 @@ export default function RealTimeDashboard() {
             : inProgress;
     }, [viewScope, liveCycleCounts, currentEmpId]);
 
-    // Exclude checkout/POS transactions and store stocking from dashboard activity stream
     const displayedActivities = useMemo(() => {
         const filtered = liveActivities.filter(
             (a) =>
@@ -801,7 +769,6 @@ export default function RealTimeDashboard() {
                     </View>
                 </ScrollView>
             ) : (
-                /* Regular Single Store Operations View */
                 <ScrollView
                     style={globalStyles.container}
                     contentContainerStyle={styles.scrollContent}

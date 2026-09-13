@@ -1,4 +1,3 @@
-// radius-frontend/src/components/store/StoreOperationsCard.tsx
 import React from "react";
 import {
     StyleSheet,
@@ -36,7 +35,6 @@ export const StoreOperationsCard: React.FC<StoreOperationsCardProps> = ({
                 style,
             ]}
         >
-            {/* Top Row: Store Name, Badges & Activity Pill */}
             <View style={styles.topRow}>
                 <View style={styles.storeTitleGroup}>
                     <View style={[styles.storeIconContainer, store.has_active_operations ? styles.activeIconBg : styles.idleIconBg]}>
@@ -77,7 +75,6 @@ export const StoreOperationsCard: React.FC<StoreOperationsCardProps> = ({
                 </View>
             </View>
 
-            {/* Address Row */}
             <View style={styles.addressRow}>
                 <Ionicons name="location-outline" size={13} color={COLORS.textSecondary} />
                 <Text style={styles.addressText} numberOfLines={1}>
@@ -85,9 +82,7 @@ export const StoreOperationsCard: React.FC<StoreOperationsCardProps> = ({
                 </Text>
             </View>
 
-            {/* Operations Metrics Counter Badges */}
             <View style={styles.metricsRow}>
-                {/* Orders Metric */}
                 <View style={[styles.metricBadge, store.active_orders_count > 0 ? styles.metricOrderActive : styles.metricMuted]}>
                     <Ionicons
                         name="cart-outline"
@@ -99,7 +94,6 @@ export const StoreOperationsCard: React.FC<StoreOperationsCardProps> = ({
                     </Text>
                 </View>
 
-                {/* Cycle Counts Metric */}
                 <View style={[styles.metricBadge, store.active_counts_count > 0 ? styles.metricCountActive : styles.metricMuted]}>
                     <Ionicons
                         name="clipboard-outline"
@@ -111,7 +105,6 @@ export const StoreOperationsCard: React.FC<StoreOperationsCardProps> = ({
                     </Text>
                 </View>
 
-                {/* Receiving Dock Metric */}
                 <View style={[styles.metricBadge, store.pending_pos_count > 0 ? styles.metricPoActive : styles.metricMuted]}>
                     <Ionicons
                         name="cube-outline"
@@ -124,7 +117,6 @@ export const StoreOperationsCard: React.FC<StoreOperationsCardProps> = ({
                 </View>
             </View>
 
-            {/* Footer Action Hint */}
             <View style={styles.footerRow}>
                 <Text style={styles.viewOpsText}>View Store Operations</Text>
                 <Ionicons name="chevron-forward" size={15} color={COLORS.primary} />

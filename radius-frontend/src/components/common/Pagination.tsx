@@ -1,4 +1,3 @@
-// radius-frontend/src/components/common/Pagination.tsx
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { COLORS } from "@/constants/colors";
@@ -49,7 +48,6 @@ export default function Pagination({
     return (
         <View style={styles.container}>
 
-            {/* Left Side: Page Navigation (Only show if multiple pages exist) */}
             <View style={styles.paginationControls}>
                 {totalPages > 1 && (
                     <>
@@ -111,7 +109,6 @@ export default function Pagination({
                 )}
             </View>
 
-            {/* Right Side: Page Size Dropdown */}
             {pageSizeOptions && onPageSizeChange && pageSize && (
                 <Dropdown
                     options={dropdownOptions}

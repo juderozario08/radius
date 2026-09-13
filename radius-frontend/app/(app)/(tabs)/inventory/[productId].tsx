@@ -1,4 +1,3 @@
-//radius-frontend/app/(app)/inventory/[productId].tsx
 import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { useLocalSearchParams } from "expo-router";

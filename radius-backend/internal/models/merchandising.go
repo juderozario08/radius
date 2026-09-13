@@ -1,4 +1,3 @@
-// radius-backend/internal/models/merchandising.go
 package models
 
 import "time"
@@ -56,9 +55,9 @@ type FillReportItemDetail struct {
 
 type FillReportFilter struct {
 	Query      string `form:"query"`
-	FilterType string `form:"filter_type"` // "ALL", "TRANSACTIONS", "IS4TC", "NEGATIVE", "IN_STOCK"
-	SortBy     string `form:"sort_by"`     // "aisle", "location", "category", "name", "fill_qty", "on_hand_qty"
-	SortOrder  string `form:"sort_order"`  // "ASC", "DESC"
+	FilterType string `form:"filter_type"`
+	SortBy     string `form:"sort_by"`
+	SortOrder  string `form:"sort_order"`
 }
 
 type FillReportResponse struct {

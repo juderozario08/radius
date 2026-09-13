@@ -1,4 +1,3 @@
-//radius-frontend/app/(app)/home/_layout.tsx
 import {
     createMaterialTopTabNavigator,
     MaterialTopTabNavigationOptions,

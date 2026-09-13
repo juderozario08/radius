@@ -44,7 +44,6 @@ func (h *AuditHandler) GetProductAuditTrail(c *gin.Context) {
 		offset = 0
 	}
 
-	// Parse filters
 	var filter models.AuditFilter
 	if startStr := c.Query("start_date"); startStr != "" {
 		if t, err := time.Parse(time.RFC3339, startStr); err == nil {

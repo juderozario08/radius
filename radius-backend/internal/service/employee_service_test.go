@@ -20,7 +20,6 @@ func TestEmployeeService_GetManagerEmployees_Success(t *testing.T) {
 	managerEmail := "manager@test.com"
 	storeId := 5
 
-	// Mock GetEmployeeByEmail
 	mockRepo.EXPECT().
 		GetEmployeeByEmail(gomock.Any(), managerEmail).
 		Return(&models.Employee{
@@ -31,7 +30,6 @@ func TestEmployeeService_GetManagerEmployees_Success(t *testing.T) {
 			},
 		}, nil)
 
-	// Mock GetAllEmployees filtered by storeId
 	mockRepo.EXPECT().
 		GetAllEmployees(gomock.Any(), 10, 0, gomock.Any()).
 		Return([]models.Employee{

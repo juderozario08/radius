@@ -1,4 +1,3 @@
-//radius-frontend/src/utils/token.ts
 import * as SecureStore from "expo-secure-store";
 
 const ACCESS_TOKEN_KEY = "auth_token";

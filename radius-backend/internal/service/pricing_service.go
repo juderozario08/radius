@@ -1,4 +1,3 @@
-// radius-backend/internal/service/pricing_service.go
 package service
 
 type PricingService struct {

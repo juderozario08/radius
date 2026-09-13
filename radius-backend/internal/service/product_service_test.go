@@ -22,7 +22,6 @@ func setupProductTestRedis() *redis.Client {
 	})
 }
 
-// MockProductRepo is a manual mock implementing ProductRepository for testing.
 type MockProductRepo struct {
 	GetProductByIDFunc func(ctx context.Context, id int) (*models.Product, error)
 	SearchProductsFunc func(ctx context.Context, query string, categoryID *int, brand *string, isActive *bool, unitOfMeasure *string, limit, offset int) ([]models.Product, int, error)
@@ -68,7 +67,6 @@ func TestProductService_GetProductByID_CacheMissAndHit(t *testing.T) {
 		return expectedProduct, nil
 	}
 
-	// Cache Miss: Query DB
 	prod1, err := productService.GetProductByID(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
@@ -80,7 +78,6 @@ func TestProductService_GetProductByID_CacheMissAndHit(t *testing.T) {
 		t.Errorf("Expected repo to be called once, got %d", callCount)
 	}
 
-	// Cache Hit: Should NOT query DB, should fetch straight from Redis
 	prod2, err := productService.GetProductByID(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)

@@ -1,4 +1,3 @@
-//radius-frontend/app/(app)/(tabs)/_layout.tsx
 import { COLORS } from "@/constants/colors";
 import { globalStyles } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,7 +20,6 @@ export default function AppLayout() {
     const { isAuthenticated, user } = useAuth();
 
     if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
-    // Store tab is accessible to ADMIN and MANAGER
     const canViewStoreTab = hasPermission(user?.role, "view_admin_actions") || hasPermission(user?.role, "view_manager_actions");
 
     return (

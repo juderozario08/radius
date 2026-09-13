@@ -1,4 +1,3 @@
-// radius-backend/internal/service/store_service.go
 package service
 
 import (
@@ -47,7 +46,7 @@ func (s *StoreService) GetAllStores(ctx context.Context, pageSize string, pageNu
 	}
 
 	if pageSizeInt < utils.PAGING_SIZE_MINIMUM || pageSizeInt > utils.PAGING_SIZE_MAXIMUM {
-		pageSizeInt = utils.DEFAULT_PAGING_SIZE // This is just to set a default paging size
+		pageSizeInt = utils.DEFAULT_PAGING_SIZE
 	}
 
 	if pageNumberInt < 0 {

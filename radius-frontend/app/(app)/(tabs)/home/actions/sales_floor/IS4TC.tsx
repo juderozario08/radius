@@ -18,7 +18,7 @@ export default function IS4TCScanScreen() {
   const { logout, user } = useAuth();
   const router = useRouter();
   const scannerRef = useRef<BarcodeScannerRef>(null);
-  
+
   const [scannedItems, setScannedItems] = useState<MimsProductInventory[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [manualSku, setManualSku] = useState('');
@@ -64,7 +64,6 @@ export default function IS4TCScanScreen() {
   };
 
   const fetchProductByBarcode = async (barcode: string) => {
-    // Prevent fetching if already scanned
     if (scannedItems.some(item => item.upc === barcode || item.sku === barcode)) {
       Toast.show({ type: "info", text1: "Already Scanned", text2: "This product is already in the list." });
       return;
@@ -76,7 +75,6 @@ export default function IS4TCScanScreen() {
       const response = await callApi<ScanProductResponse>(endpoint, { method: "GET" }, logout);
 
       if (response?.product) {
-        // Add to Redis session
         const addUrl = user?.store_id
           ? `${ENDPOINTS.SALES_FLOOR.IS4TC.addToSession}?store_id=${user.store_id}`
           : ENDPOINTS.SALES_FLOOR.IS4TC.addToSession;

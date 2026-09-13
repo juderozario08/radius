@@ -1,4 +1,3 @@
-// radius-backend/internal/repository/receiving_repo.go
 package repository
 
 import (
@@ -62,7 +61,6 @@ func (r *ReceivingRepo) GetPurchaseOrders(ctx context.Context, storeID *int) ([]
 }
 
 func (r *ReceivingRepo) GetPurchaseOrderDetail(ctx context.Context, poID int) (*models.PurchaseOrderDetailResponse, error) {
-	// Get PO header
 	headerQuery := `
 		SELECT po.po_id, po.store_id, sup.name, po.status, po.ordered_at, po.expected_at, po.arrived_at,
 			EXISTS (SELECT 1 FROM purchase_order_lprs lpr WHERE lpr.po_id = po.po_id)
@@ -82,7 +80,6 @@ func (r *ReceivingRepo) GetPurchaseOrderDetail(ctx context.Context, poID int) (*
 		return nil, err
 	}
 
-	// Get PO items with product info
 	itemsQuery := `
 		SELECT poi.po_item_id, p.product_id, p.sku, p.upc, p.name, p.brand,
 			poi.qty_ordered, poi.qty_received, poi.unit_cost
@@ -114,7 +111,6 @@ func (r *ReceivingRepo) GetPurchaseOrderDetail(ctx context.Context, poID int) (*
 		detail.Items = []models.PurchaseOrderItemDetail{}
 	}
 
-	// Get LPRs
 	lprsQuery := `
 		SELECT lpr_id, lpr_barcode, is_received, received_at
 		FROM purchase_order_lprs
@@ -175,7 +171,6 @@ func (r *ReceivingRepo) ReceivePOItems(ctx context.Context, storeID int, poID in
 	defer tx.Rollback()
 
 	for _, item := range items {
-		// Update PO item qty_received
 		_, err := tx.ExecContext(ctx,
 			`UPDATE purchase_orders_items SET qty_received = qty_received + $1 WHERE po_item_id = $2 AND po_id = $3`,
 			item.QtyReceived, item.PoItemId, poID,
@@ -184,7 +179,6 @@ func (r *ReceivingRepo) ReceivePOItems(ctx context.Context, storeID int, poID in
 			return err
 		}
 
-		// Increment store inventory
 		var productID int
 		var unitCost float64
 		err = tx.QueryRowContext(ctx,
@@ -203,7 +197,6 @@ func (r *ReceivingRepo) ReceivePOItems(ctx context.Context, storeID int, poID in
 			return err
 		}
 
-		// Log to audit trail
 		auditQuery := `
 			INSERT INTO inventory_transactions
 				(product_id, to_store_id, transaction_type, quantity, unit_cost, employee_id, reference_id)
@@ -216,7 +209,6 @@ func (r *ReceivingRepo) ReceivePOItems(ctx context.Context, storeID int, poID in
 		}
 	}
 
-	// Auto-update PO status
 	err = updatePOStatusInTx(ctx, tx, poID)
 	if err != nil {
 		return err
@@ -232,7 +224,6 @@ func (r *ReceivingRepo) ReceiveLPR(ctx context.Context, storeID int, poID int, l
 	}
 	defer tx.Rollback()
 
-	// Get LPR
 	var lprID int
 	var isReceived bool
 	err = tx.QueryRowContext(ctx,
@@ -249,7 +240,6 @@ func (r *ReceivingRepo) ReceiveLPR(ctx context.Context, storeID int, poID int, l
 		return fmt.Errorf("LPR already received")
 	}
 
-	// Mark LPR as received
 	now := time.Now()
 	_, err = tx.ExecContext(ctx,
 		`UPDATE purchase_order_lprs SET is_received = true, received_by = $1, received_at = $2 WHERE lpr_id = $3`,
@@ -259,7 +249,6 @@ func (r *ReceivingRepo) ReceiveLPR(ctx context.Context, storeID int, poID int, l
 		return err
 	}
 
-	// Get all LPR items and update PO items + inventory
 	rows, err := tx.QueryContext(ctx,
 		`SELECT li.po_item_id, li.qty, poi.product_id, poi.unit_cost
 		FROM purchase_order_lpr_items li
@@ -307,7 +296,6 @@ func (r *ReceivingRepo) ReceiveLPR(ctx context.Context, storeID int, poID int, l
 			return err
 		}
 
-		// Log to audit trail
 		auditQuery := `
 			INSERT INTO inventory_transactions
 				(product_id, to_store_id, transaction_type, quantity, unit_cost, employee_id, reference_id)
@@ -320,7 +308,6 @@ func (r *ReceivingRepo) ReceiveLPR(ctx context.Context, storeID int, poID int, l
 		}
 	}
 
-	// Auto-update PO status
 	err = updatePOStatusInTx(ctx, tx, poID)
 	if err != nil {
 		return err
@@ -357,8 +344,6 @@ func updatePOStatusInTx(ctx context.Context, tx *sql.Tx, poID int) error {
 	)
 	return err
 }
-
-// ---- Stock Transfers ----
 
 func (r *ReceivingRepo) GetStockTransfers(ctx context.Context, storeID *int) ([]models.StockTransferSummary, error) {
 	query := `
@@ -488,7 +473,6 @@ func (r *ReceivingRepo) ReceiveTransferItems(ctx context.Context, storeID int, t
 	defer tx.Rollback()
 
 	for _, item := range items {
-		// Update transfer item qty_received
 		_, err := tx.ExecContext(ctx,
 			`UPDATE stock_transfer_items SET qty_received = COALESCE(qty_received, 0) + $1 WHERE transfer_item_id = $2 AND transfer_id = $3`,
 			item.QtyReceived, item.TransferItemId, transferID,
@@ -497,7 +481,6 @@ func (r *ReceivingRepo) ReceiveTransferItems(ctx context.Context, storeID int, t
 			return err
 		}
 
-		// Increment store inventory
 		var productID int
 		err = tx.QueryRowContext(ctx,
 			`SELECT product_id FROM stock_transfer_items WHERE transfer_item_id = $1`,
@@ -515,7 +498,6 @@ func (r *ReceivingRepo) ReceiveTransferItems(ctx context.Context, storeID int, t
 			return err
 		}
 
-		// Log to audit trail
 		auditQuery := `
 			INSERT INTO inventory_transactions
 				(product_id, to_store_id, transaction_type, quantity, employee_id, reference_id)
@@ -528,7 +510,6 @@ func (r *ReceivingRepo) ReceiveTransferItems(ctx context.Context, storeID int, t
 		}
 	}
 
-	// Auto-update transfer status
 	err = updateTransferStatusInTx(ctx, tx, transferID)
 	if err != nil {
 		return err
@@ -544,7 +525,6 @@ func (r *ReceivingRepo) QuickReceiveTransfer(ctx context.Context, storeID int, t
 	}
 	defer tx.Rollback()
 
-	// Get all transfer items
 	rows, err := tx.QueryContext(ctx,
 		`SELECT transfer_item_id, product_id, COALESCE(qty_sent, qty_requested) FROM stock_transfer_items WHERE transfer_id = $1`,
 		transferID,
@@ -588,7 +568,6 @@ func (r *ReceivingRepo) QuickReceiveTransfer(ctx context.Context, storeID int, t
 			return err
 		}
 
-		// Log to audit trail
 		auditQuery := `
 			INSERT INTO inventory_transactions
 				(product_id, to_store_id, transaction_type, quantity, employee_id, reference_id)
@@ -601,7 +580,6 @@ func (r *ReceivingRepo) QuickReceiveTransfer(ctx context.Context, storeID int, t
 		}
 	}
 
-	// Mark transfer as received
 	now := time.Now()
 	_, err = tx.ExecContext(ctx,
 		`UPDATE stock_transfers SET status = 'RECEIVED'::stock_transfer_status, received_at = $1 WHERE transfer_id = $2`,

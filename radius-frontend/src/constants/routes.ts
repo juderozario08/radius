@@ -1,4 +1,3 @@
-//radius-frontend/src/constants/routes.ts
 export const ENDPOINTS = {
     AUTH: {
         login: "/login",

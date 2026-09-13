@@ -1,4 +1,3 @@
-// radius-frontend/app/(app)/home/actions/back_room/CycleCountScanner.tsx
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
     View,
@@ -77,7 +76,6 @@ export default function CycleCountScanner() {
         fetchDetail();
     }, [fetchDetail]);
 
-    // Handle barcode scan (from camera or manual text input)
     const handleBarcodeLookup = async (barcodeToSearch: string) => {
         const query = barcodeToSearch.trim();
         if (!query || !detail) return;
@@ -97,7 +95,6 @@ export default function CycleCountScanner() {
             );
 
             if (updatedItem) {
-                // Update or append item in local state
                 setDetail((prev) => {
                     if (!prev) return prev;
                     const exists = prev.items.some((i) => i.product_id === updatedItem.product_id);
@@ -107,7 +104,6 @@ export default function CycleCountScanner() {
                             i.product_id === updatedItem.product_id ? updatedItem : i
                         );
                     } else {
-                        // Newly discovered product (was 0 qty / unlisted in initial list)
                         newItems = [updatedItem, ...prev.items];
                     }
                     return {
@@ -133,7 +129,6 @@ export default function CycleCountScanner() {
                 }
                 setManualBarcode("");
 
-                // Auto-hide success banner after 4 seconds
                 setTimeout(() => {
                     setSuccessBanner(null);
                 }, 4000);
@@ -151,7 +146,6 @@ export default function CycleCountScanner() {
         }
     };
 
-    // Stepper quantity adjust
     const handleStepperAdjust = async (item: CycleCountItemDetail, delta: number) => {
         const newQty = Math.max(0, item.counted_qty + delta);
         if (newQty === item.counted_qty) return;
@@ -219,7 +213,6 @@ export default function CycleCountScanner() {
                             SKU: {item.sku}  UPC: {item.upc}
                         </Text>
 
-                        {/* Dual metric row: Expected vs Scanned */}
                         <View style={styles.metricsRow}>
                             <View style={styles.metricBadge}>
                                 <Text style={styles.metricLabel}>Expected:</Text>
@@ -242,7 +235,6 @@ export default function CycleCountScanner() {
                     </View>
                 </View>
 
-                {/* Stepper */}
                 <View style={styles.stepperRow}>
                     <TouchableOpacity
                         style={styles.stepperBtn}
@@ -308,14 +300,12 @@ export default function CycleCountScanner() {
                 style={styles.container}
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
             >
-                {/* Header Context Subtitle */}
                 <View style={styles.topContextBar}>
                     <Text style={styles.topContextText}>
                         {count.category_name} • {count.counted_by_name || "Unassigned"}
                     </Text>
                 </View>
 
-                {/* Success Toast Banner (Screenshot 5 style) */}
                 {successBanner && (
                     <View style={styles.successBanner}>
                         <Ionicons name="checkmark-circle" size={18} color="#FFF" />
@@ -323,7 +313,6 @@ export default function CycleCountScanner() {
                     </View>
                 )}
 
-                {/* Tabs: Scanner | List (N) */}
                 <View style={styles.tabContainer}>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === "SCANNER" && styles.tabActive]}
@@ -354,10 +343,8 @@ export default function CycleCountScanner() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Main Content Area */}
                 {activeTab === "SCANNER" ? (
                     <View style={styles.scannerTabContent}>
-                        {/* Camera Scanner */}
                         <BarcodeScanner
                             ref={scannerRef}
                             height={220}
@@ -365,7 +352,6 @@ export default function CycleCountScanner() {
                             onBarcodeScanned={(barcode) => handleBarcodeLookup(barcode)}
                         />
 
-                        {/* Manual SKU / Barcode Entry */}
                         <View style={styles.manualEntrySection}>
                             <Text style={styles.manualEntryLabel}>Manual Barcode / SKU Entry</Text>
                             <View style={styles.manualInputRow}>
@@ -412,7 +398,6 @@ export default function CycleCountScanner() {
                     />
                 )}
 
-                {/* Bottom Bar: "Send for Approval" or "Done" */}
                 <View style={styles.bottomBar}>
                     <TouchableOpacity
                         style={globalStyles.buttonPrimary}

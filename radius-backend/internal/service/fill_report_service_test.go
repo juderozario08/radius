@@ -91,7 +91,7 @@ func TestFillReportService_GetStoreFillReport(t *testing.T) {
 					OnHandQty:      -2,
 					AvailableQty:   -2,
 					FillQty:        0,
-					IsEmptyHole:    true, // IS4TC scan
+					IsEmptyHole:    true,
 				},
 			}, nil
 	}
@@ -137,7 +137,6 @@ func TestFillReportService_IS4TCSessionAndAutoLog(t *testing.T) {
 		OnHandQty: 10,
 	}
 
-	// 1. Add product to IS4TC session
 	items, err := fillService.AddToIS4TCSession(context.Background(), 1, product1, nil)
 	if err != nil {
 		t.Fatalf("Unexpected error adding to IS4TC session: %v", err)
@@ -149,7 +148,6 @@ func TestFillReportService_IS4TCSessionAndAutoLog(t *testing.T) {
 		t.Errorf("Expected empty hole to be auto-logged to DB, got %d calls", emptyHolesLogged)
 	}
 
-	// 2. Fetch session from Redis
 	sessionItems, err := fillService.GetActiveIS4TCSession(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("Failed to get session items: %v", err)
@@ -158,7 +156,6 @@ func TestFillReportService_IS4TCSessionAndAutoLog(t *testing.T) {
 		t.Errorf("Session item mismatch: %+v", sessionItems)
 	}
 
-	// 3. Clear session
 	err = fillService.ClearIS4TCSession(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("Failed to clear session: %v", err)

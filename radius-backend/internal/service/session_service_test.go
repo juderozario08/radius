@@ -22,7 +22,6 @@ func setupSessionTestRedis() *redis.Client {
 	})
 }
 
-// MockSessionRepo is a manual mock implementing SessionRepository for testing.
 type MockSessionRepo struct {
 	GetSessionByAccessTokenHashFunc       func(ctx context.Context, accessTokenHash string) (*models.GetSessionByHashedToken, error)
 	GetSessionByRefreshTokenHashFunc      func(ctx context.Context, refreshTokenHash string) (*models.GetSessionByHashedToken, error)
@@ -110,13 +109,11 @@ func TestValidateSession_Success(t *testing.T) {
 
 	secret := []byte("testsecret")
 	db := setupSessionTestRedis()
-	
+
 	sessionService := NewSessionService(mockRepo, secret, db)
 
-	// Create a valid token
 	token, _ := utils.GenerateAccessToken(1, "test@test.com", models.RoleAdmin, secret)
 
-	// Mock repo returning a valid, active session
 	isActive := true
 	isTerminated := false
 	mockRepo.GetSessionByAccessTokenHashFunc = func(ctx context.Context, accessTokenHash string) (*models.GetSessionByHashedToken, error) {
@@ -145,12 +142,11 @@ func TestValidateSession_Expired(t *testing.T) {
 	isActive := true
 	isTerminated := false
 
-	// Mock repo returning a session that has expired in the DB
 	mockRepo.GetSessionByAccessTokenHashFunc = func(ctx context.Context, accessTokenHash string) (*models.GetSessionByHashedToken, error) {
 		return &models.GetSessionByHashedToken{
 			SessionId:    1,
 			EmployeeId:   1,
-			ExpiresAt:    time.Now().Add(-1 * time.Hour), // Expired 1 hour ago
+			ExpiresAt:    time.Now().Add(-1 * time.Hour),
 			IsActive:     &isActive,
 			IsTerminated: &isTerminated,
 		}, nil
@@ -178,7 +174,6 @@ func TestValidateSession_NotFound(t *testing.T) {
 	sessionService := NewSessionService(mockRepo, secret, db)
 	token, _ := utils.GenerateAccessToken(1, "test@test.com", models.RoleAdmin, secret)
 
-	// Mock repo simulating session not found
 	mockRepo.GetSessionByAccessTokenHashFunc = func(ctx context.Context, accessTokenHash string) (*models.GetSessionByHashedToken, error) {
 		return nil, errors.New("sql: no rows in result set")
 	}
@@ -198,7 +193,6 @@ func TestGetAllSessions_CurrentSession(t *testing.T) {
 	token, _ := utils.GenerateAccessToken(1, "admin@test.com", models.RoleAdmin, secret)
 	hashedToken := utils.HashTokenForDB(token)
 
-	// Set in redis
 	_ = db.Set(context.Background(), "session:"+hashedToken, 42, 1*time.Hour).Err()
 
 	mockRepo.GetAllSessionsFunc = func(ctx context.Context, limit, offset int) ([]models.GetAllSessions, int, error) {

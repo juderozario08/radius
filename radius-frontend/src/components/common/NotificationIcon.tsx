@@ -1,4 +1,3 @@
-//radius-frontend/src/components/common/NotificationIcon.tsx
 import { globalStyles } from "@/constants/styles";
 import { useNotifications } from "@/hooks/useNotification";
 import { TouchableOpacity, Image } from "react-native"

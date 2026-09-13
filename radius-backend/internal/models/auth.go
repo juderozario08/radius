@@ -1,4 +1,3 @@
-// radius-backend/internal/models/auth.go
 package models
 
 type EmployeeLoginRequest struct {

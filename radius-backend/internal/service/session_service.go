@@ -33,7 +33,6 @@ func (s *SessionService) GetSessionsByEmployeeId(ctx context.Context, employeeId
 }
 
 func (s *SessionService) CreateSession(ctx context.Context, employeeId int, role models.EmployeeRole, email string, ipAddress string, storeId int) (string, string, int, error) {
-	// Clean up any existing sessions for this employee ID (DB + Redis)
 	existingSessions, err := s.sessionRepo.GetSessionsByEmployeeId(ctx, employeeId)
 	if err == nil {
 		for _, existing := range existingSessions {
@@ -69,7 +68,6 @@ func (s *SessionService) CreateSession(ctx context.Context, employeeId int, role
 		return "", "", -1, err
 	}
 
-	// Cache session in Redis
 	err = s.redisClient.Set(ctx, "session:"+accessTokenHash, session.SessionId, utils.SessionInactivityTimeout).Err()
 	if err != nil {
 		log.Printf("Failed to cache session in Redis: %v", err)
@@ -80,15 +78,12 @@ func (s *SessionService) CreateSession(ctx context.Context, employeeId int, role
 
 func (s *SessionService) ValidateSession(ctx context.Context, tokenString string) error {
 	hashedToken := utils.HashTokenForDB(tokenString)
-	
-	// Check Redis first
+
 	_, err := s.redisClient.Get(ctx, "session:"+hashedToken).Result()
 	if err == nil {
-		// Found in Redis, valid and hasn't expired
 		return nil
 	}
 
-	// Fallback to DB
 	session, err := s.sessionRepo.GetSessionByAccessTokenHash(ctx, hashedToken)
 	if err != nil {
 		return errors.New("Session not found or logged out")
@@ -106,13 +101,11 @@ func (s *SessionService) ValidateSession(ctx context.Context, tokenString string
 		return errors.New("Terminated Account")
 	}
 
-	// Session is valid in DB, repopulate Redis
 	s.redisClient.Set(ctx, "session:"+hashedToken, session.SessionId, time.Until(session.ExpiresAt))
 	return nil
 }
 
 func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenString string) (string, error) {
-	// Parse and validate the refresh JWT
 	token, err := jwt.Parse(refreshTokenString, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method")
@@ -131,26 +124,22 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 		return "", errors.New("could not extract claims from refresh token")
 	}
 
-	// Ensure this is actually a refresh token, not an access token
 	tokenType, ok := claims["token_type"]
 	if !ok || tokenType != "refresh" {
 		return "", errors.New("invalid token type: expected refresh token")
 	}
 
-	// Look up the session by refresh token hash
 	refreshTokenHash := utils.HashTokenForDB(refreshTokenString)
 	session, err := s.sessionRepo.GetSessionByRefreshTokenHash(ctx, refreshTokenHash)
 	if err != nil {
 		return "", errors.New("session not found or already logged out")
 	}
 
-	// Check session expiry (tied to refresh token lifetime)
 	if time.Now().After(session.ExpiresAt) {
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
 		return "", errors.New("session expired")
 	}
 
-	// Check employee status
 	if session.IsActive != nil && !(*session.IsActive) {
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
 		return "", errors.New("inactive account")
@@ -160,27 +149,22 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 		return "", errors.New("terminated account")
 	}
 
-	// Extract claims for new access token
 	employeeId := int(claims["employee_id"].(float64))
 	email := claims["email"].(string)
 	role := models.EmployeeRole(claims["role"].(string))
 
-	// Generate new access token
 	newAccessToken, err := utils.GenerateAccessToken(employeeId, email, role, s.jwtSecret)
 	if err != nil {
 		return "", errors.New("failed to generate new access token")
 	}
 
-	// Update the access token hash in the database
 	newAccessTokenHash := utils.HashTokenForDB(newAccessToken)
 	if err := s.sessionRepo.UpdateAccessTokenHash(ctx, session.SessionId, newAccessTokenHash); err != nil {
 		return "", errors.New("failed to update session")
 	}
 
-	// Cache new session in Redis
 	s.redisClient.Set(ctx, "session:"+newAccessTokenHash, session.SessionId, utils.SessionInactivityTimeout)
 
-	// Sliding window: extend session expiry so active users are never kicked out
 	newExpiry := time.Now().Add(utils.SessionInactivityTimeout)
 	if err := s.sessionRepo.UpdateSessionExpiry(ctx, session.SessionId, newExpiry); err != nil {
 		return "", errors.New("failed to extend session")
@@ -247,5 +231,4 @@ func (s *SessionService) GetAllSessions(ctx context.Context, pageNumber int, pag
 		CurrentSessionId: currentSessionID,
 	}, nil
 }
-
 

@@ -120,7 +120,7 @@ func TestInventoryService_ReviewAdjustments_NotManager(t *testing.T) {
 			EmployeeId: employeeId,
 			EmployeeBase: models.EmployeeBase{
 				Email:   employeeEmail,
-				Role:    models.RoleSales, // Not a manager
+				Role:    models.RoleSales,
 				StoreId: storeId,
 			},
 		}, nil)

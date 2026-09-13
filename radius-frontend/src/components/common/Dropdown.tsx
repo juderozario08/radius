@@ -1,4 +1,3 @@
-// radius-frontend/src/components/common/Dropdown.tsx
 import React, { useState } from "react";
 import {
     View,
@@ -36,7 +35,6 @@ export default function Dropdown<T>({
 }: DropdownProps<T>) {
     const [isOpen, setIsOpen] = useState(false);
 
-    // Find the label for the currently selected value
     const selectedOption = options.find((opt) => opt.value === value);
     const displayLabel = selectedOption ? selectedOption.label : placeholder;
 

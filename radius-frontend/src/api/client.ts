@@ -1,4 +1,3 @@
-//radius-frontend/src/api/client.ts
 import { getToken, saveToken, getRefreshToken, deleteToken, deleteRefreshToken } from "@/utils/token";
 import { ENDPOINTS } from "@/constants/routes";
 import { RefreshTokenResponse } from "@/types/auth.types";
@@ -23,11 +22,9 @@ export class UnauthorizedError extends Error {
     }
 }
 
-// Mutex to prevent multiple simultaneous refresh calls
 let refreshPromise: Promise<string | null> | null = null;
 
 async function refreshAccessToken(): Promise<string | null> {
-    // If a refresh is already in progress, wait for it
     if (refreshPromise) {
         return refreshPromise;
     }
@@ -46,7 +43,6 @@ async function refreshAccessToken(): Promise<string | null> {
             });
 
             if (!response.ok) {
-                // Refresh token is also invalid — full logout needed
                 await deleteToken();
                 await deleteRefreshToken();
                 return null;
@@ -82,11 +78,9 @@ export async function apiFetch<T>(
         },
     });
 
-    // On 401, attempt a transparent token refresh and retry once
     if (response.status === 401) {
         const newToken = await refreshAccessToken();
         if (newToken) {
-            // Retry the original request with the new token
             const retryResponse = await fetch(`${BASE_URL}${path}`, {
                 ...options,
                 headers: {
@@ -116,7 +110,6 @@ export async function apiFetch<T>(
             return retryResponse.json() as Promise<T>;
         }
 
-        // Refresh failed — session is truly expired
         throw new UnauthorizedError("Invalid or expired session");
     }
 

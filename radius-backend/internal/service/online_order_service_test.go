@@ -19,7 +19,7 @@ func TestOnlineOrderService_GetAllOnlineOrders_Admin(t *testing.T) {
 	svc := service.NewOnlineOrderService(mockOrdersRepo, nil, nil, nil, nil, nil)
 
 	mockOrdersRepo.EXPECT().
-		GetAllOnlineOrders(gomock.Any(), 10, 0, nil, models.OrderSearchCriteria{}). // storeID should be nil for Admin
+		GetAllOnlineOrders(gomock.Any(), 10, 0, nil, models.OrderSearchCriteria{}).
 		Return([]models.OnlineOrder{
 			{OrderId: 1},
 		}, 1, nil)
@@ -55,7 +55,7 @@ func TestOnlineOrderService_GetAllOnlineOrders_Manager(t *testing.T) {
 		}, nil)
 
 	mockOrdersRepo.EXPECT().
-		GetAllOnlineOrders(gomock.Any(), 10, 0, &storeId, models.OrderSearchCriteria{}). // storeID should be passed
+		GetAllOnlineOrders(gomock.Any(), 10, 0, &storeId, models.OrderSearchCriteria{}).
 		Return([]models.OnlineOrder{}, 0, nil)
 
 	orders, total, err := svc.GetAllOnlineOrders(context.Background(), "manager@test.com", models.RoleManager, 1, 10, models.OrderSearchCriteria{})
@@ -106,7 +106,6 @@ func TestOnlineOrderService_CreateOnlineOrder_BroadcastsEvent(t *testing.T) {
 		CreateOnlineOrder(gomock.Any(), gomock.Any()).
 		Return(&expectedSavedOrder, nil)
 
-	// Verify that BroadcastToStore is called with storeID 2 and matching event payload
 	mockBroadcaster.EXPECT().
 		BroadcastToStore(storeID, gomock.Cond(func(x any) bool {
 			evt, ok := x.(models.WebSocketEvent)
@@ -148,7 +147,7 @@ func TestOnlineOrderService_CreateOnlineOrder_InvalidStatus(t *testing.T) {
 	inputOrder := &models.OnlineOrder{
 		StoreId:   2,
 		OrderType: models.OnlineOrderTypeBOPIS,
-		Status:    models.OnlineOrderStatusShipped, // Invalid for BOPIS!
+		Status:    models.OnlineOrderStatusShipped,
 	}
 
 	_, err := svc.CreateOnlineOrder(context.Background(), "sales@store2.com", models.RoleSales, inputOrder)
@@ -163,7 +162,6 @@ func TestOnlineOrderService_CreateOnlineOrder_NilBroadcasterSafe(t *testing.T) {
 
 	mockOrdersRepo := mocks.NewMockOrdersRepository(ctrl)
 
-	// No broadcaster supplied
 	svc := service.NewOnlineOrderService(mockOrdersRepo, nil, nil, nil, nil, nil)
 
 	storeID := 2
@@ -212,7 +210,6 @@ func TestOnlineOrderService_AssignOnlineOrder(t *testing.T) {
 	storeID := 2
 	empName := "Marcus Vance"
 
-	// Case 1: Successful assignment by associate
 	mockEmployeeRepo.EXPECT().
 		GetEmployeeByEmail(gomock.Any(), "sales@test.com").
 		Return(&models.Employee{
@@ -244,7 +241,6 @@ func TestOnlineOrderService_AssignOnlineOrder(t *testing.T) {
 		t.Fatalf("expected assigned_to to be %d", empID)
 	}
 
-	// Case 2: Conflict when order already assigned to another employee
 	otherEmpID := 8
 	otherEmpName := "Sarah Jenkins"
 	mockEmployeeRepo.EXPECT().
@@ -370,5 +366,4 @@ func TestOnlineOrderService_AutoCancelExpiredBOPISOrders(t *testing.T) {
 		t.Fatalf("expected 2 cancelled orders, got %d", count)
 	}
 }
-
 

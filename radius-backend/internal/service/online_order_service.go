@@ -1,4 +1,3 @@
-// radius-backend/internal/service/online_order_service.go
 package service
 
 import (
@@ -41,7 +40,6 @@ func NewOnlineOrderService(
 	return svc
 }
 
-// SetBroadcaster allows setting or replacing the real-time event broadcaster.
 func (s *OnlineOrderService) SetBroadcaster(broadcaster EventBroadcaster) {
 	s.broadcaster = broadcaster
 }
@@ -71,14 +69,9 @@ func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, email strin
 }
 
 func (s *OnlineOrderService) GetOnlineOrderByID(ctx context.Context, email string, role models.EmployeeRole, id int) (*models.OnlineOrder, []models.OnlineOrderItem, error) {
-	// Since employees can search for orders globally, they can view them globally.
 	return s.ordersRepo.GetOnlineOrderByID(ctx, id, nil)
 }
 
-// AssignOnlineOrder assigns an online order to an employee.
-// If the order is already assigned to a different employee and force is false (e.g. non-manager associate),
-// it returns the current order and false indicating conflict ("already assigned to someone else").
-// When successfully assigned, it broadcasts EventOrderStatusUpdated and EventStoreActivity over WebSocket.
 func (s *OnlineOrderService) AssignOnlineOrder(ctx context.Context, email string, role models.EmployeeRole, orderID int, employeeID *int) (*models.OnlineOrder, bool, error) {
 	var currentEmp *models.Employee
 	if email != "" && s.employeeRepo != nil {
@@ -151,14 +144,11 @@ func (s *OnlineOrderService) AssignOnlineOrder(ctx context.Context, email string
 	return order, wasAssigned, nil
 }
 
-
-// CreateOnlineOrder validates, computes totals, persists the order, and broadcasts an EventOrderCreated WebSocket frame.
 func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, email string, role models.EmployeeRole, order *models.OnlineOrder) (*models.OnlineOrder, error) {
 	if order == nil {
 		return nil, fmt.Errorf("order cannot be nil")
 	}
 
-	// 1. Resolve store ID
 	if order.StoreId <= 0 {
 		if email != "" && s.employeeRepo != nil {
 			emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
@@ -171,7 +161,6 @@ func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, email string
 		return nil, fmt.Errorf("store ID is required to create an online order")
 	}
 
-	// 2. Set defaults
 	if order.OrderType == "" {
 		order.OrderType = models.OnlineOrderTypeBOPIS
 	}
@@ -194,12 +183,10 @@ func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, email string
 		order.CustomerName = order.CustomerEmail
 	}
 
-	// 3. Validate status against order type
 	if err := order.ValidateStatus(); err != nil {
 		return nil, err
 	}
 
-	// 4. Calculate items count and totals
 	itemsCount := 0
 	for i := range order.Items {
 		if order.Items[i].Quantity <= 0 {
@@ -222,13 +209,11 @@ func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, email string
 		order.TotalAmount = order.Subtotal + order.TaxAmount + order.ShippingFee
 	}
 
-	// 5. Persist order and items in PostgreSQL
 	createdOrder, err := s.ordersRepo.CreateOnlineOrder(ctx, order)
 	if err != nil {
 		return nil, err
 	}
 
-	// 6. Broadcast real-time WebSocket event (R2, AC1)
 	if s.broadcaster != nil {
 		placedAt := createdOrder.PlacedAt
 		if placedAt.IsZero() {
@@ -260,12 +245,10 @@ func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, email string
 	return createdOrder, nil
 }
 
-// UpdateOrderItem updates the picked quantity, status, and reason for an order item.
 func (s *OnlineOrderService) UpdateOrderItem(ctx context.Context, email string, role models.EmployeeRole, orderID, itemID int, pickedQty *int, status string, reason *string) error {
 	return s.ordersRepo.UpdateOnlineOrderItem(ctx, orderID, itemID, pickedQty, status, reason)
 }
 
-// CompleteOrderPicking updates the order status to AWAITING PICKUP and broadcasts real-time events.
 func (s *OnlineOrderService) CompleteOrderPicking(ctx context.Context, email string, role models.EmployeeRole, orderID int) (*models.OnlineOrder, error) {
 	updatedOrder, err := s.ordersRepo.UpdateOnlineOrderStatus(ctx, orderID, models.OnlineOrderStatusAwaitingPickup, nil)
 	if err != nil {
@@ -313,7 +296,6 @@ func (s *OnlineOrderService) CompleteOrderPicking(ctx context.Context, email str
 	return updatedOrder, nil
 }
 
-// CancelOnlineOrder cancels an order with a specified reason and broadcasts real-time events.
 func (s *OnlineOrderService) CancelOnlineOrder(ctx context.Context, email string, role models.EmployeeRole, orderID int, reason string) (*models.OnlineOrder, error) {
 	if reason == "" {
 		return nil, fmt.Errorf("cancellation reason is required")
@@ -365,7 +347,6 @@ func (s *OnlineOrderService) CancelOnlineOrder(ctx context.Context, email string
 	return updatedOrder, nil
 }
 
-// AutoCancelExpiredBOPISOrders finds and cancels BOPIS orders waiting > 5 days.
 func (s *OnlineOrderService) AutoCancelExpiredBOPISOrders(ctx context.Context) (int, error) {
 	cancelled, err := s.ordersRepo.AutoCancelExpiredBOPISOrders(ctx, 5*24*time.Hour)
 	if err != nil {
@@ -394,7 +375,6 @@ func (s *OnlineOrderService) AutoCancelExpiredBOPISOrders(ctx context.Context) (
 	return len(cancelled), nil
 }
 
-// StartBOPISAutoCancelWorker periodically runs auto-cancellation in the background.
 func (s *OnlineOrderService) StartBOPISAutoCancelWorker(ctx context.Context, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	go func() {

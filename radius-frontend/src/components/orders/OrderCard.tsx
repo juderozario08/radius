@@ -1,4 +1,3 @@
-// radius-frontend/src/components/orders/OrderCard.tsx
 import React, { useEffect, useRef } from "react";
 import {
     StyleSheet,
@@ -35,9 +34,6 @@ export interface OrderCardProps {
     style?: StyleProp<ViewStyle>;
 }
 
-/**
- * Lightweight helper to format relative time ago strings without external dependencies.
- */
 export function formatTimeAgo(dateString?: string): string {
     if (!dateString) return "Just now";
     const date = new Date(dateString);
@@ -60,9 +56,6 @@ export function formatTimeAgo(dateString?: string): string {
     return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-/**
- * Returns distinct styling for order type badge (BOPIS vs. STS vs. SHIPPING).
- */
 export const getOrderTypeStyle = (type?: string) => {
     const normalized = (type || "").toUpperCase();
     switch (normalized) {
@@ -78,10 +71,6 @@ export const getOrderTypeStyle = (type?: string) => {
     }
 };
 
-/**
- * Reusable Order Card component displaying customer name, order type badge (BOPIS/STS),
- * items count, total amount, time ago, and real-time highlight animation when newly arrived.
- */
 export const OrderCard: React.FC<OrderCardProps> = ({
     order,
     onPress,
@@ -93,7 +82,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     const timeAgo = formatTimeAgo(dateStr);
     const itemsCount = (order as any).items_count ?? 1;
 
-    // Real-time highlight animation for newly arrived orders
     const animValue = useRef(new Animated.Value(isNew ? 1 : 0)).current;
 
     useEffect(() => {
@@ -133,7 +121,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 onPress={onPress}
                 disabled={!onPress}
             >
-                {/* Top row: Order ID, Type Badge, New Indicator, Status Badge, and Chevron */}
                 <View style={styles.headerRow}>
                     <View style={styles.orderIdGroup}>
                         <Text style={styles.orderIdText}>Order #{order.order_id}</Text>
@@ -154,7 +141,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                     </View>
                 </View>
 
-                {/* Assignment status badge row */}
                 <View style={styles.assignmentRow}>
                     {order.assigned_to_name ? (
                         <View style={styles.assigneeBadge}>
@@ -171,7 +157,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                     )}
                 </View>
 
-                {/* Middle row: Customer Name */}
                 <View style={styles.customerRow}>
                     <Ionicons name="person-outline" size={15} color={COLORS.textSecondary} />
                     <Text style={styles.customerName} numberOfLines={1}>
@@ -179,7 +164,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                     </Text>
                 </View>
 
-                {/* Bottom row: Items Count, Relative Time, and Total Amount */}
                 <View style={styles.footerRow}>
                     <View style={styles.metaGroup}>
                         <View style={styles.metaItem}>

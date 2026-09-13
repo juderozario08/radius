@@ -1,4 +1,3 @@
-// radius-frontend/app/(app)/home/actions/admin/Sessions.tsx
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { ENDPOINTS } from "@/constants/routes";

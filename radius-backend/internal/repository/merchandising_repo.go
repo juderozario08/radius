@@ -1,4 +1,3 @@
-// radius-backend/internal/repository/merchandising_repo.go
 package repository
 
 import "database/sql"

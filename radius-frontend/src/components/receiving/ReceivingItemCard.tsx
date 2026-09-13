@@ -13,11 +13,10 @@ interface ReceivingItemCardProps {
 
 export function ReceivingItemCard({ item, scannedQty, onUpdateQuantity }: ReceivingItemCardProps) {
     const isPO = 'qty_ordered' in item;
-    
+
     const qtyOrderedOrRequested = isPO ? (item as PurchaseOrderItemDetail).qty_ordered : (item as StockTransferItemDetail).qty_requested;
     const qtyAlreadyReceived = isPO ? (item as PurchaseOrderItemDetail).qty_received : ((item as StockTransferItemDetail).qty_received || 0);
-    
-    // Determine the progress including the currently scanned uncommitted qty
+
     const totalReceived = qtyAlreadyReceived + scannedQty;
     const progressPercent = Math.min(100, Math.max(0, (totalReceived / qtyOrderedOrRequested) * 100));
 
@@ -41,7 +40,7 @@ export function ReceivingItemCard({ item, scannedQty, onUpdateQuantity }: Receiv
                     <Text style={styles.quantityLabel}>Already Received: {qtyAlreadyReceived}</Text>
                     <Text style={styles.scanLabel}>New Scan Qty:</Text>
                 </View>
-                
+
                 <View style={styles.quantityControls}>
                     <TouchableOpacity style={styles.quantityButton} onPress={decrementQuantity}>
                         <Ionicons name="remove" size={20} color="white" />

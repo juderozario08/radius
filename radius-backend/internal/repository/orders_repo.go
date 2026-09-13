@@ -1,4 +1,3 @@
-// radius-backend/internal/repository/orders_repo.go
 package repository
 
 import (
@@ -25,7 +24,6 @@ func (r *OrdersRepo) GetAllOnlineOrders(ctx context.Context, limit, offset int, 
 
 	baseConditions := "TRUE"
 
-	// Helper to safely append arguments and return the $N placeholder
 	addArg := func(val any) string {
 		args = append(args, val)
 		countArgs = append(countArgs, val)
@@ -186,7 +184,7 @@ func (r *OrdersRepo) GetOnlineOrderByID(ctx context.Context, id int, storeID *in
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil, nil // Not found
+			return nil, nil, nil
 		}
 		return nil, nil, err
 	}
@@ -606,5 +604,4 @@ func (r *OrdersRepo) AutoCancelExpiredBOPISOrders(ctx context.Context, olderThan
 	}
 	return cancelled, rows.Err()
 }
-
 

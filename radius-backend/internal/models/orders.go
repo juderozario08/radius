@@ -1,4 +1,3 @@
-// radius-backend/internal/models/orders.go
 package models
 
 import (
@@ -109,7 +108,7 @@ type OnlineOrderItem struct {
 	Quantity    int     `json:"quantity"`
 	UnitPrice   float32 `json:"unit_price"`
 	PickedQty   *int    `json:"picked_qty"`
-	Status      string  `json:"status"` // ACTIVE, CANCELLED, REMOVED
+	Status      string  `json:"status"`
 	Reason      *string `json:"reason,omitempty"`
 }
 
@@ -117,7 +116,7 @@ type UpdateOnlineOrderItemRequest struct {
 	OrderID     int     `json:"order_id" binding:"required"`
 	OrderItemID int     `json:"order_item_id" binding:"required"`
 	PickedQty   *int    `json:"picked_qty"`
-	Status      string  `json:"status"` // ACTIVE, CANCELLED, REMOVED
+	Status      string  `json:"status"`
 	Reason      *string `json:"reason"`
 }
 
@@ -160,7 +159,6 @@ type OrderSearchCriteria struct {
 	StoreID           *int
 }
 
-// Print Order Types & Statuses
 type PrintOrderType string
 type PrintOrderStatus string
 

@@ -1,4 +1,3 @@
-// radius-backend/internal/websocket/hub.go
 package websocket
 
 import (
@@ -11,30 +10,24 @@ import (
 	"radius/internal/models"
 )
 
-// Hub coordinates real-time client registrations, unregistrations, and store-isolated broadcasts.
 type Hub struct {
-	// Registered clients registries protected by stateMu for race-free inspection
 	stateMu      sync.RWMutex
 	clients      map[*Client]bool
 	storeClients map[int]map[*Client]bool
 	adminClients map[*Client]bool
 
-	// Inbound event channels
 	register   chan *Client
 	unregister chan *Client
 	broadcast  chan models.WebSocketEvent
 
-	// Concurrency & safe shutdown
 	mu       sync.Mutex
 	isClosed bool
 	quit     chan struct{}
 	done     chan struct{}
 
-	// Metrics
 	clientCount atomic.Int64
 }
 
-// NewHub instantiates a new WebSocket Hub.
 func NewHub() *Hub {
 	return &Hub{
 		clients:      make(map[*Client]bool),
@@ -48,7 +41,6 @@ func NewHub() *Hub {
 	}
 }
 
-// Run executes the central multiplexing event loop.
 func (h *Hub) Run() {
 	defer close(h.done)
 
@@ -86,24 +78,20 @@ func (h *Hub) Run() {
 				continue
 			}
 
-			// Assemble target client set under read lock
 			h.stateMu.RLock()
 			targets := make([]*Client, 0, len(h.clients))
 			targetSet := make(map[*Client]struct{})
 
 			if event.StoreId > 0 {
-				// Store-specific event: send to matching store clients
 				if storeMap, ok := h.storeClients[event.StoreId]; ok {
 					for c := range storeMap {
 						targetSet[c] = struct{}{}
 					}
 				}
-				// Also send to all connected admins
 				for c := range h.adminClients {
 					targetSet[c] = struct{}{}
 				}
 			} else {
-				// Global event (StoreId == 0): send to all connected clients
 				for c := range h.clients {
 					targetSet[c] = struct{}{}
 				}
@@ -114,13 +102,11 @@ func (h *Hub) Run() {
 			}
 			h.stateMu.RUnlock()
 
-			// Fan out with non-blocking send and slow client detection
 			var slowClients []*Client
 			for _, c := range targets {
 				select {
 				case c.Send <- data:
 				default:
-					// Send buffer overflow: slow client detected
 					log.Printf("[WS HUB] Slow client evicted: employee=%d, store=%d", c.EmployeeId, c.StoreId)
 					slowClients = append(slowClients, c)
 				}
@@ -149,8 +135,6 @@ func (h *Hub) Run() {
 	}
 }
 
-// removeClient removes a client from all internal registries and closes its send channel.
-// Must be called with stateMu.Lock held.
 func (h *Hub) removeClient(c *Client) {
 	if _, ok := h.clients[c]; ok {
 		delete(h.clients, c)
@@ -166,7 +150,6 @@ func (h *Hub) removeClient(c *Client) {
 	}
 }
 
-// Register queues a client for registration with the hub.
 func (h *Hub) Register(c *Client) {
 	h.mu.Lock()
 	closed := h.isClosed
@@ -176,12 +159,10 @@ func (h *Hub) Register(c *Client) {
 	}
 }
 
-// RegisterClient is an alias for Register.
 func (h *Hub) RegisterClient(c *Client) {
 	h.Register(c)
 }
 
-// Unregister queues a client for unregistration and resource cleanup.
 func (h *Hub) Unregister(c *Client) {
 	h.mu.Lock()
 	closed := h.isClosed
@@ -191,12 +172,10 @@ func (h *Hub) Unregister(c *Client) {
 	}
 }
 
-// UnregisterClient is an alias for Unregister.
 func (h *Hub) UnregisterClient(c *Client) {
 	h.Unregister(c)
 }
 
-// Broadcast queues an event to be broadcast to all connected clients or admins.
 func (h *Hub) Broadcast(event models.WebSocketEvent) {
 	h.mu.Lock()
 	closed := h.isClosed
@@ -214,20 +193,17 @@ func (h *Hub) Broadcast(event models.WebSocketEvent) {
 	}
 }
 
-// BroadcastToStore queues an event scoped to a specific store (and supervising admins).
 func (h *Hub) BroadcastToStore(storeID int, event models.WebSocketEvent) {
 	event.StoreId = storeID
 	h.Broadcast(event)
 }
 
-// BroadcastEvent is a pointer convenience method for Broadcast.
 func (h *Hub) BroadcastEvent(event *models.WebSocketEvent) {
 	if event != nil {
 		h.Broadcast(*event)
 	}
 }
 
-// Stop initiates a graceful shutdown of the hub and waits for completion.
 func (h *Hub) Stop() {
 	h.mu.Lock()
 	if h.isClosed {
@@ -240,24 +216,20 @@ func (h *Hub) Stop() {
 	<-h.done
 }
 
-// ClientCount returns the total number of connected clients.
 func (h *Hub) ClientCount() int {
 	return int(h.clientCount.Load())
 }
 
-// TotalConnectedClients is an alias for ClientCount.
 func (h *Hub) TotalConnectedClients() int {
 	return h.ClientCount()
 }
 
-// StoreClientCount returns the number of clients currently registered for a specific store.
 func (h *Hub) StoreClientCount(storeID int) int {
 	h.stateMu.RLock()
 	defer h.stateMu.RUnlock()
 	return len(h.storeClients[storeID])
 }
 
-// AdminClientCount returns the number of active admin clients.
 func (h *Hub) AdminClientCount() int {
 	h.stateMu.RLock()
 	defer h.stateMu.RUnlock()

@@ -1,4 +1,3 @@
-// radius-frontend/app/(app)/store/index.tsx
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { ENDPOINTS } from "@/constants/routes";
@@ -344,7 +343,6 @@ export default function Stores() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Pagination State
     const [pageNumber, setPageNumber] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [totalLength, setTotalLength] = useState(0);
@@ -377,7 +375,7 @@ export default function Stores() {
 
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);
-        setPageNumber(1); // Reset to page 1 whenever page size changes
+        setPageNumber(1);
     };
 
     const handleOpenCreateForm = () => {
@@ -412,7 +410,6 @@ export default function Stores() {
                 <StatusBadge isActive={item.is_active} />
             </View>
             <View style={styles.detailsContainer}>
-                {/* Store ID Added here */}
                 <DetailRow layout="inline" label="Store ID: " value={item.store_id} />
                 <DetailRow layout="inline" label="City: " value={`${item.city}, ${item.province}`} />
                 <DetailRow layout="inline" label="Phone: " value={item.phone} />
@@ -513,7 +510,6 @@ const styles = StyleSheet.create({
     detailsContainer: {
         gap: 6
     },
-    // Form specific styles
     formHeader: {
         padding: 20,
         borderBottomWidth: 1,

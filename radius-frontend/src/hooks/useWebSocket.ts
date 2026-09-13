@@ -1,4 +1,3 @@
-// radius-frontend/src/hooks/useWebSocket.ts
 import { useEffect, useRef, useState, useCallback } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import { useAuth } from "./useAuth";
@@ -18,10 +17,6 @@ import {
     StoreActivityEvent,
 } from "@/types/websocket.types";
 
-/**
- * Derive WebSocket endpoint URL from base HTTP API URL.
- * Converts http:// -> ws:// and https:// -> wss://, appending /api/v1/ws with token and store_id.
- */
 export function getWebSocketUrl(baseUrl: string, token: string, storeId: number): string {
     const cleanBase = (baseUrl || "http://localhost:8080").trim().replace(/\/+$/, "");
     const wsProtocol = cleanBase.startsWith("https://")
@@ -31,9 +26,6 @@ export function getWebSocketUrl(baseUrl: string, token: string, storeId: number)
     return `${wsProtocol}/api/v1/ws?token=${encodeURIComponent(token)}&store_id=${encodeURIComponent(storeId.toString())}`;
 }
 
-/**
- * Exponential backoff schedule: 1s, 2s, 4s, 8s, max 15s.
- */
 export function calculateBackoffDelay(attempt: number): number {
     const delay = 1000 * Math.pow(2, attempt);
     return Math.min(delay, 15000);
@@ -242,7 +234,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
 
                     const parsed: TypedWSEvent = JSON.parse(rawData);
 
-                    // Automatic Heartbeat Handling
                     if (parsed.type === "ping") {
                         ws.send(
                             JSON.stringify({

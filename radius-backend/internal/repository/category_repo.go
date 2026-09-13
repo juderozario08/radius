@@ -1,4 +1,3 @@
-// radius-backend/internal/repository/category_repo.go
 package repository
 
 import (

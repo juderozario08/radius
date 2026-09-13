@@ -1,4 +1,3 @@
-// radius-backend/internal/models/inventory.go
 package models
 
 import "time"
@@ -263,9 +262,6 @@ type CreateScheduleRequest struct {
 	ScheduledDate string `json:"scheduled_date" binding:"required"`
 }
 
-// ---- Receiving Models ----
-
-// PO list item (for the PO tab list)
 type PurchaseOrderSummary struct {
 	PoId         int        `json:"po_id"`
 	StoreId      int        `json:"store_id"`
@@ -279,7 +275,6 @@ type PurchaseOrderSummary struct {
 	HasLprs      bool       `json:"has_lprs"`
 }
 
-// PO item detail (for Scanner/List tabs)
 type PurchaseOrderItemDetail struct {
 	PoItemId    int     `json:"po_item_id"`
 	ProductId   int     `json:"product_id"`
@@ -292,7 +287,6 @@ type PurchaseOrderItemDetail struct {
 	UnitCost    float64 `json:"unit_cost"`
 }
 
-// LPR detail
 type PurchaseOrderLPR struct {
 	LprId      int        `json:"lpr_id"`
 	LprBarcode string     `json:"lpr_barcode"`
@@ -300,7 +294,6 @@ type PurchaseOrderLPR struct {
 	ReceivedAt *time.Time `json:"received_at"`
 }
 
-// Full PO detail response
 type PurchaseOrderDetailResponse struct {
 	PoId         int                       `json:"po_id"`
 	StoreId      int                       `json:"store_id"`
@@ -314,7 +307,6 @@ type PurchaseOrderDetailResponse struct {
 	Lprs         []PurchaseOrderLPR        `json:"lprs"`
 }
 
-// Receive request — batch of items
 type ReceivePORequest struct {
 	PoId  int                  `json:"po_id" binding:"required"`
 	Items []ReceivePOItemEntry `json:"items" binding:"required,min=1"`
@@ -325,13 +317,11 @@ type ReceivePOItemEntry struct {
 	QtyReceived int `json:"qty_received" binding:"required,min=1"`
 }
 
-// LPR receive request
 type ReceiveLPRRequest struct {
 	PoId       int    `json:"po_id" binding:"required"`
 	LprBarcode string `json:"lpr_barcode" binding:"required"`
 }
 
-// Transfer list item
 type StockTransferSummary struct {
 	TransferId          int       `json:"transfer_id"`
 	FromStoreId         int       `json:"from_store_id"`
@@ -344,7 +334,6 @@ type StockTransferSummary struct {
 	CreatedAt           time.Time `json:"created_at"`
 }
 
-// Transfer detail response
 type StockTransferDetailResponse struct {
 	TransferId          int                       `json:"transfer_id"`
 	FromStoreName       string                    `json:"from_store_name"`
@@ -367,7 +356,6 @@ type StockTransferItemDetail struct {
 	QtyReceived    *int   `json:"qty_received"`
 }
 
-// Receive transfer request — batch
 type ReceiveTransferRequest struct {
 	TransferId int                        `json:"transfer_id" binding:"required"`
 	Items      []ReceiveTransferItemEntry `json:"items" binding:"required,min=1"`
@@ -378,18 +366,15 @@ type ReceiveTransferItemEntry struct {
 	QtyReceived    int `json:"qty_received" binding:"required,min=1"`
 }
 
-// Quick receive (non-manual-check transfers)
 type QuickReceiveTransferRequest struct {
 	TransferId int `json:"transfer_id" binding:"required"`
 }
 
-// Check product in PO response
 type CheckProductInPOResponse struct {
 	Found bool                     `json:"found"`
 	Item  *PurchaseOrderItemDetail `json:"item"`
 }
 
-// Check product in transfer response
 type CheckProductInTransferResponse struct {
 	Found bool                     `json:"found"`
 	Item  *StockTransferItemDetail `json:"item"`
@@ -456,8 +441,6 @@ type ReviewAdjustmentRequest struct {
 	Reviews []ReviewAdjustmentItem `json:"reviews" binding:"required,min=1"`
 }
 
-// ---- Audit Trail Models ----
-
 type InventoryTransaction struct {
 	TransactionId   int        `json:"transaction_id"`
 	ProductId       int        `json:"product_id"`
@@ -497,6 +480,6 @@ type AuditFilter struct {
 	TransactionType *string    `form:"transaction_type"`
 	EmployeeId      *int       `form:"employee_id"`
 	StoreId         *int       `form:"store_id"`
-	SortOrder       string     `form:"sort_order"` // "DESC" or "ASC"
+	SortOrder       string     `form:"sort_order"`
 }
 

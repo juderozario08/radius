@@ -42,7 +42,6 @@ func (r *FillReportRepository) GetOrCreateActiveReport(ctx context.Context, stor
 		return nil, fmt.Errorf("failed to query active fill report: %w", err)
 	}
 
-	// Create a new OPEN fill report for this store
 	insertQuery := `
 		INSERT INTO fill_reports (store_id, report_date, generated_by, status)
 		VALUES ($1, CURRENT_DATE, $2, 'OPEN')
@@ -121,7 +120,6 @@ func (r *FillReportRepository) GetActiveFillReportForStore(ctx context.Context, 
 		baseQuery += " AND " + cond
 	}
 
-	// Sorting
 	sortOrder := "ASC"
 	if strings.ToUpper(strings.TrimSpace(filter.SortOrder)) == "DESC" {
 		sortOrder = "DESC"
@@ -150,7 +148,6 @@ func (r *FillReportRepository) GetActiveFillReportForStore(ctx context.Context, 
 	case "on_hand_qty":
 		orderBy = fmt.Sprintf("ORDER BY i.on_hand_qty %s, p.name ASC", sortOrder)
 	default:
-		// Default optimization: Aisle first (NULLS LAST), then newly created items
 		orderBy = "ORDER BY i.aisle ASC NULLS LAST, fri.created_at DESC, p.name ASC"
 	}
 

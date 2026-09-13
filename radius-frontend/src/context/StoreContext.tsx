@@ -1,4 +1,3 @@
-//radius-frontend/src/context/StoreContext.tsx
 import { apiFetch } from "@/api/client";
 import { ENDPOINTS } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";

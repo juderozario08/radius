@@ -1,4 +1,3 @@
-// radius-backend/internal/handler/online_order_handler.go
 package handler
 
 import (
@@ -103,7 +102,6 @@ func (h *OnlineOrderHandler) GetOnlineOrderByID(ctx *gin.Context) {
 	})
 }
 
-// CreateOnlineOrder handles POST /api/sales_floor/orders/online
 func (h *OnlineOrderHandler) CreateOnlineOrder(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))
@@ -131,7 +129,6 @@ func (h *OnlineOrderHandler) CreateOnlineOrder(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, createdOrder)
 }
 
-// AssignOnlineOrder handles PUT /api/sales_floor/orders/online/assign
 func (h *OnlineOrderHandler) AssignOnlineOrder(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))
@@ -172,7 +169,6 @@ func (h *OnlineOrderHandler) AssignOnlineOrder(ctx *gin.Context) {
 	})
 }
 
-// UpdateOnlineOrderItem handles PUT /api/sales_floor/orders/online/items
 func (h *OnlineOrderHandler) UpdateOnlineOrderItem(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))
@@ -196,7 +192,6 @@ func (h *OnlineOrderHandler) UpdateOnlineOrderItem(ctx *gin.Context) {
 	})
 }
 
-// CompleteOrderPicking handles POST /api/sales_floor/orders/online/complete_pick
 func (h *OnlineOrderHandler) CompleteOrderPicking(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))
@@ -221,7 +216,6 @@ func (h *OnlineOrderHandler) CompleteOrderPicking(ctx *gin.Context) {
 	})
 }
 
-// CancelOnlineOrder handles POST /api/sales_floor/orders/online/cancel
 func (h *OnlineOrderHandler) CancelOnlineOrder(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))
@@ -245,6 +239,4 @@ func (h *OnlineOrderHandler) CancelOnlineOrder(ctx *gin.Context) {
 		"online_order": order,
 	})
 }
-
-
 

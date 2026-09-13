@@ -31,8 +31,7 @@ export interface OnlineOrder {
     total_amount: number;
     placed_at: string;
     fulfilled_at: string | null;
-    
-    // Additional fields expected by the UI
+
     shipping_address: string;
     carrier: string;
     tracking_number: string;

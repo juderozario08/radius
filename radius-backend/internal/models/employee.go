@@ -1,4 +1,3 @@
-// radius-backend/internal/models/employee.go
 package models
 
 type EmployeeRole string

@@ -1,4 +1,3 @@
-// radius-frontend/app/(app)/product-search.tsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
     View,
@@ -29,7 +28,6 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 
 const PAGE_SIZE = 25;
 
-// --- Filter Panel Component ---
 function FilterPanel({
     visible,
     onClose,
@@ -71,7 +69,6 @@ function FilterPanel({
         <Modal visible={visible} animationType="slide" transparent>
             <View style={filterStyles.overlay}>
                 <View style={filterStyles.container}>
-                    {/* Header */}
                     <View style={filterStyles.header}>
                         <Text style={filterStyles.title}>Filters</Text>
                         <TouchableOpacity onPress={onClose}>
@@ -80,7 +77,6 @@ function FilterPanel({
                     </View>
 
                     <ScrollView style={filterStyles.body} showsVerticalScrollIndicator={false}>
-                        {/* Category Filter */}
                         <Text style={filterStyles.label}>Category</Text>
                         <TouchableOpacity
                             style={filterStyles.pickerButton}
@@ -126,7 +122,6 @@ function FilterPanel({
                             </View>
                         )}
 
-                        {/* Brand Filter */}
                         <Text style={[filterStyles.label, { marginTop: 20 }]}>Brand</Text>
                         <TouchableOpacity
                             style={filterStyles.pickerButton}
@@ -181,7 +176,6 @@ function FilterPanel({
                             </View>
                         )}
 
-                        {/* Status Filter */}
                         <Text style={[filterStyles.label, { marginTop: 20 }]}>Status</Text>
                         <View style={filterStyles.chipRow}>
                             <TouchableOpacity
@@ -204,7 +198,6 @@ function FilterPanel({
                             </TouchableOpacity>
                         </View>
 
-                        {/* Unit of Measure Filter */}
                         <Text style={[filterStyles.label, { marginTop: 20 }]}>Unit of Measure</Text>
                         <View style={filterStyles.chipRow}>
                             {[undefined, "EACH", "CASE", "PACK"].map((uom) => (
@@ -221,7 +214,6 @@ function FilterPanel({
                         </View>
                     </ScrollView>
 
-                    {/* Footer */}
                     <View style={filterStyles.footer}>
                         <TouchableOpacity
                             style={filterStyles.clearButton}
@@ -247,7 +239,6 @@ function FilterPanel({
     );
 }
 
-// --- Product Card Component ---
 function ProductCard({ product, onPress }: { product: Product; onPress: () => void }) {
     return (
         <TouchableOpacity style={[globalStyles.card, { marginBottom: 10, borderWidth: 1, borderColor: COLORS.border, shadowOpacity: 0.05, elevation: 1 }]} onPress={onPress} activeOpacity={0.7}>
@@ -282,7 +273,6 @@ function ProductCard({ product, onPress }: { product: Product; onPress: () => vo
     );
 }
 
-// --- Main Search Screen ---
 export default function ProductSearchScreen() {
     const { logout } = useAuth();
     const [searchText, setSearchText] = useState("");
@@ -293,7 +283,6 @@ export default function ProductSearchScreen() {
     const [offset, setOffset] = useState(0);
     const [hasSearched, setHasSearched] = useState(false);
 
-    // Filter state
     const [filters, setFilters] = useState<SearchFilters>({});
     const [showFilters, setShowFilters] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -302,10 +291,8 @@ export default function ProductSearchScreen() {
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const searchInputRef = useRef<TextInput>(null);
 
-    // Load filter options on mount
     useEffect(() => {
         loadFilterOptions();
-        // Auto-focus the search input
         setTimeout(() => searchInputRef.current?.focus(), 300);
     }, []);
 
@@ -352,7 +339,6 @@ export default function ProductSearchScreen() {
         setIsLoadingMore(false);
     }, [logout]);
 
-    // Debounced search on text change
     useEffect(() => {
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
         debounceTimer.current = setTimeout(() => {
@@ -371,7 +357,6 @@ export default function ProductSearchScreen() {
 
     const handleApplyFilters = (newFilters: SearchFilters) => {
         setFilters(newFilters);
-        // Search will be triggered by useEffect on filters change
     };
 
     const activeFilterCount = [
@@ -419,7 +404,6 @@ export default function ProductSearchScreen() {
                 headerCenter={<Text style={globalStyles.headerTitle}>Search Products</Text>}
             />
 
-            {/* Search Bar */}
             <View style={styles.searchBarContainer}>
                 <View style={styles.searchInputWrapper}>
                     <Ionicons name="search" size={20} color={COLORS.textSecondary} style={styles.searchIcon} />
@@ -456,7 +440,6 @@ export default function ProductSearchScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Results count */}
             {hasSearched && !isLoading && (
                 <View style={styles.resultsHeader}>
                     <Text style={styles.resultsCount}>
@@ -470,7 +453,6 @@ export default function ProductSearchScreen() {
                 </View>
             )}
 
-            {/* Results */}
             {isLoading ? (
                 <View style={globalStyles.centerElement}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
@@ -491,7 +473,6 @@ export default function ProductSearchScreen() {
                 />
             )}
 
-            {/* Filter Panel */}
             <FilterPanel
                 visible={showFilters}
                 onClose={() => setShowFilters(false)}
@@ -504,7 +485,6 @@ export default function ProductSearchScreen() {
     );
 }
 
-// --- Main Styles ---
 const styles = StyleSheet.create({
     searchBarContainer: {
         flexDirection: "row",
@@ -674,7 +654,6 @@ const styles = StyleSheet.create({
     },
 });
 
-// --- Filter Styles ---
 const filterStyles = StyleSheet.create({
     overlay: {
         flex: 1,

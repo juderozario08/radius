@@ -1,4 +1,3 @@
-//radius-frontend/app/(app)/home/actions/index.tsx
 import Gate from "@/components/common/Gate";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import LogoutComponent from "@/components/common/Logout";
@@ -68,22 +67,18 @@ export default function Actions() {
             <HeaderComponent headerRight={[<NotificationIconComponent />, <LogoutComponent />]} />
             <ScrollView style={{ backgroundColor: COLORS.background }}>
                 <View style={[globalStyles.container, { paddingHorizontal: 10, gap: 50 }]}>
-                    {/* Only employees with the 'view_admin_actions' permission will see this */}
                     <Gate permission="view_admin_actions">
                         <Subsection title="Admin Actions" mapping={adminActionsMapping} />
                     </Gate>
 
-                    {/* Only employees with the 'view_back_room' permission will see this */}
                     <Gate permission="view_back_room">
                         <Subsection title="Back Room" mapping={backRoomMapping} />
                     </Gate>
 
-                    {/* Only employees with the 'view_sales_floor' permission will see this */}
                     <Gate permission="view_sales_floor">
                         <Subsection title="Sales Floor" mapping={salesFloorMapping} />
                     </Gate>
 
-                    {/* Only employees with the 'view_service_actions' permission will see this */}
                     <Gate permission="view_service_actions">
                         <Subsection title="Service Actions" mapping={serviceActionsMapping} />
                     </Gate>

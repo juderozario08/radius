@@ -1,4 +1,3 @@
-//radius-backend/internal/utils/bcrypt.go
 package utils
 
 import "golang.org/x/crypto/bcrypt"

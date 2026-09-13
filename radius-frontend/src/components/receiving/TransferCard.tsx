@@ -21,7 +21,7 @@ export const TransferCard: React.FC<TransferCardProps> = ({ transfer, onPress, o
         <TouchableOpacity 
             style={[globalStyles.card, { borderLeftColor: transfer.manual_check_required ? '#F57C00' : '#388E3C' }]} 
             onPress={() => transfer.manual_check_required ? onPress(transfer.transfer_id) : undefined}
-            disabled={!transfer.manual_check_required && !onPress} // If auto and no special press, disable entire card tap
+            disabled={!transfer.manual_check_required && !onPress}
         >
             <View style={globalStyles.cardHeader}>
                 <View>

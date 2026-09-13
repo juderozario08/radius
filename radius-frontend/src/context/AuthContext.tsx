@@ -1,4 +1,3 @@
-//radius-frontend/src/context/AuthContext.tsx
 import { apiFetch } from "@/api/client";
 import { deleteToken, getToken, saveToken, saveRefreshToken, deleteRefreshToken } from "@/utils/token";
 import { createContext, ReactNode, useEffect, useState, useMemo } from "react";
@@ -33,9 +32,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setIsLoading(false);
                     return;
                 }
-                // apiFetch will auto-refresh the access token if it's expired
-                // (via the interceptor in client.ts), so this call transparently
-                // handles both valid and expired-but-refreshable access tokens.
                 const res = await apiFetch<VerifyTokenResponse>(ENDPOINTS.AUTH.verifyToken, {
                     method: "POST",
                 });
@@ -45,7 +41,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setUser(JSON.parse(userInfoStr));
                 }
 
-                // Re-read token from SecureStore in case it was refreshed
                 const currentToken = await getToken();
                 setToken(currentToken);
                 setIsLoading(false);
@@ -89,8 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 method: "POST",
             });
         } catch {
-            // Best-effort: if the backend call fails (e.g. token already expired),
-            // we still clear local state to let the user re-authenticate.
         }
         await deleteToken();
         await deleteRefreshToken();

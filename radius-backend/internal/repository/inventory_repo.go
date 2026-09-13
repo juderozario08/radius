@@ -1,4 +1,3 @@
-// radius-backend/internal/repository/inventory_repo.go
 package repository
 
 import (
@@ -151,7 +150,6 @@ func (r *InventoryRepo) UpdateInventoryQuantity(ctx context.Context, storeID int
 func (r *InventoryRepo) GetProductScreenDetails(ctx context.Context, storeID int, productID int) (*models.ProductScreenDetails, error) {
 	var details models.ProductScreenDetails
 
-	// 1. Get Product
 	productQuery := `SELECT product_id, sku, upc, name, description, category_id, brand, unit_of_measure, units_per_case, weight, is_active, retail_price, constrained_end_after, created_at FROM products WHERE product_id = $1`
 	err := r.db.QueryRowContext(ctx, productQuery, productID).Scan(
 		&details.Product.ProductId, &details.Product.Sku, &details.Product.Upc, &details.Product.Name,
@@ -162,12 +160,11 @@ func (r *InventoryRepo) GetProductScreenDetails(ctx context.Context, storeID int
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // Product not found
+			return nil, nil
 		}
 		return nil, err
 	}
 
-	// 2. Get Inventory
 	inventoryQuery := `
 		SELECT inventory_id, store_id, product_id, on_hand_qty, reserved_qty, reorder_qty, aisle, 
 		       NULL AS mims_location, last_counted_at, updated_at, available_qty, open_box_qty, new_qty, 
@@ -188,7 +185,6 @@ func (r *InventoryRepo) GetProductScreenDetails(ctx context.Context, storeID int
 		return nil, err
 	}
 
-	// 3. Get Locations
 	if details.Inventory.InventoryId != 0 {
 		locationsQuery := `SELECT mims_location_id, store_id, inventory_id, quantity, location_type FROM mims_location_items WHERE inventory_id = $1 AND store_id = $2`
 		rows, err := r.db.QueryContext(ctx, locationsQuery, details.Inventory.InventoryId, storeID)
@@ -221,13 +217,11 @@ func (r *InventoryRepo) SyncLocations(ctx context.Context, storeID int, inventor
 	}
 	defer tx.Rollback()
 
-	// 1. Delete all existing locations for this inventory
 	_, err = tx.ExecContext(ctx, "DELETE FROM mims_location_items WHERE store_id = $1 AND inventory_id = $2", storeID, inventoryID)
 	if err != nil {
 		return err
 	}
 
-	// 2. Insert new locations (only if quantity > 0)
 	insertQuery := `
 		INSERT INTO mims_location_items (mims_location_id, store_id, inventory_id, quantity, location_type)
 		VALUES ($1, $2, $3, $4, $5)
@@ -339,14 +333,13 @@ func (r *InventoryRepo) ReviewAdjustments(ctx context.Context, storeID int, revi
 			}
 		}
 
-		// Log to audit trail
 		txnType := "ADJUSTMENT"
 		if rev.Status == models.AdjustmentStatusWriteOff {
 			txnType = "WRITE_OFF"
 		}
 		qtyDelta := finalQty - previousQty
 		if rev.Status == models.AdjustmentStatusRejected {
-			qtyDelta = 0 // Rejected means no actual quantity change
+			qtyDelta = 0
 		}
 		refId := fmt.Sprintf("ADJUSTMENT:%d", rev.AdjustmentId)
 		_, err = tx.ExecContext(ctx, auditQuery, productId, storeID, txnType, qtyDelta, reason, reviewerID, refId)
@@ -354,7 +347,6 @@ func (r *InventoryRepo) ReviewAdjustments(ctx context.Context, storeID int, revi
 			return err
 		}
 
-		// Delete the resolved adjustment
 		_, err = tx.ExecContext(ctx, deleteAdjQuery, rev.AdjustmentId)
 		if err != nil {
 			return err

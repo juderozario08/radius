@@ -1,4 +1,3 @@
-// radius-backend/internal/websocket/websocket_test.go
 package websocket_test
 
 import (
@@ -13,12 +12,10 @@ import (
 	"radius/internal/websocket"
 )
 
-// Helper to create an in-memory test client with specific buffer size
 func newTestClient(hub *websocket.Hub, storeID, employeeID int, role models.EmployeeRole, bufSize int) *websocket.Client {
 	return websocket.NewTestClient(hub, storeID, employeeID, role, bufSize)
 }
 
-// Test 1: Concurrency - Concurrent Registration, Unregistration, and Broadcasting
 func TestHub_ConcurrentRegisterUnregister(t *testing.T) {
 	hub := websocket.NewHub()
 	go hub.Run()
@@ -29,13 +26,12 @@ func TestHub_ConcurrentRegisterUnregister(t *testing.T) {
 	var wg sync.WaitGroup
 	var registeredClients sync.Map
 
-	// Concurrently register clients
 	for i := 0; i < numGoroutines; i++ {
 		wg.Add(1)
 		go func(gID int) {
 			defer wg.Done()
 			for j := 0; j < clientsPerGoroutine; j++ {
-				storeID := (gID % 5) + 2 // Stores 2, 3, 4, 5, 6
+				storeID := (gID % 5) + 2
 				empID := gID*100 + j
 				client := newTestClient(hub, storeID, empID, models.RoleSales, 64)
 				hub.Register(client)
@@ -44,7 +40,6 @@ func TestHub_ConcurrentRegisterUnregister(t *testing.T) {
 		}(i)
 	}
 
-	// Concurrently broadcast messages during registration
 	stopBroadcast := make(chan struct{})
 	go func() {
 		counter := 0
@@ -67,7 +62,6 @@ func TestHub_ConcurrentRegisterUnregister(t *testing.T) {
 	wg.Wait()
 	close(stopBroadcast)
 
-	// Allow hub event loop to process registrations
 	expectedTotal := numGoroutines * clientsPerGoroutine
 	deadline := time.Now().Add(2 * time.Second)
 	for hub.ClientCount() < expectedTotal && time.Now().Before(deadline) {
@@ -78,7 +72,6 @@ func TestHub_ConcurrentRegisterUnregister(t *testing.T) {
 		t.Fatalf("expected %d registered clients, got %d", expectedTotal, count)
 	}
 
-	// Concurrently unregister half the clients
 	var unregWg sync.WaitGroup
 	var unregCount int64
 
@@ -106,29 +99,22 @@ func TestHub_ConcurrentRegisterUnregister(t *testing.T) {
 	}
 }
 
-// Test 2: Store Isolation
-// Store 2 client receives Store 2 events, Store 3 client receives nothing, Admin receives all events.
 func TestHub_StoreIsolation(t *testing.T) {
 	hub := websocket.NewHub()
 	go hub.Run()
 	defer hub.Stop()
 
-	// Client 1: Store 2 (Sales)
 	clientStore2 := newTestClient(hub, 2, 101, models.RoleSales, 10)
 	hub.Register(clientStore2)
 
-	// Client 2: Store 3 (Sales)
 	clientStore3 := newTestClient(hub, 3, 102, models.RoleSales, 10)
 	hub.Register(clientStore3)
 
-	// Client 3: Admin (Store 1 / Head Office, Role ADMIN)
 	clientAdmin := newTestClient(hub, 1, 100, models.RoleAdmin, 10)
 	hub.Register(clientAdmin)
 
-	// Wait for registrations to settle
 	time.Sleep(50 * time.Millisecond)
 
-	// --- Step A: Broadcast Store 2 event ---
 	orderEvent := models.WebSocketEvent{
 		Type:      models.EventOrderCreated,
 		StoreId:   2,
@@ -142,7 +128,6 @@ func TestHub_StoreIsolation(t *testing.T) {
 	}
 	hub.Broadcast(orderEvent)
 
-	// Assert Store 2 client receives the event
 	select {
 	case rawMsg := <-clientStore2.Send:
 		var received models.WebSocketEvent
@@ -159,7 +144,6 @@ func TestHub_StoreIsolation(t *testing.T) {
 		t.Fatal("clientStore2 timed out waiting for Store 2 event")
 	}
 
-	// Assert Admin client receives the Store 2 event
 	select {
 	case rawMsg := <-clientAdmin.Send:
 		var received models.WebSocketEvent
@@ -173,15 +157,12 @@ func TestHub_StoreIsolation(t *testing.T) {
 		t.Fatal("clientAdmin timed out waiting for Store 2 event")
 	}
 
-	// Assert Store 3 client receives NOTHING
 	select {
 	case unexpected := <-clientStore3.Send:
 		t.Fatalf("clientStore3 unexpectedly received event: %s (store isolation violated!)", string(unexpected))
 	case <-time.After(100 * time.Millisecond):
-		// Success: Store 3 received nothing
 	}
 
-	// --- Step B: Broadcast Store 3 event ---
 	cycleEvent := models.WebSocketEvent{
 		Type:      models.EventCycleCountUpdated,
 		StoreId:   3,
@@ -194,7 +175,6 @@ func TestHub_StoreIsolation(t *testing.T) {
 	}
 	hub.Broadcast(cycleEvent)
 
-	// Assert Store 3 client receives the event
 	select {
 	case rawMsg := <-clientStore3.Send:
 		var received models.WebSocketEvent
@@ -211,7 +191,6 @@ func TestHub_StoreIsolation(t *testing.T) {
 		t.Fatal("clientStore3 timed out waiting for Store 3 event")
 	}
 
-	// Assert Admin client receives the Store 3 event
 	select {
 	case rawMsg := <-clientAdmin.Send:
 		var received models.WebSocketEvent
@@ -225,16 +204,13 @@ func TestHub_StoreIsolation(t *testing.T) {
 		t.Fatal("clientAdmin timed out waiting for Store 3 event")
 	}
 
-	// Assert Store 2 client receives NOTHING
 	select {
 	case unexpected := <-clientStore2.Send:
 		t.Fatalf("clientStore2 unexpectedly received event: %s (store isolation violated!)", string(unexpected))
 	case <-time.After(100 * time.Millisecond):
-		// Success: Store 2 received nothing
 	}
 }
 
-// Test 3: Disconnect Handling & Double-Unregister Safety
 func TestHub_DisconnectHandling(t *testing.T) {
 	hub := websocket.NewHub()
 	go hub.Run()
@@ -244,18 +220,15 @@ func TestHub_DisconnectHandling(t *testing.T) {
 	hub.Register(client)
 	time.Sleep(30 * time.Millisecond)
 
-	// Send an initial message
 	hub.Broadcast(models.WebSocketEvent{
 		Type:      models.EventOrderCreated,
 		StoreId:   2,
 		Timestamp: time.Now().UTC(),
 	})
 
-	// Unregister client
 	hub.Unregister(client)
 	time.Sleep(50 * time.Millisecond)
 
-	// Verify buffer drains the queued message, then channel closes
 	rawMsg, ok := <-client.Send
 	if !ok {
 		t.Fatal("expected to read queued message before channel closure")
@@ -268,13 +241,11 @@ func TestHub_DisconnectHandling(t *testing.T) {
 		t.Errorf("expected %s, got %s", models.EventOrderCreated, received.Type)
 	}
 
-	// Next read must report channel closed
 	_, ok = <-client.Send
 	if ok {
 		t.Fatal("expected client.Send channel to be closed after unregister")
 	}
 
-	// Verify idempotency: duplicate Unregister and SafeCloseSend must not panic
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("hub.Unregister panicked on duplicate unregister: %v", r)
@@ -290,22 +261,18 @@ func TestHub_DisconnectHandling(t *testing.T) {
 	}
 }
 
-// Test 4: Slow Consumer Dropping
 func TestHub_SlowClientEviction(t *testing.T) {
 	hub := websocket.NewHub()
 	go hub.Run()
 	defer hub.Stop()
 
-	// Normal client with large buffer
 	normalClient := newTestClient(hub, 2, 301, models.RoleSales, 100)
 	hub.Register(normalClient)
 
-	// Slow client with tiny buffer (capacity 1)
 	slowClient := newTestClient(hub, 2, 302, models.RoleSales, 1)
 	hub.Register(slowClient)
 	time.Sleep(50 * time.Millisecond)
 
-	// Send 10 rapid messages to Store 2
 	for i := 0; i < 10; i++ {
 		hub.Broadcast(models.WebSocketEvent{
 			Type:      models.EventStoreActivity,
@@ -317,7 +284,6 @@ func TestHub_SlowClientEviction(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	// Normal client should have received messages without stalling
 	receivedCount := 0
 	for len(normalClient.Send) > 0 {
 		<-normalClient.Send
@@ -327,7 +293,6 @@ func TestHub_SlowClientEviction(t *testing.T) {
 		t.Fatalf("normal client expected 10 messages, got %d", receivedCount)
 	}
 
-	// Slow client should have been evicted due to buffer overflow
 	deadline := time.Now().Add(time.Second)
 	for hub.StoreClientCount(2) > 1 && time.Now().Before(deadline) {
 		time.Sleep(10 * time.Millisecond)
@@ -338,7 +303,6 @@ func TestHub_SlowClientEviction(t *testing.T) {
 	}
 }
 
-// Test 5: Global Broadcast
 func TestHub_GlobalBroadcast(t *testing.T) {
 	hub := websocket.NewHub()
 	go hub.Run()
@@ -351,7 +315,6 @@ func TestHub_GlobalBroadcast(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 
-	// Broadcast global event (StoreId == 0)
 	globalEvent := models.WebSocketEvent{
 		Type:      models.EventStoreActivity,
 		StoreId:   0,
@@ -360,7 +323,6 @@ func TestHub_GlobalBroadcast(t *testing.T) {
 	}
 	hub.Broadcast(globalEvent)
 
-	// Both Store 2 and Store 3 clients must receive the global event
 	for _, c := range []*websocket.Client{clientStore2, clientStore3} {
 		select {
 		case rawMsg := <-c.Send:
@@ -377,7 +339,6 @@ func TestHub_GlobalBroadcast(t *testing.T) {
 	}
 }
 
-// Test 6: Safe Hub Shutdown
 func TestHub_Shutdown(t *testing.T) {
 	hub := websocket.NewHub()
 	go hub.Run()
@@ -395,7 +356,6 @@ func TestHub_Shutdown(t *testing.T) {
 
 	hub.Stop()
 
-	// All client Send channels must be closed
 	for i, c := range clients {
 		_, ok := <-c.Send
 		if ok {

@@ -1,4 +1,3 @@
-// radius-frontend/src/components/common/ConnectionStatusBadge.tsx
 import React from "react";
 import { StyleSheet, Text, View, TouchableOpacity, StyleProp, ViewStyle } from "react-native";
 import { COLORS } from "@/constants/colors";
@@ -10,12 +9,6 @@ export interface ConnectionStatusBadgeProps {
     style?: StyleProp<ViewStyle>;
 }
 
-/**
- * Renders the real-time WebSocket connection state:
- * - "connected": Live green pill
- * - "reconnecting" / "connecting": Reconnecting amber pill
- * - "disconnected": Offline gray pill
- */
 export const ConnectionStatusBadge: React.FC<ConnectionStatusBadgeProps> = ({
     status,
     onPress,

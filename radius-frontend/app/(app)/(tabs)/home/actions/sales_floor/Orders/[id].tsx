@@ -126,7 +126,6 @@ export default function OnlineOrderDetail() {
             setOrder(data.online_order);
             setItems(data.items || []);
 
-            // Auto-assign if currently unassigned
             if (!data.online_order.assigned_to && user?.employee_id) {
                 callApi<{ online_order: OnlineOrder }>(
                     ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign,
@@ -346,8 +345,6 @@ export default function OnlineOrderDetail() {
     const isAssignedToOther = order.assigned_to && order.assigned_to !== user?.employee_id;
     const isManagerOrAdmin = user?.role === "MANAGER" || user?.role === "ADMIN";
 
-    // Readiness calculation for "Confirm Order Picked Up" button:
-    // Every item must either be CANCELLED, REMOVED, or fully picked (picked_qty >= quantity).
     const activeItems = items.filter((i) => i.status !== "CANCELLED" && i.status !== "REMOVED");
     const isAllPicked =
         items.length > 0 &&

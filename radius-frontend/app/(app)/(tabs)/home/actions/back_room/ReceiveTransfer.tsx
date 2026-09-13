@@ -18,10 +18,10 @@ import { COLORS } from "@/constants/colors";
 export default function ReceiveTransfer() {
     const { transfer_id } = useLocalSearchParams<{ transfer_id: string }>();
     const { logout } = useAuth();
-    
+
     const [transfer, setTransfer] = useState<StockTransferDetailResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [scannedItems, setScannedItems] = useState<Record<number, number>>({}); // transfer_item_id -> qty
+    const [scannedItems, setScannedItems] = useState<Record<number, number>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchTransfer = useCallback(async () => {
@@ -29,7 +29,7 @@ export default function ReceiveTransfer() {
         const data = await callApi<StockTransferDetailResponse>(`${ENDPOINTS.SALES_FLOOR.RECEIVING.transfer}?transfer_id=${transfer_id}`, { method: "GET" }, logout);
         if (data) {
             setTransfer(data);
-            setScannedItems({}); // Reset local scans on refresh
+            setScannedItems({});
         }
         setIsLoading(false);
     }, [transfer_id, logout]);
@@ -72,7 +72,7 @@ export default function ReceiveTransfer() {
 
     const handleReceiveBatch = async () => {
         if (!transfer || Object.keys(scannedItems).length === 0) return;
-        
+
         setIsSubmitting(true);
         const items = Object.entries(scannedItems).map(([id, qty]) => ({
             transfer_item_id: parseInt(id),
@@ -110,7 +110,7 @@ export default function ReceiveTransfer() {
                                 onBarcodeScanned={handleScan}
                             />
                         </View>
-                        
+
                         <View style={styles.scannedListContainer}>
                             {activeScannedItemsList.length === 0 ? (
                                 <View style={styles.emptyScanned}>

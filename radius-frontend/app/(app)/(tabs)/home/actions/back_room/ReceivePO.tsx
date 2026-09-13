@@ -19,10 +19,10 @@ import { COLORS } from "@/constants/colors";
 export default function ReceivePO() {
     const { po_id } = useLocalSearchParams<{ po_id: string }>();
     const { logout } = useAuth();
-    
+
     const [po, setPo] = useState<PurchaseOrderDetailResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [scannedItems, setScannedItems] = useState<Record<number, number>>({}); // po_item_id -> qty
+    const [scannedItems, setScannedItems] = useState<Record<number, number>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchPO = useCallback(async () => {
@@ -30,7 +30,7 @@ export default function ReceivePO() {
         const data = await callApi<PurchaseOrderDetailResponse>(`${ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrder}?po_id=${po_id}`, { method: "GET" }, logout);
         if (data) {
             setPo(data);
-            setScannedItems({}); // Reset local scans on refresh
+            setScannedItems({});
         }
         setIsLoading(false);
     }, [po_id, logout]);
@@ -42,7 +42,6 @@ export default function ReceivePO() {
     const handleScan = async (barcode: string) => {
         if (!po) return;
 
-        // 20 digits = LPR
         if (barcode.length === 20) {
             const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.receiveLpr, {
                 method: "POST",
@@ -55,18 +54,15 @@ export default function ReceivePO() {
             return;
         }
 
-        // If it's a product but the PO has LPRs, reject it
         if (po.has_lprs) {
             showToast("error", "This PO has LPRs. Please scan the LPR barcodes on the boxes instead of individual products.");
             return;
         }
 
-        // Otherwise product
         const res = await callApi<CheckProductInPOResponse>(`${ENDPOINTS.SALES_FLOOR.RECEIVING.checkProduct}?po_id=${po.po_id}&barcode=${barcode}`, { method: "GET" }, logout);
         if (res) {
             if (res.found && res.item) {
                 const itemId = res.item.po_item_id;
-                // Auto increment local qty if there is room
                 setScannedItems(prev => {
                     const current = prev[itemId] || 0;
                     if (current + res.item!.qty_received < res.item!.qty_ordered) {
@@ -94,7 +90,7 @@ export default function ReceivePO() {
 
     const handleReceiveBatch = async () => {
         if (!po || Object.keys(scannedItems).length === 0) return;
-        
+
         setIsSubmitting(true);
         const items = Object.entries(scannedItems).map(([id, qty]) => ({
             po_item_id: parseInt(id),
@@ -132,7 +128,7 @@ export default function ReceivePO() {
                                 onBarcodeScanned={handleScan}
                             />
                         </View>
-                        
+
                         <View style={styles.scannedListContainer}>
                             {activeScannedItemsList.length === 0 ? (
                                 <View style={styles.emptyScanned}>
@@ -187,7 +183,7 @@ export default function ReceivePO() {
                                 </View>
                             </View>
                         )}
-                        
+
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>Items</Text>
                             <View>

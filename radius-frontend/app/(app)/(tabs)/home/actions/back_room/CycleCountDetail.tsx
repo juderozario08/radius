@@ -1,4 +1,3 @@
-// radius-frontend/app/(app)/home/actions/back_room/CycleCountDetail.tsx
 import React, { useEffect, useState, useCallback } from "react";
 import {
     View,

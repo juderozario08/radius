@@ -25,20 +25,20 @@ import { Ionicons } from "@expo/vector-icons";
 const getStatusColor = (status: string) => {
     switch (status) {
         case "READY FOR PICKUP":
-            return { bg: "#FFF3E0", text: "#E65100" }; // Orange
+            return { bg: "#FFF3E0", text: "#E65100" };
         case "PENDING":
-            return { bg: "#FFF8E1", text: "#F57F17" }; // Amber
+            return { bg: "#FFF8E1", text: "#F57F17" };
         case "COMPLETED":
         case "DELIVERED":
         case "RELEASED":
-            return { bg: "#E8F5E9", text: "#2E7D32" }; // Green
+            return { bg: "#E8F5E9", text: "#2E7D32" };
         case "IN PROGRESS":
         case "WORK IN PROGRESS":
-            return { bg: "#E3F2FD", text: "#1565C0" }; // Blue
+            return { bg: "#E3F2FD", text: "#1565C0" };
         case "SHIPPED":
-            return { bg: "#F3E5F5", text: "#6A1B9A" }; // Purple
+            return { bg: "#F3E5F5", text: "#6A1B9A" };
         case "CANCELLED":
-            return { bg: "#FFEBEE", text: "#C62828" }; // Red
+            return { bg: "#FFEBEE", text: "#C62828" };
         default:
             return { bg: COLORS.surface, text: COLORS.textSecondary };
     }

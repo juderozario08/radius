@@ -1,4 +1,3 @@
-//radius-frontend/src/types/inventory.types.ts
 export type MeasureUnits = "EACH" | "CASE" | "PACK";
 
 export interface Product {

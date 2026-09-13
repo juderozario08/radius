@@ -1,5 +1,3 @@
-// radius-frontend/src/types/cyclecount.types.ts
-
 export type CycleCountStatus =
     | "NOT STARTED"
     | "IN PROGRESS"

@@ -1,4 +1,3 @@
-// radius-backend/internal/middleware/roles.go
 package middleware
 
 import (
@@ -15,7 +14,7 @@ const (
 	PermViewSalesFloorAction Permission = "view_sales_floor"
 	PermViewBackRoomActions  Permission = "view_back_room"
 	PermViewServiceActions   Permission = "view_service_actions"
-	PermViewManagerActions   Permission = "view_manager_actions" // Fixed string value
+	PermViewManagerActions   Permission = "view_manager_actions"
 	PermViewAdminActions     Permission = "view_admin_actions"
 )
 

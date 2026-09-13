@@ -75,7 +75,6 @@ type CategoryRepository interface {
 }
 
 type MerchandisingRepository interface {
-	// Add merchandising repository methods here when implemented
 }
 
 type FillReportRepository interface {
@@ -130,8 +129,6 @@ type CycleCountRepository interface {
 	CreateScheduleEntry(ctx context.Context, storeID int, categoryID int, scheduledDate time.Time, createdBy int) (*models.CycleCountScheduleEntry, error)
 }
 
-// EventBroadcaster defines the contract for broadcasting real-time WebSocket events.
-// Implemented by *websocket.Hub in radius-backend/internal/websocket/hub.go.
 type EventBroadcaster interface {
 	Broadcast(event models.WebSocketEvent)
 	BroadcastToStore(storeID int, event models.WebSocketEvent)

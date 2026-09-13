@@ -1,4 +1,3 @@
-//radius-frontend/app/_layout.tsx
 import CustomToast from "@/components/common/Toast";
 import { AuthProvider } from "@/context/AuthContext";
 import { StoreProvider } from "@/context/StoreContext";
@@ -6,7 +5,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Slot, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, StatusBar, View } from "react-native";
-
 
 function LoadingLayout() {
     const { isAuthenticated, isLoading } = useAuth();

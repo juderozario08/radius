@@ -1,4 +1,3 @@
-//radius-frontend/src/components/common/HeaderComponent.tsx
 import { COLORS } from "@/constants/colors";
 import { View } from "react-native";
 

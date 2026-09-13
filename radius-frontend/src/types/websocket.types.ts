@@ -1,19 +1,11 @@
-// radius-frontend/src/types/websocket.types.ts
 import { OrderType, OrderStatus } from "./order.types";
 
-/**
- * Real-time connection status values.
- */
 export type ConnectionStatus =
     | "connected"
     | "connecting"
     | "reconnecting"
     | "disconnected";
 
-/**
- * Discrete event discriminators supported across the WebSocket wire protocol.
- * Synchronized with Go backend models: radius-backend/internal/models/websocket.go.
- */
 export type WSEventType =
     | "order_created"
     | "order_status_updated"
@@ -22,9 +14,6 @@ export type WSEventType =
     | "ping"
     | "pong";
 
-/**
- * Standard WebSocket wire envelope matching backend models.WebSocketEvent.
- */
 export interface WSMessage<T = unknown> {
     type: WSEventType;
     store_id: number;
@@ -32,15 +21,8 @@ export interface WSMessage<T = unknown> {
     payload: T;
 }
 
-/**
- * Alias for WSMessage for API ergonomic parity.
- */
 export type WSEvent<T = unknown> = WSMessage<T>;
 
-/**
- * Payload broadcast when a customer places a new online order (BOPIS/STS/SHIPPING).
- * Matches Go backend OrderCreatedPayload.
- */
 export interface OrderCreatedPayload {
     order_id: number;
     store_id: number;
@@ -55,10 +37,6 @@ export interface OrderCreatedPayload {
     assigned_to_name?: string | null;
 }
 
-/**
- * Payload broadcast when an existing order changes status (e.g. PENDING -> READY_FOR_PICKUP).
- * Matches Go backend OrderStatusUpdatedPayload.
- */
 export interface OrderStatusUpdatedPayload {
     order_id: number;
     store_id: number;
@@ -72,9 +50,6 @@ export interface OrderStatusUpdatedPayload {
     assigned_to_name?: string | null;
 }
 
-/**
- * Action stages for cycle counts.
- */
 export type CycleCountAction =
     | "started"
     | "scanned"
@@ -83,10 +58,6 @@ export type CycleCountAction =
     | "transferred"
     | string;
 
-/**
- * Payload broadcast when a store cycle count starts, scans an item, or changes status.
- * Matches Go backend CycleCountUpdatedPayload.
- */
 export interface CycleCountUpdatedPayload {
     count_id: number;
     store_id: number;
@@ -102,10 +73,6 @@ export interface CycleCountUpdatedPayload {
     counted_by_name?: string | null;
 }
 
-/**
- * Payload broadcast for operational store activities (POS sales, adjustments, receiving dock).
- * Matches Go backend StoreActivityPayload.
- */
 export interface StoreActivityPayload {
     activity_id: string;
     store_id: number;
@@ -116,7 +83,6 @@ export interface StoreActivityPayload {
     metadata?: Record<string, unknown>;
 }
 
-// Concrete typed events
 export type OrderCreatedEvent = WSMessage<OrderCreatedPayload>;
 export type OrderStatusUpdatedEvent = WSMessage<OrderStatusUpdatedPayload>;
 export type CycleCountUpdatedEvent = WSMessage<CycleCountUpdatedPayload>;
@@ -124,9 +90,6 @@ export type StoreActivityEvent = WSMessage<StoreActivityPayload>;
 export type PingEvent = WSMessage<Record<string, unknown> | undefined>;
 export type PongEvent = WSMessage<Record<string, unknown> | undefined>;
 
-/**
- * Discriminated union of all incoming typed WebSocket messages.
- */
 export type TypedWSEvent =
     | ({ type: "order_created" } & OrderCreatedEvent)
     | ({ type: "order_status_updated" } & OrderStatusUpdatedEvent)

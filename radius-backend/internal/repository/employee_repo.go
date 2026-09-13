@@ -1,4 +1,3 @@
-// radius-backend/internal/repository/employee_repo.go
 package repository
 
 import (
@@ -98,7 +97,7 @@ func (r *EmployeeRepo) GetEmployeeByEmailWithSession(ctx context.Context, email 
 
 func (r *EmployeeRepo) GetAllEmployees(ctx context.Context, limit, offset int, storeId *int) ([]models.Employee, int, error) {
 	var totalLength int
-	
+
 	countQuery := `SELECT COUNT(*) FROM employees;`
 	if storeId != nil {
 		countQuery = `SELECT COUNT(*) FROM employees WHERE store_id = $1;`

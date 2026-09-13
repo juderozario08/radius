@@ -1,4 +1,3 @@
-// radius-frontend/src/components/reports/FillReportItem.tsx
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -24,10 +23,8 @@ export const FillReportItem: React.FC<FillReportItemProps> = ({ item, onPress })
         }
 
         if (isNegative) {
-            // Navigate directly to Item Adjust to resolve anomaly
             router.push(`/(app)/(tabs)/home/actions/sales_floor/ItemAdjust?productId=${item.product_id}`);
         } else {
-            // Navigate to Product detail view
             router.push(`/(app)/(tabs)/inventory/${item.product_id}`);
         }
     };
@@ -47,7 +44,6 @@ export const FillReportItem: React.FC<FillReportItemProps> = ({ item, onPress })
                 item.is_empty_hole && styles.is4tcCard,
             ]}
         >
-            {/* Header: Badges and Type Indicator */}
             <View style={styles.headerRow}>
                 <View style={styles.tagsContainer}>
                     {item.aisle ? (
@@ -75,7 +71,6 @@ export const FillReportItem: React.FC<FillReportItemProps> = ({ item, onPress })
                     ) : null}
                 </View>
 
-                {/* Right Badge: Prominent RED IS4TC Badge or Live Indicator */}
                 {item.is_empty_hole ? (
                     <View style={styles.redIs4tcBadge}>
                         <MaterialCommunityIcons name="alert-decagram" size={14} color="#FFFFFF" />
@@ -89,7 +84,6 @@ export const FillReportItem: React.FC<FillReportItemProps> = ({ item, onPress })
                 )}
             </View>
 
-            {/* Product Name & Details */}
             <View style={styles.body}>
                 <Text style={[styles.productName, isNegative && styles.negativeTextDim]} numberOfLines={2}>
                     {item.product_name}
@@ -106,9 +100,7 @@ export const FillReportItem: React.FC<FillReportItemProps> = ({ item, onPress })
                 ) : null}
             </View>
 
-            {/* Quantity Badges Section */}
             <View style={styles.quantitiesSection}>
-                {/* For Transaction Items: Show Fill Qty Badge */}
                 {!item.is_empty_hole && (
                     <View style={styles.fillQtyContainer}>
                         <Text style={styles.qtyLabel}>Fill Qty</Text>
@@ -119,7 +111,6 @@ export const FillReportItem: React.FC<FillReportItemProps> = ({ item, onPress })
                     </View>
                 )}
 
-                {/* On Hand Qty Badge */}
                 <View style={styles.onHandQtyContainer}>
                     <Text style={styles.qtyLabel}>On Hand</Text>
                     <View
@@ -152,14 +143,12 @@ export const FillReportItem: React.FC<FillReportItemProps> = ({ item, onPress })
                     </View>
                 </View>
 
-                {/* Available Qty */}
                 <View style={styles.availableContainer}>
                     <Text style={styles.qtyLabel}>Available</Text>
                     <Text style={styles.availableValue}>{item.available_qty}</Text>
                 </View>
             </View>
 
-            {/* Negative Stock Anomaly Banner (Accessible Action) */}
             {isNegative && (
                 <TouchableOpacity
                     style={styles.negativeBanner}

@@ -33,7 +33,7 @@ func TestAuthService_Login_Success(t *testing.T) {
 
 	jwtSecret := []byte("testsecret")
 	db := setupAuthTestRedis()
-	
+
 	sessionService := service.NewSessionService(mockSessionRepo, jwtSecret, db)
 	authService := service.NewAuthService(mockEmployeeRepo, sessionService)
 
@@ -48,7 +48,7 @@ func TestAuthService_Login_Success(t *testing.T) {
 		Return(&models.GetEmployeeByEmailWithSession{
 			EmployeeId:   1,
 			PasswordHash: hashedPassword,
-			SessionId:    nil, // No active session
+			SessionId:    nil,
 			EmployeeBase: models.EmployeeBase{
 				Email:        "test@test.com",
 				Role:         models.RoleAdmin,
@@ -132,7 +132,7 @@ func TestAuthService_Login_RequiresConfirmation_SameIP(t *testing.T) {
 	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
 	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
 	db := setupAuthTestRedis()
-	
+
 	sessionService := service.NewSessionService(mockSessionRepo, []byte("testsecret"), db)
 	authService := service.NewAuthService(mockEmployeeRepo, sessionService)
 
@@ -153,7 +153,6 @@ func TestAuthService_Login_RequiresConfirmation_SameIP(t *testing.T) {
 			},
 		}, nil)
 
-	// Existing session on SAME IP (127.0.0.1)
 	mockSessionRepo.EXPECT().
 		GetSessionsByEmployeeId(gomock.Any(), 1).
 		Return([]models.Session{
@@ -186,7 +185,7 @@ func TestAuthService_Login_DifferentIP_AutoLogsOutPreviousSession(t *testing.T) 
 	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
 	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
 	db := setupAuthTestRedis()
-	
+
 	sessionService := service.NewSessionService(mockSessionRepo, []byte("testsecret"), db)
 	authService := service.NewAuthService(mockEmployeeRepo, sessionService)
 
@@ -210,7 +209,6 @@ func TestAuthService_Login_DifferentIP_AutoLogsOutPreviousSession(t *testing.T) 
 			},
 		}, nil)
 
-	// Active session exists on 10.0.0.201, but new login is from 10.17.21.28
 	mockSessionRepo.EXPECT().
 		GetSessionsByEmployeeId(gomock.Any(), 1).
 		Return([]models.Session{
@@ -223,12 +221,10 @@ func TestAuthService_Login_DifferentIP_AutoLogsOutPreviousSession(t *testing.T) 
 		}, nil).
 		AnyTimes()
 
-	// Should terminate the existing session on 10.0.0.201
 	mockSessionRepo.EXPECT().
 		TerminateSessionById(gomock.Any(), 42).
 		Return(nil)
 
-	// And create the new session for 10.17.21.28
 	mockSessionRepo.EXPECT().
 		CreateSession(gomock.Any(), gomock.Any()).
 		Return(&models.CreateSessionResponse{
@@ -240,7 +236,7 @@ func TestAuthService_Login_DifferentIP_AutoLogsOutPreviousSession(t *testing.T) 
 	result, err := authService.Login(context.Background(), models.EmployeeLoginRequest{
 		Email:    "test@test.com",
 		Password: password,
-		Force:    false, // No force needed for different IP!
+		Force:    false,
 	}, "10.17.21.28")
 
 	if err != nil {

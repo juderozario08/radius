@@ -16,15 +16,20 @@ This document tracks application features, modules, and workflows that are **PLA
 - **Backend:** Transaction items store `return_reason` and `inventory_transactions` supports `RETURN` transaction types. Dedicated return authorization services, return receipt generation, and Return-to-Vendor (RTV) dispositioning need handlers.
 - **Frontend:** `Back Room > Returns` screen (`Returns.tsx`) is a placeholder.
 
-### 3. Sales Floor Activities Feed
-- **Status:** UI Placeholder (~5% complete)
-- **Backend:** Endpoints for employee task distribution, price change task batches, and manager shift notes are pending.
-- **Frontend:** `Sales Floor > Activities` screen (`Activities.tsx`) is a placeholder.
-
-### 4. Real-Time Push Notifications & Alerts
+### 3. Real-Time Push Notifications & Alerts
 - **Status:** UI Placeholder (~5% complete)
 - **Backend:** Notification dispatcher service for curbside BOPIS arrivals, manager adjustment approval alerts, and low stock warnings is pending.
-- **Frontend:** `Notifications` screen (`Notifications.tsx`) is a placeholder.
+- **Frontend:** `Notifications` screen (`notifications.tsx`) is a placeholder.
+
+### 4. Mobile POS Checkout
+- **Status:** Not Started (~0% complete)
+- **Backend:** Needs secure payment processing integration (or mock), receipt generation, and tax calculation services.
+- **Frontend:** The application lacks a dedicated checkout flow for processing sales directly on the floor.
+
+### 5. Print Order Updates
+- **Status:** Partial (~60% complete)
+- **Backend:** Endpoints for creating and viewing print orders exist, but updating order status (e.g., from 'IN PROGRESS' to 'COMPLETED') needs a complete flow.
+- **Frontend:** Need detailed update screens for managing print order lifecycles beyond just viewing them.
 
 ---
 
@@ -35,3 +40,4 @@ This document tracks application features, modules, and workflows that are **PLA
 - [x] **Consolidate Audit Ledger**: Standardized on `inventory_transactions` as the sole immutable audit log across POS sales, PO receiving, stock transfers, cycle counts, and manager adjustments.
 - [x] **High-Volume Seed Data Pipeline**: Automated Python synthetic seed generation with Faker, chunked SQL batch execution, and automatic file cleanup via `cmd/seeds/main.go`.
 - [x] **Store 1 Head Office Constraint**: Enforced separation between Head Office (Store 1: inventory/MIMS only) and Retail Branches (Stores 2–7: retail transactions, transfers, POs, online orders, print orders, and cycle counts).
+- [x] **Sales Floor Activities Feed**: Fully implemented live WebSocket activity feed tracking incoming online orders, cycle count updates, and receiving dock activities.

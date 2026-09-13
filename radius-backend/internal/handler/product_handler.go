@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"log"
@@ -21,7 +21,10 @@ func NewProductHandler(productService *service.ProductService) *ProductHandler {
 }
 
 func (h *ProductHandler) GetProductByID(ctx *gin.Context) {
-	idStr := ctx.Query("id")
+	idStr := ctx.Param("id")
+	if idStr == "" {
+		idStr = ctx.Query("id")
+	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		log.Printf("[ERROR] ProductHandler.GetProductByID (Atoi): %v", err)

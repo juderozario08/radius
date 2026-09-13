@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"log"
@@ -44,7 +44,10 @@ func (h *CycleCountHandler) GetWeeklyCycleCounts(ctx *gin.Context) {
 
 func (h *CycleCountHandler) GetCycleCountDetail(ctx *gin.Context) {
 	email := ctx.GetString("email")
-	countIDStr := ctx.Query("id")
+	countIDStr := ctx.Param("id")
+	if countIDStr == "" {
+		countIDStr = ctx.Query("id")
+	}
 	if countIDStr == "" {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "missing required query parameter: id"})
 		return
@@ -74,7 +77,10 @@ func (h *CycleCountHandler) GetCycleCountDetail(ctx *gin.Context) {
 
 func (h *CycleCountHandler) GetCycleCountItems(ctx *gin.Context) {
 	email := ctx.GetString("email")
-	countIDStr := ctx.Query("id")
+	countIDStr := ctx.Param("id")
+	if countIDStr == "" {
+		countIDStr = ctx.Query("id")
+	}
 	if countIDStr == "" {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "missing required query parameter: id"})
 		return
@@ -130,6 +136,12 @@ func (h *CycleCountHandler) RecordScan(ctx *gin.Context) {
 		return
 	}
 
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.CountId = id
+		}
+	}
+
 	item, err := h.cycleCountService.RecordScan(ctx.Request.Context(), email, req)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.RecordScan: %v", err)
@@ -151,6 +163,12 @@ func (h *CycleCountHandler) SubmitForApproval(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 		return
+	}
+
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.CountId = id
+		}
 	}
 
 	if err := h.cycleCountService.SubmitForApproval(ctx.Request.Context(), email, req); err != nil {
@@ -175,6 +193,12 @@ func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
 		return
 	}
 
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.CountId = id
+		}
+	}
+
 	if err := h.cycleCountService.ApproveCount(ctx.Request.Context(), email, req); err != nil {
 		log.Printf("[ERROR] CycleCountHandler.ApproveCycleCount: %v", err)
 		if strings.HasPrefix(err.Error(), "unauthorized") {
@@ -195,6 +219,12 @@ func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 		return
+	}
+
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.CountId = id
+		}
 	}
 
 	if err := h.cycleCountService.TransferOwnership(ctx.Request.Context(), email, req); err != nil {

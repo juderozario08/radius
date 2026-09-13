@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"log"
@@ -58,7 +58,10 @@ func (h *PrintOrderHandler) GetPrintOrderByID(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
-	idStr := ctx.Query("id")
+	idStr := ctx.Param("id")
+	if idStr == "" {
+		idStr = ctx.Query("id")
+	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		log.Printf("[ERROR] PrintOrderHandler.GetPrintOrderByID (Atoi): %v", err)

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -44,6 +45,12 @@ func (h *StoreHandler) UpdateStore(ctx *gin.Context) {
 		return
 	}
 
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			body.StoreId = id
+		}
+	}
+
 	res, err := h.storeService.UpdateStore(ctx.Request.Context(), body)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.UpdateStore (Service): %v", err)
@@ -72,9 +79,13 @@ func (h *StoreHandler) CreateStore(ctx *gin.Context) {
 }
 
 func (h *StoreHandler) GetStore(ctx *gin.Context) {
-	storeId := ctx.Query("store_id")
+	storeId := ctx.Param("id")
 	if storeId == "" {
 		log.Printf("[ERROR] StoreHandler.GetStore: Query parameter store_id not found")
+		storeId = ctx.Query("store_id")
+	}
+	if storeId == "" {
+		log.Printf("[ERROR] StoreHandler.GetStore: store_id parameter not found")
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid Request"})
 		return
 	}
@@ -88,15 +99,25 @@ func (h *StoreHandler) GetStore(ctx *gin.Context) {
 }
 
 func (h *StoreHandler) ActivateStore(ctx *gin.Context) {
-	var body models.StoreIdRequest
-	err := ctx.ShouldBindJSON(&body)
-	if err != nil {
-		log.Printf("[ERROR] StoreHandler.ActivateStore (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
-		return
+	var storeID int
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			storeID = id
+		}
 	}
 
-	res, err := h.storeService.ActivateStore(ctx.Request.Context(), body.StoreId)
+	if storeID == 0 {
+		var body models.StoreIdRequest
+		err := ctx.ShouldBindJSON(&body)
+		if err != nil {
+			log.Printf("[ERROR] StoreHandler.ActivateStore (BindJSON): %v", err)
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+			return
+		}
+		storeID = body.StoreId
+	}
+
+	res, err := h.storeService.ActivateStore(ctx.Request.Context(), storeID)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.ActivateStore (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -106,15 +127,25 @@ func (h *StoreHandler) ActivateStore(ctx *gin.Context) {
 }
 
 func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
-	var body models.StoreIdRequest
-	err := ctx.ShouldBindJSON(&body)
-	if err != nil {
-		log.Printf("[ERROR] StoreHandler.DeactivateStore (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
-		return
+	var storeID int
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			storeID = id
+		}
 	}
 
-	res, err := h.storeService.DeactivateStore(ctx.Request.Context(), body.StoreId)
+	if storeID == 0 {
+		var body models.StoreIdRequest
+		err := ctx.ShouldBindJSON(&body)
+		if err != nil {
+			log.Printf("[ERROR] StoreHandler.DeactivateStore (BindJSON): %v", err)
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+			return
+		}
+		storeID = body.StoreId
+	}
+
+	res, err := h.storeService.DeactivateStore(ctx.Request.Context(), storeID)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.DeactivateStore (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})

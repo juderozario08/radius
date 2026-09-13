@@ -86,6 +86,12 @@ func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 		return
 	}
 
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			body.EmployeeId = id
+		}
+	}
+
 	updateEmployeeResponse, err := e.employeeService.UpdateEmployee(ctx.Request.Context(), body)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.UpdateEmployee (Service): %v", err)
@@ -97,14 +103,24 @@ func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 }
 
 func (e *EmployeeHandler) TerminateEmployee(ctx *gin.Context) {
-	var body models.EmployeeIdRequest
-	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Printf("[ERROR] EmployeeHandler.TerminateEmployee (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
-		return
+	var employeeID int
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			employeeID = id
+		}
 	}
 
-	employeeResponse, err := e.employeeService.TerminateEmployee(ctx.Request.Context(), body.EmployeeId)
+	if employeeID == 0 {
+		var body models.EmployeeIdRequest
+		if err := ctx.ShouldBindJSON(&body); err != nil {
+			log.Printf("[ERROR] EmployeeHandler.TerminateEmployee (BindJSON): %v", err)
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+			return
+		}
+		employeeID = body.EmployeeId
+	}
+
+	employeeResponse, err := e.employeeService.TerminateEmployee(ctx.Request.Context(), employeeID)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.TerminateEmployee (Service): %v", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -114,14 +130,24 @@ func (e *EmployeeHandler) TerminateEmployee(ctx *gin.Context) {
 }
 
 func (e *EmployeeHandler) ActivateEmployee(ctx *gin.Context) {
-	var body models.EmployeeIdRequest
-	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Printf("[ERROR] EmployeeHandler.ActivateEmployee (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
-		return
+	var employeeID int
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			employeeID = id
+		}
 	}
 
-	response, err := e.employeeService.ActivateEmployee(ctx.Request.Context(), body.EmployeeId)
+	if employeeID == 0 {
+		var body models.EmployeeIdRequest
+		if err := ctx.ShouldBindJSON(&body); err != nil {
+			log.Printf("[ERROR] EmployeeHandler.ActivateEmployee (BindJSON): %v", err)
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+			return
+		}
+		employeeID = body.EmployeeId
+	}
+
+	response, err := e.employeeService.ActivateEmployee(ctx.Request.Context(), employeeID)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.ActivateEmployee (Service): %v", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})

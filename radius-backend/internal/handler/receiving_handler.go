@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"log"
@@ -44,7 +44,10 @@ func (h *ReceivingHandler) GetPurchaseOrders(ctx *gin.Context) {
 func (h *ReceivingHandler) GetPurchaseOrderDetail(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
-	poIDStr := ctx.Query("po_id")
+	poIDStr := ctx.Param("id")
+	if poIDStr == "" {
+		poIDStr = ctx.Query("po_id")
+	}
 	if poIDStr == "" {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "po_id is required"})
 		return
@@ -72,7 +75,10 @@ func (h *ReceivingHandler) GetPurchaseOrderDetail(ctx *gin.Context) {
 func (h *ReceivingHandler) CheckProductInPO(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
-	poIDStr := ctx.Query("po_id")
+	poIDStr := ctx.Param("id")
+	if poIDStr == "" {
+		poIDStr = ctx.Query("po_id")
+	}
 	barcode := ctx.Query("barcode")
 	if poIDStr == "" || barcode == "" {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "po_id and barcode are required"})
@@ -103,6 +109,12 @@ func (h *ReceivingHandler) ReceivePO(ctx *gin.Context) {
 		return
 	}
 
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.PoId = id
+		}
+	}
+
 	err := h.receivingService.ReceivePO(ctx.Request.Context(), email, req)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.ReceivePO: %v", err)
@@ -125,6 +137,12 @@ func (h *ReceivingHandler) ReceiveLPR(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 		return
+	}
+
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.PoId = id
+		}
 	}
 
 	err := h.receivingService.ReceiveLPR(ctx.Request.Context(), email, req)
@@ -159,7 +177,10 @@ func (h *ReceivingHandler) GetStockTransfers(ctx *gin.Context) {
 func (h *ReceivingHandler) GetStockTransferDetail(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
-	transferIDStr := ctx.Query("transfer_id")
+	transferIDStr := ctx.Param("id")
+	if transferIDStr == "" {
+		transferIDStr = ctx.Query("transfer_id")
+	}
 	if transferIDStr == "" {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "transfer_id is required"})
 		return
@@ -193,6 +214,12 @@ func (h *ReceivingHandler) ReceiveTransfer(ctx *gin.Context) {
 		return
 	}
 
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.TransferId = id
+		}
+	}
+
 	err := h.receivingService.ReceiveTransfer(ctx.Request.Context(), email, req)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.ReceiveTransfer: %v", err)
@@ -217,6 +244,12 @@ func (h *ReceivingHandler) QuickReceiveTransfer(ctx *gin.Context) {
 		return
 	}
 
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.TransferId = id
+		}
+	}
+
 	err := h.receivingService.QuickReceiveTransfer(ctx.Request.Context(), email, req)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.QuickReceiveTransfer: %v", err)
@@ -236,7 +269,10 @@ func (h *ReceivingHandler) QuickReceiveTransfer(ctx *gin.Context) {
 func (h *ReceivingHandler) CheckProductInTransfer(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
-	transferIDStr := ctx.Query("transfer_id")
+	transferIDStr := ctx.Param("id")
+	if transferIDStr == "" {
+		transferIDStr = ctx.Query("transfer_id")
+	}
 	barcode := ctx.Query("barcode")
 	if transferIDStr == "" || barcode == "" {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "transfer_id and barcode are required"})

@@ -42,7 +42,10 @@ func (h *InventoryHandler) ScanProduct(ctx *gin.Context) {
 func (h *InventoryHandler) GetLocationProducts(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
-	locationID := ctx.Query("location_id")
+	locationID := ctx.Param("id")
+	if locationID == "" {
+		locationID = ctx.Query("location_id")
+	}
 	if locationID == "" {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Location ID is required"})
 		return
@@ -103,7 +106,10 @@ func (h *InventoryHandler) UpdateQuantity(ctx *gin.Context) {
 func (h *InventoryHandler) GetProductScreenDetails(ctx *gin.Context) {
 	email := ctx.GetString("email")
 
-	productIDStr := ctx.Query("product_id")
+	productIDStr := ctx.Param("id")
+	if productIDStr == "" {
+		productIDStr = ctx.Query("product_id")
+	}
 	if productIDStr == "" {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "product_id is required"})
 		return

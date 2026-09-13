@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"fmt"
@@ -76,7 +76,10 @@ func (h *OnlineOrderHandler) GetOnlineOrderByID(ctx *gin.Context) {
 	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
-	idStr := ctx.Query("id")
+	idStr := ctx.Param("id")
+	if idStr == "" {
+		idStr = ctx.Query("id")
+	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.GetOnlineOrderByID (Atoi): %v", err)
@@ -140,6 +143,12 @@ func (h *OnlineOrderHandler) AssignOnlineOrder(ctx *gin.Context) {
 		return
 	}
 
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.OrderID = id
+		}
+	}
+
 	order, wasAssigned, err := h.onlineOrderService.AssignOnlineOrder(ctx.Request.Context(), email, role, req.OrderID, req.EmployeeID)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.AssignOnlineOrder (Service): %v", err)
@@ -180,6 +189,17 @@ func (h *OnlineOrderHandler) UpdateOnlineOrderItem(ctx *gin.Context) {
 		return
 	}
 
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.OrderID = id
+		}
+	}
+	if itemIDStr := ctx.Param("item_id"); itemIDStr != "" {
+		if itemID, err := strconv.Atoi(itemIDStr); err == nil && itemID > 0 {
+			req.OrderItemID = itemID
+		}
+	}
+
 	err := h.onlineOrderService.UpdateOrderItem(ctx.Request.Context(), email, role, req.OrderID, req.OrderItemID, req.PickedQty, req.Status, req.Reason)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.UpdateOnlineOrderItem (Service): %v", err)
@@ -201,6 +221,12 @@ func (h *OnlineOrderHandler) CompleteOrderPicking(ctx *gin.Context) {
 		log.Printf("[ERROR] OnlineOrderHandler.CompleteOrderPicking (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid request payload: " + err.Error()})
 		return
+	}
+
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.OrderID = id
+		}
 	}
 
 	order, err := h.onlineOrderService.CompleteOrderPicking(ctx.Request.Context(), email, role, req.OrderID)
@@ -225,6 +251,12 @@ func (h *OnlineOrderHandler) CancelOnlineOrder(ctx *gin.Context) {
 		log.Printf("[ERROR] OnlineOrderHandler.CancelOnlineOrder (BindJSON): %v", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid request payload: " + err.Error()})
 		return
+	}
+
+	if idStr := ctx.Param("id"); idStr != "" {
+		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
+			req.OrderID = id
+		}
 	}
 
 	order, err := h.onlineOrderService.CancelOnlineOrder(ctx.Request.Context(), email, role, req.OrderID, req.Reason)

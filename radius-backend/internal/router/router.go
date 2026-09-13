@@ -137,7 +137,6 @@ func NewRouter(cfg Config) *gin.Engine {
 			stores.POST("/create", cfg.Handlers.StoreHandler.CreateStore)
 			stores.PUT("/:id", cfg.Handlers.StoreHandler.UpdateStore)
 			stores.PUT("/update", cfg.Handlers.StoreHandler.UpdateStore)
-			stores.POST("/create", cfg.Handlers.StoreHandler.CreateStore)
 			stores.POST("/:id/activate", cfg.Handlers.StoreHandler.ActivateStore)
 			stores.POST("/activate", cfg.Handlers.StoreHandler.ActivateStore)
 			stores.POST("/:id/deactivate", cfg.Handlers.StoreHandler.DeactivateStore)

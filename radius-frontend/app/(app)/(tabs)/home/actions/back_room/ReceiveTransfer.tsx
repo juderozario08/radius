@@ -133,7 +133,7 @@ export default function ReceiveTransfer() {
                         </View>
 
                         <View style={styles.footer}>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={[styles.receiveButton, (!hasScannedItems || isSubmitting) && styles.receiveButtonDisabled]}
                                 onPress={handleReceiveBatch}
                                 disabled={!hasScannedItems || isSubmitting}
@@ -159,9 +159,9 @@ export default function ReceiveTransfer() {
                             <Text style={styles.sectionTitle}>Items</Text>
                             <View>
                                 {transfer.items.map(item => (
-                                    <POItemRow 
-                                        key={item.transfer_item_id} 
-                                        item={item} 
+                                    <POItemRow
+                                        key={item.transfer_item_id}
+                                        item={item}
                                         pendingScanQty={scannedItems[item.transfer_item_id] || 0}
                                     />
                                 ))}

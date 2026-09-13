@@ -310,7 +310,7 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
         }
 
         setIsSubmitting(true);
-        const endpoint = isEditMode && employee ? ENDPOINTS.ADMIN.EMPLOYEES.update(employee.employee_id) : ENDPOINTS.ADMIN.EMPLOYEES.create;
+        const endpoint = isEditMode && employee ? ENDPOINTS.ADMIN.EMPLOYEES.update(employee.employee_id) : (ENDPOINTS.ADMIN.EMPLOYEES.create as string);
         const result = await callApi(endpoint, { method: isEditMode ? "PUT" : "POST", body: payload }, logout);
         setIsSubmitting(false);
 

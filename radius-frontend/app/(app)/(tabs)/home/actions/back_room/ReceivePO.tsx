@@ -151,7 +151,7 @@ export default function ReceivePO() {
                         </View>
 
                         <View style={styles.footer}>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={[styles.receiveButton, (!hasScannedItems || isSubmitting) && styles.receiveButtonDisabled]}
                                 onPress={handleReceiveBatch}
                                 disabled={!hasScannedItems || isSubmitting}
@@ -188,9 +188,9 @@ export default function ReceivePO() {
                             <Text style={styles.sectionTitle}>Items</Text>
                             <View>
                                 {po.items.map(item => (
-                                    <POItemRow 
-                                        key={item.po_item_id} 
-                                        item={item} 
+                                    <POItemRow
+                                        key={item.po_item_id}
+                                        item={item}
                                         pendingScanQty={scannedItems[item.po_item_id] || 0}
                                     />
                                 ))}

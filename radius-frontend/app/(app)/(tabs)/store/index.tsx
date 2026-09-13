@@ -1,14 +1,20 @@
+import { ActionButtonRow } from "@/components/common/ActionButtonRow";
 import BackButton from "@/components/common/BackButton";
+import { DetailRow } from "@/components/common/DetailRow";
 import HeaderComponent from "@/components/common/HeaderComponent";
+import Pagination from "@/components/common/Pagination";
+import PillGroup, { PillOption } from "@/components/common/PillGroup";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
+import { CANADIAN_PROVINCES, isCanadianProvince, normalizeCanadianPostalCode } from "@/constants/canada";
+import { COLORS } from "@/constants/colors";
 import { ENDPOINTS } from "@/constants/routes";
 import { globalStyles } from "@/constants/styles";
-import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
-import { StatusBadge } from "@/components/common/StatusBadge";
-import { DetailRow } from "@/components/common/DetailRow";
-import { ActionButtonRow } from "@/components/common/ActionButtonRow";
-import React, { useEffect, useState, useRef } from "react";
-import { router, Redirect } from "expo-router";
+import { GetAllStoresResponse, Store } from "@/types/admin.types";
+import { callApi, showToast } from "@/utils/helpers";
+import { Redirect, router } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -24,12 +30,6 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
-import { callApi, showToast } from "@/utils/helpers";
-import { GetAllStoresResponse, Store } from "@/types/admin.types";
-import PillGroup, { PillOption } from "@/components/common/PillGroup";
-import Pagination from "@/components/common/Pagination";
-import { CANADIAN_PROVINCES, isCanadianProvince, normalizeCanadianPostalCode } from "@/constants/canada";
 
 type FormMode = "create" | "edit";
 

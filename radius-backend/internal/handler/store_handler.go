@@ -81,7 +81,6 @@ func (h *StoreHandler) CreateStore(ctx *gin.Context) {
 func (h *StoreHandler) GetStore(ctx *gin.Context) {
 	storeId := ctx.Param("id")
 	if storeId == "" {
-		log.Printf("[ERROR] StoreHandler.GetStore: Query parameter store_id not found")
 		storeId = ctx.Query("store_id")
 	}
 	if storeId == "" {
@@ -105,11 +104,9 @@ func (h *StoreHandler) ActivateStore(ctx *gin.Context) {
 			storeID = id
 		}
 	}
-
 	if storeID == 0 {
 		var body models.StoreIdRequest
-		err := ctx.ShouldBindJSON(&body)
-		if err != nil {
+		if err := ctx.ShouldBindJSON(&body); err != nil {
 			log.Printf("[ERROR] StoreHandler.ActivateStore (BindJSON): %v", err)
 			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 			return
@@ -133,11 +130,9 @@ func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
 			storeID = id
 		}
 	}
-
 	if storeID == 0 {
 		var body models.StoreIdRequest
-		err := ctx.ShouldBindJSON(&body)
-		if err != nil {
+		if err := ctx.ShouldBindJSON(&body); err != nil {
 			log.Printf("[ERROR] StoreHandler.DeactivateStore (BindJSON): %v", err)
 			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 			return

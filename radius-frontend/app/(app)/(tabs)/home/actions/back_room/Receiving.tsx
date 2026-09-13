@@ -49,7 +49,7 @@ export default function Receiving() {
             method: "POST",
             body: { transfer_id: transferId }
         }, logout);
-        
+
         if (res) {
             showToast("success", res.message);
             fetchTransfers();
@@ -61,7 +61,7 @@ export default function Receiving() {
         return pos.filter(po => {
             const query = searchQuery.toLowerCase();
             const matchesSearch = po.po_id.toString().includes(query) || po.supplier_name.toLowerCase().includes(query);
-            
+
             if (query) {
                 return matchesSearch;
             } else {
@@ -110,9 +110,9 @@ export default function Receiving() {
                         data={transfers}
                         keyExtractor={(item) => item.transfer_id.toString()}
                         renderItem={({ item }) => (
-                            <TransferCard 
-                                transfer={item} 
-                                onPress={(transferId) => router.push(`/(app)/(tabs)/home/actions/back_room/ReceiveTransfer?transfer_id=${transferId}` as any)} 
+                            <TransferCard
+                                transfer={item}
+                                onPress={(transferId) => router.push(`/(app)/(tabs)/home/actions/back_room/ReceiveTransfer?transfer_id=${transferId}` as any)}
                                 onQuickReceive={handleQuickReceive}
                                 isReceiving={isQuickReceiving[item.transfer_id]}
                             />

@@ -99,3 +99,76 @@ export interface ReceiveTransferItemEntry {
     transfer_item_id: number;
     qty_received: number;
 }
+
+export interface OutboundTransferSummary {
+    transfer_id: number;
+    from_store_id: number;
+    from_store_name: string;
+    to_store_id: number;
+    to_store_name: string;
+    status: TransferStatus;
+    manual_check_required: boolean;
+    item_count: number;
+    total_transfer_cost: number;
+    transfer_reason: string | null;
+    carrier: string | null;
+    tracking_number: string | null;
+    created_at: string;
+    shipped_at: string | null;
+}
+
+export interface OutboundTransferDetailResponse {
+    transfer_id: number;
+    from_store_id: number;
+    from_store_name: string;
+    to_store_id: number;
+    to_store_name: string;
+    status: TransferStatus;
+    requested_by: number;
+    requested_by_name: string;
+    transfer_reason: string | null;
+    carrier: string | null;
+    tracking_number: string | null;
+    manual_check_required: boolean;
+    total_transfer_cost: number;
+    created_at: string;
+    shipped_at: string | null;
+    received_at: string | null;
+    items: StockTransferItemDetail[];
+}
+
+export interface CreateTransferItemEntry {
+    product_id: number;
+    qty_requested: number;
+}
+
+export interface CreateTransferRequest {
+    from_store_id?: number;
+    to_store_id: number;
+    transfer_reason: string;
+    manual_check_required: boolean;
+    items: CreateTransferItemEntry[];
+}
+
+export interface DispatchTransferRequest {
+    transfer_id: number;
+    carrier?: string | null;
+    tracking_number?: string | null;
+}
+
+export interface CancelTransferRequest {
+    transfer_id: number;
+}
+
+export interface DestinationStore {
+    store_id: number;
+    name: string;
+    city: string;
+    province: string;
+    is_head_office: boolean;
+}
+
+export interface GetAllOutboundTransfersResponse {
+    transfers: OutboundTransferSummary[];
+    total_length: number;
+}

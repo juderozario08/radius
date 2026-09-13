@@ -1,9 +1,11 @@
-import { Stack } from 'expo-router'
+import { Stack } from 'expo-router';
 export default function Layout() {
     return (
         <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name={"index"} />
             <Stack.Screen name={"employees"} />
+            <Stack.Screen name={"transfers"} />
+            <Stack.Screen name={"purchase_orders"} />
         </Stack>
     )
 }

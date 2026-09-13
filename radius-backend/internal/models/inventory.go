@@ -380,6 +380,74 @@ type CheckProductInTransferResponse struct {
 	Item  *StockTransferItemDetail `json:"item"`
 }
 
+type CreateTransferItemEntry struct {
+	ProductId    int `json:"product_id" binding:"required"`
+	QtyRequested int `json:"qty_requested" binding:"required,min=1"`
+}
+
+type CreateTransferRequest struct {
+	FromStoreId         *int                      `json:"from_store_id"`
+	ToStoreId           int                       `json:"to_store_id" binding:"required"`
+	TransferReason      string                    `json:"transfer_reason" binding:"required"`
+	ManualCheckRequired bool                      `json:"manual_check_required"`
+	Items               []CreateTransferItemEntry `json:"items" binding:"required,min=1"`
+}
+
+type DispatchTransferRequest struct {
+	TransferId     int     `json:"transfer_id" binding:"required"`
+	Carrier        *string `json:"carrier"`
+	TrackingNumber *string `json:"tracking_number"`
+}
+
+type CancelTransferRequest struct {
+	TransferId int `json:"transfer_id" binding:"required"`
+}
+
+type OutboundTransferSummary struct {
+	TransferId          int        `json:"transfer_id"`
+	FromStoreId         int        `json:"from_store_id"`
+	FromStoreName       string     `json:"from_store_name"`
+	ToStoreId           int        `json:"to_store_id"`
+	ToStoreName         string     `json:"to_store_name"`
+	Status              string     `json:"status"`
+	ManualCheckRequired bool       `json:"manual_check_required"`
+	ItemCount           int        `json:"item_count"`
+	TotalTransferCost   float64    `json:"total_transfer_cost"`
+	TransferReason      *string    `json:"transfer_reason"`
+	Carrier             *string    `json:"carrier"`
+	TrackingNumber      *string    `json:"tracking_number"`
+	CreatedAt           time.Time  `json:"created_at"`
+	ShippedAt           *time.Time `json:"shipped_at"`
+}
+
+type OutboundTransferDetailResponse struct {
+	TransferId          int                       `json:"transfer_id"`
+	FromStoreId         int                       `json:"from_store_id"`
+	FromStoreName       string                    `json:"from_store_name"`
+	ToStoreId           int                       `json:"to_store_id"`
+	ToStoreName         string                    `json:"to_store_name"`
+	Status              string                    `json:"status"`
+	RequestedBy         int                       `json:"requested_by"`
+	RequestedByName     string                    `json:"requested_by_name"`
+	TransferReason      *string                   `json:"transfer_reason"`
+	Carrier             *string                   `json:"carrier"`
+	TrackingNumber      *string                   `json:"tracking_number"`
+	ManualCheckRequired bool                      `json:"manual_check_required"`
+	TotalTransferCost   float64                   `json:"total_transfer_cost"`
+	CreatedAt           time.Time                 `json:"created_at"`
+	ShippedAt           *time.Time                `json:"shipped_at"`
+	ReceivedAt          *time.Time                `json:"received_at"`
+	Items               []StockTransferItemDetail `json:"items"`
+}
+
+type TransferDestinationStore struct {
+	StoreId      int    `json:"store_id"`
+	Name         string `json:"name"`
+	City         string `json:"city"`
+	Province     string `json:"province"`
+	IsHeadOffice bool   `json:"is_head_office"`
+}
+
 type CreateMimsLocationRequest struct {
 	LocationId string `json:"location_id" binding:"required"`
 }

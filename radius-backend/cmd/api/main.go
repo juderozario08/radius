@@ -64,6 +64,7 @@ func main() {
 	auditRepo := repository.NewAuditRepo(db.DB)
 	cycleCountRepo := repository.NewCycleCountRepo(db.DB)
 	fillReportRepo := repository.NewFillReportRepository(db.DB)
+	transferRepo := repository.NewTransferRepo(db.DB)
 
 	wsHub := websocket.NewHub()
 	go wsHub.Run()
@@ -85,7 +86,7 @@ func main() {
 	categoryService := service.NewCategoryService(categoryRepo, redisClient)
 	storeService := service.NewStoreService(storeRepo, employeeRepo, productsRepo)
 	transactionService := service.NewTransactionService(salesRepo, employeeRepo, sessionRepo, fillReportRepo, wsHub)
-	transferService := service.NewTransferService(storeRepo, inventoryRepo, employeeRepo, sessionRepo)
+	transferService := service.NewTransferService(transferRepo, storeRepo, inventoryRepo, employeeRepo, sessionRepo, wsHub)
 	receivingService := service.NewReceivingService(receivingRepo, employeeRepo)
 	auditService := service.NewAuditService(auditRepo, employeeRepo, productsRepo)
 	printOrderService := service.NewPrintOrderService(ordersRepo, employeeRepo)

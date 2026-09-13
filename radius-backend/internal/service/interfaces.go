@@ -134,3 +134,12 @@ type EventBroadcaster interface {
 	BroadcastToStore(storeID int, event models.WebSocketEvent)
 }
 
+type TransferRepository interface {
+	CreateTransfer(ctx context.Context, fromStoreID int, toStoreID int, requestedBy int, reason string, manualCheck bool, items []models.CreateTransferItemEntry) (*models.StockTransfer, error)
+	GetOutboundTransfers(ctx context.Context, storeID *int, limit, offset int) ([]models.OutboundTransferSummary, int, error)
+	GetOutboundTransferDetail(ctx context.Context, transferID int) (*models.OutboundTransferDetailResponse, error)
+	DispatchTransfer(ctx context.Context, transferID int, carrier, trackingNumber *string) (*models.StockTransfer, int, error)
+	CancelTransfer(ctx context.Context, transferID int, employeeID int) error
+	GetDestinationStores(ctx context.Context, fromStoreID int) ([]models.TransferDestinationStore, error)
+}
+

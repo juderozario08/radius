@@ -119,7 +119,7 @@ export default function OnlineOrderDetail() {
         setIsLoading(true);
         setError(null);
 
-        const endpoint = `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.get}?id=${id}`;
+        const endpoint = ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.get(id as string);
         const data = await callApi<GetOnlineOrderByIDResponse>(endpoint, { method: "GET" }, logout);
 
         if (data && data.online_order) {
@@ -128,7 +128,7 @@ export default function OnlineOrderDetail() {
 
             if (!data.online_order.assigned_to && user?.employee_id) {
                 callApi<{ online_order: OnlineOrder }>(
-                    ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign,
+                    ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign(data.online_order.order_id),
                     {
                         method: "PUT",
                         body: JSON.stringify({
@@ -187,7 +187,7 @@ export default function OnlineOrderDetail() {
         setIsSaving(true);
         try {
             await callApi(
-                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.updateItem,
+                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.updateItem(order.order_id, scannedItem.item.order_item_id),
                 {
                     method: "PUT",
                     body: JSON.stringify({
@@ -223,7 +223,7 @@ export default function OnlineOrderDetail() {
         try {
             const finalPickedQty = pickedQty !== undefined ? pickedQty : selectedItemForAction.picked_qty;
             await callApi(
-                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.updateItem,
+                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.updateItem(order.order_id, selectedItemForAction.order_item_id),
                 {
                     method: "PUT",
                     body: JSON.stringify({
@@ -259,7 +259,7 @@ export default function OnlineOrderDetail() {
         setIsSaving(true);
         try {
             const res = await callApi<{ online_order: OnlineOrder }>(
-                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.completePick,
+                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.completePick(order.order_id),
                 {
                     method: "POST",
                     body: JSON.stringify({
@@ -288,7 +288,7 @@ export default function OnlineOrderDetail() {
         setIsSaving(true);
         try {
             const res = await callApi<{ online_order: OnlineOrder }>(
-                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.cancel,
+                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.cancel(order.order_id),
                 {
                     method: "POST",
                     body: JSON.stringify({

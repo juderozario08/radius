@@ -1,3 +1,35 @@
+export type RouteBuilder = {
+    (id?: string | number, subId?: string | number): string;
+    template: string;
+    toString: () => string;
+};
+
+export function createRoute(template: string): RouteBuilder {
+    const fn = ((id?: string | number, subId?: string | number) => {
+        if (id === undefined) {
+            return template.replace(/\/:id$/, "");
+        }
+        let result = template.replace(/:id\b/, encodeURIComponent(String(id)));
+        if (subId !== undefined) {
+            result = result.replace(/:item_id\b/, encodeURIComponent(String(subId)));
+        } else {
+            result = result.replace(/\/:item_id\b/, "");
+        }
+        return result;
+    }) as RouteBuilder;
+    fn.template = template;
+    fn.toString = () => template;
+    return fn;
+}
+
+export function buildRoute(template: string, params: Record<string, string | number>): string {
+    let result = template;
+    for (const [key, value] of Object.entries(params)) {
+        result = result.replace(new RegExp(`:${key}\\b`, "g"), encodeURIComponent(String(value)));
+    }
+    return result;
+}
+
 export const ENDPOINTS = {
     AUTH: {
         login: "/login",
@@ -8,27 +40,28 @@ export const ENDPOINTS = {
     ADMIN: {
         EMPLOYEES: {
             getAll: "/api/admin/employees",
-            create: "/api/admin/employees/create",
-            update: "/api/admin/employees/update",
-            terminate: "/api/admin/employees/terminate",
-            activate: "/api/admin/employees/activate",
+            create: "/api/admin/employees",
+            update: createRoute("/api/admin/employees/:id"),
+            terminate: createRoute("/api/admin/employees/:id/terminate"),
+            activate: createRoute("/api/admin/employees/:id/activate"),
         },
         SESSIONS: {
             getAll: "/api/admin/sessions",
-            terminate: "/api/admin/sessions/terminate",
+            terminate: createRoute("/api/admin/sessions/:id"),
         },
         STORES: {
             getAll: "/api/admin/stores",
             operations: "/api/admin/stores/operations",
-            update: "/api/admin/stores/update",
-            create: "/api/admin/stores/create",
-            activate: "/api/admin/stores/activate",
-            deactivate: "/api/admin/stores/deactivate",
+            get: createRoute("/api/admin/stores/:id"),
+            create: "/api/admin/stores",
+            update: createRoute("/api/admin/stores/:id"),
+            activate: createRoute("/api/admin/stores/:id/activate"),
+            deactivate: createRoute("/api/admin/stores/:id/deactivate"),
         },
     },
     MANAGER: {
         STORE: {
-            get: "/api/manager/store",
+            get: createRoute("/api/manager/store/:id"),
         },
         EMPLOYEES: {
             getAll: "/api/manager/employees",
@@ -36,7 +69,7 @@ export const ENDPOINTS = {
     },
     SALES_FLOOR: {
         PRODUCTS: {
-            get: "/api/sales_floor/products/get",
+            get: createRoute("/api/sales_floor/products/:id"),
             search: "/api/sales_floor/products/search",
             categories: "/api/sales_floor/products/categories",
             brands: "/api/sales_floor/products/brands",
@@ -44,20 +77,22 @@ export const ENDPOINTS = {
         },
         TRANSACTIONS: {
             getAll: "/api/sales_floor/transactions",
-            get: "/api/sales_floor/transactions/get",
+            get: createRoute("/api/sales_floor/transactions/:id"),
+            create: "/api/sales_floor/transactions",
         },
         ORDERS: {
             ONLINE: {
                 getAll: "/api/sales_floor/orders/online",
-                get: "/api/sales_floor/orders/online/get",
-                assign: "/api/sales_floor/orders/online/assign",
-                updateItem: "/api/sales_floor/orders/online/items",
-                completePick: "/api/sales_floor/orders/online/complete_pick",
-                cancel: "/api/sales_floor/orders/online/cancel",
+                get: createRoute("/api/sales_floor/orders/online/:id"),
+                create: "/api/sales_floor/orders/online",
+                assign: createRoute("/api/sales_floor/orders/online/:id/assign"),
+                updateItem: createRoute("/api/sales_floor/orders/online/:id/items/:item_id"),
+                completePick: createRoute("/api/sales_floor/orders/online/:id/complete_pick"),
+                cancel: createRoute("/api/sales_floor/orders/online/:id/cancel"),
             },
             PRINT: {
                 getAll: "/api/sales_floor/orders/print",
-                get: "/api/sales_floor/orders/print/get",
+                get: createRoute("/api/sales_floor/orders/print/:id"),
             },
         },
         IS4TC: {
@@ -71,8 +106,8 @@ export const ENDPOINTS = {
         },
         INVENTORY: {
             scanProduct: "/api/sales_floor/inventory/product",
-            productDetails: "/api/sales_floor/inventory/product-details",
-            getLocationProducts: "/api/sales_floor/inventory/location",
+            productDetails: createRoute("/api/sales_floor/inventory/products/:id"),
+            getLocationProducts: createRoute("/api/sales_floor/inventory/locations/:id"),
             binItem: "/api/sales_floor/inventory/bin",
             updateQuantity: "/api/sales_floor/inventory/quantity",
             syncLocations: "/api/sales_floor/inventory/locations/sync",
@@ -83,27 +118,35 @@ export const ENDPOINTS = {
         },
         RECEIVING: {
             purchaseOrders: "/api/sales_floor/receiving/purchase_orders",
-            purchaseOrder: "/api/sales_floor/receiving/purchase_order",
-            checkProduct: "/api/sales_floor/receiving/check_product",
-            receivePo: "/api/sales_floor/receiving/receive_po",
-            receiveLpr: "/api/sales_floor/receiving/receive_lpr",
+            purchaseOrder: createRoute("/api/sales_floor/receiving/purchase_orders/:id"),
+            checkProduct: createRoute("/api/sales_floor/receiving/purchase_orders/:id/check_product"),
+            receivePo: createRoute("/api/sales_floor/receiving/purchase_orders/:id/receive"),
+            receiveLpr: createRoute("/api/sales_floor/receiving/purchase_orders/:id/receive_lpr"),
             transfers: "/api/sales_floor/receiving/transfers",
-            transfer: "/api/sales_floor/receiving/transfer",
-            checkTransferProduct: "/api/sales_floor/receiving/check_transfer_product",
-            receiveTransfer: "/api/sales_floor/receiving/receive_transfer",
-            quickReceiveTransfer: "/api/sales_floor/receiving/quick_receive_transfer",
+            transfer: createRoute("/api/sales_floor/receiving/transfers/:id"),
+            checkTransferProduct: createRoute("/api/sales_floor/receiving/transfers/:id/check_product"),
+            receiveTransfer: createRoute("/api/sales_floor/receiving/transfers/:id/receive"),
+            quickReceiveTransfer: createRoute("/api/sales_floor/receiving/transfers/:id/quick_receive"),
+        },
+        TRANSFERS: {
+            getAll: "/api/sales_floor/transfers",
+            getDetail: createRoute("/api/sales_floor/transfers/:id"),
+            create: "/api/sales_floor/transfers",
+            dispatch: createRoute("/api/sales_floor/transfers/:id/dispatch"),
+            cancel: createRoute("/api/sales_floor/transfers/:id/cancel"),
+            stores: "/api/sales_floor/transfers/stores",
         },
         CYCLE_COUNT: {
             getWeekly: "/api/sales_floor/cycle_counts",
-            getDetail: "/api/sales_floor/cycle_counts/detail",
-            getItems: "/api/sales_floor/cycle_counts/items",
-            start: "/api/sales_floor/cycle_counts/start",
-            scan: "/api/sales_floor/cycle_counts/scan",
-            submit: "/api/sales_floor/cycle_counts/submit",
-            approve: "/api/sales_floor/cycle_counts/approve",
+            getDetail: createRoute("/api/sales_floor/cycle_counts/:id"),
+            getItems: createRoute("/api/sales_floor/cycle_counts/:id/items"),
+            start: "/api/sales_floor/cycle_counts",
+            scan: createRoute("/api/sales_floor/cycle_counts/:id/scans"),
+            submit: createRoute("/api/sales_floor/cycle_counts/:id/submit"),
+            approve: createRoute("/api/sales_floor/cycle_counts/:id/approve"),
             search: "/api/sales_floor/cycle_counts/search",
             schedule: "/api/sales_floor/cycle_counts/schedule",
-            transfer: "/api/sales_floor/cycle_counts/transfer",
+            transfer: createRoute("/api/sales_floor/cycle_counts/:id/transfer_ownership"),
         },
     },
 };

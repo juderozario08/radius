@@ -38,7 +38,7 @@ export default function LocationDetailScreen() {
 
     const validateAndFetchLocation = async () => {
         setIsLoading(true);
-        const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.getLocationProducts}?location_id=${encodeURIComponent(locationId)}`;
+        const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.getLocationProducts(locationId);
         const response = await callApi<LocationProductsResponse>(endpoint, { method: "GET" }, logout);
 
         if (!response) {
@@ -54,7 +54,7 @@ export default function LocationDetailScreen() {
     const fetchProductsByLocation = async () => {
         if (locationError) return;
         setIsLoading(true);
-        const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.getLocationProducts}?location_id=${encodeURIComponent(locationId)}`;
+        const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.getLocationProducts(locationId);
         const response = await callApi<LocationProductsResponse>(endpoint, { method: "GET" }, logout);
         setProducts(response?.products ?? []);
         setIsLoading(false);

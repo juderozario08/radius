@@ -34,7 +34,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
         setError(null);
         try {
-            const endpoint = `${ENDPOINTS.MANAGER.STORE.get}?store_id=${user.store_id}`;
+            const endpoint = ENDPOINTS.MANAGER.STORE.get(user.store_id);
             const result = await apiFetch<GetStoreResponse>(endpoint, { method: "GET" });
             setStore(result.store);
         } catch (err) {

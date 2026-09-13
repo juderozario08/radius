@@ -6,15 +6,14 @@ This document tracks application features, modules, and workflows that are **PLA
 
 ## 🚧 Active Backlog & Partially Implemented Features
 
-### 1. Outbound Stock Transfer Creation & Dispatching
-- **Status:** Partial (~35% complete) — Inbound receiving works; outbound creation is a stub.
-- **Backend:** `transfer_handler.go` and `transfer_service.go` exist as stubs. Endpoints for initiating an outbound transfer, scanning items into the transfer manifest, and dispatching in-transit status need completion.
-- **Frontend:** `Store > Transfers` screen (`transfers.tsx`) is a placeholder ("Coming soon"). Needs UI for selecting destination store, adding items/quantities, and reviewing dispatch manifests.
-
-### 2. Customer Returns & RMA Pipeline
+### 1. Customer Returns & RMA Pipeline
 - **Status:** Schema Foundation Only (~15% complete)
 - **Backend:** Transaction items store `return_reason` and `inventory_transactions` supports `RETURN` transaction types. Dedicated return authorization services, return receipt generation, and Return-to-Vendor (RTV) dispositioning need handlers.
 - **Frontend:** `Back Room > Returns` screen (`Returns.tsx`) is a placeholder.
+
+### 2. Fix Receiving Repo Generated Column Writes
+- **Status:** Bug (~5% complete)
+- **Backend:** `receiving_repo.go` writes to `on_hand_qty` directly, but migration `000031` converted it to a `GENERATED ALWAYS AS STORED` column. These writes will fail on the current schema. All receiving queries (PO receive, transfer receive, quick receive) need to update `new_qty` instead of `on_hand_qty`.
 
 ### 3. Real-Time Push Notifications & Alerts
 - **Status:** UI Placeholder (~5% complete)
@@ -41,3 +40,5 @@ This document tracks application features, modules, and workflows that are **PLA
 - [x] **High-Volume Seed Data Pipeline**: Automated Python synthetic seed generation with Faker, chunked SQL batch execution, and automatic file cleanup via `cmd/seeds/main.go`.
 - [x] **Store 1 Head Office Constraint**: Enforced separation between Head Office (Store 1: inventory/MIMS only) and Retail Branches (Stores 2–7: retail transactions, transfers, POs, online orders, print orders, and cycle counts).
 - [x] **Sales Floor Activities Feed**: Fully implemented live WebSocket activity feed tracking incoming online orders, cycle count updates, and receiving dock activities.
+- [x] **Outbound Stock Transfer Creation & Dispatching**: End-to-end stock transfer creation, manifest scanning, inventory deduction/audit trail on creation, dispatching with carrier/tracking, cancellation with stock refund, and real-time WebSocket notifications.
+- [x] **RESTful API Endpoint Standardization**: Refactored backend routes and handlers to standard RESTful conventions using path parameters (`:id`), collection routes, and sub-resource action verbs, along with type-safe route builders and updated callers across the frontend.

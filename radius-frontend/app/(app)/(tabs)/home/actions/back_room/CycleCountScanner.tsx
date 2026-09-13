@@ -47,7 +47,7 @@ export default function CycleCountScanner() {
         if (!countId) return;
         try {
             const data = await callApi<CycleCountDetailResponse>(
-                `${ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getDetail}?id=${countId}`,
+                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getDetail(countId),
                 { method: "GET" },
                 logout
             );
@@ -83,7 +83,7 @@ export default function CycleCountScanner() {
         setIsSaving(true);
         try {
             const updatedItem = await callApi<CycleCountItemDetail>(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan,
+                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan(countId),
                 {
                     method: "POST",
                     body: JSON.stringify({
@@ -153,7 +153,7 @@ export default function CycleCountScanner() {
         setIsSaving(true);
         try {
             await callApi(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan,
+                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan(countId),
                 {
                     method: "POST",
                     body: JSON.stringify({

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
     StyleSheet,
     View,
@@ -509,7 +509,7 @@ export default function RealTimeDashboard() {
 
             try {
                 await callApi(
-                    ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign,
+                    ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign(order.order_id),
                     {
                         method: "PUT",
                         body: JSON.stringify({

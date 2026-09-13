@@ -64,7 +64,7 @@ export default function CycleCountDetail() {
         try {
             setError(null);
             const data = await callApi<CycleCountDetailResponse>(
-                `${ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getDetail}?id=${countId}`,
+                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getDetail(countId),
                 { method: "GET" },
                 logout
             );
@@ -119,7 +119,7 @@ export default function CycleCountDetail() {
         setIsTransferring(true);
         try {
             const res = await callApi(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.transfer,
+                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.transfer(countId),
                 {
                     method: "POST",
                     body: JSON.stringify({ count_id: countId, employee_id: selectedEmployeeId }),
@@ -162,7 +162,7 @@ export default function CycleCountDetail() {
         setIsActionLoading(true);
         try {
             await callApi(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan,
+                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan(countId),
                 {
                     method: "POST",
                     body: JSON.stringify({
@@ -187,7 +187,7 @@ export default function CycleCountDetail() {
         setIsActionLoading(true);
         try {
             await callApi(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.submit,
+                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.submit(countId),
                 {
                     method: "POST",
                     body: JSON.stringify({
@@ -220,7 +220,7 @@ export default function CycleCountDetail() {
                         setIsActionLoading(true);
                         try {
                             await callApi(
-                                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.approve,
+                                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.approve(countId),
                                 {
                                     method: "POST",
                                     body: JSON.stringify({ count_id: countId }),

@@ -27,7 +27,7 @@ export default function ReceivePO() {
 
     const fetchPO = useCallback(async () => {
         setIsLoading(true);
-        const data = await callApi<PurchaseOrderDetailResponse>(`${ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrder}?po_id=${po_id}`, { method: "GET" }, logout);
+        const data = await callApi<PurchaseOrderDetailResponse>(ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrder(po_id as string), { method: "GET" }, logout);
         if (data) {
             setPo(data);
             setScannedItems({});
@@ -43,7 +43,7 @@ export default function ReceivePO() {
         if (!po) return;
 
         if (barcode.length === 20) {
-            const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.receiveLpr, {
+            const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.receiveLpr(po.po_id), {
                 method: "POST",
                 body: { po_id: po.po_id, lpr_barcode: barcode }
             }, logout);
@@ -59,7 +59,7 @@ export default function ReceivePO() {
             return;
         }
 
-        const res = await callApi<CheckProductInPOResponse>(`${ENDPOINTS.SALES_FLOOR.RECEIVING.checkProduct}?po_id=${po.po_id}&barcode=${barcode}`, { method: "GET" }, logout);
+        const res = await callApi<CheckProductInPOResponse>(`${ENDPOINTS.SALES_FLOOR.RECEIVING.checkProduct(po.po_id)}?barcode=${barcode}`, { method: "GET" }, logout);
         if (res) {
             if (res.found && res.item) {
                 const itemId = res.item.po_item_id;
@@ -97,7 +97,7 @@ export default function ReceivePO() {
             qty_received: qty
         }));
 
-        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.receivePo, {
+        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.receivePo(po.po_id), {
             method: "POST",
             body: { po_id: po.po_id, items }
         }, logout);

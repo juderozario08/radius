@@ -1,4 +1,4 @@
-import BackButton from "@/components/common/BackButton";
+﻿import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { ENDPOINTS } from "@/constants/routes";
 import { globalStyles } from "@/constants/styles";
@@ -29,7 +29,7 @@ const SessionDetailModal: React.FC<{
 
     const confirmTerminate = async () => {
         setIsTerminating(true);
-        const result = await callApi(ENDPOINTS.ADMIN.SESSIONS.terminate, { method: "POST", body: { session_id: session.session_id } }, logout);
+        const result = await callApi(ENDPOINTS.ADMIN.SESSIONS.terminate(session.session_id), { method: "DELETE" }, logout);
         setIsTerminating(false);
 
         if (result !== null) {

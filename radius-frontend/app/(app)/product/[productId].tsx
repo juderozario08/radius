@@ -35,7 +35,7 @@ export default function ProductScreen() {
         setIsLoading(true);
         setError(null);
         try {
-            const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails}?product_id=${productId}`;
+            const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails(productId as string);
             const data = await callApi<ProductScreenDetails>(endpoint, { method: "GET" }, logout);
             if (data) {
                 setDetails(data);
@@ -119,9 +119,9 @@ export default function ProductScreen() {
                             </View>
                         </View>
                         <View style={styles.imagePlaceholder}>
-                            <Image 
-                                source={require('@/assets/images/favicon.png')} 
-                                style={{ width: 40, height: 40, opacity: 0.5 }} 
+                            <Image
+                                source={require('@/assets/images/favicon.png')}
+                                style={{ width: 40, height: 40, opacity: 0.5 }}
                                 resizeMode="contain"
                             />
                         </View>
@@ -129,8 +129,8 @@ export default function ProductScreen() {
 
                     <View style={styles.tabsContainer}>
                         {(["Details", "Protection", "Locations"] as TabName[]).map(tab => (
-                            <TouchableOpacity 
-                                key={tab} 
+                            <TouchableOpacity
+                                key={tab}
                                 style={[styles.tab, activeTab === tab && styles.activeTab]}
                                 onPress={() => setActiveTab(tab)}
                             >

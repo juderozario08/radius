@@ -41,7 +41,7 @@ export default function TransactionDetail() {
         setIsLoading(true);
         setError(null);
 
-        const endpoint = `${ENDPOINTS.SALES_FLOOR.TRANSACTIONS.get}?id=${id}`;
+        const endpoint = ENDPOINTS.SALES_FLOOR.TRANSACTIONS.get(id as string);
         const data = await callApi<GetTransactionByIDResponse>(endpoint, { method: "GET" }, logout);
 
         if (data) {
@@ -120,8 +120,8 @@ export default function TransactionDetail() {
                 <View style={styles.card}>
                     <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Items ({items.length})</Text>
                     {items.map((item) => (
-                        <TouchableOpacity 
-                            key={item.transaction_item_id} 
+                        <TouchableOpacity
+                            key={item.transaction_item_id}
                             style={styles.itemRow}
                             onPress={() => router.push(`/(app)/product/${item.product_id}` as any)}
                         >

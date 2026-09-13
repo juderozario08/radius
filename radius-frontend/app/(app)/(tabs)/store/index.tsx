@@ -80,8 +80,8 @@ const StoreDetailModal: React.FC<{
     const confirmToggleStatus = async () => {
         setIsUpdatingStatus(true);
         const endpoint = store.is_active
-            ? ENDPOINTS.ADMIN.STORES.deactivate
-            : ENDPOINTS.ADMIN.STORES.activate;
+            ? ENDPOINTS.ADMIN.STORES.deactivate(store.store_id)
+            : ENDPOINTS.ADMIN.STORES.activate(store.store_id);
 
         const result = await callApi(
             endpoint,
@@ -214,7 +214,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
         }
 
         setIsSubmitting(true);
-        const endpoint = isEditMode ? ENDPOINTS.ADMIN.STORES.update : ENDPOINTS.ADMIN.STORES.create;
+        const endpoint = isEditMode && store ? ENDPOINTS.ADMIN.STORES.update(store.store_id) : ENDPOINTS.ADMIN.STORES.create;
         const result = await callApi(endpoint, { method: isEditMode ? "PUT" : "POST", body: payload }, logout);
         setIsSubmitting(false);
 
@@ -335,10 +335,6 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
 export default function Stores() {
     const { logout, user } = useAuth();
 
-    if (user?.role === "MANAGER") {
-        return <Redirect href="/(app)/(tabs)/store/employees" />;
-    }
-
     const [stores, setStores] = useState<Store[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -417,6 +413,10 @@ export default function Stores() {
             </View>
         </TouchableOpacity>
     );
+
+    if (user?.role === "MANAGER") {
+        return <Redirect href="/(app)/(tabs)/store/employees" />;
+    }
 
     const totalPages = Math.max(1, Math.ceil(totalLength / pageSize));
 

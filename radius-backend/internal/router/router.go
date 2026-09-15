@@ -40,6 +40,7 @@ type Handlers struct {
 	TransferHandler    *handler.TransferHandler
 	SessionHandler     *handler.SessionHandler
 	PrintOrderHandler  *handler.PrintOrderHandler
+	ReturnsHandler     *handler.ReturnsHandler
 	WSHandler          *handler.WSHandler
 }
 
@@ -288,6 +289,23 @@ func NewRouter(cfg Config) *gin.Engine {
 			cycleCounts.GET("/search", cfg.Handlers.CycleCountHandler.SearchCycleCounts)
 			cycleCounts.GET("/schedule", cfg.Handlers.CycleCountHandler.GetSchedule)
 			cycleCounts.POST("/schedule", cfg.Handlers.CycleCountHandler.CreateScheduleEntry)
+		}
+
+		returns := salesFloor.Group("/returns")
+		{
+			returns.GET("", cfg.Handlers.ReturnsHandler.GetReturns)
+			returns.GET("/:id", cfg.Handlers.ReturnsHandler.GetReturnDetail)
+			returns.GET("/detail", cfg.Handlers.ReturnsHandler.GetReturnDetail)
+			returns.POST("", cfg.Handlers.ReturnsHandler.CreateReturn)
+			returns.POST("/create", cfg.Handlers.ReturnsHandler.CreateReturn)
+			returns.POST("/:id/approve", cfg.Handlers.ReturnsHandler.ApproveReturn)
+			returns.POST("/approve", cfg.Handlers.ReturnsHandler.ApproveReturn)
+			returns.POST("/:id/reject", cfg.Handlers.ReturnsHandler.RejectReturn)
+			returns.POST("/reject", cfg.Handlers.ReturnsHandler.RejectReturn)
+			returns.GET("/lookup/:id", cfg.Handlers.ReturnsHandler.LookupTransaction)
+			returns.GET("/lookup", cfg.Handlers.ReturnsHandler.LookupTransaction)
+			returns.GET("/search_by_product", cfg.Handlers.ReturnsHandler.LookupByProduct)
+			returns.GET("/rtv", cfg.Handlers.ReturnsHandler.GetRtvQueue)
 		}
 	}
 

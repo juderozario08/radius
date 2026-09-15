@@ -12,6 +12,7 @@ This document tracks application features, modules, and workflows that are **PLA
 - **Frontend:** `Back Room > Returns` screen (`Returns.tsx`) is a placeholder.
 
 ### 2. Fix Receiving Repo Generated Column Writes
+### 1. Fix Receiving Repo Generated Column Writes
 - **Status:** Bug (~5% complete)
 - **Backend:** `receiving_repo.go` writes to `on_hand_qty` directly, but migration `000031` converted it to a `GENERATED ALWAYS AS STORED` column. These writes will fail on the current schema. All receiving queries (PO receive, transfer receive, quick receive) need to update `new_qty` instead of `on_hand_qty`.
 
@@ -34,6 +35,7 @@ This document tracks application features, modules, and workflows that are **PLA
 
 ## 🧹 Completed Schema & Codebase Cleanups
 
+- [x] **Customer Returns & RMA Pipeline**: End-to-end customer return authorization, receipt lookup and product scan fallback, return window enforcement (14 days tech, 30 days default), manager approval workflow for returns over $50, RTV queueing for defective items, inventory disposition re-stocking, immutable audit ledger integration, and interactive frontend back room Returns workflow.
 - [x] **Remove Planograms & Price Tag Generation**: Dropped `planograms` and `planogram_products` tables via migration `000038`, removed backend boilerplate services/handlers, and purged frontend planogram tabs and price tag screens.
 - [x] **Drop 7 Unused Database Tables & Custom Enums**: Removed dead tables (`audit_log`, `out_of_stock_log`, `price_history`, `price_tag_jobs`, `price_tag_job_items`, `print_supplies`, `print_services`) and 5 unused enums via `golang-migrate` migration `000037`.
 - [x] **Consolidate Audit Ledger**: Standardized on `inventory_transactions` as the sole immutable audit log across POS sales, PO receiving, stock transfers, cycle counts, and manager adjustments.

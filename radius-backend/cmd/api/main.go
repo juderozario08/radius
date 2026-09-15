@@ -65,6 +65,7 @@ func main() {
 	cycleCountRepo := repository.NewCycleCountRepo(db.DB)
 	fillReportRepo := repository.NewFillReportRepository(db.DB)
 	transferRepo := repository.NewTransferRepo(db.DB)
+	returnsRepo := repository.NewReturnsRepo(db.DB)
 
 	wsHub := websocket.NewHub()
 	go wsHub.Run()
@@ -90,6 +91,7 @@ func main() {
 	receivingService := service.NewReceivingService(receivingRepo, employeeRepo)
 	auditService := service.NewAuditService(auditRepo, employeeRepo, productsRepo)
 	printOrderService := service.NewPrintOrderService(ordersRepo, employeeRepo)
+	returnsService := service.NewReturnsService(returnsRepo, employeeRepo, productsRepo, salesRepo, wsHub)
 
 	upgrader := websocket.NewUpgrader()
 	wsHandler := handler.NewWSHandler(
@@ -119,6 +121,7 @@ func main() {
 		SessionHandler:     handler.NewSessionHandler(sessionService),
 		EmployeeHandler:    handler.NewEmployeeHandler(employeeService),
 		PrintOrderHandler:  handler.NewPrintOrderHandler(printOrderService),
+		ReturnsHandler:     handler.NewReturnsHandler(returnsService),
 		WSHandler:          wsHandler,
 	}
 

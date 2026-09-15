@@ -143,3 +143,15 @@ type TransferRepository interface {
 	GetDestinationStores(ctx context.Context, fromStoreID int) ([]models.TransferDestinationStore, error)
 }
 
+type ReturnsRepository interface {
+	CreateReturn(ctx context.Context, storeID int, employeeID int, status models.ReturnStatus, req models.CreateReturnRequest) (*models.CustomerReturn, []models.CustomerReturnItem, error)
+	ApproveReturn(ctx context.Context, returnID int, approverID int) error
+	RejectReturn(ctx context.Context, returnID int, approverID int, reason string) error
+	GetReturns(ctx context.Context, storeID *int, criteria models.ReturnSearchCriteria, limit, offset int) ([]models.CustomerReturnSummary, int, error)
+	GetReturnDetail(ctx context.Context, returnID int) (*models.CustomerReturnSummary, []models.CustomerReturnItemDetail, error)
+	LookupTransaction(ctx context.Context, transactionID int64, storeID *int) (*models.LookupTransactionResponse, error)
+	LookupTransactionsByProduct(ctx context.Context, barcodeOrUpc string, storeID int) ([]models.RecentTransactionSummary, error)
+	GetRtvQueue(ctx context.Context, storeID *int, status *models.RtvStatus, limit, offset int) ([]models.RtvQueueItem, int, error)
+}
+
+

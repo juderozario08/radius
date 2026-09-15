@@ -148,5 +148,15 @@ export const ENDPOINTS = {
             schedule: "/api/sales_floor/cycle_counts/schedule",
             transfer: createRoute("/api/sales_floor/cycle_counts/:id/transfer_ownership"),
         },
+        RETURNS: {
+            getAll: "/api/sales_floor/returns",
+            getDetail: createRoute("/api/sales_floor/returns/:id"),
+            create: "/api/sales_floor/returns",
+            approve: createRoute("/api/sales_floor/returns/:id/approve"),
+            reject: createRoute("/api/sales_floor/returns/:id/reject"),
+            lookup: createRoute("/api/sales_floor/returns/lookup/:id"),
+            searchByProduct: "/api/sales_floor/returns/search_by_product",
+            rtv: "/api/sales_floor/returns/rtv",
+        },
     },
 };

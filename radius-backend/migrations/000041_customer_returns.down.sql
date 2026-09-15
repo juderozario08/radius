@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS rtv_queue CASCADE;
+DROP TABLE IF EXISTS customer_return_items CASCADE;
+DROP TABLE IF EXISTS customer_returns CASCADE;
+
+DROP TYPE IF EXISTS rtv_status CASCADE;
+DROP TYPE IF EXISTS return_disposition CASCADE;
+DROP TYPE IF EXISTS return_status CASCADE;
+DROP TYPE IF EXISTS refund_method CASCADE;
+

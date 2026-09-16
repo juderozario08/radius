@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"radius/internal/models"
 	"time"
@@ -83,6 +84,9 @@ func (s *OnlineOrderService) AssignOnlineOrder(ctx context.Context, email string
 
 	targetEmpID := employeeID
 	if targetEmpID == nil && currentEmp != nil {
+		if role == models.RoleAdmin {
+			return nil, false, errors.New("admin must specify an employee_id to assign an order")
+		}
 		targetEmpID = &currentEmp.EmployeeId
 	}
 

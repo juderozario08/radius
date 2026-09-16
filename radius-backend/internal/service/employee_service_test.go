@@ -50,6 +50,41 @@ func TestEmployeeService_GetManagerEmployees_Success(t *testing.T) {
 	}
 }
 
+func TestEmployeeService_GetManagerEmployees_AdminStoreOverride(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockEmployeeRepository(ctrl)
+	svc := service.NewEmployeeService(mockRepo)
+
+	adminEmail := "admin@test.com"
+	overrideStoreID := 9
+
+	mockRepo.EXPECT().
+		GetEmployeeByEmail(gomock.Any(), adminEmail).
+		Return(&models.Employee{
+			EmployeeBase: models.EmployeeBase{
+				Email:   adminEmail,
+				Role:    models.RoleAdmin,
+				StoreId: 1,
+			},
+		}, nil)
+
+	mockRepo.EXPECT().
+		GetAllEmployees(gomock.Any(), 10, 0, &overrideStoreID).
+		Return([]models.Employee{
+			{EmployeeId: 10, EmployeeBase: models.EmployeeBase{StoreId: overrideStoreID}},
+		}, 1, nil)
+
+	res, err := svc.GetManagerEmployees(context.Background(), adminEmail, 1, 10, &overrideStoreID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if res.TotalLength != 1 || res.Employees[0].StoreId != overrideStoreID {
+		t.Fatalf("expected 1 employee with store id %d", overrideStoreID)
+	}
+}
+
 func TestEmployeeService_GetManagerEmployees_NotFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

@@ -68,7 +68,14 @@ func (e *EmployeeHandler) GetManagerEmployees(ctx *gin.Context) {
 		return
 	}
 
-	employeeResponse, err := e.employeeService.GetManagerEmployees(ctx.Request.Context(), email.(string), pageNumber, pageSize)
+	var storeId *int
+	if storeIdStr := ctx.Query("store_id"); storeIdStr != "" {
+		if parsedStoreId, err := strconv.Atoi(storeIdStr); err == nil && parsedStoreId > 0 {
+			storeId = &parsedStoreId
+		}
+	}
+
+	employeeResponse, err := e.employeeService.GetManagerEmployees(ctx.Request.Context(), email.(string), pageNumber, pageSize, storeId)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.GetManagerEmployees (Service): %v", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})

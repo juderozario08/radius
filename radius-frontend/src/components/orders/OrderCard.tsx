@@ -31,6 +31,7 @@ export interface OrderCardProps {
     order: OnlineOrder | OrderCardData;
     onPress?: () => void;
     isNew?: boolean;
+    isAdmin?: boolean;
     style?: StyleProp<ViewStyle>;
 }
 
@@ -75,6 +76,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     order,
     onPress,
     isNew = false,
+    isAdmin = false,
     style,
 }) => {
     const typeStyle = getOrderTypeStyle(order.order_type);
@@ -151,8 +153,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                         </View>
                     ) : (
                         <View style={styles.unassignedBadge}>
-                            <Ionicons name="hand-right-outline" size={11} color="#E65100" />
-                            <Text style={styles.unassignedText}>Unassigned • Tap to open & claim</Text>
+                            <Ionicons name={isAdmin ? "eye-outline" : "hand-right-outline"} size={11} color="#E65100" />
+                            <Text style={styles.unassignedText}>
+                                {isAdmin ? "Unassigned • Tap to view" : "Unassigned • Tap to open & claim"}
+                            </Text>
                         </View>
                     )}
                 </View>

@@ -22,6 +22,7 @@ import {
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import { callApi } from "@/utils/helpers";
 import { GetOnlineOrderByIDResponse, OnlineOrder, OnlineOrderItem, OrderItemStatus } from "@/types/order.types";
+import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -104,10 +105,75 @@ export default function OnlineOrderDetail() {
 
     const [isFinancialsModalVisible, setIsFinancialsModalVisible] = useState(false);
 
+    const [isAssignModalVisible, setIsAssignModalVisible] = useState(false);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
+    const [isAssigning, setIsAssigning] = useState(false);
+
     const [selectedItemForAction, setSelectedItemForAction] = useState<OnlineOrderItem | null>(null);
     const [itemActionType, setItemActionType] = useState<"MENU" | "CANCEL" | "REMOVE" | "INVALID_QTY" | null>(null);
     const [selectedItemReason, setSelectedItemReason] = useState<string>("");
     const [tempInvalidQty, setTempInvalidQty] = useState<number>(0);
+
+    const openAssignModal = async () => {
+        setIsAssignModalVisible(true);
+        setSelectedEmployeeId(order?.assigned_to || null);
+        setIsLoadingEmployees(true);
+        const storeParam = order?.store_id ? `&store_id=${order.store_id}` : "";
+        const endpoint = user?.role === "ADMIN"
+            ? `${ENDPOINTS.ADMIN.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`
+            : `${ENDPOINTS.MANAGER.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`;
+        const data = await callApi<GetAllEmployeeResponse>(
+            endpoint,
+            { method: "GET" },
+            logout
+        );
+        if (data && data.employees) {
+            setEmployees(data.employees.filter((e) => !e.is_terminated && e.role !== "ADMIN"));
+        }
+        setIsLoadingEmployees(false);
+    };
+
+    const handleAssignOrder = async () => {
+        if (!selectedEmployeeId || !order) {
+            Alert.alert("Validation", "Please select an employee to assign this order to.");
+            return;
+        }
+        setIsAssigning(true);
+        try {
+            const res = await callApi<{ message?: string; online_order?: OnlineOrder; assigned_to?: number; assigned_to_name?: string }>(
+                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign(order.order_id),
+                {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        order_id: order.order_id,
+                        employee_id: selectedEmployeeId,
+                    }),
+                },
+                logout
+            );
+            if (res) {
+                const selectedEmp = employees.find((e) => e.employee_id === selectedEmployeeId);
+                const assigneeName = res.assigned_to_name || (selectedEmp ? `${selectedEmp.first_name} ${selectedEmp.last_name}` : "Associate");
+                setOrder((prev) =>
+                    prev
+                        ? {
+                              ...prev,
+                              assigned_to: selectedEmployeeId,
+                              assigned_to_name: assigneeName,
+                          }
+                        : prev
+                );
+                setIsAssignModalVisible(false);
+                Alert.alert("Success", `Order #${order.order_id} assigned to ${assigneeName}.`);
+            }
+        } catch (err: any) {
+            Alert.alert("Assignment Failed", err.message || "Failed to assign order");
+        } finally {
+            setIsAssigning(false);
+        }
+    };
 
     useEffect(() => {
         if (id) {
@@ -126,7 +192,7 @@ export default function OnlineOrderDetail() {
             setOrder(data.online_order);
             setItems(data.items || []);
 
-            if (!data.online_order.assigned_to && user?.employee_id) {
+            if (!data.online_order.assigned_to && user?.employee_id && user?.role !== "ADMIN") {
                 callApi<{ online_order: OnlineOrder }>(
                     ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign(data.online_order.order_id),
                     {
@@ -406,6 +472,31 @@ export default function OnlineOrderDetail() {
                         <Text style={styles.metaBadge}>{order.order_type}</Text>
                         <Text style={styles.metaText}>Store #{order.store_id}</Text>
                         <Text style={styles.metaText}>Placed: {new Date(order.placed_at).toLocaleDateString()}</Text>
+                    </View>
+
+                    <View style={styles.assigneeRow}>
+                        <View style={styles.assigneeInfo}>
+                            <Ionicons name="person-outline" size={16} color={COLORS.textSecondary} />
+                            <Text style={styles.assigneeText}>
+                                Assigned to:{" "}
+                                <Text style={{ fontWeight: "700", color: COLORS.textPrimary }}>
+                                    {order.assigned_to_name || "Unassigned"}
+                                </Text>
+                            </Text>
+                        </View>
+
+                        {isManagerOrAdmin && (
+                            <TouchableOpacity
+                                style={styles.reassignBtn}
+                                activeOpacity={0.7}
+                                onPress={openAssignModal}
+                            >
+                                <Ionicons name="swap-horizontal" size={14} color={COLORS.primary} />
+                                <Text style={styles.reassignBtnText}>
+                                    {order.assigned_to ? "Reassign" : "Assign"}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
 
                     {order.status === "CANCELLED" && order.cancellation_reason && (
@@ -777,6 +868,21 @@ export default function OnlineOrderDetail() {
                                 <Ionicons name="receipt-outline" size={20} color={COLORS.textPrimary} />
                                 <Text style={styles.menuItemText}>View Financials & Shipping</Text>
                             </TouchableOpacity>
+
+                            {isManagerOrAdmin && (
+                                <TouchableOpacity
+                                    style={styles.menuItem}
+                                    onPress={() => {
+                                        setIsOrderMenuVisible(false);
+                                        openAssignModal();
+                                    }}
+                                >
+                                    <Ionicons name="swap-horizontal" size={20} color={COLORS.textPrimary} />
+                                    <Text style={styles.menuItemText}>
+                                        {order.assigned_to ? "Reassign Order" : "Assign Order"}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
 
                             {order.status !== "CANCELLED" && (
                                 <TouchableOpacity
@@ -1168,6 +1274,106 @@ export default function OnlineOrderDetail() {
                                 )}
                             </View>
                         )}
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={isAssignModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setIsAssignModalVisible(false)}
+            >
+                <View style={globalStyles.modalOverlay}>
+                    <View style={[globalStyles.modalContentWrapper, { maxHeight: "80%" }]}>
+                        <View style={globalStyles.modalCardContainer}>
+                            <View style={globalStyles.modalHeader}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={globalStyles.modalTitle}>
+                                        {order.assigned_to ? "Reassign Order" : "Assign Order"}
+                                    </Text>
+                                    <Text style={globalStyles.modalSubtitle}>
+                                        Assign this order to a store associate
+                                    </Text>
+                                </View>
+                                <TouchableOpacity onPress={() => setIsAssignModalVisible(false)}>
+                                    <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
+
+                            {isLoadingEmployees ? (
+                                <View style={{ paddingVertical: 30, alignItems: "center" }}>
+                                    <ActivityIndicator size="small" color={COLORS.primary} />
+                                </View>
+                            ) : (
+                                <ScrollView style={{ maxHeight: 280, marginVertical: 10 }}>
+                                    {employees.length === 0 ? (
+                                        <View style={{ paddingVertical: 20, alignItems: "center" }}>
+                                            <Text style={globalStyles.emptyText}>No available employees in this store</Text>
+                                        </View>
+                                    ) : (
+                                        employees.map((emp) => {
+                                            const isSelected = selectedEmployeeId === emp.employee_id;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={emp.employee_id}
+                                                    style={[
+                                                        styles.empSelectItem,
+                                                        isSelected && styles.empSelectItemActive,
+                                                    ]}
+                                                    onPress={() => setSelectedEmployeeId(emp.employee_id)}
+                                                >
+                                                    <Ionicons
+                                                        name={isSelected ? "radio-button-on" : "radio-button-off"}
+                                                        size={20}
+                                                        color={isSelected ? COLORS.primary : COLORS.textSecondary}
+                                                    />
+                                                    <View style={{ marginLeft: 12, flex: 1 }}>
+                                                        <Text
+                                                            style={[
+                                                                styles.empSelectName,
+                                                                isSelected && styles.empSelectNameActive,
+                                                            ]}
+                                                        >
+                                                            {emp.first_name} {emp.last_name}
+                                                        </Text>
+                                                        <Text style={styles.empSelectRole}>
+                                                            {emp.role} • Store #{emp.store_id}
+                                                        </Text>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            );
+                                        })
+                                    )}
+                                </ScrollView>
+                            )}
+
+                            <View style={styles.modalBtnRow}>
+                                <TouchableOpacity
+                                    style={[globalStyles.buttonSecondary, { flex: 1 }]}
+                                    onPress={() => setIsAssignModalVisible(false)}
+                                >
+                                    <Text style={globalStyles.buttonTextSecondary}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        globalStyles.buttonPrimary,
+                                        { flex: 1 },
+                                        (!selectedEmployeeId || isAssigning) && { opacity: 0.6 },
+                                    ]}
+                                    disabled={!selectedEmployeeId || isAssigning}
+                                    onPress={handleAssignOrder}
+                                >
+                                    {isAssigning ? (
+                                        <ActivityIndicator size="small" color="#FFF" />
+                                    ) : (
+                                        <Text style={globalStyles.buttonTextPrimary}>
+                                            {order.assigned_to ? "Reassign" : "Assign"}
+                                        </Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -1620,5 +1826,67 @@ const styles = StyleSheet.create({
         color: COLORS.textPrimary,
         marginTop: 10,
         marginBottom: 6,
+    },
+    assigneeRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginTop: 10,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
+    },
+    assigneeInfo: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        flex: 1,
+    },
+    assigneeText: {
+        fontSize: 13,
+        color: COLORS.textSecondary,
+    },
+    reassignBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        borderRadius: 6,
+        backgroundColor: "#EDE7F6",
+    },
+    reassignBtnText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: COLORS.primary,
+    },
+    empSelectItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        marginBottom: 6,
+        backgroundColor: "#F9FAFB",
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    empSelectItemActive: {
+        backgroundColor: "#EDE7F6",
+        borderColor: COLORS.primary,
+    },
+    empSelectName: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: COLORS.textPrimary,
+    },
+    empSelectNameActive: {
+        color: COLORS.primary,
+        fontWeight: "700",
+    },
+    empSelectRole: {
+        fontSize: 12,
+        color: COLORS.textSecondary,
+        marginTop: 2,
     },
 });

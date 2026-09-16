@@ -100,13 +100,16 @@ export default function CycleCountDetail() {
         setSelectedEmployeeId(detail?.count.counted_by || null);
         setIsLoadingEmployees(true);
         const storeParam = detail?.count.store_id ? `&store_id=${detail.count.store_id}` : "";
+        const endpoint = user?.role === "ADMIN"
+            ? `${ENDPOINTS.ADMIN.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`
+            : `${ENDPOINTS.MANAGER.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`;
         const data = await callApi<GetAllEmployeeResponse>(
-            `${ENDPOINTS.MANAGER.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`,
+            endpoint,
             { method: "GET" },
             logout
         );
         if (data && data.employees) {
-            setEmployees(data.employees.filter((e) => !e.is_terminated));
+            setEmployees(data.employees.filter((e) => !e.is_terminated && e.role !== "ADMIN"));
         }
         setIsLoadingEmployees(false);
     };
@@ -406,7 +409,9 @@ export default function CycleCountDetail() {
                                 onPress={openReassignModal}
                             >
                                 <Ionicons name="swap-horizontal" size={14} color={COLORS.primary} />
-                                <Text style={styles.reassignBtnText}>Reassign</Text>
+                                <Text style={styles.reassignBtnText}>
+                                    {count.counted_by ? "Reassign" : "Assign"}
+                                </Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -715,7 +720,9 @@ export default function CycleCountDetail() {
                         <View style={globalStyles.modalCardContainer}>
                             <View style={globalStyles.modalHeader}>
                                 <View>
-                                    <Text style={globalStyles.modalTitle}>Transfer Ownership</Text>
+                                    <Text style={globalStyles.modalTitle}>
+                                        {detail?.count.counted_by ? "Transfer Ownership" : "Assign Ownership"}
+                                    </Text>
                                     <Text style={globalStyles.modalSubtitle}>
                                         Assign this cycle count to a store employee
                                     </Text>
@@ -778,7 +785,9 @@ export default function CycleCountDetail() {
                                 {isTransferring ? (
                                     <ActivityIndicator size="small" color="#FFF" />
                                 ) : (
-                                    <Text style={globalStyles.buttonTextPrimary}>Confirm Transfer</Text>
+                                    <Text style={globalStyles.buttonTextPrimary}>
+                                        {detail?.count.counted_by ? "Confirm Transfer" : "Confirm Assignment"}
+                                    </Text>
                                 )}
                             </TouchableOpacity>
                         </View>

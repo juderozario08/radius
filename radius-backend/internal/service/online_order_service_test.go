@@ -273,6 +273,52 @@ func TestOnlineOrderService_AssignOnlineOrder(t *testing.T) {
 	}
 }
 
+func TestOnlineOrderService_AssignOnlineOrder_Admin(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockOrdersRepo := mocks.NewMockOrdersRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	svc := service.NewOnlineOrderService(mockOrdersRepo, nil, nil, nil, nil, mockEmployeeRepo)
+
+	orderID := 101
+	adminID := 1
+	targetEmpID := 5
+
+	mockEmployeeRepo.EXPECT().
+		GetEmployeeByEmail(gomock.Any(), "admin@test.com").
+		Return(&models.Employee{
+			EmployeeId: adminID,
+			EmployeeBase: models.EmployeeBase{
+				StoreId: 1,
+				Role:    models.RoleAdmin,
+			},
+		}, nil).Times(2)
+
+	_, _, err := svc.AssignOnlineOrder(context.Background(), "admin@test.com", models.RoleAdmin, orderID, nil)
+	if err == nil {
+		t.Fatalf("expected error when admin assigns with nil employeeID")
+	}
+
+	empName := "Store Associate"
+	mockOrdersRepo.EXPECT().
+		AssignOnlineOrder(gomock.Any(), orderID, &targetEmpID, (*int)(nil), true).
+		Return(&models.OnlineOrder{
+			OrderId:        orderID,
+			StoreId:        2,
+			AssignedTo:     &targetEmpID,
+			AssignedToName: &empName,
+		}, true, nil)
+
+	order, wasAssigned, err := svc.AssignOnlineOrder(context.Background(), "admin@test.com", models.RoleAdmin, orderID, &targetEmpID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !wasAssigned || order.AssignedTo == nil || *order.AssignedTo != targetEmpID {
+		t.Fatalf("expected order assigned to %d", targetEmpID)
+	}
+}
+
 func TestOnlineOrderService_UpdateOrderItem(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

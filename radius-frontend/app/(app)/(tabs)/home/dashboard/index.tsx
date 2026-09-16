@@ -492,6 +492,14 @@ export default function RealTimeDashboard() {
         const currentEmpId = user?.employee_id;
         const isManagerOrAdmin = user?.role === "MANAGER" || user?.role === "ADMIN";
 
+        if (isAdmin) {
+            router.push({
+                pathname: `/(app)/(tabs)/home/actions/sales_floor/Orders/${order.order_id}`,
+                params: { from: "dashboard" },
+            } as any);
+            return;
+        }
+
         if (order.assigned_to && order.assigned_to !== currentEmpId) {
             const assignee = order.assigned_to_name || "another associate";
             if (!isManagerOrAdmin) {
@@ -1056,6 +1064,7 @@ export default function RealTimeDashboard() {
                                                 key={`order-${order.order_id}`}
                                                 order={order}
                                                 isNew={newOrderIds.has(order.order_id)}
+                                                isAdmin={isAdmin}
                                                 onPress={() => handleOrderPress(order)}
                                                 style={styles.cardSpacing}
                                             />

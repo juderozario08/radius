@@ -35,7 +35,7 @@ func (e *EmployeeService) GetAllEmployees(ctx context.Context, pageNumber int, p
 	}, nil
 }
 
-func (e *EmployeeService) GetManagerEmployees(ctx context.Context, email string, pageNumber int, pageSize int) (*models.GetAllEmployeesResponse, error) {
+func (e *EmployeeService) GetManagerEmployees(ctx context.Context, email string, pageNumber int, pageSize int, storeIDOverride ...*int) (*models.GetAllEmployeesResponse, error) {
 	employee, err := e.employeeRepo.GetEmployeeByEmail(ctx, email)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,12 @@ func (e *EmployeeService) GetManagerEmployees(ctx context.Context, email string,
 	limit := pageSize
 	offset := (pageNumber - 1) * pageSize
 
-	employees, totalLength, err := e.employeeRepo.GetAllEmployees(ctx, limit, offset, &employee.StoreId)
+	targetStoreID := &employee.StoreId
+	if len(storeIDOverride) > 0 && storeIDOverride[0] != nil && *storeIDOverride[0] > 0 && employee.Role == models.RoleAdmin {
+		targetStoreID = storeIDOverride[0]
+	}
+
+	employees, totalLength, err := e.employeeRepo.GetAllEmployees(ctx, limit, offset, targetStoreID)
 	if err != nil {
 		return nil, err
 	}

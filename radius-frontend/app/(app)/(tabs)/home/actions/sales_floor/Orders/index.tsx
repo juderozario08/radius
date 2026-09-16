@@ -150,6 +150,7 @@ export default function OnlineOrdersList() {
                     <DetailRow layout="inline" label="Customer: " value={item.customer_name} />
                     <DetailRow layout="inline" label="Total: " value={`$${(item.total_amount || 0).toFixed(2)}`} />
                     <DetailRow layout="inline" label="Placed: " value={date} />
+                    <DetailRow layout="inline" label="Assigned: " value={item.assigned_to_name || "Unassigned"} />
                     <DetailRow layout="inline" label="Status: " value={item.status} />
                 </View>
             </TouchableOpacity>

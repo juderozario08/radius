@@ -75,7 +75,7 @@ const BackButton: React.FC<BackButtonProps> = ({
     }, [from, handlePress]);
 
     return (
-        <TouchableOpacity onPress={handlePress} style={style}>
+        <TouchableOpacity onPress={handlePress} style={style} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
             <Image
                 style={[globalStyles.headerImageSize, imageStyle]}
                 source={require("@/assets/images/back.png")}

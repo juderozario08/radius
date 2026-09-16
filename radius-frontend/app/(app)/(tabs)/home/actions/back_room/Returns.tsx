@@ -12,11 +12,8 @@ import {
     Alert,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
-import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
-import { View, Text, StyleSheet } from "react-native";
-import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import Pagination from "@/components/common/Pagination";
 import { ReturnCard } from "@/components/returns/ReturnCard";
 import { COLORS } from "@/constants/colors";
@@ -396,18 +393,11 @@ export default function Returns() {
     return (
         <TopSafeAreaView>
             <HeaderComponent
-                headerLeft={(<BackButton />)}
-                headerCenter={(
-                    <View style={{ flexDirection: 'row' }}>
-                        <Text>Returns</Text>
                 headerLeft={<BackButton />}
                 headerCenter={
                     <View style={styles.headerTitleContainer}>
                         <Text style={styles.headerTitle}>Customer Returns & RMA</Text>
                     </View>
-                )} />
-            <View style={styles.container}>
-                <Text>Returns</Text>
                 }
             />
 
@@ -1080,12 +1070,10 @@ export default function Returns() {
                 </View>
             </Modal>
         </TopSafeAreaView>
-    )
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
     headerTitleContainer: {
         flexDirection: "row",
         alignItems: "center",
@@ -1104,8 +1092,6 @@ const styles = StyleSheet.create({
     },
     tabButton: {
         flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
@@ -1114,9 +1100,6 @@ const styles = StyleSheet.create({
         borderBottomWidth: 2,
         borderBottomColor: "transparent",
     },
-    title: {
-    }
-})
     tabButtonActive: {
         borderBottomColor: COLORS.primary,
     },

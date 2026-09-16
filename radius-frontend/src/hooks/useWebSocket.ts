@@ -218,7 +218,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
             wsRef.current = ws;
 
             ws.onopen = () => {
-                if (!isMountedRef.current) {
+                if (!isMountedRef.current || wsRef.current !== ws) {
                     ws.close();
                     return;
                 }
@@ -227,7 +227,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
             };
 
             ws.onmessage = (event: WebSocketMessageEvent) => {
-                if (!isMountedRef.current) return;
+                if (!isMountedRef.current || wsRef.current !== ws) return;
                 try {
                     const rawData = typeof event.data === "string" ? event.data : "";
                     if (!rawData) return;
@@ -291,12 +291,15 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
             };
 
             ws.onerror = (err) => {
+                if (!isMountedRef.current || wsRef.current !== ws) return;
                 console.warn("[useWebSocket] Socket error:", err);
             };
 
             ws.onclose = (e: WebSocketCloseEvent) => {
-                wsRef.current = null;
-                if (!isMountedRef.current) return;
+                if (wsRef.current === ws) {
+                    wsRef.current = null;
+                }
+                if (!isMountedRef.current || wsRef.current !== null) return;
 
                 if (isIntentionallyClosedRef.current || e.code === 1000) {
                     updateStatus("disconnected");
@@ -338,8 +341,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         reconnectAttemptRef.current = 0;
         if (wsRef.current) {
             isIntentionallyClosedRef.current = true;
-            wsRef.current.close(1000, "Manual reconnect triggered");
+            const oldWs = wsRef.current;
             wsRef.current = null;
+            oldWs.onopen = null;
+            oldWs.onmessage = null;
+            oldWs.onerror = null;
+            oldWs.onclose = null;
+            oldWs.close(1000, "Manual reconnect triggered");
         }
         connect();
     }, [connect]);
@@ -359,8 +367,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
                 isSuspendedRef.current = true;
                 clearReconnectTimeout();
                 if (wsRef.current) {
-                    wsRef.current.close(1000, "App backgrounded");
+                    const oldWs = wsRef.current;
                     wsRef.current = null;
+                    oldWs.onopen = null;
+                    oldWs.onmessage = null;
+                    oldWs.onerror = null;
+                    oldWs.onclose = null;
+                    oldWs.close(1000, "App backgrounded");
                 }
                 updateStatus("disconnected");
             }
@@ -393,8 +406,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
             isIntentionallyClosedRef.current = true;
             clearReconnectTimeout();
             if (wsRef.current) {
-                wsRef.current.close(1000, "Component unmounted");
+                const oldWs = wsRef.current;
                 wsRef.current = null;
+                oldWs.onopen = null;
+                oldWs.onmessage = null;
+                oldWs.onerror = null;
+                oldWs.onclose = null;
+                oldWs.close(1000, "Component unmounted");
             }
         };
     }, [autoConnect, isAuthenticated, connect, clearReconnectTimeout]);

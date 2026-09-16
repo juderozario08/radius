@@ -56,15 +56,18 @@ export default function Activities() {
                 return [payload, ...prev];
             });
             showToast(`⚡ New Order #${payload.order_id} Received`);
-            setLiveActivities((prev) => [{
-                activity_id: `act-order-${payload.order_id}-${Date.now()}`,
-                store_id: payload.store_id,
-                activity_type: "ORDER_PLACED",
-                title: `New Online Order #${payload.order_id}`,
-                description: `${payload.customer_name} placed ${payload.order_type} order`,
-                timestamp: payload.placed_at || new Date().toISOString(),
-                metadata: { order_id: payload.order_id, assigned_to: payload.assigned_to },
-            }, ...prev]);
+            setLiveActivities((prev) => {
+                const newAct: StoreActivityPayload = {
+                    activity_id: `act-order-${payload.order_id}-${Date.now()}`,
+                    store_id: payload.store_id,
+                    activity_type: "ORDER_PLACED",
+                    title: `New Online Order #${payload.order_id}`,
+                    description: `${payload.customer_name} placed ${payload.order_type} order`,
+                    timestamp: payload.placed_at || new Date().toISOString(),
+                    metadata: { order_id: payload.order_id, assigned_to: payload.assigned_to },
+                };
+                return [newAct, ...prev.filter((a) => a.activity_id !== newAct.activity_id)];
+            });
         },
         onOrderStatusUpdated: (payload) => {
             setLiveOrders((prev) => {
@@ -92,15 +95,18 @@ export default function Activities() {
                 }, ...prev];
             });
 
-            setLiveActivities((prev) => [{
-                activity_id: `act-status-${payload.order_id}-${Date.now()}`,
-                store_id: payload.store_id,
-                activity_type: "ORDER_STATUS_CHANGED",
-                title: `Order #${payload.order_id} Updated`,
-                description: payload.assigned_to_name ? `Assigned to ${payload.assigned_to_name}` : `Moved to ${payload.new_status}`,
-                timestamp: payload.updated_at || new Date().toISOString(),
-                metadata: { order_id: payload.order_id, assigned_to: payload.assigned_to },
-            }, ...prev]);
+            setLiveActivities((prev) => {
+                const newAct: StoreActivityPayload = {
+                    activity_id: `act-status-${payload.order_id}-${Date.now()}`,
+                    store_id: payload.store_id,
+                    activity_type: "ORDER_STATUS_CHANGED",
+                    title: `Order #${payload.order_id} Updated`,
+                    description: payload.assigned_to_name ? `Assigned to ${payload.assigned_to_name}` : `Moved to ${payload.new_status}`,
+                    timestamp: payload.updated_at || new Date().toISOString(),
+                    metadata: { order_id: payload.order_id, assigned_to: payload.assigned_to },
+                };
+                return [newAct, ...prev.filter((a) => a.activity_id !== newAct.activity_id)];
+            });
         },
         onCycleCountUpdated: (payload) => {
             setLiveCycleCounts((prev) => {
@@ -112,21 +118,27 @@ export default function Activities() {
                 }
                 return [payload, ...prev];
             });
-            setLiveActivities((prev) => [{
-                activity_id: `act-cycle-${payload.count_id}-${Date.now()}`,
-                store_id: payload.store_id,
-                activity_type: "CYCLE_COUNT_UPDATED",
-                title: `Cycle Count #${payload.count_id} - ${payload.category_name}`,
-                description: `Status: ${payload.status} • Action: ${payload.action}`,
-                timestamp: payload.updated_at || new Date().toISOString(),
-                metadata: { count_id: payload.count_id },
-            }, ...prev]);
+            setLiveActivities((prev) => {
+                const newAct: StoreActivityPayload = {
+                    activity_id: `act-cycle-${payload.count_id}-${Date.now()}`,
+                    store_id: payload.store_id,
+                    activity_type: "CYCLE_COUNT_UPDATED",
+                    title: `Cycle Count #${payload.count_id} - ${payload.category_name}`,
+                    description: `Status: ${payload.status} • Action: ${payload.action}`,
+                    timestamp: payload.updated_at || new Date().toISOString(),
+                    metadata: { count_id: payload.count_id },
+                };
+                return [newAct, ...prev.filter((a) => a.activity_id !== newAct.activity_id)];
+            });
         },
         onStoreActivity: (payload) => {
             if (payload.activity_type.includes("POS") || payload.activity_type.includes("TRANSACTION") || payload.activity_type.includes("FILL") || payload.activity_type.includes("STOCK")) {
                 return;
             }
-            setLiveActivities((prev) => [payload, ...prev]);
+            setLiveActivities((prev) => [
+                payload,
+                ...prev.filter((a) => a.activity_id !== payload.activity_id),
+            ]);
         },
     });
 

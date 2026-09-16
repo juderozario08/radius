@@ -22,7 +22,7 @@ import {
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import { callApi } from "@/utils/helpers";
 import { GetOnlineOrderByIDResponse, OnlineOrder, OnlineOrderItem, OrderItemStatus } from "@/types/order.types";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 type TabType = "SCANNER" | "PRODUCTS";
@@ -513,14 +513,25 @@ export default function OnlineOrderDetail() {
                         {scannedItem ? (
                             <View style={styles.scannedCardPopup}>
                                 <View style={styles.scannedCardHeader}>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.scannedCardTitle}>
-                                            SKU: {scannedItem.item.product_sku || "N/A"}
-                                        </Text>
+                                    <TouchableOpacity
+                                        style={{ flex: 1 }}
+                                        activeOpacity={0.7}
+                                        onPress={() => {
+                                            if (scannedItem.item.product_id) {
+                                                router.push(`/(app)/product/${scannedItem.item.product_id}` as any);
+                                            }
+                                        }}
+                                    >
+                                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                            <Text style={styles.scannedCardTitle}>
+                                                SKU: {scannedItem.item.product_sku || "N/A"}
+                                            </Text>
+                                            <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+                                        </View>
                                         <Text style={styles.scannedCardSub}>
                                             Price: ${(scannedItem.item.unit_price || 0).toFixed(2)} | Ordered: {scannedItem.item.quantity}
                                         </Text>
-                                    </View>
+                                    </TouchableOpacity>
                                     <TouchableOpacity
                                         onPress={() => {
                                             setScannedItem(null);
@@ -611,9 +622,18 @@ export default function OnlineOrderDetail() {
                                         ]}
                                     >
                                         <View style={styles.productCardHeader}>
-                                            <View style={{ flex: 1 }}>
+                                            <TouchableOpacity
+                                                style={{ flex: 1 }}
+                                                activeOpacity={0.7}
+                                                onPress={() => {
+                                                    if (item.product_id) {
+                                                        router.push(`/(app)/product/${item.product_id}` as any);
+                                                    }
+                                                }}
+                                            >
                                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                                                     <Text style={styles.productSku}>SKU: {item.product_sku || "N/A"}</Text>
+                                                    <Ionicons name="chevron-forward" size={14} color={COLORS.textSecondary} />
                                                     {item.status && item.status !== "ACTIVE" && (
                                                         <View
                                                             style={[
@@ -643,7 +663,7 @@ export default function OnlineOrderDetail() {
                                                 <Text style={styles.productPrice}>
                                                     ${(item.unit_price || 0).toFixed(2)} each
                                                 </Text>
-                                            </View>
+                                            </TouchableOpacity>
 
                                             <TouchableOpacity
                                                 style={styles.itemActionBtn}
@@ -657,35 +677,44 @@ export default function OnlineOrderDetail() {
                                             </TouchableOpacity>
                                         </View>
 
-                                        <View style={styles.progressRow}>
-                                            <Text style={styles.progressLabel}>
-                                                Picked: {item.picked_qty} / {item.quantity}
-                                            </Text>
-                                            <View style={styles.progressBarBg}>
-                                                <View
-                                                    style={[
-                                                        styles.progressBarFill,
-                                                        {
-                                                            width: `${Math.min(
-                                                                100,
-                                                                (item.picked_qty / Math.max(1, item.quantity)) * 100
-                                                            )}%`,
-                                                            backgroundColor:
-                                                                item.picked_qty >= item.quantity
-                                                                    ? "#2E7D32"
-                                                                    : COLORS.primary,
-                                                        },
-                                                    ]}
-                                                />
+                                        <TouchableOpacity
+                                            activeOpacity={0.7}
+                                            onPress={() => {
+                                                if (item.product_id) {
+                                                    router.push(`/(app)/product/${item.product_id}` as any);
+                                                }
+                                            }}
+                                        >
+                                            <View style={styles.progressRow}>
+                                                <Text style={styles.progressLabel}>
+                                                    Picked: {item.picked_qty} / {item.quantity}
+                                                </Text>
+                                                <View style={styles.progressBarBg}>
+                                                    <View
+                                                        style={[
+                                                            styles.progressBarFill,
+                                                            {
+                                                                width: `${Math.min(
+                                                                    100,
+                                                                    (item.picked_qty / Math.max(1, item.quantity)) * 100
+                                                                )}%`,
+                                                                backgroundColor:
+                                                                    item.picked_qty >= item.quantity
+                                                                        ? "#2E7D32"
+                                                                        : COLORS.primary,
+                                                            },
+                                                        ]}
+                                                    />
+                                                </View>
                                             </View>
-                                        </View>
 
-                                        {item.reason && (
-                                            <View style={styles.itemReasonRow}>
-                                                <Ionicons name="information-circle-outline" size={14} color={COLORS.textSecondary} />
-                                                <Text style={styles.itemReasonText}>Note: {item.reason}</Text>
-                                            </View>
-                                        )}
+                                            {item.reason && (
+                                                <View style={styles.itemReasonRow}>
+                                                    <Ionicons name="information-circle-outline" size={14} color={COLORS.textSecondary} />
+                                                    <Text style={styles.itemReasonText}>Note: {item.reason}</Text>
+                                                </View>
+                                            )}
+                                        </TouchableOpacity>
                                     </View>
                                 );
                             }}
@@ -904,7 +933,23 @@ export default function OnlineOrderDetail() {
                                         <Text style={styles.modalSubtitle}>
                                             SKU: {selectedItemForAction.product_sku || "Item #" + selectedItemForAction.product_id}
                                         </Text>
-                                        <View style={globalStyles.divider} />
+                                        <TouchableOpacity
+                                            style={styles.menuItem}
+                                            onPress={() => {
+                                                const prodId = selectedItemForAction.product_id;
+                                                setItemActionType(null);
+                                                setSelectedItemForAction(null);
+                                                if (prodId) {
+                                                    router.push(`/(app)/product/${prodId}` as any);
+                                                }
+                                            }}
+                                        >
+                                            <Ionicons name="information-circle-outline" size={20} color={COLORS.primary} />
+                                            <View style={{ marginLeft: 8 }}>
+                                                <Text style={[styles.menuItemText, { color: COLORS.primary }]}>View Product Details</Text>
+                                                <Text style={styles.menuItemSubText}>Check inventory, locations, or pricing</Text>
+                                            </View>
+                                        </TouchableOpacity>
 
                                         <TouchableOpacity
                                             style={styles.menuItem}

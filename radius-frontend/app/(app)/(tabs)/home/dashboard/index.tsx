@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
     StyleSheet,
     View,
@@ -141,19 +141,22 @@ export default function RealTimeDashboard() {
             setNewOrderIds((prev) => new Set(prev).add(payload.order_id));
             showToast(`⚡ Live Order #${payload.order_id} Received (${payload.order_type} - $${payload.total_amount.toFixed(2)})`);
 
-            setLiveActivities((prev) => [{
-                activity_id: `act-order-${payload.order_id}-${Date.now()}`,
-                store_id: payload.store_id,
-                activity_type: "ORDER_PLACED",
-                title: `New Online Order #${payload.order_id}`,
-                description: `${payload.customer_name} placed ${payload.order_type} order with ${payload.items_count} item(s)`,
-                timestamp: payload.placed_at || new Date().toISOString(),
-                metadata: {
-                    order_id: payload.order_id,
-                    order_type: payload.order_type,
-                    assigned_to: payload.assigned_to,
-                },
-            }, ...prev]);
+            setLiveActivities((prev) => {
+                const newAct: StoreActivityPayload = {
+                    activity_id: `act-order-${payload.order_id}-${Date.now()}`,
+                    store_id: payload.store_id,
+                    activity_type: "ORDER_PLACED",
+                    title: `New Online Order #${payload.order_id}`,
+                    description: `${payload.customer_name} placed ${payload.order_type} order with ${payload.items_count} item(s)`,
+                    timestamp: payload.placed_at || new Date().toISOString(),
+                    metadata: {
+                        order_id: payload.order_id,
+                        order_type: payload.order_type,
+                        assigned_to: payload.assigned_to,
+                    },
+                };
+                return [newAct, ...prev.filter((a) => a.activity_id !== newAct.activity_id)];
+            });
         },
         onOrderStatusUpdated: (payload) => {
             if (isAdmin && !selectedStore) {
@@ -208,8 +211,8 @@ export default function RealTimeDashboard() {
                 showToast(`🔄 Order #${payload.order_id} status changed to ${payload.new_status}`);
             }
 
-            setLiveActivities((prev) => [
-                {
+            setLiveActivities((prev) => {
+                const newAct: StoreActivityPayload = {
                     activity_id: `act-status-${payload.order_id}-${Date.now()}`,
                     store_id: payload.store_id,
                     activity_type: "ORDER_STATUS_CHANGED",
@@ -223,9 +226,9 @@ export default function RealTimeDashboard() {
                         assigned_to: payload.assigned_to,
                         assigned_to_name: payload.assigned_to_name,
                     },
-                },
-                ...prev,
-            ]);
+                };
+                return [newAct, ...prev.filter((a) => a.activity_id !== newAct.activity_id)];
+            });
         },
         onCycleCountUpdated: (payload) => {
             if (isAdmin && !selectedStore) {
@@ -251,8 +254,8 @@ export default function RealTimeDashboard() {
                 showToast(`📊 Cycle Count #${payload.count_id} Updated: ${payload.category_name} (${payload.action})`);
             }
 
-            setLiveActivities((prev) => [
-                {
+            setLiveActivities((prev) => {
+                const newAct: StoreActivityPayload = {
                     activity_id: `act-cycle-${payload.count_id}-${Date.now()}`,
                     store_id: payload.store_id,
                     activity_type: "CYCLE_COUNT_UPDATED",
@@ -260,9 +263,9 @@ export default function RealTimeDashboard() {
                     description: `Action: ${payload.action} | Progress: ${payload.counted_items}/${payload.total_items} items`,
                     timestamp: payload.updated_at || new Date().toISOString(),
                     metadata: { count_id: payload.count_id },
-                },
-                ...prev,
-            ]);
+                };
+                return [newAct, ...prev.filter((a) => a.activity_id !== newAct.activity_id)];
+            });
         },
         onStoreActivity: (payload) => {
             if (isAdmin && !selectedStore) {
@@ -277,7 +280,10 @@ export default function RealTimeDashboard() {
             ) {
                 return;
             }
-            setLiveActivities((prev) => [payload, ...prev]);
+            setLiveActivities((prev) => [
+                payload,
+                ...prev.filter((a) => a.activity_id !== payload.activity_id),
+            ]);
             showToast(`🔔 Store Activity: ${payload.title}`);
         },
     });
@@ -444,7 +450,13 @@ export default function RealTimeDashboard() {
         }
 
         activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        setLiveActivities(activities);
+        const seen = new Set<string>();
+        const uniqueActivities = activities.filter((a) => {
+            if (seen.has(a.activity_id)) return false;
+            seen.add(a.activity_id);
+            return true;
+        });
+        setLiveActivities(uniqueActivities);
 
         setInitialLoading(false);
     }, [isAdmin, selectedStore, user?.store_id, logout]);
@@ -633,7 +645,7 @@ export default function RealTimeDashboard() {
                 !a.activity_type.includes("FILL") &&
                 !a.activity_type.includes("STOCK")
         );
-        return viewScope === "my_tasks"
+        const scoped = viewScope === "my_tasks"
             ? filtered.filter(
                 (a) =>
                     a.metadata?.employee_id === currentEmpId ||
@@ -641,6 +653,13 @@ export default function RealTimeDashboard() {
                     !a.metadata?.assigned_to
             )
             : filtered;
+
+        const seen = new Set<string>();
+        return scoped.filter((a) => {
+            if (seen.has(a.activity_id)) return false;
+            seen.add(a.activity_id);
+            return true;
+        });
     }, [viewScope, liveActivities, currentEmpId]);
 
     return (
@@ -1155,9 +1174,9 @@ export default function RealTimeDashboard() {
                                             <Text style={styles.emptyCardText}>No activity recorded yet</Text>
                                         </View>
                                     ) : (
-                                        displayedActivities.slice(0, activeTab === "overview" ? 4 : 30).map((act) => (
+                                        displayedActivities.slice(0, activeTab === "overview" ? 4 : 30).map((act, index) => (
                                             <TouchableOpacity
-                                                key={act.activity_id}
+                                                key={`${act.activity_id}-${index}`}
                                                 activeOpacity={0.7}
                                                 onPress={() => handleActivityPress(act)}
                                                 style={[globalStyles.card, styles.activityCard]}

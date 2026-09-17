@@ -69,6 +69,7 @@ export default function IS4TCScanScreen() {
       return;
     }
 
+    if (isProcessing) return;
     setIsProcessing(true);
     try {
       const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.scanProduct}?barcode=${encodeURIComponent(barcode)}`;
@@ -84,13 +85,16 @@ export default function IS4TCScanScreen() {
         }, logout);
 
         if (addResp?.items) {
+          scannerRef.current?.triggerSuccess();
           setScannedItems(addResp.items);
           Toast.show({ type: "success", text1: "Added to List", text2: response.product.name });
         }
       } else {
+        scannerRef.current?.triggerError();
         Toast.show({ type: "error", text1: "Not Found", text2: "Product not found in inventory." });
       }
     } catch (err) {
+      scannerRef.current?.triggerError();
       Toast.show({ type: "error", text1: "Error", text2: "Failed to process scan." });
     } finally {
       setIsProcessing(false);
@@ -99,9 +103,6 @@ export default function IS4TCScanScreen() {
 
   const handleBarcodeScanned = (barcode: string) => {
     fetchProductByBarcode(barcode);
-    setTimeout(() => {
-        scannerRef.current?.resetScanner();
-    }, 1500);
   };
 
   const handleManualEntry = () => {

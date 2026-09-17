@@ -1,4 +1,4 @@
-import React, { useState, useImperativeHandle, forwardRef } from "react";
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
 import { CameraView } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,6 +9,8 @@ import { globalStyles } from "@/constants/styles";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const DEFAULT_CAMERA_HEIGHT = Math.round(SCREEN_HEIGHT * 0.4);
+const DUPLICATE_COOLDOWN_MS = 2500;
+const BURST_THROTTLE_MS = 600;
 
 const SUPPORTED_BARCODE_TYPES: (
     "upc_a" | "upc_e" | "ean13" | "ean8" | "code128" | "code39" | "codabar"
@@ -16,6 +18,10 @@ const SUPPORTED_BARCODE_TYPES: (
 
 export interface BarcodeScannerRef {
     resetScanner: () => void;
+    triggerSuccess: (durationMs?: number) => void;
+    triggerError: (durationMs?: number) => void;
+    pause?: () => void;
+    resume?: () => void;
 }
 
 interface BarcodeScannerProps {
@@ -24,23 +30,112 @@ interface BarcodeScannerProps {
     height?: number;
 }
 
+function sanitizeBarcode(raw: string): string | null {
+    if (!raw) return null;
+    const cleaned = raw.replace(/[\x00-\x1F\x7F-\x9F\u200B-\u200D\uFEFF]/g, "").trim();
+    if (cleaned.length < 3 || cleaned.length > 64) return null;
+    if (/[\x00-\x1F<>{}\\]/.test(cleaned)) return null;
+    return cleaned;
+}
+
 export const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
     ({ onBarcodeScanned, isActive = true, height = DEFAULT_CAMERA_HEIGHT }, ref) => {
         const hasPermission = useCameraPermission();
         const isFocused = useIsFocused();
 
-        const [scanned, setScanned] = useState(false);
-        const [isScanning, setIsScanning] = useState(true);
+        const [scanStatus, setScanStatus] = useState<"idle" | "success" | "error">("idle");
         const [torch, setTorch] = useState(false);
         const [snapMode, setSnapMode] = useState(false);
         const [manualSnapTrigger, setManualSnapTrigger] = useState(false);
 
+        const lastScannedBarcode = useRef<string | null>(null);
+        const lastScanTime = useRef<number>(0);
+        const lastAnyScanTime = useRef<number>(0);
+        const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+        const statusResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+        useEffect(() => {
+            return () => {
+                if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+                if (statusResetTimer.current) clearTimeout(statusResetTimer.current);
+            };
+        }, []);
+
+        useEffect(() => {
+            if (isFocused) {
+                setScanStatus("idle");
+                lastScannedBarcode.current = null;
+                lastScanTime.current = 0;
+                lastAnyScanTime.current = 0;
+            }
+        }, [isFocused]);
+
+        const triggerSuccess = useCallback((durationMs = 1200) => {
+            if (statusResetTimer.current) clearTimeout(statusResetTimer.current);
+            setScanStatus("success");
+            statusResetTimer.current = setTimeout(() => {
+                setScanStatus("idle");
+            }, durationMs);
+        }, []);
+
+        const triggerError = useCallback((durationMs = 1500) => {
+            if (statusResetTimer.current) clearTimeout(statusResetTimer.current);
+            setScanStatus("error");
+            statusResetTimer.current = setTimeout(() => {
+                setScanStatus("idle");
+            }, durationMs);
+        }, []);
+
+        const resetScanner = useCallback(() => {
+            if (statusResetTimer.current) clearTimeout(statusResetTimer.current);
+            if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+            setScanStatus("idle");
+            lastScannedBarcode.current = null;
+            lastScanTime.current = 0;
+            lastAnyScanTime.current = 0;
+            setManualSnapTrigger(false);
+        }, []);
+
         useImperativeHandle(ref, () => ({
-            resetScanner: () => {
-                setScanned(false);
-                setIsScanning(true);
-            },
+            resetScanner,
+            triggerSuccess,
+            triggerError,
+            pause: () => {},
+            resume: () => {},
         }));
+
+        const handleBarcode = useCallback((result: { type: string; data: string }) => {
+            if (!result?.data) return;
+
+            const sanitized = sanitizeBarcode(result.data);
+            if (!sanitized) return;
+
+            if (snapMode && !manualSnapTrigger) return;
+            if (snapMode) setManualSnapTrigger(false);
+
+            const now = Date.now();
+
+            if (inactivityTimer.current) {
+                clearTimeout(inactivityTimer.current);
+            }
+            inactivityTimer.current = setTimeout(() => {
+                lastScannedBarcode.current = null;
+            }, 2000);
+
+            if (lastScannedBarcode.current === sanitized && now - lastScanTime.current < DUPLICATE_COOLDOWN_MS) {
+                return;
+            }
+
+            if (now - lastAnyScanTime.current < BURST_THROTTLE_MS) {
+                return;
+            }
+
+            lastScannedBarcode.current = sanitized;
+            lastScanTime.current = now;
+            lastAnyScanTime.current = now;
+
+            onBarcodeScanned(sanitized);
+        }, [snapMode, manualSnapTrigger, onBarcodeScanned]);
 
         const scannerIsActive = isActive && isFocused;
 
@@ -51,25 +146,6 @@ export const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>
                 </View>
             );
         }
-
-        const handleBarcode = (result: { type: string; data: string }) => {
-            if (snapMode) setManualSnapTrigger(false);
-            setScanned(true);
-            setIsScanning(false);
-            onBarcodeScanned(result.data);
-        };
-
-        const pauseScanner = () => {
-            setScanned(true);
-            setIsScanning(false);
-        };
-
-        const resumeScanner = () => {
-            setScanned(false);
-            setIsScanning(true);
-        };
-
-        const shouldScan = !scanned && (!snapMode || manualSnapTrigger);
 
         return (
             <View style={[styles.cameraWrapper, { height }]}>
@@ -84,48 +160,49 @@ export const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>
                         </View>
                     ) : (
                         <View style={styles.cameraInner}>
-                            {isScanning ? (
-                                <CameraView
-                                    style={StyleSheet.absoluteFillObject}
-                                    enableTorch={torch}
-                                    onBarcodeScanned={shouldScan ? handleBarcode : undefined}
-                                    barcodeScannerSettings={{ barcodeTypes: SUPPORTED_BARCODE_TYPES }}
-                                />
-                            ) : (
-                                <View style={[StyleSheet.absoluteFillObject, styles.cameraPaused]}>
-                                    <Text style={styles.pausedText}>Scanner Paused</Text>
-                                    <TouchableOpacity style={styles.resumeButton} onPress={resumeScanner}>
-                                        <Text style={styles.resumeButtonText}>Tap to Scan Again</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            )}
+                            <CameraView
+                                style={StyleSheet.absoluteFillObject}
+                                enableTorch={torch}
+                                onBarcodeScanned={handleBarcode}
+                                barcodeScannerSettings={{ barcodeTypes: SUPPORTED_BARCODE_TYPES }}
+                            />
 
-                            <View style={styles.scannerOverlay}>
-                                <View style={styles.scannerReticle} />
+                            <View style={styles.scannerOverlay} pointerEvents="none">
+                                <View
+                                    style={[
+                                        styles.scannerReticle,
+                                        scanStatus === "success" && styles.reticleSuccess,
+                                        scanStatus === "error" && styles.reticleError,
+                                    ]}
+                                >
+                                    {scanStatus === "success" && (
+                                        <Ionicons name="checkmark-circle" size={48} color="#4CAF50" />
+                                    )}
+                                    {scanStatus === "error" && (
+                                        <Ionicons name="close-circle" size={48} color="#EF4444" />
+                                    )}
+                                </View>
                             </View>
 
-                            {isScanning && (
-                                <>
-                                    <View style={styles.cameraTopControls}>
-                                        <TouchableOpacity style={styles.controlIcon} onPress={() => setTorch(!torch)}>
-                                            <Ionicons name={torch ? "flash" : "flash-off"} size={22} color="white" />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity style={styles.controlIcon} onPress={pauseScanner}>
-                                            <Ionicons name="pause" size={22} color="white" />
-                                        </TouchableOpacity>
-                                    </View>
+                            <View style={styles.cameraTopControls}>
+                                <TouchableOpacity
+                                    style={styles.controlIcon}
+                                    onPress={() => setTorch(!torch)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name={torch ? "flash" : "flash-off"} size={22} color="white" />
+                                </TouchableOpacity>
+                            </View>
 
-                                    {snapMode && (
-                                        <View style={styles.snapBtnContainer}>
-                                            <TouchableOpacity
-                                                style={styles.snapButtonOuter}
-                                                onPress={() => setManualSnapTrigger(true)}
-                                            >
-                                                <View style={styles.snapButtonInner} />
-                                            </TouchableOpacity>
-                                        </View>
-                                    )}
-                                </>
+                            {snapMode && (
+                                <View style={styles.snapBtnContainer}>
+                                    <TouchableOpacity
+                                        style={styles.snapButtonOuter}
+                                        onPress={() => setManualSnapTrigger(true)}
+                                    >
+                                        <View style={styles.snapButtonInner} />
+                                    </TouchableOpacity>
+                                </View>
                             )}
                         </View>
                     )}
@@ -172,28 +249,19 @@ const styles = StyleSheet.create({
         height: 150,
         borderWidth: 2,
         borderColor: "rgba(255, 255, 255, 0.5)",
-        borderRadius: 12,
-    },
-    cameraPaused: {
-        backgroundColor: "rgba(0,0,0,0.7)",
+        borderRadius: 16,
         justifyContent: "center",
         alignItems: "center",
     },
-    pausedText: {
-        color: "white",
-        fontSize: 18,
-        fontWeight: "bold",
-        marginBottom: 16,
+    reticleSuccess: {
+        borderColor: "#4CAF50",
+        borderWidth: 3,
+        backgroundColor: "rgba(76, 175, 80, 0.2)",
     },
-    resumeButton: {
-        backgroundColor: COLORS.primary,
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 8,
-    },
-    resumeButtonText: {
-        color: "white",
-        fontWeight: "600",
+    reticleError: {
+        borderColor: "#EF4444",
+        borderWidth: 3,
+        backgroundColor: "rgba(239, 68, 68, 0.2)",
     },
     cameraTopControls: {
         position: "absolute",
@@ -201,9 +269,10 @@ const styles = StyleSheet.create({
         right: 16,
         flexDirection: "row",
         gap: 12,
+        zIndex: 10,
     },
     controlIcon: {
-        backgroundColor: "rgba(0,0,0,0.45)",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
         width: 40,
         height: 40,
         borderRadius: 20,
@@ -212,9 +281,9 @@ const styles = StyleSheet.create({
     },
     snapBtnContainer: {
         position: "absolute",
-        bottom: 20,
+        bottom: 16,
         alignSelf: "center",
-        zIndex: 2,
+        zIndex: 10,
     },
     snapButtonOuter: {
         width: 70,

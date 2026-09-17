@@ -26,20 +26,27 @@ export default function MimsScreen() {
     const [activeTabIndex, setActiveTabIndex] = useState(0);
 
     const fetchProductByBarcode = async (barcode: string) => {
+        if (isLoadingMims) return;
         setIsLoadingMims(true);
         const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.scanProduct}?barcode=${encodeURIComponent(barcode)}`;
         const response = await callApi<ScanProductResponse>(endpoint, { method: "GET" }, logout);
 
         if (response?.product) {
+            const targetProductId = response.product.product_id;
+            scannerRef.current?.triggerSuccess();
             Toast.show({ type: "success", text1: "Product Scanned", text2: response.message });
-            router.push(`/(app)/product/${response.product.product_id}` as any);
+            setTimeout(() => {
+                setIsLoadingMims(false);
+                router.push(`/(app)/product/${targetProductId}` as any);
+            }, 350);
         } else {
+            scannerRef.current?.triggerError();
             setMimsProduct(null);
             if (response) {
                 Toast.show({ type: "error", text1: "Not Found", text2: "Product not found for this barcode." });
             }
+            setIsLoadingMims(false);
         }
-        setIsLoadingMims(false);
     };
 
     const formatLocationId = (rawDigits: string) => {
@@ -54,19 +61,29 @@ export default function MimsScreen() {
 
     const navigateToLocation = (rawId: string) => {
         if (rawId.length !== 9) {
+            scannerRef.current?.triggerError();
             Toast.show({ type: "error", text1: "Invalid Location", text2: "Location ID must be 9 digits." });
             return;
         }
-        router.push(`/inventory/location/${encodeURIComponent(formatLocationId(rawId))}`);
+        scannerRef.current?.triggerSuccess();
+        setTimeout(() => {
+            router.push(`/inventory/location/${encodeURIComponent(formatLocationId(rawId))}`);
+        }, 350);
     };
 
     const handleBarcodeScanned = (barcode: string) => {
+        if (isLoadingMims) return;
         if (activeTabIndex === 0) {
             fetchProductByBarcode(barcode);
         } else {
-            const digitsOnly = barcode.replace(/\D/g, "").slice(0, 9);
-            setLocationId(digitsOnly);
-            if (digitsOnly.length === 9) navigateToLocation(digitsOnly);
+            const digitsOnly = barcode.replace(/\D/g, "");
+            if (digitsOnly.length === 9) {
+                setLocationId(digitsOnly);
+                navigateToLocation(digitsOnly);
+            } else {
+                scannerRef.current?.triggerError();
+                Toast.show({ type: "error", text1: "Invalid Location", text2: "Location ID must be 9 digits." });
+            }
         }
     };
 

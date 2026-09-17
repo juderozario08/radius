@@ -7,6 +7,7 @@ import Toast from "react-native-toast-message";
 
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
+import BackButton from "@/components/common/BackButton";
 import { BarcodeScanner, BarcodeScannerRef } from "@/components/common/BarcodeScanner";
 import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
 import { ProductAdjusterCard } from "@/components/inventory/ProductAdjusterCard";
@@ -61,6 +62,7 @@ export default function LocationDetailScreen() {
     };
 
     const handleBarcodeScanned = async (barcode: string) => {
+        if (isLoading) return;
         setIsLoading(true);
         const response = await callApi<MimsProductInventory>(ENDPOINTS.SALES_FLOOR.INVENTORY.binItem, {
             method: "POST",
@@ -68,10 +70,12 @@ export default function LocationDetailScreen() {
         }, logout);
 
         if (response) {
+            scannerRef.current?.triggerSuccess();
             setScannedProduct(response);
             Toast.show({ type: "success", text1: "Success", text2: `Product binned ${action.toLowerCase()} successfully.` });
             fetchProductsByLocation();
         } else {
+            scannerRef.current?.triggerError();
             setScannedProduct(null);
         }
         setIsLoading(false);
@@ -100,11 +104,7 @@ export default function LocationDetailScreen() {
     return (
         <TopSafeAreaView style={styles.container}>
             <HeaderComponent
-                headerLeft={
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-                    </TouchableOpacity>
-                }
+                headerLeft={<BackButton />}
                 headerCenter={<Text style={globalStyles.headerTitle}>Bin {locationId}</Text>}
             />
 

@@ -2,9 +2,23 @@ import CustomToast from "@/components/common/Toast";
 import { AuthProvider } from "@/context/AuthContext";
 import { StoreProvider } from "@/context/StoreContext";
 import { useAuth } from "@/hooks/useAuth";
-import { Slot, useRouter } from "expo-router";
+import { navigationTracker } from "@/utils/navigationTracker";
+import { Slot, useRouter, usePathname, useGlobalSearchParams } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, StatusBar, View } from "react-native";
+
+function NavigationHistoryWatcher() {
+    const pathname = usePathname();
+    const params = useGlobalSearchParams();
+
+    useEffect(() => {
+        if (pathname && !pathname.includes("/(auth)")) {
+            navigationTracker.record(pathname, params as Record<string, any>);
+        }
+    }, [pathname, params]);
+
+    return null;
+}
 
 function LoadingLayout() {
     const { isAuthenticated, isLoading } = useAuth();
@@ -28,7 +42,12 @@ function LoadingLayout() {
         );
     }
 
-    return <Slot />;
+    return (
+        <>
+            <NavigationHistoryWatcher />
+            <Slot />
+        </>
+    );
 }
 
 export default function RootLayout() {

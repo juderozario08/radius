@@ -102,6 +102,11 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
     const handleBarcodeScanned = (barcode: string) => {
         const digits = barcode.replace(/\D/g, '').slice(0, 9);
         setNewLocationId(digits);
+        if (digits.length === 9) {
+            scannerRef.current?.triggerSuccess();
+        } else {
+            scannerRef.current?.triggerError();
+        }
     };
 
     const handleAddLocation = async () => {

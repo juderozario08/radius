@@ -78,7 +78,7 @@ export default function CycleCountScanner() {
 
     const handleBarcodeLookup = async (barcodeToSearch: string) => {
         const query = barcodeToSearch.trim();
-        if (!query || !detail) return;
+        if (!query || !detail || isSaving) return;
 
         setIsSaving(true);
         try {
@@ -95,6 +95,7 @@ export default function CycleCountScanner() {
             );
 
             if (updatedItem) {
+                scannerRef.current?.triggerSuccess();
                 setDetail((prev) => {
                     if (!prev) return prev;
                     const exists = prev.items.some((i) => i.product_id === updatedItem.product_id);
@@ -134,6 +135,7 @@ export default function CycleCountScanner() {
                 }, 4000);
             }
         } catch (err: any) {
+            scannerRef.current?.triggerError();
             Alert.alert("Product Lookup / Scan Error", err.message || "Failed to record scan", [
                 {
                     text: "OK",
@@ -142,7 +144,6 @@ export default function CycleCountScanner() {
             ]);
         } finally {
             setIsSaving(false);
-            scannerRef.current?.resetScanner();
         }
     };
 

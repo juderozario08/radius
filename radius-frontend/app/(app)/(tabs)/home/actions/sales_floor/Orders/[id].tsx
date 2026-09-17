@@ -216,6 +216,7 @@ export default function OnlineOrderDetail() {
     };
 
     const handleBarcodeLookup = (barcode: string) => {
+        if (isSaving) return;
         const cleaned = barcode.trim().toUpperCase();
         if (!cleaned) return;
 
@@ -226,15 +227,16 @@ export default function OnlineOrderDetail() {
         });
 
         if (!matchedItem) {
+            scannerRef.current?.triggerError();
             setScanBanner({
                 type: "error",
                 message: "Not part of this order",
             });
             setTimeout(() => setScanBanner(null), 4000);
-            scannerRef.current?.resetScanner();
             return;
         }
 
+        scannerRef.current?.triggerSuccess();
         setScanBanner({
             type: "success",
             message: `Product Found: ${matchedItem.product_sku || "Item #" + matchedItem.product_id}`,

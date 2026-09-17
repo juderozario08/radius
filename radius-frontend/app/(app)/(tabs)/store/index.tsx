@@ -479,7 +479,7 @@ export default function Stores() {
                 onStatusChange={() => fetchStores(pageNumber, pageSize)}
                 onViewEmployees={(storeId) => {
                     setDetailModalVisible(false);
-                    router.push({ pathname: "/home/actions/admin/Employees", params: { store_id: storeId } });
+                    router.push({ pathname: "/home/actions/admin/Employees", params: { store_id: storeId, from: "/(app)/(tabs)/store" } });
                 }}
             />
 

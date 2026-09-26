@@ -20,16 +20,7 @@ func TestCycleCountService_GetWeeklyCycleCounts(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil)
 
-	email := "test@radius.com"
 	storeID := 1
-
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), email).
-		Return(&models.Employee{
-			EmployeeBase: models.EmployeeBase{
-				StoreId: storeID,
-			},
-		}, nil)
 
 	mockCycleCountRepo.EXPECT().
 		GetWeeklyCycleCounts(gomock.Any(), storeID).
@@ -45,7 +36,7 @@ func TestCycleCountService_GetWeeklyCycleCounts(t *testing.T) {
 			},
 		}, nil)
 
-	summaries, err := svc.GetWeeklyCycleCounts(context.Background(), email, "", nil)
+	summaries, err := svc.GetWeeklyCycleCounts(context.Background(), storeID, "", nil)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -69,7 +60,7 @@ func TestCycleCountService_GetWeeklyCycleCounts(t *testing.T) {
 			},
 		}, nil)
 
-	adminSummaries, err := svc.GetWeeklyCycleCounts(context.Background(), email, string(models.RoleAdmin), &targetStore)
+	adminSummaries, err := svc.GetWeeklyCycleCounts(context.Background(), storeID, models.RoleAdmin, &targetStore)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -87,38 +78,16 @@ func TestCycleCountService_ApproveCount_ManagerOnly(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil)
 
-	salesEmail := "sales@radius.com"
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), salesEmail).
-		Return(&models.Employee{
-			EmployeeId: 10,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: 1,
-				Role:    models.RoleSales,
-			},
-		}, nil)
-
-	err := svc.ApproveCount(context.Background(), salesEmail, models.ApproveCycleCountRequest{CountId: 1})
+	err := svc.ApproveCount(context.Background(), 1, 10, models.RoleSales, models.ApproveCycleCountRequest{CountId: 1})
 	if err == nil {
 		t.Fatalf("expected error for non-manager, got nil")
 	}
-
-	mgrEmail := "manager@radius.com"
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), mgrEmail).
-		Return(&models.Employee{
-			EmployeeId: 2,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: 1,
-				Role:    models.RoleManager,
-			},
-		}, nil)
 
 	mockCycleCountRepo.EXPECT().
 		ApproveCycleCount(gomock.Any(), 1, 1, 2).
 		Return(nil)
 
-	err = svc.ApproveCount(context.Background(), mgrEmail, models.ApproveCycleCountRequest{CountId: 1})
+	err = svc.ApproveCount(context.Background(), 1, 2, models.RoleManager, models.ApproveCycleCountRequest{CountId: 1})
 	if err != nil {
 		t.Fatalf("expected manager approval to succeed, got: %v", err)
 	}
@@ -132,17 +101,6 @@ func TestCycleCountService_RecordScan(t *testing.T) {
 	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil)
-
-	email := "counter@radius.com"
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), email).
-		Return(&models.Employee{
-			EmployeeId: 5,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: 1,
-				Role:    models.RoleSales,
-			},
-		}, nil)
 
 	now := time.Now()
 	empID := 5
@@ -180,7 +138,7 @@ func TestCycleCountService_RecordScan(t *testing.T) {
 			ScannedBy:    &empID,
 		}, nil)
 
-	item, err := svc.RecordScan(context.Background(), email, req)
+	item, err := svc.RecordScan(context.Background(), 1, 5, models.RoleSales, req)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -198,17 +156,6 @@ func TestCycleCountService_RecordScan_ZeroQuantityUnlistedProduct(t *testing.T) 
 	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil)
-
-	email := "counter@radius.com"
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), email).
-		Return(&models.Employee{
-			EmployeeId: 5,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: 1,
-				Role:    models.RoleSales,
-			},
-		}, nil)
 
 	now := time.Now()
 	empID := 5
@@ -243,7 +190,7 @@ func TestCycleCountService_RecordScan_ZeroQuantityUnlistedProduct(t *testing.T) 
 			ScannedBy:    &empID,
 		}, nil)
 
-	item, err := svc.RecordScan(context.Background(), email, req)
+	item, err := svc.RecordScan(context.Background(), 1, 5, models.RoleSales, req)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -268,9 +215,6 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil)
 
-	empAEmail := "empa@radius.com"
-	empBEmail := "empb@radius.com"
-	mgrEmail := "mgr@radius.com"
 	storeID := 1
 	countID := 42
 
@@ -281,22 +225,7 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 			Role:    models.RoleSales,
 		},
 	}
-	empB := &models.Employee{
-		EmployeeId: 102,
-		EmployeeBase: models.EmployeeBase{
-			StoreId: storeID,
-			Role:    models.RoleSales,
-		},
-	}
-	mgr := &models.Employee{
-		EmployeeId: 200,
-		EmployeeBase: models.EmployeeBase{
-			StoreId: storeID,
-			Role:    models.RoleManager,
-		},
-	}
 
-	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), empAEmail).Return(empA, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), countID, storeID).Return(&models.CycleCount{
 		CountId:   countID,
 		StoreId:   storeID,
@@ -311,7 +240,7 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 	}, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountItems(gomock.Any(), countID).Return([]models.CycleCountItemDetail{}, nil)
 
-	resA, err := svc.GetCycleCountDetail(context.Background(), empAEmail, countID)
+	resA, err := svc.GetCycleCountDetail(context.Background(), storeID, 101, models.RoleSales, countID)
 	if err != nil {
 		t.Fatalf("expected auto-assignment to succeed, got: %v", err)
 	}
@@ -320,7 +249,6 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 	}
 
 	nameA := "Employee A"
-	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), empBEmail).Return(empB, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), countID, storeID).Return(&models.CycleCount{
 		CountId:       countID,
 		StoreId:       storeID,
@@ -329,12 +257,11 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 		Status:        models.CycleCountStatusInProgress,
 	}, nil)
 
-	_, err = svc.GetCycleCountDetail(context.Background(), empBEmail, countID)
+	_, err = svc.GetCycleCountDetail(context.Background(), storeID, 102, models.RoleSales, countID)
 	if err == nil {
 		t.Fatalf("expected Employee B to be blocked by concurrency lock, got nil")
 	}
 
-	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), mgrEmail).Return(mgr, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), countID, storeID).Return(&models.CycleCount{
 		CountId:       countID,
 		StoreId:       storeID,
@@ -344,7 +271,7 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 	}, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountItems(gomock.Any(), countID).Return([]models.CycleCountItemDetail{}, nil)
 
-	resMgr, err := svc.GetCycleCountDetail(context.Background(), mgrEmail, countID)
+	resMgr, err := svc.GetCycleCountDetail(context.Background(), storeID, 200, models.RoleManager, countID)
 	if err != nil {
 		t.Fatalf("expected Manager to be allowed access, got: %v", err)
 	}
@@ -352,20 +279,11 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 		t.Fatalf("expected non-nil response for manager")
 	}
 
-	adminEmail := "admin@radius.com"
-	admin := &models.Employee{
-		EmployeeId: 1,
-		EmployeeBase: models.EmployeeBase{
-			StoreId: 1,
-			Role:    models.RoleAdmin,
-		},
-	}
 	otherStoreCountID := 931
 	otherStoreID := 5
 	countedByEmp2 := 2
 	countedByName := "Store 5 Employee"
 
-	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), adminEmail).Return(admin, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), otherStoreCountID, 0).Return(&models.CycleCount{
 		CountId:       otherStoreCountID,
 		StoreId:       otherStoreID,
@@ -377,7 +295,7 @@ func TestCycleCountService_AutoAssignmentAndLocking(t *testing.T) {
 		{CountItemId: 1, CountId: otherStoreCountID, ProductId: 10, ExpectedQty: 5, CountedQty: 5},
 	}, nil)
 
-	resAdmin, err := svc.GetCycleCountDetail(context.Background(), adminEmail, otherStoreCountID)
+	resAdmin, err := svc.GetCycleCountDetail(context.Background(), 1, 1, models.RoleAdmin, otherStoreCountID)
 	if err != nil {
 		t.Fatalf("expected Admin to access other store count, got: %v", err)
 	}
@@ -395,26 +313,17 @@ func TestCycleCountService_ApproveCount_AdminCrossStore(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil)
 
-	adminEmail := "admin@radius.com"
-	admin := &models.Employee{
-		EmployeeId: 1,
-		EmployeeBase: models.EmployeeBase{
-			StoreId: 1,
-			Role:    models.RoleAdmin,
-		},
-	}
 	countID := 931
 	storeID := 5
 
-	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), adminEmail).Return(admin, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), countID, 0).Return(&models.CycleCount{
 		CountId: countID,
 		StoreId: storeID,
 		Status:  models.CycleCountStatusPendingApproval,
 	}, nil)
-	mockCycleCountRepo.EXPECT().ApproveCycleCount(gomock.Any(), storeID, countID, admin.EmployeeId).Return(nil)
+	mockCycleCountRepo.EXPECT().ApproveCycleCount(gomock.Any(), storeID, countID, 1).Return(nil)
 
-	err := svc.ApproveCount(context.Background(), adminEmail, models.ApproveCycleCountRequest{CountId: countID})
+	err := svc.ApproveCount(context.Background(), 1, 1, models.RoleAdmin, models.ApproveCycleCountRequest{CountId: countID})
 	if err != nil {
 		t.Fatalf("expected Admin to approve cross-store count, got: %v", err)
 	}
@@ -429,26 +338,10 @@ func TestCycleCountService_TransferOwnership(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil)
 
-	mgrEmail := "mgr@radius.com"
-	salesEmail := "sales@radius.com"
 	storeID := 1
 	countID := 15
 	targetEmpID := 105
 
-	mgr := &models.Employee{
-		EmployeeId: 2,
-		EmployeeBase: models.EmployeeBase{
-			StoreId: storeID,
-			Role:    models.RoleManager,
-		},
-	}
-	sales := &models.Employee{
-		EmployeeId: 10,
-		EmployeeBase: models.EmployeeBase{
-			StoreId: storeID,
-			Role:    models.RoleSales,
-		},
-	}
 	isTerminated := false
 	isActive := true
 	targetEmp := &models.Employee{
@@ -460,8 +353,7 @@ func TestCycleCountService_TransferOwnership(t *testing.T) {
 		},
 	}
 
-	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), salesEmail).Return(sales, nil)
-	err := svc.TransferOwnership(context.Background(), salesEmail, models.TransferCycleCountOwnershipRequest{
+	err := svc.TransferOwnership(context.Background(), storeID, models.RoleSales, models.TransferCycleCountOwnershipRequest{
 		CountId:    countID,
 		EmployeeId: targetEmpID,
 	})
@@ -469,7 +361,6 @@ func TestCycleCountService_TransferOwnership(t *testing.T) {
 		t.Fatalf("expected non-manager transfer to fail, got nil")
 	}
 
-	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), mgrEmail).Return(mgr, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), countID, storeID).Return(&models.CycleCount{
 		CountId: countID,
 		StoreId: storeID,
@@ -477,7 +368,7 @@ func TestCycleCountService_TransferOwnership(t *testing.T) {
 	mockEmployeeRepo.EXPECT().GetEmployeeById(gomock.Any(), targetEmpID).Return(targetEmp, nil)
 	mockCycleCountRepo.EXPECT().TransferOwnership(gomock.Any(), storeID, countID, targetEmpID).Return(nil)
 
-	err = svc.TransferOwnership(context.Background(), mgrEmail, models.TransferCycleCountOwnershipRequest{
+	err = svc.TransferOwnership(context.Background(), storeID, models.RoleManager, models.TransferCycleCountOwnershipRequest{
 		CountId:    countID,
 		EmployeeId: targetEmpID,
 	})
@@ -496,20 +387,9 @@ func TestCycleCountService_StartCount_BroadcastsEvent(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil, mockBroadcaster)
 
-	email := "counter@store2.com"
 	storeID := 2
 	empID := 15
 	catID := 3
-
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), email).
-		Return(&models.Employee{
-			EmployeeId: empID,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: storeID,
-				Role:    models.RoleSales,
-			},
-		}, nil)
 
 	mockCycleCountRepo.EXPECT().
 		StartCycleCount(gomock.Any(), storeID, catID, empID).
@@ -546,7 +426,7 @@ func TestCycleCountService_StartCount_BroadcastsEvent(t *testing.T) {
 		})).
 		Times(1)
 
-	count, err := svc.StartCount(context.Background(), email, catID)
+	count, err := svc.StartCount(context.Background(), storeID, empID, models.RoleSales, catID)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -565,21 +445,10 @@ func TestCycleCountService_RecordScan_BroadcastsEvent(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil, mockBroadcaster)
 
-	email := "counter@store2.com"
 	storeID := 2
 	empID := 15
 	countID := 401
 	prodID := 10
-
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), email).
-		Return(&models.Employee{
-			EmployeeId: empID,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: storeID,
-				Role:    models.RoleSales,
-			},
-		}, nil)
 
 	mockCycleCountRepo.EXPECT().
 		GetCycleCountByID(gomock.Any(), countID, storeID).
@@ -625,7 +494,7 @@ func TestCycleCountService_RecordScan_BroadcastsEvent(t *testing.T) {
 		})).
 		Times(1)
 
-	item, err := svc.RecordScan(context.Background(), email, req)
+	item, err := svc.RecordScan(context.Background(), storeID, empID, models.RoleSales, req)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -644,20 +513,9 @@ func TestCycleCountService_SubmitForApproval_BroadcastsEvent(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil, mockBroadcaster)
 
-	email := "counter@store2.com"
 	storeID := 2
 	empID := 15
 	countID := 401
-
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), email).
-		Return(&models.Employee{
-			EmployeeId: empID,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: storeID,
-				Role:    models.RoleSales,
-			},
-		}, nil)
 
 	mockCycleCountRepo.EXPECT().
 		GetCycleCountByID(gomock.Any(), countID, storeID).
@@ -686,7 +544,7 @@ func TestCycleCountService_SubmitForApproval_BroadcastsEvent(t *testing.T) {
 		})).
 		Times(1)
 
-	err := svc.SubmitForApproval(context.Background(), email, models.SubmitCycleCountRequest{
+	err := svc.SubmitForApproval(context.Background(), storeID, empID, models.RoleSales, models.SubmitCycleCountRequest{
 		CountId: countID,
 		Notes:   &notes,
 	})
@@ -705,20 +563,9 @@ func TestCycleCountService_ApproveCount_BroadcastsEvent(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil, mockBroadcaster)
 
-	mgrEmail := "manager@store2.com"
 	storeID := 2
 	empID := 2
 	countID := 401
-
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), mgrEmail).
-		Return(&models.Employee{
-			EmployeeId: empID,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: storeID,
-				Role:    models.RoleManager,
-			},
-		}, nil)
 
 	mockCycleCountRepo.EXPECT().
 		ApproveCycleCount(gomock.Any(), storeID, countID, empID).
@@ -750,7 +597,7 @@ func TestCycleCountService_ApproveCount_BroadcastsEvent(t *testing.T) {
 		})).
 		Times(1)
 
-	err := svc.ApproveCount(context.Background(), mgrEmail, models.ApproveCycleCountRequest{CountId: countID})
+	err := svc.ApproveCount(context.Background(), storeID, empID, models.RoleManager, models.ApproveCycleCountRequest{CountId: countID})
 	if err != nil {
 		t.Fatalf("expected manager approval to succeed, got: %v", err)
 	}
@@ -766,18 +613,10 @@ func TestCycleCountService_TransferOwnership_BroadcastsEvent(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil, mockBroadcaster)
 
-	mgrEmail := "mgr@store2.com"
 	storeID := 2
 	countID := 15
 	targetEmpID := 105
 
-	mgr := &models.Employee{
-		EmployeeId: 2,
-		EmployeeBase: models.EmployeeBase{
-			StoreId: storeID,
-			Role:    models.RoleManager,
-		},
-	}
 	isTerminated := false
 	isActive := true
 	targetEmp := &models.Employee{
@@ -789,7 +628,6 @@ func TestCycleCountService_TransferOwnership_BroadcastsEvent(t *testing.T) {
 		},
 	}
 
-	mockEmployeeRepo.EXPECT().GetEmployeeByEmail(gomock.Any(), mgrEmail).Return(mgr, nil)
 	mockCycleCountRepo.EXPECT().GetCycleCountByID(gomock.Any(), countID, storeID).Return(&models.CycleCount{
 		CountId:      countID,
 		StoreId:      storeID,
@@ -811,7 +649,7 @@ func TestCycleCountService_TransferOwnership_BroadcastsEvent(t *testing.T) {
 		})).
 		Times(1)
 
-	err := svc.TransferOwnership(context.Background(), mgrEmail, models.TransferCycleCountOwnershipRequest{
+	err := svc.TransferOwnership(context.Background(), storeID, models.RoleManager, models.TransferCycleCountOwnershipRequest{
 		CountId:    countID,
 		EmployeeId: targetEmpID,
 	})
@@ -829,26 +667,15 @@ func TestCycleCountService_NilBroadcasterSafe(t *testing.T) {
 
 	svc := service.NewCycleCountService(mockCycleCountRepo, mockEmployeeRepo, nil, nil, nil, nil)
 
-	mgrEmail := "manager@store2.com"
 	storeID := 2
 	empID := 2
 	countID := 402
-
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), mgrEmail).
-		Return(&models.Employee{
-			EmployeeId: empID,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: storeID,
-				Role:    models.RoleManager,
-			},
-		}, nil)
 
 	mockCycleCountRepo.EXPECT().
 		ApproveCycleCount(gomock.Any(), storeID, countID, empID).
 		Return(nil)
 
-	err := svc.ApproveCount(context.Background(), mgrEmail, models.ApproveCycleCountRequest{CountId: countID})
+	err := svc.ApproveCount(context.Background(), storeID, empID, models.RoleManager, models.ApproveCycleCountRequest{CountId: countID})
 	if err != nil {
 		t.Fatalf("expected manager approval to succeed with nil broadcaster, got: %v", err)
 	}

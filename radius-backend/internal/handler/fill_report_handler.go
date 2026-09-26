@@ -27,10 +27,6 @@ func (h *FillReportHandler) resolveStoreID(c *gin.Context) (int, error) {
 	if storeID := c.GetInt("store_id"); storeID > 0 {
 		return storeID, nil
 	}
-	email := c.GetString("email")
-	if email != "" {
-		return h.service.GetEmployeeStoreID(c.Request.Context(), email)
-	}
 	return 0, http.ErrNoCookie
 }
 

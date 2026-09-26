@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"radius/internal/models"
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/sync/singleflight"
 )
 
 type ProductService struct {
@@ -17,6 +17,7 @@ type ProductService struct {
 	employeeRepo EmployeeRepository
 	sessionRepo  SessionRepository
 	redisClient  *redis.Client
+	requestGroup singleflight.Group
 }
 
 func NewProductService(
@@ -45,21 +46,26 @@ func (s *ProductService) GetProductByID(ctx context.Context, id int) (*models.Pr
 		}
 	}
 
-	product, err := s.productsRepo.GetProductByID(ctx, id)
+	v, err, _ := s.requestGroup.Do(cacheKey, func() (any, error) {
+		prod, dbErr := s.productsRepo.GetProductByID(ctx, id)
+		if dbErr != nil {
+			return nil, dbErr
+		}
+		if prod != nil {
+			if data, marshalErr := json.Marshal(prod); marshalErr == nil {
+				s.redisClient.Set(ctx, cacheKey, data, 5*time.Minute)
+			}
+		}
+		return prod, nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-
-	if product != nil {
-		productJSON, err := json.Marshal(product)
-		if err == nil {
-			s.redisClient.Set(ctx, cacheKey, productJSON, 5*time.Minute)
-		} else {
-			log.Printf("Failed to marshal product for cache: %v", err)
-		}
+	if v == nil {
+		return nil, nil
 	}
-
-	return product, nil
+	return v.(*models.Product), nil
 }
 
 func (s *ProductService) SearchProducts(

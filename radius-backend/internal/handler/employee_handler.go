@@ -62,20 +62,17 @@ func (e *EmployeeHandler) GetAllEmployees(ctx *gin.Context) {
 func (e *EmployeeHandler) GetManagerEmployees(ctx *gin.Context) {
 	pageNumber, pageSize := utils.ParsePagination(ctx)
 
-	email, exists := ctx.Get("email")
-	if !exists {
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Unauthorized"})
-		return
-	}
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
-	var storeId *int
+	var storeIDOverride *int
 	if storeIdStr := ctx.Query("store_id"); storeIdStr != "" {
 		if parsedStoreId, err := strconv.Atoi(storeIdStr); err == nil && parsedStoreId > 0 {
-			storeId = &parsedStoreId
+			storeIDOverride = &parsedStoreId
 		}
 	}
 
-	employeeResponse, err := e.employeeService.GetManagerEmployees(ctx.Request.Context(), email.(string), pageNumber, pageSize, storeId)
+	employeeResponse, err := e.employeeService.GetManagerEmployees(ctx.Request.Context(), storeId, role, pageNumber, pageSize, storeIDOverride)
 	if err != nil {
 		log.Printf("[ERROR] EmployeeHandler.GetManagerEmployees (Service): %v", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})

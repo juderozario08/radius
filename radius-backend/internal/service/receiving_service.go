@@ -18,37 +18,18 @@ func NewReceivingService(receivingRepo ReceivingRepository, employeeRepo Employe
 	}
 }
 
-func (s *ReceivingService) getEmployeeAndStoreID(ctx context.Context, email string) (*models.Employee, *int, error) {
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, nil, err
-	}
-	if employee == nil {
-		return nil, nil, errors.New("employee not found")
-	}
-
-	if employee.Role == "ADMIN" {
-		return employee, nil, nil
-	}
-	return employee, &employee.StoreId, nil
-}
-
-func (s *ReceivingService) GetPurchaseOrders(ctx context.Context, email string, role string, storeIDOverride *int) ([]models.PurchaseOrderSummary, error) {
+func (s *ReceivingService) GetPurchaseOrders(ctx context.Context, storeId int, role string, storeIDOverride *int) ([]models.PurchaseOrderSummary, error) {
 	if role == string(models.RoleAdmin) && storeIDOverride != nil {
 		return s.receivingRepo.GetPurchaseOrders(ctx, storeIDOverride)
 	}
-	_, storeID, err := s.getEmployeeAndStoreID(ctx, email)
-	if err != nil {
-		return nil, err
+	var targetStore *int
+	if role != string(models.RoleAdmin) {
+		targetStore = &storeId
 	}
-	return s.receivingRepo.GetPurchaseOrders(ctx, storeID)
+	return s.receivingRepo.GetPurchaseOrders(ctx, targetStore)
 }
 
-func (s *ReceivingService) GetPurchaseOrderDetail(ctx context.Context, email string, poID int) (*models.PurchaseOrderDetailResponse, error) {
-	_, _, err := s.getEmployeeAndStoreID(ctx, email)
-	if err != nil {
-		return nil, err
-	}
+func (s *ReceivingService) GetPurchaseOrderDetail(ctx context.Context, poID int) (*models.PurchaseOrderDetailResponse, error) {
 	detail, err := s.receivingRepo.GetPurchaseOrderDetail(ctx, poID)
 	if err != nil {
 		return nil, err
@@ -59,12 +40,7 @@ func (s *ReceivingService) GetPurchaseOrderDetail(ctx context.Context, email str
 	return detail, nil
 }
 
-func (s *ReceivingService) CheckProductInPO(ctx context.Context, email string, poID int, barcode string) (*models.CheckProductInPOResponse, error) {
-	_, _, err := s.getEmployeeAndStoreID(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *ReceivingService) CheckProductInPO(ctx context.Context, poID int, barcode string) (*models.CheckProductInPOResponse, error) {
 	item, err := s.receivingRepo.CheckProductInPO(ctx, poID, barcode)
 	if err != nil {
 		return nil, err
@@ -76,12 +52,7 @@ func (s *ReceivingService) CheckProductInPO(ctx context.Context, email string, p
 	return &models.CheckProductInPOResponse{Found: true, Item: item}, nil
 }
 
-func (s *ReceivingService) ReceivePO(ctx context.Context, email string, req models.ReceivePORequest) error {
-	employee, _, err := s.getEmployeeAndStoreID(ctx, email)
-	if err != nil {
-		return err
-	}
-
+func (s *ReceivingService) ReceivePO(ctx context.Context, storeId int, employeeId int, role string, req models.ReceivePORequest) error {
 	detail, err := s.receivingRepo.GetPurchaseOrderDetail(ctx, req.PoId)
 	if err != nil {
 		return err
@@ -90,19 +61,14 @@ func (s *ReceivingService) ReceivePO(ctx context.Context, email string, req mode
 		return errors.New("purchase order not found")
 	}
 
-	if employee.Role != "ADMIN" && detail.StoreId != employee.StoreId {
+	if role != "ADMIN" && detail.StoreId != storeId {
 		return errors.New("cannot receive for a different store")
 	}
 
-	return s.receivingRepo.ReceivePOItems(ctx, detail.StoreId, req.PoId, employee.EmployeeId, req.Items)
+	return s.receivingRepo.ReceivePOItems(ctx, detail.StoreId, req.PoId, employeeId, req.Items)
 }
 
-func (s *ReceivingService) ReceiveLPR(ctx context.Context, email string, req models.ReceiveLPRRequest) error {
-	employee, _, err := s.getEmployeeAndStoreID(ctx, email)
-	if err != nil {
-		return err
-	}
-
+func (s *ReceivingService) ReceiveLPR(ctx context.Context, storeId int, employeeId int, role string, req models.ReceiveLPRRequest) error {
 	detail, err := s.receivingRepo.GetPurchaseOrderDetail(ctx, req.PoId)
 	if err != nil {
 		return err
@@ -111,26 +77,22 @@ func (s *ReceivingService) ReceiveLPR(ctx context.Context, email string, req mod
 		return errors.New("purchase order not found")
 	}
 
-	if employee.Role != "ADMIN" && detail.StoreId != employee.StoreId {
+	if role != "ADMIN" && detail.StoreId != storeId {
 		return errors.New("cannot receive for a different store")
 	}
 
-	return s.receivingRepo.ReceiveLPR(ctx, detail.StoreId, req.PoId, req.LprBarcode, employee.EmployeeId)
+	return s.receivingRepo.ReceiveLPR(ctx, detail.StoreId, req.PoId, req.LprBarcode, employeeId)
 }
 
-func (s *ReceivingService) GetStockTransfers(ctx context.Context, email string) ([]models.StockTransferSummary, error) {
-	_, storeID, err := s.getEmployeeAndStoreID(ctx, email)
-	if err != nil {
-		return nil, err
+func (s *ReceivingService) GetStockTransfers(ctx context.Context, storeId int, role string) ([]models.StockTransferSummary, error) {
+	var targetStore *int
+	if role != "ADMIN" {
+		targetStore = &storeId
 	}
-	return s.receivingRepo.GetStockTransfers(ctx, storeID)
+	return s.receivingRepo.GetStockTransfers(ctx, targetStore)
 }
 
-func (s *ReceivingService) GetStockTransferDetail(ctx context.Context, email string, transferID int) (*models.StockTransferDetailResponse, error) {
-	_, _, err := s.getEmployeeAndStoreID(ctx, email)
-	if err != nil {
-		return nil, err
-	}
+func (s *ReceivingService) GetStockTransferDetail(ctx context.Context, transferID int) (*models.StockTransferDetailResponse, error) {
 	detail, err := s.receivingRepo.GetStockTransferDetail(ctx, transferID)
 	if err != nil {
 		return nil, err
@@ -141,12 +103,7 @@ func (s *ReceivingService) GetStockTransferDetail(ctx context.Context, email str
 	return detail, nil
 }
 
-func (s *ReceivingService) CheckProductInTransfer(ctx context.Context, email string, transferID int, barcode string) (*models.CheckProductInTransferResponse, error) {
-	_, _, err := s.getEmployeeAndStoreID(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *ReceivingService) CheckProductInTransfer(ctx context.Context, transferID int, barcode string) (*models.CheckProductInTransferResponse, error) {
 	item, err := s.receivingRepo.CheckProductInTransfer(ctx, transferID, barcode)
 	if err != nil {
 		return nil, err
@@ -158,12 +115,7 @@ func (s *ReceivingService) CheckProductInTransfer(ctx context.Context, email str
 	return &models.CheckProductInTransferResponse{Found: true, Item: item}, nil
 }
 
-func (s *ReceivingService) ReceiveTransfer(ctx context.Context, email string, req models.ReceiveTransferRequest) error {
-	employee, _, err := s.getEmployeeAndStoreID(ctx, email)
-	if err != nil {
-		return err
-	}
-
+func (s *ReceivingService) ReceiveTransfer(ctx context.Context, storeId int, employeeId int, req models.ReceiveTransferRequest) error {
 	detail, err := s.receivingRepo.GetStockTransferDetail(ctx, req.TransferId)
 	if err != nil {
 		return err
@@ -175,18 +127,10 @@ func (s *ReceivingService) ReceiveTransfer(ctx context.Context, email string, re
 		return errors.New("transfer is not in transit")
 	}
 
-	var toStoreID int
-	toStoreID = employee.StoreId
-
-	return s.receivingRepo.ReceiveTransferItems(ctx, toStoreID, req.TransferId, employee.EmployeeId, req.Items)
+	return s.receivingRepo.ReceiveTransferItems(ctx, storeId, req.TransferId, employeeId, req.Items)
 }
 
-func (s *ReceivingService) QuickReceiveTransfer(ctx context.Context, email string, req models.QuickReceiveTransferRequest) error {
-	employee, _, err := s.getEmployeeAndStoreID(ctx, email)
-	if err != nil {
-		return err
-	}
-
+func (s *ReceivingService) QuickReceiveTransfer(ctx context.Context, storeId int, employeeId int, req models.QuickReceiveTransferRequest) error {
 	detail, err := s.receivingRepo.GetStockTransferDetail(ctx, req.TransferId)
 	if err != nil {
 		return err
@@ -201,5 +145,5 @@ func (s *ReceivingService) QuickReceiveTransfer(ctx context.Context, email strin
 		return errors.New("this transfer requires manual check — cannot quick receive")
 	}
 
-	return s.receivingRepo.QuickReceiveTransfer(ctx, employee.StoreId, req.TransferId, employee.EmployeeId)
+	return s.receivingRepo.QuickReceiveTransfer(ctx, storeId, req.TransferId, employeeId)
 }

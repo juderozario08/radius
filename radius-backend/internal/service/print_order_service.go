@@ -20,7 +20,7 @@ func NewPrintOrderService(
 	}
 }
 
-func (s *PrintOrderService) GetAllPrintOrders(ctx context.Context, email string, role models.EmployeeRole, page, limit int, criteria models.PrintOrderSearchCriteria) ([]models.PrintOrder, int, error) {
+func (s *PrintOrderService) GetAllPrintOrders(ctx context.Context, storeId int, role models.EmployeeRole, page, limit int, criteria models.PrintOrderSearchCriteria) ([]models.PrintOrder, int, error) {
 	isTargetedSearch := criteria.OrderID != nil ||
 		criteria.CustomerName != "" ||
 		criteria.CustomerEmail != "" ||
@@ -28,17 +28,13 @@ func (s *PrintOrderService) GetAllPrintOrders(ctx context.Context, email string,
 
 	var storeID *int
 	if role != models.RoleAdmin && !isTargetedSearch {
-		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-		if err != nil {
-			return nil, 0, err
-		}
-		storeID = &emp.StoreId
+		storeID = &storeId
 	}
 
 	offset := (page - 1) * limit
 	return s.ordersRepo.GetAllPrintOrders(ctx, limit, offset, storeID, criteria)
 }
 
-func (s *PrintOrderService) GetPrintOrderByID(ctx context.Context, email string, role models.EmployeeRole, id int) (*models.PrintOrder, []models.PrintOrderItem, error) {
+func (s *PrintOrderService) GetPrintOrderByID(ctx context.Context, id int) (*models.PrintOrder, []models.PrintOrderItem, error) {
 	return s.ordersRepo.GetPrintOrderByID(ctx, id, nil)
 }

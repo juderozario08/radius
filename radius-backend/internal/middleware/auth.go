@@ -98,6 +98,13 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 		ctx.Set("email", emailClaim)
 		ctx.Set("role", roleClaim)
 		ctx.Set("token_string", tokenString)
+
+		if storeIdRaw, ok := claims["store_id"]; ok {
+			if storeIdFloat, ok := storeIdRaw.(float64); ok {
+				ctx.Set("store_id", int(storeIdFloat))
+			}
+		}
+
 		ctx.Next()
 	}
 }

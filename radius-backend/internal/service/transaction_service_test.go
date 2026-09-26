@@ -22,16 +22,6 @@ func TestTransactionService_CreateTransaction_AutoReportsToFillReport(t *testing
 
 	storeId := 3
 	empId := 42
-	email := "cashier@radius.com"
-
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), email).
-		Return(&models.Employee{
-			EmployeeId: empId,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: storeId,
-			},
-		}, nil)
 
 	req := models.CreateTransactionRequest{
 		RegisterId:  "REG-01",
@@ -78,7 +68,7 @@ func TestTransactionService_CreateTransaction_AutoReportsToFillReport(t *testing
 		AddSoldItems(gomock.Any(), storeId, expectedItems).
 		Return(nil)
 
-	tx, err := svc.CreateTransaction(context.Background(), email, models.RoleSales, req)
+	tx, err := svc.CreateTransaction(context.Background(), storeId, empId, models.RoleSales, req)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -102,7 +92,7 @@ func TestTransactionService_GetAllTransactions_Admin(t *testing.T) {
 			{TransactionId: 2},
 		}, 2, nil)
 
-	txns, total, err := svc.GetAllTransactions(context.Background(), "admin@test.com", models.RoleAdmin, 1, 10)
+	txns, total, err := svc.GetAllTransactions(context.Background(), 1, models.RoleAdmin, 1, 10)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -124,21 +114,13 @@ func TestTransactionService_GetAllTransactions_NonAdmin(t *testing.T) {
 
 	storeId := 5
 
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), "sales@test.com").
-		Return(&models.Employee{
-			EmployeeBase: models.EmployeeBase{
-				StoreId: storeId,
-			},
-		}, nil)
-
 	mockSalesRepo.EXPECT().
 		GetAllTransactions(gomock.Any(), 10, 0, &storeId).
 		Return([]models.Transaction{
 			{TransactionId: 100},
 		}, 1, nil)
 
-	txns, total, err := svc.GetAllTransactions(context.Background(), "sales@test.com", models.RoleSales, 1, 10)
+	txns, total, err := svc.GetAllTransactions(context.Background(), storeId, models.RoleSales, 1, 10)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

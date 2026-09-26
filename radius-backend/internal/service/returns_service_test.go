@@ -22,19 +22,8 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 	svc := service.NewReturnsService(mockReturnsRepo, mockEmployeeRepo, mockProductRepo, mockSalesRepo)
 
 	t.Run("successful return under 50 completed immediately", func(t *testing.T) {
-		email := "cashier@radius.com"
 		storeId := 2
 		empId := 10
-
-		mockEmployeeRepo.EXPECT().
-			GetEmployeeByEmail(gomock.Any(), email).
-			Return(&models.Employee{
-				EmployeeId: empId,
-				EmployeeBase: models.EmployeeBase{
-					StoreId: storeId,
-					Role:    models.RoleSales,
-				},
-			}, nil)
 
 		mockProductRepo.EXPECT().
 			GetProductByID(gomock.Any(), 101).
@@ -77,7 +66,7 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 				},
 			}, nil)
 
-		ret, err := svc.CreateReturn(context.Background(), email, req)
+		ret, err := svc.CreateReturn(context.Background(), storeId, empId, models.RoleSales, req)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -87,19 +76,8 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 	})
 
 	t.Run("return over 50 by cashier requires approval", func(t *testing.T) {
-		email := "cashier@radius.com"
 		storeId := 2
 		empId := 10
-
-		mockEmployeeRepo.EXPECT().
-			GetEmployeeByEmail(gomock.Any(), email).
-			Return(&models.Employee{
-				EmployeeId: empId,
-				EmployeeBase: models.EmployeeBase{
-					StoreId: storeId,
-					Role:    models.RoleSales,
-				},
-			}, nil)
 
 		mockProductRepo.EXPECT().
 			GetProductByID(gomock.Any(), 102).
@@ -142,7 +120,7 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 				},
 			}, nil)
 
-		ret, err := svc.CreateReturn(context.Background(), email, req)
+		ret, err := svc.CreateReturn(context.Background(), storeId, empId, models.RoleSales, req)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -152,19 +130,8 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 	})
 
 	t.Run("non-returnable product rejected", func(t *testing.T) {
-		email := "cashier@radius.com"
 		storeId := 2
 		empId := 10
-
-		mockEmployeeRepo.EXPECT().
-			GetEmployeeByEmail(gomock.Any(), email).
-			Return(&models.Employee{
-				EmployeeId: empId,
-				EmployeeBase: models.EmployeeBase{
-					StoreId: storeId,
-					Role:    models.RoleSales,
-				},
-			}, nil)
 
 		mockProductRepo.EXPECT().
 			GetProductByID(gomock.Any(), 103).
@@ -187,28 +154,17 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 			},
 		}
 
-		_, err := svc.CreateReturn(context.Background(), email, req)
+		_, err := svc.CreateReturn(context.Background(), storeId, empId, models.RoleSales, req)
 		if err == nil {
 			t.Fatalf("expected error for non-returnable product, got nil")
 		}
 	})
 
 	t.Run("item outside policy window without store credit rejected", func(t *testing.T) {
-		email := "cashier@radius.com"
 		storeId := 2
 		empId := 10
 		txId := int64(999)
 		txItemId := int64(1001)
-
-		mockEmployeeRepo.EXPECT().
-			GetEmployeeByEmail(gomock.Any(), email).
-			Return(&models.Employee{
-				EmployeeId: empId,
-				EmployeeBase: models.EmployeeBase{
-					StoreId: storeId,
-					Role:    models.RoleSales,
-				},
-			}, nil)
 
 		mockReturnsRepo.EXPECT().
 			LookupTransaction(gomock.Any(), txId, &storeId).
@@ -255,7 +211,7 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 			},
 		}
 
-		_, err := svc.CreateReturn(context.Background(), email, req)
+		_, err := svc.CreateReturn(context.Background(), storeId, empId, models.RoleSales, req)
 		if err == nil {
 			t.Fatalf("expected error for return outside policy without store credit, got nil")
 		}
@@ -274,20 +230,9 @@ func TestReturnsService_ApproveReturn(t *testing.T) {
 	svc := service.NewReturnsService(mockReturnsRepo, mockEmployeeRepo, mockProductRepo, mockSalesRepo)
 
 	t.Run("manager can approve return for own store", func(t *testing.T) {
-		email := "manager@radius.com"
 		storeId := 2
 		empId := 5
 		returnId := 12
-
-		mockEmployeeRepo.EXPECT().
-			GetEmployeeByEmail(gomock.Any(), email).
-			Return(&models.Employee{
-				EmployeeId: empId,
-				EmployeeBase: models.EmployeeBase{
-					StoreId: storeId,
-					Role:    models.RoleManager,
-				},
-			}, nil)
 
 		mockReturnsRepo.EXPECT().
 			GetReturnDetail(gomock.Any(), returnId).
@@ -302,29 +247,18 @@ func TestReturnsService_ApproveReturn(t *testing.T) {
 			ApproveReturn(gomock.Any(), returnId, empId).
 			Return(nil)
 
-		err := svc.ApproveReturn(context.Background(), email, returnId)
+		err := svc.ApproveReturn(context.Background(), storeId, empId, models.RoleManager, returnId)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 	})
 
 	t.Run("cashier cannot approve return", func(t *testing.T) {
-		email := "cashier@radius.com"
 		storeId := 2
 		empId := 10
 		returnId := 12
 
-		mockEmployeeRepo.EXPECT().
-			GetEmployeeByEmail(gomock.Any(), email).
-			Return(&models.Employee{
-				EmployeeId: empId,
-				EmployeeBase: models.EmployeeBase{
-					StoreId: storeId,
-					Role:    models.RoleSales,
-				},
-			}, nil)
-
-		err := svc.ApproveReturn(context.Background(), email, returnId)
+		err := svc.ApproveReturn(context.Background(), storeId, empId, models.RoleSales, returnId)
 		if err == nil {
 			t.Fatalf("expected error for cashier approving return, got nil")
 		}

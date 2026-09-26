@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"log"
@@ -22,8 +22,8 @@ func NewCycleCountHandler(cycleCountService *service.CycleCountService) *CycleCo
 }
 
 func (h *CycleCountHandler) GetWeeklyCycleCounts(ctx *gin.Context) {
-	email := ctx.GetString("email")
-	role := ctx.GetString("role")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var storeIDOverride *int
 	if storeIDStr := ctx.Query("store_id"); storeIDStr != "" {
@@ -32,7 +32,7 @@ func (h *CycleCountHandler) GetWeeklyCycleCounts(ctx *gin.Context) {
 		}
 	}
 
-	counts, err := h.cycleCountService.GetWeeklyCycleCounts(ctx.Request.Context(), email, role, storeIDOverride)
+	counts, err := h.cycleCountService.GetWeeklyCycleCounts(ctx.Request.Context(), storeId, role, storeIDOverride)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.GetWeeklyCycleCounts: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
@@ -43,7 +43,10 @@ func (h *CycleCountHandler) GetWeeklyCycleCounts(ctx *gin.Context) {
 }
 
 func (h *CycleCountHandler) GetCycleCountDetail(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
+
 	countIDStr := ctx.Param("id")
 	if countIDStr == "" {
 		countIDStr = ctx.Query("id")
@@ -59,7 +62,7 @@ func (h *CycleCountHandler) GetCycleCountDetail(ctx *gin.Context) {
 		return
 	}
 
-	detail, err := h.cycleCountService.GetCycleCountDetail(ctx.Request.Context(), email, countID)
+	detail, err := h.cycleCountService.GetCycleCountDetail(ctx.Request.Context(), storeId, employeeId, role, countID)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.GetCycleCountDetail: %v", err)
 		if strings.Contains(err.Error(), "currently assigned to") || strings.HasPrefix(err.Error(), "unauthorized") {
@@ -76,7 +79,10 @@ func (h *CycleCountHandler) GetCycleCountDetail(ctx *gin.Context) {
 }
 
 func (h *CycleCountHandler) GetCycleCountItems(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
+
 	countIDStr := ctx.Param("id")
 	if countIDStr == "" {
 		countIDStr = ctx.Query("id")
@@ -92,7 +98,7 @@ func (h *CycleCountHandler) GetCycleCountItems(ctx *gin.Context) {
 		return
 	}
 
-	items, err := h.cycleCountService.GetCycleCountItems(ctx.Request.Context(), email, countID)
+	items, err := h.cycleCountService.GetCycleCountItems(ctx.Request.Context(), storeId, employeeId, role, countID)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.GetCycleCountItems: %v", err)
 		if strings.Contains(err.Error(), "currently assigned to") || strings.HasPrefix(err.Error(), "unauthorized") {
@@ -109,7 +115,9 @@ func (h *CycleCountHandler) GetCycleCountItems(ctx *gin.Context) {
 }
 
 func (h *CycleCountHandler) StartCycleCount(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.StartCycleCountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -117,7 +125,7 @@ func (h *CycleCountHandler) StartCycleCount(ctx *gin.Context) {
 		return
 	}
 
-	count, err := h.cycleCountService.StartCount(ctx.Request.Context(), email, req.CategoryId, req.StoreId)
+	count, err := h.cycleCountService.StartCount(ctx.Request.Context(), storeId, employeeId, role, req.CategoryId, req.StoreId)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.StartCycleCount: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
@@ -128,7 +136,9 @@ func (h *CycleCountHandler) StartCycleCount(ctx *gin.Context) {
 }
 
 func (h *CycleCountHandler) RecordScan(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.RecordScanRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -142,7 +152,7 @@ func (h *CycleCountHandler) RecordScan(ctx *gin.Context) {
 		}
 	}
 
-	item, err := h.cycleCountService.RecordScan(ctx.Request.Context(), email, req)
+	item, err := h.cycleCountService.RecordScan(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.RecordScan: %v", err)
 		if strings.Contains(err.Error(), "currently assigned to") || strings.HasPrefix(err.Error(), "unauthorized") {
@@ -157,7 +167,9 @@ func (h *CycleCountHandler) RecordScan(ctx *gin.Context) {
 }
 
 func (h *CycleCountHandler) SubmitForApproval(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.SubmitCycleCountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -171,7 +183,7 @@ func (h *CycleCountHandler) SubmitForApproval(ctx *gin.Context) {
 		}
 	}
 
-	if err := h.cycleCountService.SubmitForApproval(ctx.Request.Context(), email, req); err != nil {
+	if err := h.cycleCountService.SubmitForApproval(ctx.Request.Context(), storeId, employeeId, role, req); err != nil {
 		log.Printf("[ERROR] CycleCountHandler.SubmitForApproval: %v", err)
 		if strings.Contains(err.Error(), "currently assigned to") || strings.HasPrefix(err.Error(), "unauthorized") {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
@@ -185,7 +197,9 @@ func (h *CycleCountHandler) SubmitForApproval(ctx *gin.Context) {
 }
 
 func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.ApproveCycleCountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -199,7 +213,7 @@ func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
 		}
 	}
 
-	if err := h.cycleCountService.ApproveCount(ctx.Request.Context(), email, req); err != nil {
+	if err := h.cycleCountService.ApproveCount(ctx.Request.Context(), storeId, employeeId, role, req); err != nil {
 		log.Printf("[ERROR] CycleCountHandler.ApproveCycleCount: %v", err)
 		if strings.HasPrefix(err.Error(), "unauthorized") {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
@@ -213,7 +227,8 @@ func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
 }
 
 func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.TransferCycleCountOwnershipRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -227,7 +242,7 @@ func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
 		}
 	}
 
-	if err := h.cycleCountService.TransferOwnership(ctx.Request.Context(), email, req); err != nil {
+	if err := h.cycleCountService.TransferOwnership(ctx.Request.Context(), storeId, role, req); err != nil {
 		log.Printf("[ERROR] CycleCountHandler.TransferOwnership: %v", err)
 		if strings.HasPrefix(err.Error(), "unauthorized") {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
@@ -241,7 +256,8 @@ func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
 }
 
 func (h *CycleCountHandler) SearchCycleCounts(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var criteria models.CycleCountSearchCriteria
 	criteria.Query = ctx.Query("query")
@@ -264,7 +280,7 @@ func (h *CycleCountHandler) SearchCycleCounts(ctx *gin.Context) {
 		}
 	}
 
-	results, err := h.cycleCountService.SearchCycleCounts(ctx.Request.Context(), email, criteria)
+	results, err := h.cycleCountService.SearchCycleCounts(ctx.Request.Context(), storeId, role, criteria)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.SearchCycleCounts: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
@@ -275,7 +291,8 @@ func (h *CycleCountHandler) SearchCycleCounts(ctx *gin.Context) {
 }
 
 func (h *CycleCountHandler) GetSchedule(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 	from := ctx.Query("from")
 	to := ctx.Query("to")
 
@@ -286,7 +303,7 @@ func (h *CycleCountHandler) GetSchedule(ctx *gin.Context) {
 		}
 	}
 
-	schedule, err := h.cycleCountService.GetSchedule(ctx.Request.Context(), email, from, to, storeIDOverride)
+	schedule, err := h.cycleCountService.GetSchedule(ctx.Request.Context(), storeId, role, from, to, storeIDOverride)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.GetSchedule: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
@@ -297,7 +314,9 @@ func (h *CycleCountHandler) GetSchedule(ctx *gin.Context) {
 }
 
 func (h *CycleCountHandler) CreateScheduleEntry(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.CreateScheduleRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -305,7 +324,7 @@ func (h *CycleCountHandler) CreateScheduleEntry(ctx *gin.Context) {
 		return
 	}
 
-	entry, err := h.cycleCountService.CreateScheduleEntry(ctx.Request.Context(), email, req)
+	entry, err := h.cycleCountService.CreateScheduleEntry(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.CreateScheduleEntry: %v", err)
 		if strings.HasPrefix(err.Error(), "unauthorized") {

@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"log"
@@ -21,7 +21,7 @@ func NewReceivingHandler(receivingService *service.ReceivingService) *ReceivingH
 }
 
 func (h *ReceivingHandler) GetPurchaseOrders(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 	role := ctx.GetString("role")
 
 	var storeIDOverride *int
@@ -31,7 +31,7 @@ func (h *ReceivingHandler) GetPurchaseOrders(ctx *gin.Context) {
 		}
 	}
 
-	results, err := h.receivingService.GetPurchaseOrders(ctx.Request.Context(), email, role, storeIDOverride)
+	results, err := h.receivingService.GetPurchaseOrders(ctx.Request.Context(), storeId, role, storeIDOverride)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.GetPurchaseOrders: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -42,8 +42,6 @@ func (h *ReceivingHandler) GetPurchaseOrders(ctx *gin.Context) {
 }
 
 func (h *ReceivingHandler) GetPurchaseOrderDetail(ctx *gin.Context) {
-	email := ctx.GetString("email")
-
 	poIDStr := ctx.Param("id")
 	if poIDStr == "" {
 		poIDStr = ctx.Query("po_id")
@@ -58,7 +56,7 @@ func (h *ReceivingHandler) GetPurchaseOrderDetail(ctx *gin.Context) {
 		return
 	}
 
-	detail, err := h.receivingService.GetPurchaseOrderDetail(ctx.Request.Context(), email, poID)
+	detail, err := h.receivingService.GetPurchaseOrderDetail(ctx.Request.Context(), poID)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.GetPurchaseOrderDetail: %v", err)
 		if err.Error() == "purchase order not found" {
@@ -73,8 +71,6 @@ func (h *ReceivingHandler) GetPurchaseOrderDetail(ctx *gin.Context) {
 }
 
 func (h *ReceivingHandler) CheckProductInPO(ctx *gin.Context) {
-	email := ctx.GetString("email")
-
 	poIDStr := ctx.Param("id")
 	if poIDStr == "" {
 		poIDStr = ctx.Query("po_id")
@@ -90,7 +86,7 @@ func (h *ReceivingHandler) CheckProductInPO(ctx *gin.Context) {
 		return
 	}
 
-	result, err := h.receivingService.CheckProductInPO(ctx.Request.Context(), email, poID, barcode)
+	result, err := h.receivingService.CheckProductInPO(ctx.Request.Context(), poID, barcode)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.CheckProductInPO: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -101,7 +97,9 @@ func (h *ReceivingHandler) CheckProductInPO(ctx *gin.Context) {
 }
 
 func (h *ReceivingHandler) ReceivePO(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := ctx.GetString("role")
 
 	var req models.ReceivePORequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -115,7 +113,7 @@ func (h *ReceivingHandler) ReceivePO(ctx *gin.Context) {
 		}
 	}
 
-	err := h.receivingService.ReceivePO(ctx.Request.Context(), email, req)
+	err := h.receivingService.ReceivePO(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.ReceivePO: %v", err)
 		errMsg := err.Error()
@@ -131,7 +129,9 @@ func (h *ReceivingHandler) ReceivePO(ctx *gin.Context) {
 }
 
 func (h *ReceivingHandler) ReceiveLPR(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := ctx.GetString("role")
 
 	var req models.ReceiveLPRRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -145,7 +145,7 @@ func (h *ReceivingHandler) ReceiveLPR(ctx *gin.Context) {
 		}
 	}
 
-	err := h.receivingService.ReceiveLPR(ctx.Request.Context(), email, req)
+	err := h.receivingService.ReceiveLPR(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.ReceiveLPR: %v", err)
 		errMsg := err.Error()
@@ -162,9 +162,10 @@ func (h *ReceivingHandler) ReceiveLPR(ctx *gin.Context) {
 }
 
 func (h *ReceivingHandler) GetStockTransfers(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := ctx.GetString("role")
 
-	results, err := h.receivingService.GetStockTransfers(ctx.Request.Context(), email)
+	results, err := h.receivingService.GetStockTransfers(ctx.Request.Context(), storeId, role)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.GetStockTransfers: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -175,8 +176,6 @@ func (h *ReceivingHandler) GetStockTransfers(ctx *gin.Context) {
 }
 
 func (h *ReceivingHandler) GetStockTransferDetail(ctx *gin.Context) {
-	email := ctx.GetString("email")
-
 	transferIDStr := ctx.Param("id")
 	if transferIDStr == "" {
 		transferIDStr = ctx.Query("transfer_id")
@@ -191,7 +190,7 @@ func (h *ReceivingHandler) GetStockTransferDetail(ctx *gin.Context) {
 		return
 	}
 
-	detail, err := h.receivingService.GetStockTransferDetail(ctx.Request.Context(), email, transferID)
+	detail, err := h.receivingService.GetStockTransferDetail(ctx.Request.Context(), transferID)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.GetStockTransferDetail: %v", err)
 		if err.Error() == "transfer not found" {
@@ -206,7 +205,8 @@ func (h *ReceivingHandler) GetStockTransferDetail(ctx *gin.Context) {
 }
 
 func (h *ReceivingHandler) ReceiveTransfer(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
 
 	var req models.ReceiveTransferRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -220,7 +220,7 @@ func (h *ReceivingHandler) ReceiveTransfer(ctx *gin.Context) {
 		}
 	}
 
-	err := h.receivingService.ReceiveTransfer(ctx.Request.Context(), email, req)
+	err := h.receivingService.ReceiveTransfer(ctx.Request.Context(), storeId, employeeId, req)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.ReceiveTransfer: %v", err)
 		errMsg := err.Error()
@@ -236,7 +236,8 @@ func (h *ReceivingHandler) ReceiveTransfer(ctx *gin.Context) {
 }
 
 func (h *ReceivingHandler) QuickReceiveTransfer(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
 
 	var req models.QuickReceiveTransferRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -250,7 +251,7 @@ func (h *ReceivingHandler) QuickReceiveTransfer(ctx *gin.Context) {
 		}
 	}
 
-	err := h.receivingService.QuickReceiveTransfer(ctx.Request.Context(), email, req)
+	err := h.receivingService.QuickReceiveTransfer(ctx.Request.Context(), storeId, employeeId, req)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.QuickReceiveTransfer: %v", err)
 		errMsg := err.Error()
@@ -267,8 +268,6 @@ func (h *ReceivingHandler) QuickReceiveTransfer(ctx *gin.Context) {
 }
 
 func (h *ReceivingHandler) CheckProductInTransfer(ctx *gin.Context) {
-	email := ctx.GetString("email")
-
 	transferIDStr := ctx.Param("id")
 	if transferIDStr == "" {
 		transferIDStr = ctx.Query("transfer_id")
@@ -284,7 +283,7 @@ func (h *ReceivingHandler) CheckProductInTransfer(ctx *gin.Context) {
 		return
 	}
 
-	result, err := h.receivingService.CheckProductInTransfer(ctx.Request.Context(), email, transferID, barcode)
+	result, err := h.receivingService.CheckProductInTransfer(ctx.Request.Context(), transferID, barcode)
 	if err != nil {
 		log.Printf("[ERROR] ReceivingHandler.CheckProductInTransfer: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})

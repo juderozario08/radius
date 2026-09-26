@@ -19,12 +19,12 @@ func NewSessionRepo(db *sql.DB) *SessionRepo {
 func (r *SessionRepo) GetSessionByAccessTokenHash(ctx context.Context, accessTokenHash string) (*models.GetSessionByHashedToken, error) {
 	var session models.GetSessionByHashedToken
 	query := `
-		SELECT s.session_id, e.employee_id, s.expires_at, e.store_id, e.is_active, e.is_terminated FROM sessions as s
+		SELECT s.session_id, e.employee_id, s.expires_at, e.store_id, e.is_active, e.is_terminated, s.access_token_hash FROM sessions as s
 		JOIN employees as e ON e.employee_id = s.employee_id
 		WHERE access_token_hash = $1;
     `
 	err := r.db.QueryRowContext(ctx, query, accessTokenHash).Scan(
-		&session.SessionId, &session.EmployeeId, &session.ExpiresAt, &session.StoreId, &session.IsActive, &session.IsTerminated,
+		&session.SessionId, &session.EmployeeId, &session.ExpiresAt, &session.StoreId, &session.IsActive, &session.IsTerminated, &session.AccessTokenHash,
 	)
 	if err != nil {
 		return nil, err
@@ -36,12 +36,12 @@ func (r *SessionRepo) GetSessionByAccessTokenHash(ctx context.Context, accessTok
 func (r *SessionRepo) GetSessionByRefreshTokenHash(ctx context.Context, refreshTokenHash string) (*models.GetSessionByHashedToken, error) {
 	var session models.GetSessionByHashedToken
 	query := `
-		SELECT s.session_id, e.employee_id, s.expires_at, e.store_id, e.is_active, e.is_terminated FROM sessions as s
+		SELECT s.session_id, e.employee_id, s.expires_at, e.store_id, e.is_active, e.is_terminated, s.access_token_hash FROM sessions as s
 		JOIN employees as e ON e.employee_id = s.employee_id
 		WHERE refresh_token_hash = $1;
     `
 	err := r.db.QueryRowContext(ctx, query, refreshTokenHash).Scan(
-		&session.SessionId, &session.EmployeeId, &session.ExpiresAt, &session.StoreId, &session.IsActive, &session.IsTerminated,
+		&session.SessionId, &session.EmployeeId, &session.ExpiresAt, &session.StoreId, &session.IsActive, &session.IsTerminated, &session.AccessTokenHash,
 	)
 	if err != nil {
 		return nil, err

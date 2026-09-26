@@ -70,13 +70,13 @@ func main() {
 	wsHub := websocket.NewHub()
 	go wsHub.Run()
 
-	employeeService := service.NewEmployeeService(employeeRepo)
 	sessionService := service.NewSessionService(sessionRepo, cfg.JWTSecretKey, redisClient)
+	employeeService := service.NewEmployeeService(employeeRepo, sessionService)
 	authService := service.NewAuthService(employeeRepo, sessionService)
 	barcodeService := service.NewBarcodeService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
 	cycleCountService := service.NewCycleCountService(cycleCountRepo, employeeRepo, storeRepo, productsRepo, inventoryRepo, sessionRepo, wsHub)
 	fillReportService := service.NewFillReportService(fillReportRepo, storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo, redisClient)
-	inventoryService := service.NewInventoryService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
+	inventoryService := service.NewInventoryService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo, redisClient)
 	onlineOrderService := service.NewOnlineOrderService(ordersRepo, productsRepo, inventoryRepo, sessionRepo, storeRepo, employeeRepo, wsHub)
 	workerCtx, workerCancel := context.WithCancel(context.Background())
 	defer workerCancel()
@@ -85,9 +85,9 @@ func main() {
 	pricingService := service.NewPricingService(storeRepo, employeeRepo, sessionRepo, inventoryRepo)
 	productService := service.NewProductService(productsRepo, storeRepo, employeeRepo, sessionRepo, redisClient)
 	categoryService := service.NewCategoryService(categoryRepo, redisClient)
-	storeService := service.NewStoreService(storeRepo, employeeRepo, productsRepo)
+	storeService := service.NewStoreService(storeRepo, employeeRepo, productsRepo, redisClient)
 	transactionService := service.NewTransactionService(salesRepo, employeeRepo, sessionRepo, fillReportRepo, wsHub)
-	transferService := service.NewTransferService(transferRepo, storeRepo, inventoryRepo, employeeRepo, sessionRepo, wsHub)
+	transferService := service.NewTransferService(transferRepo, employeeRepo, wsHub)
 	receivingService := service.NewReceivingService(receivingRepo, employeeRepo)
 	auditService := service.NewAuditService(auditRepo, employeeRepo, productsRepo)
 	printOrderService := service.NewPrintOrderService(ordersRepo, employeeRepo)
@@ -100,6 +100,7 @@ func main() {
 		authService,
 		employeeRepo,
 		upgrader,
+		redisClient,
 	)
 
 	appHandlers := router.Handlers{

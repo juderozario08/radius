@@ -15,20 +15,9 @@ func TestEmployeeService_GetManagerEmployees_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockEmployeeRepository(ctrl)
-	svc := service.NewEmployeeService(mockRepo)
+	svc := service.NewEmployeeService(mockRepo, nil)
 
-	managerEmail := "manager@test.com"
 	storeId := 5
-
-	mockRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), managerEmail).
-		Return(&models.Employee{
-			EmployeeBase: models.EmployeeBase{
-				Email:   managerEmail,
-				Role:    models.RoleManager,
-				StoreId: storeId,
-			},
-		}, nil)
 
 	mockRepo.EXPECT().
 		GetAllEmployees(gomock.Any(), 10, 0, gomock.Any()).
@@ -37,7 +26,7 @@ func TestEmployeeService_GetManagerEmployees_Success(t *testing.T) {
 			{EmployeeId: 2, EmployeeBase: models.EmployeeBase{StoreId: storeId}},
 		}, 2, nil)
 
-	res, err := svc.GetManagerEmployees(context.Background(), managerEmail, 1, 10)
+	res, err := svc.GetManagerEmployees(context.Background(), storeId, models.RoleManager, 1, 10)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -55,20 +44,9 @@ func TestEmployeeService_GetManagerEmployees_AdminStoreOverride(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockEmployeeRepository(ctrl)
-	svc := service.NewEmployeeService(mockRepo)
+	svc := service.NewEmployeeService(mockRepo, nil)
 
-	adminEmail := "admin@test.com"
 	overrideStoreID := 9
-
-	mockRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), adminEmail).
-		Return(&models.Employee{
-			EmployeeBase: models.EmployeeBase{
-				Email:   adminEmail,
-				Role:    models.RoleAdmin,
-				StoreId: 1,
-			},
-		}, nil)
 
 	mockRepo.EXPECT().
 		GetAllEmployees(gomock.Any(), 10, 0, &overrideStoreID).
@@ -76,7 +54,7 @@ func TestEmployeeService_GetManagerEmployees_AdminStoreOverride(t *testing.T) {
 			{EmployeeId: 10, EmployeeBase: models.EmployeeBase{StoreId: overrideStoreID}},
 		}, 1, nil)
 
-	res, err := svc.GetManagerEmployees(context.Background(), adminEmail, 1, 10, &overrideStoreID)
+	res, err := svc.GetManagerEmployees(context.Background(), 1, models.RoleAdmin, 1, 10, &overrideStoreID)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -85,25 +63,28 @@ func TestEmployeeService_GetManagerEmployees_AdminStoreOverride(t *testing.T) {
 	}
 }
 
-func TestEmployeeService_GetManagerEmployees_NotFound(t *testing.T) {
+func TestEmployeeService_GetManagerEmployees_NonAdminCannotOverride(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockEmployeeRepository(ctrl)
-	svc := service.NewEmployeeService(mockRepo)
+	svc := service.NewEmployeeService(mockRepo, nil)
 
-	managerEmail := "unknown@test.com"
+	storeId := 5
+	overrideStoreID := 9
 
 	mockRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), managerEmail).
-		Return(nil, nil)
+		GetAllEmployees(gomock.Any(), 10, 0, &storeId).
+		Return([]models.Employee{
+			{EmployeeId: 1, EmployeeBase: models.EmployeeBase{StoreId: storeId}},
+		}, 1, nil)
 
-	_, err := svc.GetManagerEmployees(context.Background(), managerEmail, 1, 10)
-	if err == nil {
-		t.Fatal("expected error for unknown manager")
+	res, err := svc.GetManagerEmployees(context.Background(), storeId, models.RoleManager, 1, 10, &overrideStoreID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
 	}
-	if err.Error() != "manager not found" {
-		t.Fatalf("expected 'manager not found', got '%v'", err.Error())
+	if len(res.Employees) != 1 || res.Employees[0].StoreId != storeId {
+		t.Fatalf("expected employee with store id %d, got override", storeId)
 	}
 }
 
@@ -112,7 +93,7 @@ func TestEmployeeService_UpdateEmployee_InvalidState(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockEmployeeRepository(ctrl)
-	svc := service.NewEmployeeService(mockRepo)
+	svc := service.NewEmployeeService(mockRepo, nil)
 
 	isActive := true
 	isTerminated := true
@@ -135,7 +116,7 @@ func TestEmployeeService_CreateEmployee_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockEmployeeRepository(ctrl)
-	svc := service.NewEmployeeService(mockRepo)
+	svc := service.NewEmployeeService(mockRepo, nil)
 
 	req := models.CreateEmployeeRequest{
 		Password:   "securepass",

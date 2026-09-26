@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"log"
@@ -22,7 +22,7 @@ func NewPrintOrderHandler(printOrderService *service.PrintOrderService) *PrintOr
 }
 
 func (h *PrintOrderHandler) GetAllPrintOrders(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	pageNumber, pageSize := utils.ParsePagination(ctx)
@@ -41,7 +41,7 @@ func (h *PrintOrderHandler) GetAllPrintOrders(ctx *gin.Context) {
 		}
 	}
 
-	orders, totalLength, err := h.printOrderService.GetAllPrintOrders(ctx.Request.Context(), email, role, pageNumber, pageSize, criteria)
+	orders, totalLength, err := h.printOrderService.GetAllPrintOrders(ctx.Request.Context(), storeId, role, pageNumber, pageSize, criteria)
 	if err != nil {
 		log.Printf("[ERROR] PrintOrderHandler.GetAllPrintOrders (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -55,9 +55,6 @@ func (h *PrintOrderHandler) GetAllPrintOrders(ctx *gin.Context) {
 }
 
 func (h *PrintOrderHandler) GetPrintOrderByID(ctx *gin.Context) {
-	email := ctx.GetString("email")
-	role := models.EmployeeRole(ctx.GetString("role"))
-
 	idStr := ctx.Param("id")
 	if idStr == "" {
 		idStr = ctx.Query("id")
@@ -69,7 +66,7 @@ func (h *PrintOrderHandler) GetPrintOrderByID(ctx *gin.Context) {
 		return
 	}
 
-	order, items, err := h.printOrderService.GetPrintOrderByID(ctx.Request.Context(), email, role, id)
+	order, items, err := h.printOrderService.GetPrintOrderByID(ctx.Request.Context(), id)
 	if err != nil {
 		log.Printf("[ERROR] PrintOrderHandler.GetPrintOrderByID (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})

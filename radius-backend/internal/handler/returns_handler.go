@@ -21,7 +21,9 @@ func NewReturnsHandler(returnsService *service.ReturnsService) *ReturnsHandler {
 }
 
 func (h *ReturnsHandler) CreateReturn(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.CreateReturnRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -29,7 +31,7 @@ func (h *ReturnsHandler) CreateReturn(ctx *gin.Context) {
 		return
 	}
 
-	createdReturn, err := h.returnsService.CreateReturn(ctx.Request.Context(), email, req)
+	createdReturn, err := h.returnsService.CreateReturn(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] ReturnsHandler.CreateReturn: %v", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
@@ -40,7 +42,8 @@ func (h *ReturnsHandler) CreateReturn(ctx *gin.Context) {
 }
 
 func (h *ReturnsHandler) GetReturns(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "15"))
@@ -65,7 +68,7 @@ func (h *ReturnsHandler) GetReturns(ctx *gin.Context) {
 		criteria.Query = &q
 	}
 
-	results, total, err := h.returnsService.GetReturns(ctx.Request.Context(), email, criteria, page, limit)
+	results, total, err := h.returnsService.GetReturns(ctx.Request.Context(), storeId, role, criteria, page, limit)
 	if err != nil {
 		log.Printf("[ERROR] ReturnsHandler.GetReturns: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve returns"})
@@ -79,7 +82,8 @@ func (h *ReturnsHandler) GetReturns(ctx *gin.Context) {
 }
 
 func (h *ReturnsHandler) GetReturnDetail(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	returnIDStr := ctx.Param("id")
 	if returnIDStr == "" {
@@ -96,7 +100,7 @@ func (h *ReturnsHandler) GetReturnDetail(ctx *gin.Context) {
 		return
 	}
 
-	detail, err := h.returnsService.GetReturnDetail(ctx.Request.Context(), email, returnID)
+	detail, err := h.returnsService.GetReturnDetail(ctx.Request.Context(), storeId, role, returnID)
 	if err != nil {
 		log.Printf("[ERROR] ReturnsHandler.GetReturnDetail: %v", err)
 		if err.Error() == "return not found" {
@@ -115,7 +119,9 @@ func (h *ReturnsHandler) GetReturnDetail(ctx *gin.Context) {
 }
 
 func (h *ReturnsHandler) ApproveReturn(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	returnIDStr := ctx.Param("id")
 	if returnIDStr == "" {
@@ -132,7 +138,7 @@ func (h *ReturnsHandler) ApproveReturn(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.returnsService.ApproveReturn(ctx.Request.Context(), email, returnID); err != nil {
+	if err := h.returnsService.ApproveReturn(ctx.Request.Context(), storeId, employeeId, role, returnID); err != nil {
 		log.Printf("[ERROR] ReturnsHandler.ApproveReturn: %v", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 		return
@@ -142,7 +148,9 @@ func (h *ReturnsHandler) ApproveReturn(ctx *gin.Context) {
 }
 
 func (h *ReturnsHandler) RejectReturn(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	returnIDStr := ctx.Param("id")
 	if returnIDStr == "" {
@@ -164,7 +172,7 @@ func (h *ReturnsHandler) RejectReturn(ctx *gin.Context) {
 	}
 	_ = ctx.ShouldBindJSON(&req)
 
-	if err := h.returnsService.RejectReturn(ctx.Request.Context(), email, returnID, req.Reason); err != nil {
+	if err := h.returnsService.RejectReturn(ctx.Request.Context(), storeId, employeeId, role, returnID, req.Reason); err != nil {
 		log.Printf("[ERROR] ReturnsHandler.RejectReturn: %v", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
 		return
@@ -174,7 +182,8 @@ func (h *ReturnsHandler) RejectReturn(ctx *gin.Context) {
 }
 
 func (h *ReturnsHandler) LookupTransaction(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	txIDStr := ctx.Param("id")
 	if txIDStr == "" {
@@ -191,7 +200,7 @@ func (h *ReturnsHandler) LookupTransaction(ctx *gin.Context) {
 		return
 	}
 
-	resp, err := h.returnsService.LookupTransaction(ctx.Request.Context(), email, txID)
+	resp, err := h.returnsService.LookupTransaction(ctx.Request.Context(), storeId, role, txID)
 	if err != nil {
 		log.Printf("[ERROR] ReturnsHandler.LookupTransaction: %v", err)
 		if err.Error() == "transaction not found" {
@@ -206,7 +215,7 @@ func (h *ReturnsHandler) LookupTransaction(ctx *gin.Context) {
 }
 
 func (h *ReturnsHandler) LookupByProduct(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 
 	barcode := ctx.Query("barcode")
 	if barcode == "" {
@@ -220,7 +229,7 @@ func (h *ReturnsHandler) LookupByProduct(ctx *gin.Context) {
 		return
 	}
 
-	results, err := h.returnsService.LookupTransactionsByProduct(ctx.Request.Context(), email, barcode)
+	results, err := h.returnsService.LookupTransactionsByProduct(ctx.Request.Context(), storeId, barcode)
 	if err != nil {
 		log.Printf("[ERROR] ReturnsHandler.LookupByProduct: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to search transactions by product"})
@@ -233,7 +242,8 @@ func (h *ReturnsHandler) LookupByProduct(ctx *gin.Context) {
 }
 
 func (h *ReturnsHandler) GetRtvQueue(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "20"))
@@ -244,7 +254,7 @@ func (h *ReturnsHandler) GetRtvQueue(ctx *gin.Context) {
 		status = &rtvSt
 	}
 
-	results, total, err := h.returnsService.GetRtvQueue(ctx.Request.Context(), email, status, page, limit)
+	results, total, err := h.returnsService.GetRtvQueue(ctx.Request.Context(), storeId, role, status, page, limit)
 	if err != nil {
 		log.Printf("[ERROR] ReturnsHandler.GetRtvQueue: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve RTV queue"})

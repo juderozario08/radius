@@ -2,10 +2,14 @@ package service_test
 
 import (
 	"context"
+	"fmt"
 	"radius/internal/models"
 	"radius/internal/service"
 	"radius/internal/service/mocks"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
@@ -87,5 +91,61 @@ func TestProductService_GetProductByID_CacheMissAndHit(t *testing.T) {
 	}
 	if callCount != 1 {
 		t.Errorf("Expected repo to be called once, got %d", callCount)
+	}
+}
+
+func TestProductService_GetProductByID_SingleflightDeduplication(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockProductRepo := &MockProductRepo{}
+	mockStoreRepo := mocks.NewMockStoreRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+
+	db := setupProductTestRedis()
+
+	productService := service.NewProductService(mockProductRepo, mockStoreRepo, mockEmployeeRepo, mockSessionRepo, db)
+
+	expectedProduct := &models.Product{
+		ProductId: 42,
+		Name:      "Singleflight Product",
+	}
+
+	var callCount int64
+	mockProductRepo.GetProductByIDFunc = func(ctx context.Context, id int) (*models.Product, error) {
+		atomic.AddInt64(&callCount, 1)
+		time.Sleep(50 * time.Millisecond)
+		return expectedProduct, nil
+	}
+
+	const concurrency = 10
+	var wg sync.WaitGroup
+	errs := make(chan error, concurrency)
+
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			prod, err := productService.GetProductByID(context.Background(), 42)
+			if err != nil {
+				errs <- err
+				return
+			}
+			if prod.Name != "Singleflight Product" {
+				errs <- fmt.Errorf("unexpected name: %s", prod.Name)
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(errs)
+
+	for err := range errs {
+		t.Fatalf("Concurrent call failed: %v", err)
+	}
+
+	if atomic.LoadInt64(&callCount) != 1 {
+		t.Errorf("Expected singleflight to collapse calls into 1, got %d", atomic.LoadInt64(&callCount))
 	}
 }

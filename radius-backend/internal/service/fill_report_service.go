@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"radius/internal/models"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -43,16 +43,37 @@ func NewFillReportService(
 
 func (s *FillReportService) GetActiveIS4TCSession(ctx context.Context, storeID int) ([]models.MimsProductInventory, error) {
 	key := fmt.Sprintf("is4tc_session:%d", storeID)
-	val, err := s.redisClient.Get(ctx, key).Result()
-	if err == redis.Nil {
-		return []models.MimsProductInventory{}, nil
-	} else if err != nil {
+	result, err := s.redisClient.HGetAll(ctx, key).Result()
+	if err != nil {
+		if strings.Contains(err.Error(), "WRONGTYPE") {
+			val, getErr := s.redisClient.Get(ctx, key).Result()
+			if getErr == nil {
+				var oldItems []models.MimsProductInventory
+				if json.Unmarshal([]byte(val), &oldItems) == nil {
+					_ = s.redisClient.Del(ctx, key).Err()
+					for _, item := range oldItems {
+						if d, mErr := json.Marshal(item); mErr == nil {
+							_ = s.redisClient.HSet(ctx, key, fmt.Sprintf("%d", item.ProductId), d).Err()
+						}
+					}
+					_ = s.redisClient.Expire(ctx, key, 24*time.Hour).Err()
+					return oldItems, nil
+				}
+			}
+		}
 		return nil, err
 	}
 
-	var items []models.MimsProductInventory
-	if err := json.Unmarshal([]byte(val), &items); err != nil {
-		return nil, err
+	if len(result) == 0 {
+		return []models.MimsProductInventory{}, nil
+	}
+
+	items := make([]models.MimsProductInventory, 0, len(result))
+	for _, itemJSON := range result {
+		var item models.MimsProductInventory
+		if err := json.Unmarshal([]byte(itemJSON), &item); err == nil {
+			items = append(items, item)
+		}
 	}
 	return items, nil
 }
@@ -62,31 +83,26 @@ func (s *FillReportService) AddToIS4TCSession(ctx context.Context, storeID int, 
 		_ = s.fillReportRepo.AddEmptyHole(ctx, storeID, product.ProductId, employeeID)
 	}
 
-	items, err := s.GetActiveIS4TCSession(ctx, storeID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, item := range items {
-		if item.ProductId == product.ProductId {
-			return items, nil
-		}
-	}
-
-	items = append([]models.MimsProductInventory{product}, items...)
-
-	data, err := json.Marshal(items)
+	data, err := json.Marshal(product)
 	if err != nil {
 		return nil, err
 	}
 
 	key := fmt.Sprintf("is4tc_session:%d", storeID)
-	err = s.redisClient.Set(ctx, key, data, 24*time.Hour).Err()
+	field := fmt.Sprintf("%d", product.ProductId)
+
+	err = s.redisClient.HSet(ctx, key, field, data).Err()
+	if err != nil && strings.Contains(err.Error(), "WRONGTYPE") {
+		_ = s.redisClient.Del(ctx, key).Err()
+		err = s.redisClient.HSet(ctx, key, field, data).Err()
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	return items, nil
+	_ = s.redisClient.Expire(ctx, key, 24*time.Hour).Err()
+
+	return s.GetActiveIS4TCSession(ctx, storeID)
 }
 
 func (s *FillReportService) ClearIS4TCSession(ctx context.Context, storeID int) error {
@@ -127,21 +143,4 @@ func (s *FillReportService) LogEmptyHole(ctx context.Context, storeID int, produ
 
 func (s *FillReportService) LogSoldItems(ctx context.Context, storeID int, items []models.TransactionItem) error {
 	return s.fillReportRepo.AddSoldItems(ctx, storeID, items)
-}
-
-func (s *FillReportService) GetEmployeeStoreID(ctx context.Context, email string) (int, error) {
-	if s.employeeRepo == nil {
-		return 0, errors.New("employee repository is not configured")
-	}
-	if email == "" {
-		return 0, errors.New("email is empty")
-	}
-	emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return 0, err
-	}
-	if emp == nil {
-		return 0, errors.New("employee not found")
-	}
-	return emp.StoreId, nil
 }

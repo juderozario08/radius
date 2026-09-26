@@ -9,28 +9,19 @@ import (
 )
 
 type TransferService struct {
-	transferRepo  TransferRepository
-	storeRepo     StoreRepository
-	inventoryRepo InventoryRepository
-	employeeRepo  EmployeeRepository
-	sessionRepo   SessionRepository
-	broadcaster   EventBroadcaster
+	transferRepo TransferRepository
+	employeeRepo EmployeeRepository
+	broadcaster  EventBroadcaster
 }
 
 func NewTransferService(
 	transferRepo TransferRepository,
-	storeRepo StoreRepository,
-	inventoryRepo InventoryRepository,
 	employeeRepo EmployeeRepository,
-	sessionRepo SessionRepository,
 	broadcaster ...EventBroadcaster,
 ) *TransferService {
 	svc := &TransferService{
-		transferRepo:  transferRepo,
-		storeRepo:     storeRepo,
-		inventoryRepo: inventoryRepo,
-		employeeRepo:  employeeRepo,
-		sessionRepo:   sessionRepo,
+		transferRepo: transferRepo,
+		employeeRepo: employeeRepo,
 	}
 	if len(broadcaster) > 0 && broadcaster[0] != nil {
 		svc.broadcaster = broadcaster[0]
@@ -42,29 +33,13 @@ func (s *TransferService) SetBroadcaster(broadcaster EventBroadcaster) {
 	s.broadcaster = broadcaster
 }
 
-func (s *TransferService) getEmployee(ctx context.Context, email string) (*models.Employee, error) {
-	emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if emp == nil {
-		return nil, errors.New("employee not found")
-	}
-	return emp, nil
-}
-
-func (s *TransferService) CreateTransfer(ctx context.Context, email string, req models.CreateTransferRequest) (*models.StockTransfer, error) {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
-	if emp.Role != models.RoleAdmin && emp.Role != models.RoleManager {
+func (s *TransferService) CreateTransfer(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.CreateTransferRequest) (*models.StockTransfer, error) {
+	if role != models.RoleAdmin && role != models.RoleManager {
 		return nil, errors.New("insufficient permissions to create stock transfers")
 	}
 
-	fromStoreID := emp.StoreId
-	if emp.Role == models.RoleAdmin && req.FromStoreId != nil && *req.FromStoreId > 0 {
+	fromStoreID := storeId
+	if role == models.RoleAdmin && req.FromStoreId != nil && *req.FromStoreId > 0 {
 		fromStoreID = *req.FromStoreId
 	}
 
@@ -87,41 +62,26 @@ func (s *TransferService) CreateTransfer(ctx context.Context, email string, req 
 		}
 	}
 
-	return s.transferRepo.CreateTransfer(ctx, fromStoreID, toStoreID, emp.EmployeeId, req.TransferReason, req.ManualCheckRequired, req.Items)
+	return s.transferRepo.CreateTransfer(ctx, fromStoreID, toStoreID, employeeId, req.TransferReason, req.ManualCheckRequired, req.Items)
 }
 
-func (s *TransferService) GetOutboundTransfers(ctx context.Context, email string, pageSize, pageNumber int, filterStoreID *int) ([]models.OutboundTransferSummary, int, error) {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return nil, 0, err
-	}
-
+func (s *TransferService) GetOutboundTransfers(ctx context.Context, storeId int, role models.EmployeeRole, pageSize, pageNumber int, filterStoreID *int) ([]models.OutboundTransferSummary, int, error) {
 	var storeID *int
-	if emp.Role == models.RoleAdmin {
+	if role == models.RoleAdmin {
 		if filterStoreID != nil && *filterStoreID > 0 {
 			storeID = filterStoreID
 		}
 	} else {
-		storeID = &emp.StoreId
+		storeID = &storeId
 	}
 
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-	if pageNumber <= 0 {
-		pageNumber = 1
-	}
+	limit := pageSize
 	offset := (pageNumber - 1) * pageSize
 
-	return s.transferRepo.GetOutboundTransfers(ctx, storeID, pageSize, offset)
+	return s.transferRepo.GetOutboundTransfers(ctx, storeID, limit, offset)
 }
 
-func (s *TransferService) GetOutboundTransferDetail(ctx context.Context, email string, transferID int) (*models.OutboundTransferDetailResponse, error) {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *TransferService) GetOutboundTransferDetail(ctx context.Context, storeId int, role models.EmployeeRole, transferID int) (*models.OutboundTransferDetailResponse, error) {
 	detail, err := s.transferRepo.GetOutboundTransferDetail(ctx, transferID)
 	if err != nil {
 		return nil, err
@@ -130,20 +90,15 @@ func (s *TransferService) GetOutboundTransferDetail(ctx context.Context, email s
 		return nil, errors.New("transfer not found")
 	}
 
-	if emp.Role != models.RoleAdmin && detail.FromStoreId != emp.StoreId && detail.ToStoreId != emp.StoreId {
+	if role != models.RoleAdmin && detail.FromStoreId != storeId && detail.ToStoreId != storeId {
 		return nil, errors.New("unauthorized to view this transfer")
 	}
 
 	return detail, nil
 }
 
-func (s *TransferService) DispatchTransfer(ctx context.Context, email string, req models.DispatchTransferRequest) error {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return err
-	}
-
-	if emp.Role != models.RoleAdmin && emp.Role != models.RoleManager {
+func (s *TransferService) DispatchTransfer(ctx context.Context, storeId int, role models.EmployeeRole, req models.DispatchTransferRequest) error {
+	if role != models.RoleAdmin && role != models.RoleManager {
 		return errors.New("insufficient permissions to dispatch stock transfers")
 	}
 
@@ -155,7 +110,7 @@ func (s *TransferService) DispatchTransfer(ctx context.Context, email string, re
 		return errors.New("transfer not found")
 	}
 
-	if emp.Role != models.RoleAdmin && detail.FromStoreId != emp.StoreId {
+	if role != models.RoleAdmin && detail.FromStoreId != storeId {
 		return errors.New("only origin store can dispatch this transfer")
 	}
 
@@ -192,13 +147,8 @@ func (s *TransferService) DispatchTransfer(ctx context.Context, email string, re
 	return nil
 }
 
-func (s *TransferService) CancelTransfer(ctx context.Context, email string, req models.CancelTransferRequest) error {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return err
-	}
-
-	if emp.Role != models.RoleAdmin && emp.Role != models.RoleManager {
+func (s *TransferService) CancelTransfer(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.CancelTransferRequest) error {
+	if role != models.RoleAdmin && role != models.RoleManager {
 		return errors.New("insufficient permissions to cancel stock transfers")
 	}
 
@@ -210,21 +160,16 @@ func (s *TransferService) CancelTransfer(ctx context.Context, email string, req 
 		return errors.New("transfer not found")
 	}
 
-	if emp.Role != models.RoleAdmin && detail.FromStoreId != emp.StoreId {
+	if role != models.RoleAdmin && detail.FromStoreId != storeId {
 		return errors.New("only origin store can cancel this transfer")
 	}
 
-	return s.transferRepo.CancelTransfer(ctx, req.TransferId, emp.EmployeeId)
+	return s.transferRepo.CancelTransfer(ctx, req.TransferId, employeeId)
 }
 
-func (s *TransferService) GetDestinationStores(ctx context.Context, email string, fromStoreIDParam *int) ([]models.TransferDestinationStore, error) {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
-	fromStoreID := emp.StoreId
-	if emp.Role == models.RoleAdmin && fromStoreIDParam != nil && *fromStoreIDParam > 0 {
+func (s *TransferService) GetDestinationStores(ctx context.Context, storeId int, role models.EmployeeRole, fromStoreIDParam *int) ([]models.TransferDestinationStore, error) {
+	fromStoreID := storeId
+	if role == models.RoleAdmin && fromStoreIDParam != nil && *fromStoreIDParam > 0 {
 		fromStoreID = *fromStoreIDParam
 	}
 

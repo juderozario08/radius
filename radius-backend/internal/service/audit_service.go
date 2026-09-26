@@ -20,15 +20,7 @@ func NewAuditService(ar AuditRepository, er EmployeeRepository, pr ProductReposi
 	}
 }
 
-func (s *AuditService) GetProductAuditTrail(ctx context.Context, email string, barcode string, filter models.AuditFilter, limit, offset int) (*models.AuditTrailResponse, error) {
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if employee == nil {
-		return nil, errors.New("employee not found")
-	}
-
+func (s *AuditService) GetProductAuditTrail(ctx context.Context, storeId int, role models.EmployeeRole, barcode string, filter models.AuditFilter, limit, offset int) (*models.AuditTrailResponse, error) {
 	product, err := s.productRepo.GetProductByBarcode(ctx, barcode)
 	if err != nil {
 		return nil, err
@@ -38,8 +30,8 @@ func (s *AuditService) GetProductAuditTrail(ctx context.Context, email string, b
 	}
 
 	var storeID *int
-	if employee.Role != "ADMIN" {
-		storeID = &employee.StoreId
+	if role != models.RoleAdmin {
+		storeID = &storeId
 	} else if filter.StoreId != nil {
 		storeID = filter.StoreId
 	}

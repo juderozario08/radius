@@ -17,12 +17,13 @@ type Session struct {
 }
 
 type GetSessionByHashedToken struct {
-	SessionId    int
-	EmployeeId   int
-	ExpiresAt    time.Time
-	StoreId      int
-	IsActive     *bool
-	IsTerminated *bool
+	SessionId       int
+	EmployeeId      int
+	ExpiresAt       time.Time
+	StoreId         int
+	IsActive        *bool
+	IsTerminated    *bool
+	AccessTokenHash string
 }
 
 type CreateSessionRequest struct {

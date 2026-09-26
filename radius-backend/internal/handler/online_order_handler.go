@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ func NewOnlineOrderHandler(onlineOrderService *service.OnlineOrderService) *Onli
 }
 
 func (h *OnlineOrderHandler) GetAllOnlineOrders(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	pageNumber, pageSize := utils.ParsePagination(ctx)
@@ -59,7 +59,7 @@ func (h *OnlineOrderHandler) GetAllOnlineOrders(ctx *gin.Context) {
 		}
 	}
 
-	orders, totalLength, err := h.onlineOrderService.GetAllOnlineOrders(ctx.Request.Context(), email, role, pageNumber, pageSize, criteria)
+	orders, totalLength, err := h.onlineOrderService.GetAllOnlineOrders(ctx.Request.Context(), storeId, role, pageNumber, pageSize, criteria)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.GetAllOnlineOrders (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -73,9 +73,6 @@ func (h *OnlineOrderHandler) GetAllOnlineOrders(ctx *gin.Context) {
 }
 
 func (h *OnlineOrderHandler) GetOnlineOrderByID(ctx *gin.Context) {
-	email := ctx.GetString("email")
-	role := models.EmployeeRole(ctx.GetString("role"))
-
 	idStr := ctx.Param("id")
 	if idStr == "" {
 		idStr = ctx.Query("id")
@@ -87,7 +84,7 @@ func (h *OnlineOrderHandler) GetOnlineOrderByID(ctx *gin.Context) {
 		return
 	}
 
-	order, items, err := h.onlineOrderService.GetOnlineOrderByID(ctx.Request.Context(), email, role, id)
+	order, items, err := h.onlineOrderService.GetOnlineOrderByID(ctx.Request.Context(), id)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.GetOnlineOrderByID (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -106,7 +103,7 @@ func (h *OnlineOrderHandler) GetOnlineOrderByID(ctx *gin.Context) {
 }
 
 func (h *OnlineOrderHandler) CreateOnlineOrder(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var order models.OnlineOrder
@@ -116,7 +113,7 @@ func (h *OnlineOrderHandler) CreateOnlineOrder(ctx *gin.Context) {
 		return
 	}
 
-	createdOrder, err := h.onlineOrderService.CreateOnlineOrder(ctx.Request.Context(), email, role, &order)
+	createdOrder, err := h.onlineOrderService.CreateOnlineOrder(ctx.Request.Context(), storeId, role, &order)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.CreateOnlineOrder (Service): %v", err)
 		if strings.Contains(err.Error(), "invalid status") ||
@@ -133,7 +130,8 @@ func (h *OnlineOrderHandler) CreateOnlineOrder(ctx *gin.Context) {
 }
 
 func (h *OnlineOrderHandler) AssignOnlineOrder(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.AssignOnlineOrderRequest
@@ -149,7 +147,7 @@ func (h *OnlineOrderHandler) AssignOnlineOrder(ctx *gin.Context) {
 		}
 	}
 
-	order, wasAssigned, err := h.onlineOrderService.AssignOnlineOrder(ctx.Request.Context(), email, role, req.OrderID, req.EmployeeID)
+	order, wasAssigned, err := h.onlineOrderService.AssignOnlineOrder(ctx.Request.Context(), storeId, employeeId, role, req.OrderID, req.EmployeeID)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.AssignOnlineOrder (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to assign order: " + err.Error()})

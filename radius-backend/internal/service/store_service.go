@@ -2,29 +2,39 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"radius/internal/models"
 	"radius/internal/utils"
 	"strconv"
+	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type StoreService struct {
 	storeRepo    StoreRepository
 	employeeRepo EmployeeRepository
 	productsRepo ProductRepository
+	redisClient  *redis.Client
 }
 
 func NewStoreService(
 	storeRepo StoreRepository,
 	employeeRepo EmployeeRepository,
 	productsRepo ProductRepository,
+	redisClient ...*redis.Client,
 ) *StoreService {
-	return &StoreService{
+	svc := &StoreService{
 		storeRepo:    storeRepo,
 		employeeRepo: employeeRepo,
 		productsRepo: productsRepo,
 	}
+	if len(redisClient) > 0 && redisClient[0] != nil {
+		svc.redisClient = redisClient[0]
+	}
+	return svc
 }
 
 func (s *StoreService) GetAllStores(ctx context.Context, pageSize string, pageNumber string) (*models.GetAllStoresResponse, error) {
@@ -140,5 +150,26 @@ func (s *StoreService) GetStore(ctx context.Context, storeId string) (*models.St
 }
 
 func (s *StoreService) GetStoreOperations(ctx context.Context) ([]models.StoreOperationSummary, error) {
-	return s.storeRepo.GetStoreOperationsSummaries(ctx)
+	cacheKey := "radius:v1:store:ops"
+	if s.redisClient != nil {
+		if val, err := s.redisClient.Get(ctx, cacheKey).Result(); err == nil {
+			var ops []models.StoreOperationSummary
+			if json.Unmarshal([]byte(val), &ops) == nil {
+				return ops, nil
+			}
+		}
+	}
+
+	ops, err := s.storeRepo.GetStoreOperationsSummaries(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.redisClient != nil {
+		if data, err := json.Marshal(ops); err == nil {
+			_ = s.redisClient.Set(ctx, cacheKey, data, 30*time.Second).Err()
+		}
+	}
+
+	return ops, nil
 }

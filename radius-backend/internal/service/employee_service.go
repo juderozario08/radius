@@ -10,12 +10,14 @@ import (
 )
 
 type EmployeeService struct {
-	employeeRepo EmployeeRepository
+	employeeRepo   EmployeeRepository
+	sessionService *SessionService
 }
 
-func NewEmployeeService(employeeRepo EmployeeRepository) *EmployeeService {
+func NewEmployeeService(employeeRepo EmployeeRepository, sessionService *SessionService) *EmployeeService {
 	return &EmployeeService{
-		employeeRepo: employeeRepo,
+		employeeRepo:   employeeRepo,
+		sessionService: sessionService,
 	}
 }
 
@@ -35,20 +37,12 @@ func (e *EmployeeService) GetAllEmployees(ctx context.Context, pageNumber int, p
 	}, nil
 }
 
-func (e *EmployeeService) GetManagerEmployees(ctx context.Context, email string, pageNumber int, pageSize int, storeIDOverride ...*int) (*models.GetAllEmployeesResponse, error) {
-	employee, err := e.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if employee == nil {
-		return nil, errors.New("manager not found")
-	}
-
+func (e *EmployeeService) GetManagerEmployees(ctx context.Context, storeId int, role models.EmployeeRole, pageNumber int, pageSize int, storeIDOverride ...*int) (*models.GetAllEmployeesResponse, error) {
 	limit := pageSize
 	offset := (pageNumber - 1) * pageSize
 
-	targetStoreID := &employee.StoreId
-	if len(storeIDOverride) > 0 && storeIDOverride[0] != nil && *storeIDOverride[0] > 0 && employee.Role == models.RoleAdmin {
+	targetStoreID := &storeId
+	if len(storeIDOverride) > 0 && storeIDOverride[0] != nil && *storeIDOverride[0] > 0 && role == models.RoleAdmin {
 		targetStoreID = storeIDOverride[0]
 	}
 
@@ -65,6 +59,10 @@ func (e *EmployeeService) GetManagerEmployees(ctx context.Context, email string,
 }
 
 func (e *EmployeeService) TerminateEmployee(ctx context.Context, employeeId int) (*models.APIMessage, error) {
+	if e.sessionService != nil {
+		e.sessionService.TerminateAllSessionsByEmployeeId(ctx, employeeId)
+	}
+
 	err := e.employeeRepo.TerminateEmployeeById(ctx, employeeId)
 	if err != nil {
 		return nil, err
@@ -97,6 +95,11 @@ func (e *EmployeeService) UpdateEmployee(ctx context.Context, body models.Employ
 	}
 	body.Province = province
 	body.PostalCode = postalCode
+
+	isBeingDeactivated := (body.IsTerminated != nil && *body.IsTerminated) || (body.IsActive != nil && !*body.IsActive)
+	if isBeingDeactivated && e.sessionService != nil {
+		e.sessionService.TerminateAllSessionsByEmployeeId(ctx, body.EmployeeId)
+	}
 
 	err = e.employeeRepo.UpdateEmployee(ctx, body)
 	if err != nil {

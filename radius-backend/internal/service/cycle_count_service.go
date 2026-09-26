@@ -45,36 +45,20 @@ func (s *CycleCountService) SetBroadcaster(broadcaster EventBroadcaster) {
 	s.broadcaster = broadcaster
 }
 
-func (s *CycleCountService) GetWeeklyCycleCounts(ctx context.Context, email string, role string, storeIDOverride *int) ([]models.CycleCountSummary, error) {
-	if role == string(models.RoleAdmin) {
+func (s *CycleCountService) GetWeeklyCycleCounts(ctx context.Context, storeId int, role models.EmployeeRole, storeIDOverride *int) ([]models.CycleCountSummary, error) {
+	if role == models.RoleAdmin {
 		if storeIDOverride != nil {
 			return s.cycleCountRepo.GetWeeklyCycleCounts(ctx, *storeIDOverride)
 		}
 		return s.cycleCountRepo.GetWeeklyCycleCounts(ctx, 0)
 	}
 
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if employee == nil {
-		return nil, errors.New("employee not found")
-	}
-
-	return s.cycleCountRepo.GetWeeklyCycleCounts(ctx, employee.StoreId)
+	return s.cycleCountRepo.GetWeeklyCycleCounts(ctx, storeId)
 }
 
-func (s *CycleCountService) GetCycleCountDetail(ctx context.Context, email string, countID int) (*models.CycleCountDetailResponse, error) {
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if employee == nil {
-		return nil, errors.New("employee not found")
-	}
-
-	targetStoreID := employee.StoreId
-	if employee.Role == models.RoleAdmin {
+func (s *CycleCountService) GetCycleCountDetail(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, countID int) (*models.CycleCountDetailResponse, error) {
+	targetStoreID := storeId
+	if role == models.RoleAdmin {
 		targetStoreID = 0
 	}
 
@@ -86,16 +70,16 @@ func (s *CycleCountService) GetCycleCountDetail(ctx context.Context, email strin
 		return nil, fmt.Errorf("cycle count %d not found", countID)
 	}
 
-	if count.CountedBy == nil && employee.Role != models.RoleAdmin {
-		updatedCount, err := s.cycleCountRepo.AutoAssignCycleCount(ctx, countID, count.StoreId, employee.EmployeeId)
+	if count.CountedBy == nil && role != models.RoleAdmin {
+		updatedCount, err := s.cycleCountRepo.AutoAssignCycleCount(ctx, countID, count.StoreId, employeeId)
 		if err != nil {
 			return nil, err
 		}
 		if updatedCount != nil {
 			count = updatedCount
 		}
-	} else if count.CountedBy != nil && *count.CountedBy != employee.EmployeeId {
-		if employee.Role != models.RoleManager && employee.Role != models.RoleAdmin {
+	} else if count.CountedBy != nil && *count.CountedBy != employeeId {
+		if role != models.RoleManager && role != models.RoleAdmin {
 			assignee := "another employee"
 			if count.CountedByName != nil && *count.CountedByName != "" {
 				assignee = *count.CountedByName
@@ -115,17 +99,9 @@ func (s *CycleCountService) GetCycleCountDetail(ctx context.Context, email strin
 	}, nil
 }
 
-func (s *CycleCountService) GetCycleCountItems(ctx context.Context, email string, countID int) ([]models.CycleCountItemDetail, error) {
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if employee == nil {
-		return nil, errors.New("employee not found")
-	}
-
-	targetStoreID := employee.StoreId
-	if employee.Role == models.RoleAdmin {
+func (s *CycleCountService) GetCycleCountItems(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, countID int) ([]models.CycleCountItemDetail, error) {
+	targetStoreID := storeId
+	if role == models.RoleAdmin {
 		targetStoreID = 0
 	}
 
@@ -137,8 +113,8 @@ func (s *CycleCountService) GetCycleCountItems(ctx context.Context, email string
 		return nil, fmt.Errorf("cycle count %d not found", countID)
 	}
 
-	if count.CountedBy != nil && *count.CountedBy != employee.EmployeeId {
-		if employee.Role != models.RoleManager && employee.Role != models.RoleAdmin {
+	if count.CountedBy != nil && *count.CountedBy != employeeId {
+		if role != models.RoleManager && role != models.RoleAdmin {
 			assignee := "another employee"
 			if count.CountedByName != nil && *count.CountedByName != "" {
 				assignee = *count.CountedByName
@@ -150,21 +126,13 @@ func (s *CycleCountService) GetCycleCountItems(ctx context.Context, email string
 	return s.cycleCountRepo.GetCycleCountItems(ctx, countID)
 }
 
-func (s *CycleCountService) StartCount(ctx context.Context, email string, categoryID int, storeIDOverride ...*int) (*models.CycleCount, error) {
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if employee == nil {
-		return nil, errors.New("employee not found")
-	}
-
-	targetStoreID := employee.StoreId
-	if len(storeIDOverride) > 0 && storeIDOverride[0] != nil && *storeIDOverride[0] > 0 && employee.Role == models.RoleAdmin {
+func (s *CycleCountService) StartCount(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, categoryID int, storeIDOverride ...*int) (*models.CycleCount, error) {
+	targetStoreID := storeId
+	if len(storeIDOverride) > 0 && storeIDOverride[0] != nil && *storeIDOverride[0] > 0 && role == models.RoleAdmin {
 		targetStoreID = *storeIDOverride[0]
 	}
 
-	count, err := s.cycleCountRepo.StartCycleCount(ctx, targetStoreID, categoryID, employee.EmployeeId)
+	count, err := s.cycleCountRepo.StartCycleCount(ctx, targetStoreID, categoryID, employeeId)
 	if err != nil {
 		return nil, err
 	}
@@ -193,17 +161,9 @@ func (s *CycleCountService) StartCount(ctx context.Context, email string, catego
 	return count, nil
 }
 
-func (s *CycleCountService) RecordScan(ctx context.Context, email string, req models.RecordScanRequest) (*models.CycleCountItemDetail, error) {
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if employee == nil {
-		return nil, errors.New("employee not found")
-	}
-
-	targetStoreID := employee.StoreId
-	if employee.Role == models.RoleAdmin {
+func (s *CycleCountService) RecordScan(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.RecordScanRequest) (*models.CycleCountItemDetail, error) {
+	targetStoreID := storeId
+	if role == models.RoleAdmin {
 		targetStoreID = 0
 	}
 
@@ -215,8 +175,8 @@ func (s *CycleCountService) RecordScan(ctx context.Context, email string, req mo
 		return nil, fmt.Errorf("cycle count %d not found", req.CountId)
 	}
 
-	if count.CountedBy != nil && *count.CountedBy != employee.EmployeeId {
-		if employee.Role != models.RoleManager && employee.Role != models.RoleAdmin {
+	if count.CountedBy != nil && *count.CountedBy != employeeId {
+		if role != models.RoleManager && role != models.RoleAdmin {
 			assignee := "another employee"
 			if count.CountedByName != nil && *count.CountedByName != "" {
 				assignee = *count.CountedByName
@@ -225,7 +185,7 @@ func (s *CycleCountService) RecordScan(ctx context.Context, email string, req mo
 		}
 	}
 
-	item, err := s.cycleCountRepo.RecordScan(ctx, count.StoreId, req, employee.EmployeeId)
+	item, err := s.cycleCountRepo.RecordScan(ctx, count.StoreId, req, employeeId)
 	if err != nil {
 		return nil, err
 	}
@@ -270,17 +230,9 @@ func (s *CycleCountService) RecordScan(ctx context.Context, email string, req mo
 	return item, nil
 }
 
-func (s *CycleCountService) SubmitForApproval(ctx context.Context, email string, req models.SubmitCycleCountRequest) error {
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return err
-	}
-	if employee == nil {
-		return errors.New("employee not found")
-	}
-
-	targetStoreID := employee.StoreId
-	if employee.Role == models.RoleAdmin {
+func (s *CycleCountService) SubmitForApproval(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.SubmitCycleCountRequest) error {
+	targetStoreID := storeId
+	if role == models.RoleAdmin {
 		targetStoreID = 0
 	}
 
@@ -292,8 +244,8 @@ func (s *CycleCountService) SubmitForApproval(ctx context.Context, email string,
 		return fmt.Errorf("cycle count %d not found", req.CountId)
 	}
 
-	if count.CountedBy != nil && *count.CountedBy != employee.EmployeeId {
-		if employee.Role != models.RoleManager && employee.Role != models.RoleAdmin {
+	if count.CountedBy != nil && *count.CountedBy != employeeId {
+		if role != models.RoleManager && role != models.RoleAdmin {
 			assignee := "another employee"
 			if count.CountedByName != nil && *count.CountedByName != "" {
 				assignee = *count.CountedByName
@@ -331,21 +283,13 @@ func (s *CycleCountService) SubmitForApproval(ctx context.Context, email string,
 	return nil
 }
 
-func (s *CycleCountService) ApproveCount(ctx context.Context, email string, req models.ApproveCycleCountRequest) error {
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return err
-	}
-	if employee == nil {
-		return errors.New("employee not found")
-	}
-
-	if employee.Role != models.RoleManager && employee.Role != models.RoleAdmin {
+func (s *CycleCountService) ApproveCount(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.ApproveCycleCountRequest) error {
+	if role != models.RoleManager && role != models.RoleAdmin {
 		return errors.New("unauthorized: only managers and admins can approve cycle counts")
 	}
 
-	storeID := employee.StoreId
-	if employee.Role == models.RoleAdmin {
+	storeID := storeId
+	if role == models.RoleAdmin {
 		count, err := s.cycleCountRepo.GetCycleCountByID(ctx, req.CountId, 0)
 		if err != nil {
 			return err
@@ -356,7 +300,7 @@ func (s *CycleCountService) ApproveCount(ctx context.Context, email string, req 
 		storeID = count.StoreId
 	}
 
-	err = s.cycleCountRepo.ApproveCycleCount(ctx, storeID, req.CountId, employee.EmployeeId)
+	err := s.cycleCountRepo.ApproveCycleCount(ctx, storeID, req.CountId, employeeId)
 	if err != nil {
 		return err
 	}
@@ -388,21 +332,13 @@ func (s *CycleCountService) ApproveCount(ctx context.Context, email string, req 
 	return nil
 }
 
-func (s *CycleCountService) TransferOwnership(ctx context.Context, email string, req models.TransferCycleCountOwnershipRequest) error {
-	manager, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return err
-	}
-	if manager == nil {
-		return errors.New("employee not found")
-	}
-
-	if manager.Role != models.RoleManager && manager.Role != models.RoleAdmin {
+func (s *CycleCountService) TransferOwnership(ctx context.Context, storeId int, role models.EmployeeRole, req models.TransferCycleCountOwnershipRequest) error {
+	if role != models.RoleManager && role != models.RoleAdmin {
 		return errors.New("unauthorized: only managers and admins can transfer cycle count ownership")
 	}
 
-	targetStoreID := manager.StoreId
-	if manager.Role == models.RoleAdmin {
+	targetStoreID := storeId
+	if role == models.RoleAdmin {
 		targetStoreID = 0
 	}
 
@@ -451,17 +387,9 @@ func (s *CycleCountService) TransferOwnership(ctx context.Context, email string,
 	return nil
 }
 
-func (s *CycleCountService) SearchCycleCounts(ctx context.Context, email string, criteria models.CycleCountSearchCriteria) ([]models.CycleCountSummary, error) {
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if employee == nil {
-		return nil, errors.New("employee not found")
-	}
-
-	targetStoreID := employee.StoreId
-	if employee.Role == models.RoleAdmin {
+func (s *CycleCountService) SearchCycleCounts(ctx context.Context, storeId int, role models.EmployeeRole, criteria models.CycleCountSearchCriteria) ([]models.CycleCountSummary, error) {
+	targetStoreID := storeId
+	if role == models.RoleAdmin {
 		if criteria.StoreId != nil && *criteria.StoreId > 0 {
 			targetStoreID = *criteria.StoreId
 		} else {
@@ -472,17 +400,9 @@ func (s *CycleCountService) SearchCycleCounts(ctx context.Context, email string,
 	return s.cycleCountRepo.SearchCycleCounts(ctx, targetStoreID, criteria)
 }
 
-func (s *CycleCountService) GetSchedule(ctx context.Context, email string, fromStr, toStr string, storeIDOverride ...*int) ([]models.CycleCountScheduleEntry, error) {
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if employee == nil {
-		return nil, errors.New("employee not found")
-	}
-
-	targetStoreID := employee.StoreId
-	if employee.Role == models.RoleAdmin {
+func (s *CycleCountService) GetSchedule(ctx context.Context, storeId int, role models.EmployeeRole, fromStr, toStr string, storeIDOverride ...*int) ([]models.CycleCountScheduleEntry, error) {
+	targetStoreID := storeId
+	if role == models.RoleAdmin {
 		if len(storeIDOverride) > 0 && storeIDOverride[0] != nil && *storeIDOverride[0] > 0 {
 			targetStoreID = *storeIDOverride[0]
 		} else {
@@ -515,16 +435,8 @@ func (s *CycleCountService) GetSchedule(ctx context.Context, email string, fromS
 	return s.cycleCountRepo.GetSchedule(ctx, targetStoreID, fromDate, toDate)
 }
 
-func (s *CycleCountService) CreateScheduleEntry(ctx context.Context, email string, req models.CreateScheduleRequest) (*models.CycleCountScheduleEntry, error) {
-	employee, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if employee == nil {
-		return nil, errors.New("employee not found")
-	}
-
-	if employee.Role != models.RoleManager && employee.Role != models.RoleAdmin {
+func (s *CycleCountService) CreateScheduleEntry(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.CreateScheduleRequest) (*models.CycleCountScheduleEntry, error) {
+	if role != models.RoleManager && role != models.RoleAdmin {
 		return nil, errors.New("unauthorized: only managers and admins can schedule cycle counts")
 	}
 
@@ -533,10 +445,10 @@ func (s *CycleCountService) CreateScheduleEntry(ctx context.Context, email strin
 		return nil, fmt.Errorf("invalid date format, expected YYYY-MM-DD: %w", err)
 	}
 
-	targetStoreID := employee.StoreId
-	if req.StoreId != nil && *req.StoreId > 0 && employee.Role == models.RoleAdmin {
+	targetStoreID := storeId
+	if req.StoreId != nil && *req.StoreId > 0 && role == models.RoleAdmin {
 		targetStoreID = *req.StoreId
 	}
 
-	return s.cycleCountRepo.CreateScheduleEntry(ctx, targetStoreID, req.CategoryId, scheduledDate, employee.EmployeeId)
+	return s.cycleCountRepo.CreateScheduleEntry(ctx, targetStoreID, req.CategoryId, scheduledDate, employeeId)
 }

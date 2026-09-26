@@ -38,33 +38,28 @@ func (s *TransactionService) SetBroadcaster(broadcaster EventBroadcaster) {
 	s.broadcaster = broadcaster
 }
 
-func (s *TransactionService) CreateTransaction(ctx context.Context, email string, role models.EmployeeRole, req models.CreateTransactionRequest) (*models.Transaction, error) {
-	var storeID int
-	var employeeID *int
-
-	if email != "" {
-		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-		if err == nil && emp != nil {
-			storeID = emp.StoreId
-			employeeID = &emp.EmployeeId
-		}
+func (s *TransactionService) CreateTransaction(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.CreateTransactionRequest) (*models.Transaction, error) {
+	targetStoreID := storeId
+	if targetStoreID == 0 && req.StoreId != nil && *req.StoreId > 0 {
+		targetStoreID = *req.StoreId
 	}
 
-	if storeID == 0 && req.StoreId != nil && *req.StoreId > 0 {
-		storeID = *req.StoreId
-	}
-
-	if storeID == 0 {
+	if targetStoreID == 0 {
 		return nil, fmt.Errorf("store ID is required to create a transaction")
 	}
 
-	tx, items, err := s.salesRepo.CreateTransaction(ctx, storeID, employeeID, req)
+	var empID *int
+	if employeeId > 0 {
+		empID = &employeeId
+	}
+
+	tx, items, err := s.salesRepo.CreateTransaction(ctx, targetStoreID, empID, req)
 	if err != nil {
 		return nil, err
 	}
 
 	if s.fillReportRepo != nil && len(items) > 0 {
-		_ = s.fillReportRepo.AddSoldItems(ctx, storeID, items)
+		_ = s.fillReportRepo.AddSoldItems(ctx, targetStoreID, items)
 	}
 
 	if s.broadcaster != nil && tx != nil {
@@ -75,13 +70,13 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, email string
 			"total_amount":   float64(tx.TotalAmount),
 			"items_count":    len(items),
 		}
-		if employeeID != nil {
-			metadata["employee_id"] = *employeeID
+		if empID != nil {
+			metadata["employee_id"] = *empID
 		}
 
 		payload := models.StoreActivityPayload{
 			ActivityId:   fmt.Sprintf("tx-%d", tx.TransactionId),
-			StoreId:      storeID,
+			StoreId:      targetStoreID,
 			ActivityType: "TRANSACTION_COMPLETED",
 			Title:        fmt.Sprintf("POS Sale #%d", tx.TransactionId),
 			Description:  fmt.Sprintf("Completed sale of %d item(s) for $%.2f at register %s", len(items), tx.TotalAmount, tx.RegisterId),
@@ -89,9 +84,9 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, email string
 			Metadata:     metadata,
 		}
 
-		s.broadcaster.BroadcastToStore(storeID, models.WebSocketEvent{
+		s.broadcaster.BroadcastToStore(targetStoreID, models.WebSocketEvent{
 			Type:      models.EventStoreActivity,
-			StoreId:   storeID,
+			StoreId:   targetStoreID,
 			Timestamp: now,
 			Payload:   payload,
 		})
@@ -100,29 +95,21 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, email string
 	return tx, nil
 }
 
-func (s *TransactionService) GetAllTransactions(ctx context.Context, email string, role models.EmployeeRole, page, limit int) ([]models.Transaction, int, error) {
-	var storeID *int
+func (s *TransactionService) GetAllTransactions(ctx context.Context, storeId int, role models.EmployeeRole, page, limit int) ([]models.Transaction, int, error) {
+	var targetStoreID *int
 	if role != models.RoleAdmin {
-		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-		if err != nil {
-			return nil, 0, err
-		}
-		storeID = &emp.StoreId
+		targetStoreID = &storeId
 	}
 
 	offset := (page - 1) * limit
-	return s.salesRepo.GetAllTransactions(ctx, limit, offset, storeID)
+	return s.salesRepo.GetAllTransactions(ctx, limit, offset, targetStoreID)
 }
 
-func (s *TransactionService) GetTransactionByID(ctx context.Context, email string, role models.EmployeeRole, id int) (*models.Transaction, []models.TransactionItem, error) {
-	var storeID *int
+func (s *TransactionService) GetTransactionByID(ctx context.Context, storeId int, role models.EmployeeRole, id int) (*models.Transaction, []models.TransactionItem, error) {
+	var targetStoreID *int
 	if role != models.RoleAdmin {
-		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-		if err != nil {
-			return nil, nil, err
-		}
-		storeID = &emp.StoreId
+		targetStoreID = &storeId
 	}
 
-	return s.salesRepo.GetTransactionByID(ctx, id, storeID)
+	return s.salesRepo.GetTransactionByID(ctx, id, targetStoreID)
 }

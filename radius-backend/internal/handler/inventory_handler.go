@@ -21,7 +21,8 @@ func NewInventoryHandler(inventoryService *service.InventoryService) *InventoryH
 }
 
 func (h *InventoryHandler) ScanProduct(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
 
 	barcode := ctx.Query("barcode")
 	if barcode == "" {
@@ -29,7 +30,7 @@ func (h *InventoryHandler) ScanProduct(ctx *gin.Context) {
 		return
 	}
 
-	result, err := h.inventoryService.ScanProduct(ctx.Request.Context(), email, barcode)
+	result, err := h.inventoryService.ScanProduct(ctx.Request.Context(), storeId, employeeId, barcode)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.ScanProduct (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -40,7 +41,8 @@ func (h *InventoryHandler) ScanProduct(ctx *gin.Context) {
 }
 
 func (h *InventoryHandler) GetLocationProducts(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
 
 	locationID := ctx.Param("id")
 	if locationID == "" {
@@ -51,7 +53,7 @@ func (h *InventoryHandler) GetLocationProducts(ctx *gin.Context) {
 		return
 	}
 
-	result, err := h.inventoryService.GetLocationProducts(ctx.Request.Context(), email, locationID)
+	result, err := h.inventoryService.GetLocationProducts(ctx.Request.Context(), storeId, employeeId, locationID)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.GetLocationProducts (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -62,7 +64,8 @@ func (h *InventoryHandler) GetLocationProducts(ctx *gin.Context) {
 }
 
 func (h *InventoryHandler) BinItem(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
 
 	var req models.BinItemRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -70,7 +73,7 @@ func (h *InventoryHandler) BinItem(ctx *gin.Context) {
 		return
 	}
 
-	result, err := h.inventoryService.BinItem(ctx.Request.Context(), email, req)
+	result, err := h.inventoryService.BinItem(ctx.Request.Context(), storeId, employeeId, req)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.BinItem: %v", err)
 		if err.Error() == "Product is not in this bin" {
@@ -85,7 +88,7 @@ func (h *InventoryHandler) BinItem(ctx *gin.Context) {
 }
 
 func (h *InventoryHandler) UpdateQuantity(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 
 	var req models.UpdateQuantityRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -93,7 +96,7 @@ func (h *InventoryHandler) UpdateQuantity(ctx *gin.Context) {
 		return
 	}
 
-	err := h.inventoryService.UpdateQuantity(ctx.Request.Context(), email, req)
+	err := h.inventoryService.UpdateQuantity(ctx.Request.Context(), storeId, req)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.UpdateQuantity: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -104,7 +107,7 @@ func (h *InventoryHandler) UpdateQuantity(ctx *gin.Context) {
 }
 
 func (h *InventoryHandler) GetProductScreenDetails(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 
 	productIDStr := ctx.Param("id")
 	if productIDStr == "" {
@@ -121,7 +124,7 @@ func (h *InventoryHandler) GetProductScreenDetails(ctx *gin.Context) {
 		return
 	}
 
-	result, err := h.inventoryService.GetProductScreenDetails(ctx.Request.Context(), email, productID)
+	result, err := h.inventoryService.GetProductScreenDetails(ctx.Request.Context(), storeId, productID)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.GetProductScreenDetails: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -137,7 +140,7 @@ func (h *InventoryHandler) GetProductScreenDetails(ctx *gin.Context) {
 }
 
 func (h *InventoryHandler) SyncLocations(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 
 	var req models.SyncLocationsRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -145,10 +148,10 @@ func (h *InventoryHandler) SyncLocations(ctx *gin.Context) {
 		return
 	}
 
-	err := h.inventoryService.SyncLocations(ctx.Request.Context(), email, req)
+	err := h.inventoryService.SyncLocations(ctx.Request.Context(), storeId, req)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.SyncLocations: %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 
@@ -156,7 +159,7 @@ func (h *InventoryHandler) SyncLocations(ctx *gin.Context) {
 }
 
 func (h *InventoryHandler) CreateMimsLocation(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 
 	var req models.CreateMimsLocationRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -164,10 +167,10 @@ func (h *InventoryHandler) CreateMimsLocation(ctx *gin.Context) {
 		return
 	}
 
-	err := h.inventoryService.CreateMimsLocation(ctx.Request.Context(), email, req)
+	err := h.inventoryService.CreateMimsLocation(ctx.Request.Context(), storeId, req)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.CreateMimsLocation: %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 
@@ -175,7 +178,8 @@ func (h *InventoryHandler) CreateMimsLocation(ctx *gin.Context) {
 }
 
 func (h *InventoryHandler) CreateAdjustment(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
 
 	var req models.AdjustInventoryRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -183,10 +187,10 @@ func (h *InventoryHandler) CreateAdjustment(ctx *gin.Context) {
 		return
 	}
 
-	err := h.inventoryService.CreateInventoryAdjustment(ctx.Request.Context(), email, req)
+	err := h.inventoryService.CreateInventoryAdjustment(ctx.Request.Context(), storeId, employeeId, req)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.CreateAdjustment: %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 
@@ -194,12 +198,12 @@ func (h *InventoryHandler) CreateAdjustment(ctx *gin.Context) {
 }
 
 func (h *InventoryHandler) GetPendingAdjustments(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 
-	adjustments, err := h.inventoryService.GetPendingAdjustments(ctx.Request.Context(), email)
+	adjustments, err := h.inventoryService.GetPendingAdjustments(ctx.Request.Context(), storeId)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.GetPendingAdjustments: %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 
@@ -207,7 +211,9 @@ func (h *InventoryHandler) GetPendingAdjustments(ctx *gin.Context) {
 }
 
 func (h *InventoryHandler) ReviewAdjustments(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.ReviewAdjustmentRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -215,7 +221,7 @@ func (h *InventoryHandler) ReviewAdjustments(ctx *gin.Context) {
 		return
 	}
 
-	err := h.inventoryService.ReviewAdjustments(ctx.Request.Context(), email, req)
+	err := h.inventoryService.ReviewAdjustments(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.ReviewAdjustments: %v", err)
 		if err.Error() == "unauthorized" {

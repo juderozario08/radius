@@ -24,7 +24,7 @@ func TestOnlineOrderService_GetAllOnlineOrders_Admin(t *testing.T) {
 			{OrderId: 1},
 		}, 1, nil)
 
-	orders, total, err := svc.GetAllOnlineOrders(context.Background(), "admin@test.com", models.RoleAdmin, 1, 10, models.OrderSearchCriteria{})
+	orders, total, err := svc.GetAllOnlineOrders(context.Background(), 1, models.RoleAdmin, 1, 10, models.OrderSearchCriteria{})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -41,24 +41,15 @@ func TestOnlineOrderService_GetAllOnlineOrders_Manager(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockOrdersRepo := mocks.NewMockOrdersRepository(ctrl)
-	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
-	svc := service.NewOnlineOrderService(mockOrdersRepo, nil, nil, nil, nil, mockEmployeeRepo)
+	svc := service.NewOnlineOrderService(mockOrdersRepo, nil, nil, nil, nil, nil)
 
 	storeId := 2
-
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), "manager@test.com").
-		Return(&models.Employee{
-			EmployeeBase: models.EmployeeBase{
-				StoreId: storeId,
-			},
-		}, nil)
 
 	mockOrdersRepo.EXPECT().
 		GetAllOnlineOrders(gomock.Any(), 10, 0, &storeId, models.OrderSearchCriteria{}).
 		Return([]models.OnlineOrder{}, 0, nil)
 
-	orders, total, err := svc.GetAllOnlineOrders(context.Background(), "manager@test.com", models.RoleManager, 1, 10, models.OrderSearchCriteria{})
+	orders, total, err := svc.GetAllOnlineOrders(context.Background(), storeId, models.RoleManager, 1, 10, models.OrderSearchCriteria{})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -129,7 +120,7 @@ func TestOnlineOrderService_CreateOnlineOrder_BroadcastsEvent(t *testing.T) {
 		})).
 		Times(1)
 
-	created, err := svc.CreateOnlineOrder(context.Background(), "sales@store2.com", models.RoleSales, inputOrder)
+	created, err := svc.CreateOnlineOrder(context.Background(), 2, models.RoleSales, inputOrder)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -150,7 +141,7 @@ func TestOnlineOrderService_CreateOnlineOrder_InvalidStatus(t *testing.T) {
 		Status:    models.OnlineOrderStatusShipped,
 	}
 
-	_, err := svc.CreateOnlineOrder(context.Background(), "sales@store2.com", models.RoleSales, inputOrder)
+	_, err := svc.CreateOnlineOrder(context.Background(), 2, models.RoleSales, inputOrder)
 	if err == nil {
 		t.Fatal("expected error for invalid BOPIS status, got nil")
 	}
@@ -188,7 +179,7 @@ func TestOnlineOrderService_CreateOnlineOrder_NilBroadcasterSafe(t *testing.T) {
 			TotalAmount:   89.50,
 		}, nil)
 
-	created, err := svc.CreateOnlineOrder(context.Background(), "sales@store2.com", models.RoleSales, inputOrder)
+	created, err := svc.CreateOnlineOrder(context.Background(), storeID, models.RoleSales, inputOrder)
 	if err != nil {
 		t.Fatalf("expected success with nil broadcaster, got %v", err)
 	}
@@ -210,17 +201,6 @@ func TestOnlineOrderService_AssignOnlineOrder(t *testing.T) {
 	storeID := 2
 	empName := "Marcus Vance"
 
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), "sales@test.com").
-		Return(&models.Employee{
-			EmployeeId: empID,
-			EmployeeBase: models.EmployeeBase{
-				StoreId:   storeID,
-				FirstName: "Marcus",
-				LastName:  "Vance",
-			},
-		}, nil)
-
 	mockOrdersRepo.EXPECT().
 		AssignOnlineOrder(gomock.Any(), orderID, &empID, &storeID, false).
 		Return(&models.OnlineOrder{
@@ -230,7 +210,7 @@ func TestOnlineOrderService_AssignOnlineOrder(t *testing.T) {
 			AssignedToName: &empName,
 		}, true, nil)
 
-	order, wasAssigned, err := svc.AssignOnlineOrder(context.Background(), "sales@test.com", models.RoleSales, orderID, &empID)
+	order, wasAssigned, err := svc.AssignOnlineOrder(context.Background(), storeID, empID, models.RoleSales, orderID, &empID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -243,14 +223,6 @@ func TestOnlineOrderService_AssignOnlineOrder(t *testing.T) {
 
 	otherEmpID := 8
 	otherEmpName := "Sarah Jenkins"
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), "sales2@test.com").
-		Return(&models.Employee{
-			EmployeeId: otherEmpID,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: storeID,
-			},
-		}, nil)
 
 	mockOrdersRepo.EXPECT().
 		AssignOnlineOrder(gomock.Any(), orderID, &otherEmpID, &storeID, false).
@@ -261,7 +233,7 @@ func TestOnlineOrderService_AssignOnlineOrder(t *testing.T) {
 			AssignedToName: &otherEmpName,
 		}, false, nil)
 
-	conflictOrder, wasAssigned2, err := svc.AssignOnlineOrder(context.Background(), "sales2@test.com", models.RoleSales, orderID, &otherEmpID)
+	conflictOrder, wasAssigned2, err := svc.AssignOnlineOrder(context.Background(), storeID, otherEmpID, models.RoleSales, orderID, &otherEmpID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -285,17 +257,7 @@ func TestOnlineOrderService_AssignOnlineOrder_Admin(t *testing.T) {
 	adminID := 1
 	targetEmpID := 5
 
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), "admin@test.com").
-		Return(&models.Employee{
-			EmployeeId: adminID,
-			EmployeeBase: models.EmployeeBase{
-				StoreId: 1,
-				Role:    models.RoleAdmin,
-			},
-		}, nil).Times(2)
-
-	_, _, err := svc.AssignOnlineOrder(context.Background(), "admin@test.com", models.RoleAdmin, orderID, nil)
+	_, _, err := svc.AssignOnlineOrder(context.Background(), 1, adminID, models.RoleAdmin, orderID, nil)
 	if err == nil {
 		t.Fatalf("expected error when admin assigns with nil employeeID")
 	}
@@ -310,7 +272,7 @@ func TestOnlineOrderService_AssignOnlineOrder_Admin(t *testing.T) {
 			AssignedToName: &empName,
 		}, true, nil)
 
-	order, wasAssigned, err := svc.AssignOnlineOrder(context.Background(), "admin@test.com", models.RoleAdmin, orderID, &targetEmpID)
+	order, wasAssigned, err := svc.AssignOnlineOrder(context.Background(), 1, adminID, models.RoleAdmin, orderID, &targetEmpID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

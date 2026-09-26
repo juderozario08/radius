@@ -20,11 +20,8 @@ func NewAuditHandler(auditService *service.AuditService) *AuditHandler {
 }
 
 func (h *AuditHandler) GetProductAuditTrail(c *gin.Context) {
-	email, exists := c.Get("email")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
+	storeId := c.GetInt("store_id")
+	role := models.EmployeeRole(c.GetString("role"))
 
 	barcode := c.Query("barcode")
 	if barcode == "" {
@@ -71,7 +68,7 @@ func (h *AuditHandler) GetProductAuditTrail(c *gin.Context) {
 	sortOrder := c.DefaultQuery("sort_order", "DESC")
 	filter.SortOrder = sortOrder
 
-	res, err := h.auditService.GetProductAuditTrail(c.Request.Context(), email.(string), barcode, filter, limit, offset)
+	res, err := h.auditService.GetProductAuditTrail(c.Request.Context(), storeId, role, barcode, filter, limit, offset)
 	if err != nil {
 		log.Printf("[ERROR] AuditHandler.GetProductAuditTrail: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

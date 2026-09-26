@@ -23,7 +23,7 @@ func TestPrintOrderService_GetAllPrintOrders_Admin(t *testing.T) {
 			{PrintOrderId: 1, OrderType: models.PrintOrderTypeWeb},
 		}, 1, nil)
 
-	orders, total, err := svc.GetAllPrintOrders(context.Background(), "admin@test.com", models.RoleAdmin, 1, 10, models.PrintOrderSearchCriteria{})
+	orders, total, err := svc.GetAllPrintOrders(context.Background(), 1, models.RoleAdmin, 1, 10, models.PrintOrderSearchCriteria{})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -45,21 +45,13 @@ func TestPrintOrderService_GetAllPrintOrders_NonAdmin(t *testing.T) {
 
 	storeId := 2
 
-	mockEmployeeRepo.EXPECT().
-		GetEmployeeByEmail(gomock.Any(), "service@test.com").
-		Return(&models.Employee{
-			EmployeeBase: models.EmployeeBase{
-				StoreId: storeId,
-			},
-		}, nil)
-
 	mockOrdersRepo.EXPECT().
 		GetAllPrintOrders(gomock.Any(), 10, 0, &storeId, models.PrintOrderSearchCriteria{}).
 		Return([]models.PrintOrder{
 			{PrintOrderId: 2, StoreId: storeId, OrderType: models.PrintOrderTypeWalkIn},
 		}, 1, nil)
 
-	orders, total, err := svc.GetAllPrintOrders(context.Background(), "service@test.com", models.RoleService, 1, 10, models.PrintOrderSearchCriteria{})
+	orders, total, err := svc.GetAllPrintOrders(context.Background(), storeId, models.RoleService, 1, 10, models.PrintOrderSearchCriteria{})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -88,7 +80,7 @@ func TestPrintOrderService_GetPrintOrderByID(t *testing.T) {
 			{PrintOrderItemId: 1, Description: "Business Cards"},
 		}, nil)
 
-	order, items, err := svc.GetPrintOrderByID(context.Background(), "admin@test.com", models.RoleAdmin, orderID)
+	order, items, err := svc.GetPrintOrderByID(context.Background(), orderID)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

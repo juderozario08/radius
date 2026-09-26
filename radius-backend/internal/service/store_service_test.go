@@ -7,6 +7,8 @@ import (
 	"radius/internal/service/mocks"
 	"testing"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/mock/gomock"
 )
 
@@ -108,5 +110,53 @@ func TestStoreService_GetStoreOperations(t *testing.T) {
 	}
 	if summaries[1].ActiveOrdersCount != 4 || !summaries[1].HasActiveOperations {
 		t.Errorf("expected Store 2 to have active operations with 4 orders")
+	}
+}
+
+func TestStoreService_GetStoreOperations_RedisCache(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	defer mr.Close()
+
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+
+	mockStoreRepo := mocks.NewMockStoreRepository(ctrl)
+	svc := service.NewStoreService(mockStoreRepo, nil, nil, rdb)
+
+	mockStoreRepo.EXPECT().
+		GetStoreOperationsSummaries(gomock.Any()).
+		Return([]models.StoreOperationSummary{
+			{
+				StoreID:             1,
+				Name:                "Head Office",
+				IsHeadOffice:        true,
+				ActiveOrdersCount:   0,
+				ActiveCountsCount:   0,
+				PendingPosCount:     0,
+				HasActiveOperations: false,
+			},
+		}, nil).
+		Times(1)
+
+	res1, err := svc.GetStoreOperations(context.Background())
+	if err != nil {
+		t.Fatalf("first call failed: %v", err)
+	}
+	if len(res1) != 1 || res1[0].StoreID != 1 {
+		t.Fatalf("unexpected res1: %+v", res1)
+	}
+
+	res2, err := svc.GetStoreOperations(context.Background())
+	if err != nil {
+		t.Fatalf("second call failed: %v", err)
+	}
+	if len(res2) != 1 || res2[0].StoreID != 1 {
+		t.Fatalf("unexpected res2: %+v", res2)
 	}
 }

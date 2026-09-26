@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"log"
@@ -22,7 +22,8 @@ func NewTransactionHandler(transactionService *service.TransactionService) *Tran
 }
 
 func (h *TransactionHandler) CreateTransaction(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.CreateTransactionRequest
@@ -31,7 +32,7 @@ func (h *TransactionHandler) CreateTransaction(ctx *gin.Context) {
 		return
 	}
 
-	createdTx, err := h.transactionService.CreateTransaction(ctx.Request.Context(), email, role, req)
+	createdTx, err := h.transactionService.CreateTransaction(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] TransactionHandler.CreateTransaction: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
@@ -46,12 +47,12 @@ func (h *TransactionHandler) CreateTransaction(ctx *gin.Context) {
 }
 
 func (h *TransactionHandler) GetAllTransactions(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	pageNumber, pageSize := utils.ParsePagination(ctx)
 
-	transactions, totalLength, err := h.transactionService.GetAllTransactions(ctx.Request.Context(), email, role, pageNumber, pageSize)
+	transactions, totalLength, err := h.transactionService.GetAllTransactions(ctx.Request.Context(), storeId, role, pageNumber, pageSize)
 	if err != nil {
 		log.Printf("[ERROR] TransactionHandler.GetAllTransactions (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -65,7 +66,7 @@ func (h *TransactionHandler) GetAllTransactions(ctx *gin.Context) {
 }
 
 func (h *TransactionHandler) GetTransactionByID(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	idStr := ctx.Param("id")
@@ -79,7 +80,7 @@ func (h *TransactionHandler) GetTransactionByID(ctx *gin.Context) {
 		return
 	}
 
-	transaction, items, err := h.transactionService.GetTransactionByID(ctx.Request.Context(), email, role, id)
+	transaction, items, err := h.transactionService.GetTransactionByID(ctx.Request.Context(), storeId, role, id)
 	if err != nil {
 		log.Printf("[ERROR] TransactionHandler.GetTransactionByID (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})

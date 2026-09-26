@@ -45,7 +45,7 @@ func (s *OnlineOrderService) SetBroadcaster(broadcaster EventBroadcaster) {
 	s.broadcaster = broadcaster
 }
 
-func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, email string, role models.EmployeeRole, page, limit int, criteria models.OrderSearchCriteria) ([]models.OnlineOrder, int, error) {
+func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, storeId int, role models.EmployeeRole, page, limit int, criteria models.OrderSearchCriteria) ([]models.OnlineOrder, int, error) {
 	isTargetedSearch := criteria.OrderID != nil ||
 		criteria.CustomerFirstName != "" ||
 		criteria.CustomerLastName != "" ||
@@ -54,47 +54,35 @@ func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, email strin
 		criteria.PaymentCard != "" ||
 		criteria.SKU != ""
 
-	var storeID *int
+	var targetStoreID *int
 	if role == models.RoleAdmin && criteria.StoreID != nil {
-		storeID = criteria.StoreID
+		targetStoreID = criteria.StoreID
 	} else if role != models.RoleAdmin && !isTargetedSearch {
-		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-		if err != nil {
-			return nil, 0, err
-		}
-		storeID = &emp.StoreId
+		targetStoreID = &storeId
 	}
 
 	offset := (page - 1) * limit
-	return s.ordersRepo.GetAllOnlineOrders(ctx, limit, offset, storeID, criteria)
+	return s.ordersRepo.GetAllOnlineOrders(ctx, limit, offset, targetStoreID, criteria)
 }
 
-func (s *OnlineOrderService) GetOnlineOrderByID(ctx context.Context, email string, role models.EmployeeRole, id int) (*models.OnlineOrder, []models.OnlineOrderItem, error) {
+func (s *OnlineOrderService) GetOnlineOrderByID(ctx context.Context, id int) (*models.OnlineOrder, []models.OnlineOrderItem, error) {
 	return s.ordersRepo.GetOnlineOrderByID(ctx, id, nil)
 }
 
-func (s *OnlineOrderService) AssignOnlineOrder(ctx context.Context, email string, role models.EmployeeRole, orderID int, employeeID *int) (*models.OnlineOrder, bool, error) {
-	var currentEmp *models.Employee
-	if email != "" && s.employeeRepo != nil {
-		emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-		if err == nil {
-			currentEmp = emp
-		}
-	}
-
+func (s *OnlineOrderService) AssignOnlineOrder(ctx context.Context, storeId int, currentEmployeeId int, role models.EmployeeRole, orderID int, employeeID *int) (*models.OnlineOrder, bool, error) {
 	targetEmpID := employeeID
-	if targetEmpID == nil && currentEmp != nil {
+	if targetEmpID == nil && currentEmployeeId > 0 {
 		if role == models.RoleAdmin {
 			return nil, false, errors.New("admin must specify an employee_id to assign an order")
 		}
-		targetEmpID = &currentEmp.EmployeeId
+		targetEmpID = &currentEmployeeId
 	}
 
 	force := role == models.RoleAdmin || role == models.RoleManager
 
 	var storeID *int
-	if role != models.RoleAdmin && currentEmp != nil {
-		storeID = &currentEmp.StoreId
+	if role != models.RoleAdmin && storeId > 0 {
+		storeID = &storeId
 	}
 
 	order, wasAssigned, err := s.ordersRepo.AssignOnlineOrder(ctx, orderID, targetEmpID, storeID, force)
@@ -148,18 +136,13 @@ func (s *OnlineOrderService) AssignOnlineOrder(ctx context.Context, email string
 	return order, wasAssigned, nil
 }
 
-func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, email string, role models.EmployeeRole, order *models.OnlineOrder) (*models.OnlineOrder, error) {
+func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, storeId int, role models.EmployeeRole, order *models.OnlineOrder) (*models.OnlineOrder, error) {
 	if order == nil {
 		return nil, fmt.Errorf("order cannot be nil")
 	}
 
 	if order.StoreId <= 0 {
-		if email != "" && s.employeeRepo != nil {
-			emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-			if err == nil && emp != nil {
-				order.StoreId = emp.StoreId
-			}
-		}
+		order.StoreId = storeId
 	}
 	if order.StoreId <= 0 {
 		return nil, fmt.Errorf("store ID is required to create an online order")

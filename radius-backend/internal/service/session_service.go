@@ -43,11 +43,11 @@ func (s *SessionService) CreateSession(ctx context.Context, employeeId int, role
 		}
 	}
 
-	accessToken, err := utils.GenerateAccessToken(employeeId, email, role, s.jwtSecret)
+	accessToken, err := utils.GenerateAccessToken(employeeId, email, role, storeId, s.jwtSecret)
 	if err != nil {
 		return "", "", -1, err
 	}
-	refreshToken, err := utils.GenerateRefreshToken(employeeId, email, role, s.jwtSecret)
+	refreshToken, err := utils.GenerateRefreshToken(employeeId, email, role, storeId, s.jwtSecret)
 	if err != nil {
 		return "", "", -1, err
 	}
@@ -136,15 +136,24 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 	}
 
 	if time.Now().After(session.ExpiresAt) {
+		if session.AccessTokenHash != "" {
+			s.redisClient.Del(ctx, "session:"+session.AccessTokenHash)
+		}
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
 		return "", errors.New("session expired")
 	}
 
 	if session.IsActive != nil && !(*session.IsActive) {
+		if session.AccessTokenHash != "" {
+			s.redisClient.Del(ctx, "session:"+session.AccessTokenHash)
+		}
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
 		return "", errors.New("inactive account")
 	}
 	if session.IsTerminated != nil && *session.IsTerminated {
+		if session.AccessTokenHash != "" {
+			s.redisClient.Del(ctx, "session:"+session.AccessTokenHash)
+		}
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
 		return "", errors.New("terminated account")
 	}
@@ -152,10 +161,15 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 	employeeId := int(claims["employee_id"].(float64))
 	email := claims["email"].(string)
 	role := models.EmployeeRole(claims["role"].(string))
+	storeId := session.StoreId
 
-	newAccessToken, err := utils.GenerateAccessToken(employeeId, email, role, s.jwtSecret)
+	newAccessToken, err := utils.GenerateAccessToken(employeeId, email, role, storeId, s.jwtSecret)
 	if err != nil {
 		return "", errors.New("failed to generate new access token")
+	}
+
+	if session.AccessTokenHash != "" {
+		s.redisClient.Del(ctx, "session:"+session.AccessTokenHash)
 	}
 
 	newAccessTokenHash := utils.HashTokenForDB(newAccessToken)
@@ -180,10 +194,29 @@ func (s *SessionService) Logout(ctx context.Context, tokenString string) error {
 }
 
 func (s *SessionService) TerminateSessionById(ctx context.Context, sessionId int) (*models.APIMessage, error) {
-	if err := s.sessionRepo.TerminateSessionById(ctx, sessionId); err != nil {
+	session, err := s.sessionRepo.GetSessionById(ctx, sessionId)
+	if err == nil && session != nil && session.AccessTokenHash != "" {
+		s.redisClient.Del(ctx, "session:"+session.AccessTokenHash)
+	}
+
+	if err = s.sessionRepo.TerminateSessionById(ctx, sessionId); err != nil {
 		return nil, err
 	}
 	return &models.APIMessage{Message: "Session deleted successfully"}, nil
+}
+
+func (s *SessionService) TerminateAllSessionsByEmployeeId(ctx context.Context, employeeId int) {
+	sessions, err := s.sessionRepo.GetSessionsByEmployeeId(ctx, employeeId)
+	if err != nil {
+		log.Printf("Failed to fetch sessions for employee %d: %v", employeeId, err)
+		return
+	}
+	for _, session := range sessions {
+		if session.AccessTokenHash != "" {
+			s.redisClient.Del(ctx, "session:"+session.AccessTokenHash)
+		}
+		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
+	}
 }
 
 func (s *SessionService) GetSessionIdByToken(ctx context.Context, tokenString string) (*int, error) {

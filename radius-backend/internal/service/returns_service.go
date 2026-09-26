@@ -39,25 +39,9 @@ func (s *ReturnsService) SetBroadcaster(broadcaster EventBroadcaster) {
 	s.broadcaster = broadcaster
 }
 
-func (s *ReturnsService) getEmployee(ctx context.Context, email string) (*models.Employee, error) {
-	emp, err := s.employeeRepo.GetEmployeeByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	if emp == nil {
-		return nil, errors.New("employee not found")
-	}
-	return emp, nil
-}
-
-func (s *ReturnsService) CreateReturn(ctx context.Context, email string, req models.CreateReturnRequest) (*models.CustomerReturn, error) {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
-	storeID := emp.StoreId
-	if emp.Role == models.RoleAdmin && req.StoreId != nil && *req.StoreId > 0 {
+func (s *ReturnsService) CreateReturn(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.CreateReturnRequest) (*models.CustomerReturn, error) {
+	storeID := storeId
+	if role == models.RoleAdmin && req.StoreId != nil && *req.StoreId > 0 {
 		storeID = *req.StoreId
 	}
 
@@ -66,12 +50,13 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, email string, req mod
 	}
 
 	var lookupTx *models.LookupTransactionResponse
+	var err error
 	if req.OriginalTransactionId != nil && *req.OriginalTransactionId > 0 {
 		lookupTx, err = s.returnsRepo.LookupTransaction(ctx, *req.OriginalTransactionId, &storeID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to lookup original transaction: %w", err)
 		}
-		if lookupTx == nil && emp.Role == models.RoleAdmin {
+		if lookupTx == nil && role == models.RoleAdmin {
 			lookupTx, err = s.returnsRepo.LookupTransaction(ctx, *req.OriginalTransactionId, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to lookup original transaction: %w", err)
@@ -124,11 +109,11 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, email string, req mod
 	totalRefund := subtotal * 1.05
 
 	status := models.ReturnStatusCompleted
-	if totalRefund > 50.0 && emp.Role != models.RoleManager && emp.Role != models.RoleAdmin {
+	if totalRefund > 50.0 && role != models.RoleManager && role != models.RoleAdmin {
 		status = models.ReturnStatusPendingApproval
 	}
 
-	createdReturn, items, err := s.returnsRepo.CreateReturn(ctx, storeID, emp.EmployeeId, status, req)
+	createdReturn, items, err := s.returnsRepo.CreateReturn(ctx, storeID, employeeId, status, req)
 	if err != nil {
 		return nil, err
 	}
@@ -172,13 +157,8 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, email string, req mod
 	return createdReturn, nil
 }
 
-func (s *ReturnsService) ApproveReturn(ctx context.Context, email string, returnID int) error {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return err
-	}
-
-	if emp.Role != models.RoleAdmin && emp.Role != models.RoleManager {
+func (s *ReturnsService) ApproveReturn(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, returnID int) error {
+	if role != models.RoleAdmin && role != models.RoleManager {
 		return errors.New("insufficient permissions to approve customer returns")
 	}
 
@@ -190,11 +170,11 @@ func (s *ReturnsService) ApproveReturn(ctx context.Context, email string, return
 		return errors.New("return not found")
 	}
 
-	if emp.Role != models.RoleAdmin && retSummary.StoreId != emp.StoreId {
+	if role != models.RoleAdmin && retSummary.StoreId != storeId {
 		return errors.New("unauthorized to approve return for another store")
 	}
 
-	if err := s.returnsRepo.ApproveReturn(ctx, returnID, emp.EmployeeId); err != nil {
+	if err := s.returnsRepo.ApproveReturn(ctx, returnID, employeeId); err != nil {
 		return err
 	}
 
@@ -213,7 +193,7 @@ func (s *ReturnsService) ApproveReturn(ctx context.Context, email string, return
 				Timestamp:    now,
 				Metadata: map[string]any{
 					"return_id":    returnID,
-					"approved_by":  emp.EmployeeId,
+					"approved_by":  employeeId,
 					"total_refund": retSummary.TotalRefund,
 				},
 			},
@@ -223,13 +203,8 @@ func (s *ReturnsService) ApproveReturn(ctx context.Context, email string, return
 	return nil
 }
 
-func (s *ReturnsService) RejectReturn(ctx context.Context, email string, returnID int, reason string) error {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return err
-	}
-
-	if emp.Role != models.RoleAdmin && emp.Role != models.RoleManager {
+func (s *ReturnsService) RejectReturn(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, returnID int, reason string) error {
+	if role != models.RoleAdmin && role != models.RoleManager {
 		return errors.New("insufficient permissions to reject customer returns")
 	}
 
@@ -241,26 +216,21 @@ func (s *ReturnsService) RejectReturn(ctx context.Context, email string, returnI
 		return errors.New("return not found")
 	}
 
-	if emp.Role != models.RoleAdmin && retSummary.StoreId != emp.StoreId {
+	if role != models.RoleAdmin && retSummary.StoreId != storeId {
 		return errors.New("unauthorized to reject return for another store")
 	}
 
-	return s.returnsRepo.RejectReturn(ctx, returnID, emp.EmployeeId, reason)
+	return s.returnsRepo.RejectReturn(ctx, returnID, employeeId, reason)
 }
 
-func (s *ReturnsService) GetReturns(ctx context.Context, email string, criteria models.ReturnSearchCriteria, page, limit int) ([]models.CustomerReturnSummary, int, error) {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return nil, 0, err
-	}
-
+func (s *ReturnsService) GetReturns(ctx context.Context, storeId int, role models.EmployeeRole, criteria models.ReturnSearchCriteria, page, limit int) ([]models.CustomerReturnSummary, int, error) {
 	var storeID *int
-	if emp.Role == models.RoleAdmin {
+	if role == models.RoleAdmin {
 		if criteria.StoreId != nil && *criteria.StoreId > 0 {
 			storeID = criteria.StoreId
 		}
 	} else {
-		storeID = &emp.StoreId
+		storeID = &storeId
 	}
 
 	if page <= 0 {
@@ -274,12 +244,7 @@ func (s *ReturnsService) GetReturns(ctx context.Context, email string, criteria 
 	return s.returnsRepo.GetReturns(ctx, storeID, criteria, limit, offset)
 }
 
-func (s *ReturnsService) GetReturnDetail(ctx context.Context, email string, returnID int) (*models.CustomerReturnDetailResponse, error) {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *ReturnsService) GetReturnDetail(ctx context.Context, storeId int, role models.EmployeeRole, returnID int) (*models.CustomerReturnDetailResponse, error) {
 	summary, items, err := s.returnsRepo.GetReturnDetail(ctx, returnID)
 	if err != nil {
 		return nil, err
@@ -288,7 +253,7 @@ func (s *ReturnsService) GetReturnDetail(ctx context.Context, email string, retu
 		return nil, errors.New("return not found")
 	}
 
-	if emp.Role != models.RoleAdmin && summary.StoreId != emp.StoreId {
+	if role != models.RoleAdmin && summary.StoreId != storeId {
 		return nil, errors.New("unauthorized to view return for another store")
 	}
 
@@ -298,15 +263,10 @@ func (s *ReturnsService) GetReturnDetail(ctx context.Context, email string, retu
 	}, nil
 }
 
-func (s *ReturnsService) LookupTransaction(ctx context.Context, email string, transactionID int64) (*models.LookupTransactionResponse, error) {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *ReturnsService) LookupTransaction(ctx context.Context, storeId int, role models.EmployeeRole, transactionID int64) (*models.LookupTransactionResponse, error) {
 	var storeID *int
-	if emp.Role != models.RoleAdmin {
-		storeID = &emp.StoreId
+	if role != models.RoleAdmin {
+		storeID = &storeId
 	}
 
 	resp, err := s.returnsRepo.LookupTransaction(ctx, transactionID, storeID)
@@ -320,24 +280,14 @@ func (s *ReturnsService) LookupTransaction(ctx context.Context, email string, tr
 	return resp, nil
 }
 
-func (s *ReturnsService) LookupTransactionsByProduct(ctx context.Context, email string, barcodeOrUpc string) ([]models.RecentTransactionSummary, error) {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.returnsRepo.LookupTransactionsByProduct(ctx, barcodeOrUpc, emp.StoreId)
+func (s *ReturnsService) LookupTransactionsByProduct(ctx context.Context, storeId int, barcodeOrUpc string) ([]models.RecentTransactionSummary, error) {
+	return s.returnsRepo.LookupTransactionsByProduct(ctx, barcodeOrUpc, storeId)
 }
 
-func (s *ReturnsService) GetRtvQueue(ctx context.Context, email string, status *models.RtvStatus, page, limit int) ([]models.RtvQueueItem, int, error) {
-	emp, err := s.getEmployee(ctx, email)
-	if err != nil {
-		return nil, 0, err
-	}
-
+func (s *ReturnsService) GetRtvQueue(ctx context.Context, storeId int, role models.EmployeeRole, status *models.RtvStatus, page, limit int) ([]models.RtvQueueItem, int, error) {
 	var storeID *int
-	if emp.Role != models.RoleAdmin {
-		storeID = &emp.StoreId
+	if role != models.RoleAdmin {
+		storeID = &storeId
 	}
 
 	if page <= 0 {

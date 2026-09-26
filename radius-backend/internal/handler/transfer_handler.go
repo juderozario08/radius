@@ -21,7 +21,8 @@ func NewTransferHandler(transferService *service.TransferService) *TransferHandl
 }
 
 func (h *TransferHandler) GetOutboundTransfers(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("page_size", "10"))
 	pageNumber, _ := strconv.Atoi(ctx.DefaultQuery("page_number", "1"))
@@ -33,7 +34,7 @@ func (h *TransferHandler) GetOutboundTransfers(ctx *gin.Context) {
 		}
 	}
 
-	results, total, err := h.transferService.GetOutboundTransfers(ctx.Request.Context(), email, pageSize, pageNumber, filterStoreID)
+	results, total, err := h.transferService.GetOutboundTransfers(ctx.Request.Context(), storeId, role, pageSize, pageNumber, filterStoreID)
 	if err != nil {
 		log.Printf("[ERROR] TransferHandler.GetOutboundTransfers: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve stock transfers"})
@@ -47,7 +48,8 @@ func (h *TransferHandler) GetOutboundTransfers(ctx *gin.Context) {
 }
 
 func (h *TransferHandler) GetOutboundTransferDetail(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	transferIDStr := ctx.Param("id")
 	if transferIDStr == "" {
@@ -63,7 +65,7 @@ func (h *TransferHandler) GetOutboundTransferDetail(ctx *gin.Context) {
 		return
 	}
 
-	detail, err := h.transferService.GetOutboundTransferDetail(ctx.Request.Context(), email, transferID)
+	detail, err := h.transferService.GetOutboundTransferDetail(ctx.Request.Context(), storeId, role, transferID)
 	if err != nil {
 		log.Printf("[ERROR] TransferHandler.GetOutboundTransferDetail: %v", err)
 		if err.Error() == "transfer not found" {
@@ -82,7 +84,9 @@ func (h *TransferHandler) GetOutboundTransferDetail(ctx *gin.Context) {
 }
 
 func (h *TransferHandler) CreateTransfer(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.CreateTransferRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -90,7 +94,7 @@ func (h *TransferHandler) CreateTransfer(ctx *gin.Context) {
 		return
 	}
 
-	transfer, err := h.transferService.CreateTransfer(ctx.Request.Context(), email, req)
+	transfer, err := h.transferService.CreateTransfer(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] TransferHandler.CreateTransfer: %v", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
@@ -104,7 +108,8 @@ func (h *TransferHandler) CreateTransfer(ctx *gin.Context) {
 }
 
 func (h *TransferHandler) DispatchTransfer(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.DispatchTransferRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -118,7 +123,7 @@ func (h *TransferHandler) DispatchTransfer(ctx *gin.Context) {
 		}
 	}
 
-	err := h.transferService.DispatchTransfer(ctx.Request.Context(), email, req)
+	err := h.transferService.DispatchTransfer(ctx.Request.Context(), storeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] TransferHandler.DispatchTransfer: %v", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
@@ -131,7 +136,9 @@ func (h *TransferHandler) DispatchTransfer(ctx *gin.Context) {
 }
 
 func (h *TransferHandler) CancelTransfer(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	employeeId := ctx.GetInt("employee_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.CancelTransferRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -145,7 +152,7 @@ func (h *TransferHandler) CancelTransfer(ctx *gin.Context) {
 		}
 	}
 
-	err := h.transferService.CancelTransfer(ctx.Request.Context(), email, req)
+	err := h.transferService.CancelTransfer(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] TransferHandler.CancelTransfer: %v", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
@@ -158,7 +165,8 @@ func (h *TransferHandler) CancelTransfer(ctx *gin.Context) {
 }
 
 func (h *TransferHandler) GetDestinationStores(ctx *gin.Context) {
-	email := ctx.GetString("email")
+	storeId := ctx.GetInt("store_id")
+	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var fromStoreID *int
 	if storeIDStr := ctx.Query("from_store_id"); storeIDStr != "" {
@@ -167,7 +175,7 @@ func (h *TransferHandler) GetDestinationStores(ctx *gin.Context) {
 		}
 	}
 
-	stores, err := h.transferService.GetDestinationStores(ctx.Request.Context(), email, fromStoreID)
+	stores, err := h.transferService.GetDestinationStores(ctx.Request.Context(), storeId, role, fromStoreID)
 	if err != nil {
 		log.Printf("[ERROR] TransferHandler.GetDestinationStores: %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve stores"})

@@ -37,6 +37,9 @@ export const ENDPOINTS = {
         logout: "/api/logout",
         verifyToken: "/api/verify_token",
     },
+    WS: {
+        ticket: "/api/v1/ws/ticket",
+    },
     ADMIN: {
         EMPLOYEES: {
             getAll: "/api/admin/employees",

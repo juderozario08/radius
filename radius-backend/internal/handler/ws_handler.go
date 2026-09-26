@@ -1,11 +1,15 @@
 package handler
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"radius/internal/models"
 	"radius/internal/service"
@@ -14,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	gorilla "github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
 )
 
 type WSHandler struct {
@@ -22,6 +27,7 @@ type WSHandler struct {
 	authService  *service.AuthService
 	employeeRepo service.EmployeeRepository
 	upgrader     *gorilla.Upgrader
+	redisClient  *redis.Client
 }
 
 func NewWSHandler(
@@ -42,97 +48,25 @@ func NewWSHandler(
 			handler.employeeRepo = v
 		case *gorilla.Upgrader:
 			handler.upgrader = v
+		case *redis.Client:
+			handler.redisClient = v
 		}
 	}
 
 	return handler
 }
 
-func (h *WSHandler) HandleWS(ctx *gin.Context) {
-	h.HandleWebSocket(ctx)
-}
-
-func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
-	var tokenString string
-
-	authHeader := ctx.GetHeader("Authorization")
-	if authHeader != "" {
-		split := strings.Split(authHeader, " ")
-		if len(split) == 2 && strings.EqualFold(split[0], "Bearer") {
-			tokenString = split[1]
-		}
-	}
-
-	if tokenString == "" {
-		tokenString = ctx.Query("token")
-	}
-
-	if tokenString == "" {
-		log.Printf("[WS UNAUTHORIZED] Missing authentication token in header and query")
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Authentication token required"})
+func (h *WSHandler) CreateTicket(ctx *gin.Context) {
+	if h.redisClient == nil {
+		log.Printf("[ERROR] WS CreateTicket: Redis client not configured")
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Ticket service unavailable"})
 		return
 	}
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return h.jwtSecret, nil
-	})
-	if err != nil || !token.Valid {
-		log.Printf("[WS UNAUTHORIZED] Invalid or expired JWT: %v", err)
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
-		return
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		log.Printf("[WS UNAUTHORIZED] Failed to extract claims")
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid token claims"})
-		return
-	}
-
-	tokenType, exists := claims["token_type"]
-	if !exists || tokenType != "access" {
-		log.Printf("[WS UNAUTHORIZED] Non-access token provided")
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid token type"})
-		return
-	}
-
-	employeeIdRaw, ok := claims["employee_id"]
-	if !ok {
-		log.Printf("[WS UNAUTHORIZED] Missing employee_id claim")
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Missing employee_id claim"})
-		return
-	}
-	var employeeID int
-	switch v := employeeIdRaw.(type) {
-	case float64:
-		employeeID = int(v)
-	case int:
-		employeeID = v
-	default:
-		log.Printf("[WS UNAUTHORIZED] Non-numeric employee_id claim")
-		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid employee_id claim"})
-		return
-	}
-
-	email, _ := claims["email"].(string)
-
-	var role models.EmployeeRole
-	if roleStr, ok := claims["role"].(string); ok && roleStr != "" {
-		role = models.EmployeeRole(roleStr)
-	}
-
-	if h.authService != nil {
-		if err := h.authService.ValidateSession(ctx.Request.Context(), tokenString); err != nil {
-			log.Printf("[WS UNAUTHORIZED] Session validation failed for employee %d: %v", employeeID, err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Session expired or terminated"})
-			return
-		}
-	}
-
-	var storeID int
+	employeeID := ctx.GetInt("employee_id")
+	email := ctx.GetString("email")
+	role := models.EmployeeRole(ctx.GetString("role"))
+	storeID := ctx.GetInt("store_id")
 
 	if reqStoreID := ctx.Query("store_id"); reqStoreID != "" {
 		if parsed, err := strconv.Atoi(reqStoreID); err == nil && parsed > 0 {
@@ -141,12 +75,179 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 	}
 
 	if storeID <= 0 {
-		if sidRaw, exists := claims["store_id"]; exists {
-			switch v := sidRaw.(type) {
-			case float64:
-				storeID = int(v)
-			case int:
-				storeID = v
+		storeID = 1
+	}
+
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		log.Printf("[ERROR] WS CreateTicket: Failed to generate random ticket: %v", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Failed to generate ticket"})
+		return
+	}
+	ticket := hex.EncodeToString(b)
+
+	ticketData := models.WSTicketData{
+		EmployeeID: employeeID,
+		StoreID:    storeID,
+		Role:       role,
+		Email:      email,
+	}
+
+	data, err := json.Marshal(ticketData)
+	if err != nil {
+		log.Printf("[ERROR] WS CreateTicket: Failed to serialize ticket data: %v", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Failed to serialize ticket"})
+		return
+	}
+
+	if err := h.redisClient.Set(ctx.Request.Context(), "ws_ticket:"+ticket, data, 30*time.Second).Err(); err != nil {
+		log.Printf("[ERROR] WS CreateTicket: Failed to store ticket in Redis: %v", err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Failed to store ticket"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, models.WSTicketResponse{
+		Ticket:    ticket,
+		ExpiresIn: 30,
+	})
+}
+
+func (h *WSHandler) HandleWS(ctx *gin.Context) {
+	h.HandleWebSocket(ctx)
+}
+
+func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
+	var employeeID int
+	var email string
+	var role models.EmployeeRole
+	var storeID int
+
+	ticket := ctx.Query("ticket")
+	if ticket != "" {
+		if h.redisClient == nil {
+			log.Printf("[WS UNAUTHORIZED] Redis not configured for ticket authentication")
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Ticket authentication unavailable"})
+			return
+		}
+
+		val, err := h.redisClient.Get(ctx.Request.Context(), "ws_ticket:"+ticket).Result()
+		if err != nil {
+			log.Printf("[WS UNAUTHORIZED] Invalid or expired connection ticket")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired connection ticket"})
+			return
+		}
+
+		_ = h.redisClient.Del(ctx.Request.Context(), "ws_ticket:"+ticket).Err()
+
+		var ticketData models.WSTicketData
+		if err := json.Unmarshal([]byte(val), &ticketData); err != nil {
+			log.Printf("[WS UNAUTHORIZED] Failed to deserialize ticket data: %v", err)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid connection ticket"})
+			return
+		}
+
+		employeeID = ticketData.EmployeeID
+		email = ticketData.Email
+		role = ticketData.Role
+		storeID = ticketData.StoreID
+
+		if reqStoreID := ctx.Query("store_id"); reqStoreID != "" {
+			if parsed, err := strconv.Atoi(reqStoreID); err == nil && parsed > 0 {
+				storeID = parsed
+			}
+		}
+	} else {
+		var tokenString string
+
+		authHeader := ctx.GetHeader("Authorization")
+		if authHeader != "" {
+			split := strings.Split(authHeader, " ")
+			if len(split) == 2 && strings.EqualFold(split[0], "Bearer") {
+				tokenString = split[1]
+			}
+		}
+
+		if tokenString == "" {
+			tokenString = ctx.Query("token")
+		}
+
+		if tokenString == "" {
+			log.Printf("[WS UNAUTHORIZED] Missing authentication token in header and query")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Authentication token required"})
+			return
+		}
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return h.jwtSecret, nil
+		})
+		if err != nil || !token.Valid {
+			log.Printf("[WS UNAUTHORIZED] Invalid or expired JWT: %v", err)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			log.Printf("[WS UNAUTHORIZED] Failed to extract claims")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid token claims"})
+			return
+		}
+
+		tokenType, exists := claims["token_type"]
+		if !exists || tokenType != "access" {
+			log.Printf("[WS UNAUTHORIZED] Non-access token provided")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid token type"})
+			return
+		}
+
+		employeeIdRaw, ok := claims["employee_id"]
+		if !ok {
+			log.Printf("[WS UNAUTHORIZED] Missing employee_id claim")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Missing employee_id claim"})
+			return
+		}
+		switch v := employeeIdRaw.(type) {
+		case float64:
+			employeeID = int(v)
+		case int:
+			employeeID = v
+		default:
+			log.Printf("[WS UNAUTHORIZED] Non-numeric employee_id claim")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid employee_id claim"})
+			return
+		}
+
+		email, _ = claims["email"].(string)
+
+		if roleStr, ok := claims["role"].(string); ok && roleStr != "" {
+			role = models.EmployeeRole(roleStr)
+		}
+
+		if h.authService != nil {
+			if err := h.authService.ValidateSession(ctx.Request.Context(), tokenString); err != nil {
+				log.Printf("[WS UNAUTHORIZED] Session validation failed for employee %d: %v", employeeID, err)
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Session expired or terminated"})
+				return
+			}
+		}
+
+		if reqStoreID := ctx.Query("store_id"); reqStoreID != "" {
+			if parsed, err := strconv.Atoi(reqStoreID); err == nil && parsed > 0 {
+				storeID = parsed
+			}
+		}
+
+		if storeID <= 0 {
+			if sidRaw, exists := claims["store_id"]; exists {
+				switch v := sidRaw.(type) {
+				case float64:
+					storeID = int(v)
+				case int:
+					storeID = v
+				}
 			}
 		}
 	}

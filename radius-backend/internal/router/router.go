@@ -104,6 +104,10 @@ func NewRouter(cfg Config) *gin.Engine {
 	{
 		api.POST("/logout", cfg.Handlers.AuthHandler.Logout)
 		api.POST("/verify_token", cfg.Handlers.AuthHandler.VerifyToken)
+		if cfg.Handlers.WSHandler != nil {
+			api.POST("/v1/ws/ticket", cfg.Handlers.WSHandler.CreateTicket)
+			api.POST("/ws/ticket", cfg.Handlers.WSHandler.CreateTicket)
+		}
 	}
 
 	admin := router.Group("/api/admin")

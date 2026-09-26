@@ -80,3 +80,16 @@ type StoreActivityPayload struct {
 	Timestamp    time.Time      `json:"timestamp"`
 	Metadata     map[string]any `json:"metadata,omitempty"`
 }
+
+type WSTicketResponse struct {
+	Ticket    string `json:"ticket"`
+	ExpiresIn int    `json:"expires_in"`
+}
+
+type WSTicketData struct {
+	EmployeeID int          `json:"employee_id"`
+	StoreID    int          `json:"store_id"`
+	Role       EmployeeRole `json:"role"`
+	Email      string       `json:"email"`
+}
+

@@ -2,14 +2,17 @@ package websocket_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
 	gorilla "github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
 
 	"radius/internal/handler"
 	"radius/internal/models"
@@ -68,13 +71,13 @@ func TestWSHandshake_InvalidToken(t *testing.T) {
 	defer server.Close()
 	defer hub.Stop()
 
-	refreshToken, err := utils.GenerateRefreshToken(10, "test@example.com", models.RoleSales, jwtSecret)
+	refreshToken, err := utils.GenerateRefreshToken(10, "test@example.com", models.RoleSales, 1, jwtSecret)
 	if err != nil {
 		t.Fatalf("failed to generate refresh token: %v", err)
 	}
 
 	wrongSecret := []byte("completely_different_signing_key")
-	wrongSecretToken, err := utils.GenerateAccessToken(10, "test@example.com", models.RoleSales, wrongSecret)
+	wrongSecretToken, err := utils.GenerateAccessToken(10, "test@example.com", models.RoleSales, 1, wrongSecret)
 	if err != nil {
 		t.Fatalf("failed to generate wrong secret token: %v", err)
 	}
@@ -116,7 +119,7 @@ func TestWSHandshake_ValidJWT_Success(t *testing.T) {
 	defer server.Close()
 	defer hub.Stop()
 
-	validToken, err := utils.GenerateAccessToken(42, "employee@store2.com", models.RoleSales, jwtSecret)
+	validToken, err := utils.GenerateAccessToken(42, "employee@store2.com", models.RoleSales, 2, jwtSecret)
 	if err != nil {
 		t.Fatalf("failed to generate access token: %v", err)
 	}
@@ -180,7 +183,7 @@ func TestWSHandshake_ValidJWT_AuthorizationHeader(t *testing.T) {
 	defer server.Close()
 	defer hub.Stop()
 
-	validToken, err := utils.GenerateAccessToken(43, "manager@store2.com", models.RoleManager, jwtSecret)
+	validToken, err := utils.GenerateAccessToken(43, "manager@store2.com", models.RoleManager, 2, jwtSecret)
 	if err != nil {
 		t.Fatalf("failed to generate access token: %v", err)
 	}
@@ -215,7 +218,7 @@ func TestWSHandshake_StoreIsolation_LiveSockets(t *testing.T) {
 	defer server.Close()
 	defer hub.Stop()
 
-	token2, _ := utils.GenerateAccessToken(51, "store2@test.com", models.RoleSales, jwtSecret)
+	token2, _ := utils.GenerateAccessToken(51, "store2@test.com", models.RoleSales, 2, jwtSecret)
 	wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token2 + "&store_id=2"
 	conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, nil)
 	if err != nil {
@@ -223,7 +226,7 @@ func TestWSHandshake_StoreIsolation_LiveSockets(t *testing.T) {
 	}
 	defer conn2.Close()
 
-	token3, _ := utils.GenerateAccessToken(52, "store3@test.com", models.RoleSales, jwtSecret)
+	token3, _ := utils.GenerateAccessToken(52, "store3@test.com", models.RoleSales, 3, jwtSecret)
 	wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token3 + "&store_id=3"
 	conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, nil)
 	if err != nil {
@@ -444,7 +447,7 @@ func TestWebSocket_OrderCreated_AC1(t *testing.T) {
 	server := httptest.NewServer(router)
 	defer server.Close()
 
-	token2, err := utils.GenerateAccessToken(101, "sales2@store2.com", models.RoleSales, jwtSecret)
+	token2, err := utils.GenerateAccessToken(101, "sales2@store2.com", models.RoleSales, 2, jwtSecret)
 	if err != nil {
 		t.Fatalf("failed to generate access token: %v", err)
 	}
@@ -458,7 +461,7 @@ func TestWebSocket_OrderCreated_AC1(t *testing.T) {
 		t.Fatalf("expected 101 Switching Protocols, got %d", resp2.StatusCode)
 	}
 
-	token3, _ := utils.GenerateAccessToken(102, "sales3@store3.com", models.RoleSales, jwtSecret)
+	token3, _ := utils.GenerateAccessToken(102, "sales3@store3.com", models.RoleSales, 3, jwtSecret)
 	wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token3 + "&store_id=3"
 	conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, nil)
 	if err != nil {
@@ -538,7 +541,7 @@ func TestWebSocket_CycleCountUpdated_AC2(t *testing.T) {
 	defer server.Close()
 	defer hub.Stop()
 
-	token, err := utils.GenerateAccessToken(102, "counter2@store2.com", models.RoleSales, jwtSecret)
+	token, err := utils.GenerateAccessToken(102, "counter2@store2.com", models.RoleSales, 2, jwtSecret)
 	if err != nil {
 		t.Fatalf("failed to generate access token: %v", err)
 	}
@@ -585,7 +588,7 @@ func TestWebSocket_CycleCountUpdated_AC2(t *testing.T) {
 	}
 	cycleService := service.NewCycleCountService(cycleRepo, empRepo, nil, nil, nil, nil, hub)
 
-	count, err := cycleService.StartCount(context.Background(), "counter2@store2.com", 4)
+	count, err := cycleService.StartCount(context.Background(), 2, 15, models.RoleSales, 4)
 	if err != nil {
 		t.Fatalf("StartCount failed: %v", err)
 	}
@@ -687,7 +690,7 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 	defer hub.Stop()
 
 	t.Run("Store2_Event_Not_Leaked_To_Store3", func(t *testing.T) {
-		token2, _ := utils.GenerateAccessToken(201, "emp2@store2.com", models.RoleSales, jwtSecret)
+		token2, _ := utils.GenerateAccessToken(201, "emp2@store2.com", models.RoleSales, 2, jwtSecret)
 		wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token2 + "&store_id=2"
 		conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, nil)
 		if err != nil {
@@ -695,7 +698,7 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 		}
 		defer conn2.Close()
 
-		token3, _ := utils.GenerateAccessToken(301, "emp3@store3.com", models.RoleSales, jwtSecret)
+		token3, _ := utils.GenerateAccessToken(301, "emp3@store3.com", models.RoleSales, 3, jwtSecret)
 		wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token3 + "&store_id=3"
 		conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, nil)
 		if err != nil {
@@ -736,7 +739,7 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 	})
 
 	t.Run("Store3_Event_Not_Leaked_To_Store2", func(t *testing.T) {
-		token2, _ := utils.GenerateAccessToken(202, "emp2b@store2.com", models.RoleSales, jwtSecret)
+		token2, _ := utils.GenerateAccessToken(202, "emp2b@store2.com", models.RoleSales, 2, jwtSecret)
 		wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token2 + "&store_id=2"
 		conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, nil)
 		if err != nil {
@@ -744,7 +747,7 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 		}
 		defer conn2.Close()
 
-		token3, _ := utils.GenerateAccessToken(302, "emp3b@store3.com", models.RoleSales, jwtSecret)
+		token3, _ := utils.GenerateAccessToken(302, "emp3b@store3.com", models.RoleSales, 3, jwtSecret)
 		wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token3 + "&store_id=3"
 		conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, nil)
 		if err != nil {
@@ -784,4 +787,163 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 		}
 	})
 }
+
+func setupTestWSServerWithRedis(jwtSecret []byte, redisClient *redis.Client) (*httptest.Server, *websocket.Hub) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(gin.Recovery())
+
+	hub := websocket.NewHub()
+	go hub.Run()
+
+	wsHandler := handler.NewWSHandler(hub, jwtSecret, nil, redisClient)
+
+	router.GET("/api/v1/ws", wsHandler.HandleWS)
+	router.GET("/ws", wsHandler.HandleWS)
+	router.POST("/api/v1/ws/ticket", func(ctx *gin.Context) {
+		ctx.Set("employee_id", 10)
+		ctx.Set("email", "test@example.com")
+		ctx.Set("role", "SALES")
+		ctx.Set("store_id", 2)
+		wsHandler.CreateTicket(ctx)
+	})
+
+	server := httptest.NewServer(router)
+	return server, hub
+}
+
+func TestWSHandshake_TicketAuth_Success(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	defer mr.Close()
+
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+
+	jwtSecret := []byte("test_secret_key_1234567890123456")
+	server, hub := setupTestWSServerWithRedis(jwtSecret, rdb)
+	defer server.Close()
+	defer hub.Stop()
+
+	resp, err := http.Post(server.URL+"/api/v1/ws/ticket", "application/json", nil)
+	if err != nil {
+		t.Fatalf("failed to create ticket: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.StatusCode)
+	}
+
+	var ticketRes models.WSTicketResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ticketRes); err != nil {
+		t.Fatalf("failed to decode ticket response: %v", err)
+	}
+	if ticketRes.Ticket == "" {
+		t.Fatal("expected non-empty ticket")
+	}
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?ticket=" + ticketRes.Ticket + "&store_id=2"
+	conn, wsResp, err := gorilla.DefaultDialer.Dial(wsURL, nil)
+	if err != nil {
+		t.Fatalf("failed to dial websocket with valid ticket: %v", err)
+	}
+	defer conn.Close()
+
+	if wsResp.StatusCode != http.StatusSwitchingProtocols {
+		t.Fatalf("expected 101 Switching Protocols, got %d", wsResp.StatusCode)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	if hub.StoreClientCount(2) != 1 {
+		t.Fatalf("expected 1 client registered in Store 2, got %d", hub.StoreClientCount(2))
+	}
+
+	exists, err := rdb.Exists(context.Background(), "ws_ticket:"+ticketRes.Ticket).Result()
+	if err != nil {
+		t.Fatalf("redis error checking ticket: %v", err)
+	}
+	if exists != 0 {
+		t.Fatal("expected ticket to be deleted from Redis after first use")
+	}
+}
+
+func TestWSHandshake_TicketAuth_InvalidOrExpired(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	defer mr.Close()
+
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+
+	jwtSecret := []byte("test_secret_key_1234567890123456")
+	server, hub := setupTestWSServerWithRedis(jwtSecret, rdb)
+	defer server.Close()
+	defer hub.Stop()
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?ticket=nonexistent_or_expired_ticket&store_id=2"
+	conn, resp, err := gorilla.DefaultDialer.Dial(wsURL, nil)
+	if conn != nil {
+		conn.Close()
+		t.Fatal("expected connection to fail with invalid ticket")
+	}
+	if resp == nil {
+		t.Fatalf("expected HTTP response, got nil (err: %v)", err)
+	}
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected status 401 Unauthorized, got %d", resp.StatusCode)
+	}
+}
+
+func TestWSHandshake_TicketAuth_SingleUse(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	defer mr.Close()
+
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+
+	jwtSecret := []byte("test_secret_key_1234567890123456")
+	server, hub := setupTestWSServerWithRedis(jwtSecret, rdb)
+	defer server.Close()
+	defer hub.Stop()
+
+	resp, err := http.Post(server.URL+"/api/v1/ws/ticket", "application/json", nil)
+	if err != nil {
+		t.Fatalf("failed to create ticket: %v", err)
+	}
+	defer resp.Body.Close()
+
+	var ticketRes models.WSTicketResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ticketRes); err != nil {
+		t.Fatalf("failed to decode ticket response: %v", err)
+	}
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?ticket=" + ticketRes.Ticket + "&store_id=2"
+	conn1, wsResp1, err := gorilla.DefaultDialer.Dial(wsURL, nil)
+	if err != nil {
+		t.Fatalf("first dial failed: %v", err)
+	}
+	defer conn1.Close()
+
+	if wsResp1.StatusCode != http.StatusSwitchingProtocols {
+		t.Fatalf("expected 101 Switching Protocols on first dial, got %d", wsResp1.StatusCode)
+	}
+
+	conn2, wsResp2, err := gorilla.DefaultDialer.Dial(wsURL, nil)
+	if conn2 != nil {
+		conn2.Close()
+		t.Fatal("expected second dial with same ticket to fail")
+	}
+	if wsResp2 == nil || wsResp2.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected status 401 Unauthorized on reuse, got %v", wsResp2)
+	}
+}
+
 

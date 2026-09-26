@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import { useAuth } from "./useAuth";
 import { getToken } from "@/utils/token";
+import { apiFetch } from "@/api/client";
+import { ENDPOINTS } from "@/constants/routes";
 import {
     ConnectionStatus,
     WSMessage,
@@ -17,13 +19,14 @@ import {
     StoreActivityEvent,
 } from "@/types/websocket.types";
 
-export function getWebSocketUrl(baseUrl: string, token: string, storeId: number): string {
+export function getWebSocketUrl(baseUrl: string, tokenOrTicket: string, storeId: number, isTicket: boolean = false): string {
     const cleanBase = (baseUrl || "http://localhost:8080").trim().replace(/\/+$/, "");
     const wsProtocol = cleanBase.startsWith("https://")
         ? cleanBase.replace(/^https:\/\//i, "wss://")
         : cleanBase.replace(/^http:\/\//i, "ws://");
 
-    return `${wsProtocol}/api/v1/ws?token=${encodeURIComponent(token)}&store_id=${encodeURIComponent(storeId.toString())}`;
+    const authParam = isTicket ? `ticket=${encodeURIComponent(tokenOrTicket)}` : `token=${encodeURIComponent(tokenOrTicket)}`;
+    return `${wsProtocol}/api/v1/ws?${authParam}&store_id=${encodeURIComponent(storeId.toString())}`;
 }
 
 export function calculateBackoffDelay(attempt: number): number {
@@ -211,7 +214,20 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         updateStatus(reconnectAttemptRef.current > 0 ? "reconnecting" : "connecting");
 
         const baseUrl = customUrl || process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
-        const wsUrl = getWebSocketUrl(baseUrl, activeToken, targetStoreId);
+        let wsUrl: string;
+
+        try {
+            const ticketRes = await apiFetch<{ ticket: string }>(ENDPOINTS.WS.ticket, {
+                method: "POST",
+            });
+            if (ticketRes?.ticket) {
+                wsUrl = getWebSocketUrl(baseUrl, ticketRes.ticket, targetStoreId, true);
+            } else {
+                wsUrl = getWebSocketUrl(baseUrl, activeToken, targetStoreId, false);
+            }
+        } catch {
+            wsUrl = getWebSocketUrl(baseUrl, activeToken, targetStoreId, false);
+        }
 
         try {
             const ws = new WebSocket(wsUrl);

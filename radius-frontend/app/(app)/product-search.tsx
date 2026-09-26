@@ -298,8 +298,8 @@ export default function ProductSearchScreen() {
 
     const loadFilterOptions = async () => {
         const [cats, brnds] = await Promise.all([
-            callApi<Category[]>(ENDPOINTS.SALES_FLOOR.PRODUCTS.categories, { method: "GET" }, logout),
-            callApi<string[]>(ENDPOINTS.SALES_FLOOR.PRODUCTS.brands, { method: "GET" }, logout),
+            callApi<Category[]>(ENDPOINTS.SALES_FLOOR.PRODUCTS.categories, { method: "GET", swr: true }, logout),
+            callApi<string[]>(ENDPOINTS.SALES_FLOOR.PRODUCTS.brands, { method: "GET", swr: true }, logout),
         ]);
         if (cats) setCategories(cats);
         if (brnds) setBrands(brnds);

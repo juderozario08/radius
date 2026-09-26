@@ -1,4 +1,4 @@
-import { apiFetch, UnauthorizedError } from "@/api/client";
+import { apiFetch, apiFetchSWR, UnauthorizedError } from "@/api/client";
 import Toast from "react-native-toast-message";
 
 export function capitalize(value: string): string {
@@ -13,6 +13,7 @@ export function showToast(type: "success" | "error" | "info", text: string) {
 export interface ApiCallOptions {
     method?: string;
     body?: any;
+    swr?: boolean;
 }
 
 export async function callApi<T>(
@@ -28,6 +29,12 @@ export async function callApi<T>(
         : undefined;
 
     try {
+        if (options?.swr && (!options.method || options.method === "GET")) {
+            return await apiFetchSWR<T>(endpoint, {
+                method,
+                body,
+            });
+        }
         return await apiFetch<T>(endpoint, {
             method,
             body,

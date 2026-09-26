@@ -94,7 +94,7 @@ export default function CycleCountCalendar() {
         try {
             const data = await callApi<Category[]>(
                 ENDPOINTS.SALES_FLOOR.PRODUCTS.categories,
-                { method: "GET" },
+                { method: "GET", swr: true },
                 logout
             );
             if (data) {

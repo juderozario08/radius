@@ -11,6 +11,7 @@ import { COLORS } from "@/constants/colors";
 import { ENDPOINTS } from "@/constants/routes";
 import { globalStyles } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
+import { clearSWRCache } from "@/api/client";
 import { GetAllStoresResponse, Store } from "@/types/admin.types";
 import { callApi, showToast } from "@/utils/helpers";
 import { Redirect, router } from "expo-router";
@@ -91,6 +92,7 @@ const StoreDetailModal: React.FC<{
         setIsUpdatingStatus(false);
 
         if (result) {
+            clearSWRCache(ENDPOINTS.ADMIN.STORES.getAll);
             showToast("success", `Store ${store.is_active ? 'deactivated' : 'activated'}`);
             onStatusChange();
             onClose();
@@ -219,6 +221,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
         setIsSubmitting(false);
 
         if (result !== null) {
+            clearSWRCache(ENDPOINTS.ADMIN.STORES.getAll);
             showToast("success", isEditMode ? "Store updated successfully!" : "Store created successfully!");
             onSuccess();
         }
@@ -358,7 +361,7 @@ export default function Stores() {
         setError(null);
 
         const endpoint = `${ENDPOINTS.ADMIN.STORES.getAll}?page_size=${limit}&page_number=${page}`;
-        const data = await callApi<GetAllStoresResponse>(endpoint, { method: "GET" }, logout);
+        const data = await callApi<GetAllStoresResponse>(endpoint, { method: "GET", swr: true }, logout);
 
         if (data) {
             setStores(data.stores || []);

@@ -345,49 +345,49 @@ export default function Returns() {
     const handleRejectReturn = (returnId: number) => {
         Alert.prompt
             ? Alert.prompt("Reject Return", "Enter reason for rejection:", [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                      text: "Reject",
-                      style: "destructive",
-                      onPress: async (reason?: string) => {
-                          setIsProcessingAction(true);
-                          const endpoint = ENDPOINTS.SALES_FLOOR.RETURNS.reject(returnId);
-                          const res = await callApi<{ message: string }>(
-                              endpoint,
-                              { method: "POST", body: { reason: reason || "Manager rejected" } },
-                              logout
-                          );
-                          setIsProcessingAction(false);
-                          if (res) {
-                              showToast("success", "Return rejected");
-                              fetchReturnDetail(returnId);
-                              fetchHistory();
-                          }
-                      },
-                  },
-              ])
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Reject",
+                    style: "destructive",
+                    onPress: async (reason?: string) => {
+                        setIsProcessingAction(true);
+                        const endpoint = ENDPOINTS.SALES_FLOOR.RETURNS.reject(returnId);
+                        const res = await callApi<{ message: string }>(
+                            endpoint,
+                            { method: "POST", body: { reason: reason || "Manager rejected" } },
+                            logout
+                        );
+                        setIsProcessingAction(false);
+                        if (res) {
+                            showToast("success", "Return rejected");
+                            fetchReturnDetail(returnId);
+                            fetchHistory();
+                        }
+                    },
+                },
+            ])
             : Alert.alert("Reject Return", "Are you sure you want to reject this return?", [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                      text: "Reject",
-                      style: "destructive",
-                      onPress: async () => {
-                          setIsProcessingAction(true);
-                          const endpoint = ENDPOINTS.SALES_FLOOR.RETURNS.reject(returnId);
-                          const res = await callApi<{ message: string }>(
-                              endpoint,
-                              { method: "POST", body: { reason: "Manager rejected" } },
-                              logout
-                          );
-                          setIsProcessingAction(false);
-                          if (res) {
-                              showToast("success", "Return rejected");
-                              fetchReturnDetail(returnId);
-                              fetchHistory();
-                          }
-                      },
-                  },
-              ]);
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Reject",
+                    style: "destructive",
+                    onPress: async () => {
+                        setIsProcessingAction(true);
+                        const endpoint = ENDPOINTS.SALES_FLOOR.RETURNS.reject(returnId);
+                        const res = await callApi<{ message: string }>(
+                            endpoint,
+                            { method: "POST", body: { reason: "Manager rejected" } },
+                            logout
+                        );
+                        setIsProcessingAction(false);
+                        if (res) {
+                            showToast("success", "Return rejected");
+                            fetchReturnDetail(returnId);
+                            fetchHistory();
+                        }
+                    },
+                },
+            ]);
     };
 
     return (
@@ -589,16 +589,16 @@ export default function Returns() {
                                                     isSelected
                                                         ? "checkbox"
                                                         : canReturn
-                                                        ? "square-outline"
-                                                        : "close-circle-outline"
+                                                            ? "square-outline"
+                                                            : "close-circle-outline"
                                                 }
                                                 size={22}
                                                 color={
                                                     isSelected
                                                         ? COLORS.primary
                                                         : canReturn
-                                                        ? COLORS.textSecondary
-                                                        : COLORS.inactiveTint
+                                                            ? COLORS.textSecondary
+                                                            : COLORS.inactiveTint
                                                 }
                                             />
                                             <View style={styles.itemInfo}>
@@ -672,7 +672,7 @@ export default function Returns() {
                                                                 style={[
                                                                     styles.pill,
                                                                     selectedData.return_reason === r &&
-                                                                        styles.pillActive,
+                                                                    styles.pillActive,
                                                                 ]}
                                                                 onPress={() =>
                                                                     updateItemReason(item.transaction_item_id, r)
@@ -682,7 +682,7 @@ export default function Returns() {
                                                                     style={[
                                                                         styles.pillText,
                                                                         selectedData.return_reason === r &&
-                                                                            styles.pillTextActive,
+                                                                        styles.pillTextActive,
                                                                     ]}
                                                                 >
                                                                     {r.replace("_", " ")}
@@ -705,7 +705,7 @@ export default function Returns() {
                                                                 style={[
                                                                     styles.pill,
                                                                     selectedData.disposition === d.key &&
-                                                                        styles.pillActive,
+                                                                    styles.pillActive,
                                                                 ]}
                                                                 onPress={() =>
                                                                     updateItemDisposition(
@@ -718,7 +718,7 @@ export default function Returns() {
                                                                     style={[
                                                                         styles.pillText,
                                                                         selectedData.disposition === d.key &&
-                                                                            styles.pillTextActive,
+                                                                        styles.pillTextActive,
                                                                     ]}
                                                                 >
                                                                     {d.label}

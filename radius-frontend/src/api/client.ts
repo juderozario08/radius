@@ -128,3 +128,41 @@ export async function apiFetch<T>(
 
     return response.json() as Promise<T>;
 }
+
+const swrCache = new Map<string, { data: any; timestamp: number }>();
+
+export function clearSWRCache(prefixOrKey?: string): void {
+    if (!prefixOrKey) {
+        swrCache.clear();
+        return;
+    }
+    for (const key of swrCache.keys()) {
+        if (key.startsWith(prefixOrKey)) {
+            swrCache.delete(key);
+        }
+    }
+}
+
+export async function apiFetchSWR<T>(
+    path: string,
+    options?: RequestInit,
+): Promise<T> {
+    const cacheKey = path;
+    const cached = swrCache.get(cacheKey);
+    const isStale = !cached || (Date.now() - cached.timestamp > 5 * 60 * 1000);
+
+    if (cached) {
+        if (isStale) {
+            apiFetch<T>(path, options)
+                .then((data) => {
+                    swrCache.set(cacheKey, { data, timestamp: Date.now() });
+                })
+                .catch(() => {});
+        }
+        return cached.data as T;
+    }
+
+    const data = await apiFetch<T>(path, options);
+    swrCache.set(cacheKey, { data, timestamp: Date.now() });
+    return data;
+}

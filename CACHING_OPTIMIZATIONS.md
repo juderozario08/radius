@@ -274,15 +274,18 @@ Ensure all text search fields on the React Native frontend debounce user keystro
 
 ## 7. Priority Matrix & Implementation Roadmap
 
-| Priority | Category | Optimization Item | Estimated Impact |
-| :--- | :--- | :--- | :--- |
-| **P0 (Immediate)** | Security / Bug | Fix `TerminateSessionById` to delete `session:<hash>` in Redis | Eliminates unauthorized access after session termination |
-| **P0 (Immediate)** | Security / Bug | Invalidate Redis sessions when employees are deactivated/terminated | Closes authorization leak for terminated staff |
-| **P1 (High)** | Concurrency | Convert `is4tc_session` from JSON array to Redis Hash (`HSET`) | Resolves race conditions and prevents lost empty hole scans |
-| **P1 (High)** | Performance | Implement 2-tier barcode caching (`radius:v1:catalog:barcode`) | **90% reduction in database load** during floor scanning |
-| **P1 (High)** | Performance | Embed `store_id` in JWT or cache `GetEmployeeByEmail` in Redis | Eliminates redundant DB lookup on every single authenticated request |
-| **P2 (Medium)** | Reliability | Add `singleflight` deduplication to `ProductService` & `CategoryService` | Protects PostgreSQL from cache stampedes on key expiry |
-| **P2 (Medium)** | Database | Add `pg_trgm` GIN indexes on `products(name, sku)` | 20x faster product catalog search across 10,000 SKUs |
-| **P2 (Medium)** | Performance | Cache Store Operations Dashboard (`radius:v1:store:ops:<id>`) for 30s | Shields database during peak manager shift transitions |
-| **P3 (Planned)** | Mobile Client | Implement Stale-While-Revalidate (SWR) cache in `apiFetch` | Instant UI screen transitions (< 16ms) in React Native |
-| **P3 (Planned)** | Network | Add `ETag` support for static entities (`/categories`, `/stores`) | Bandwidth and battery optimization for mobile devices |
+| Priority | Category | Optimization Item | Estimated Impact | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **P0 (Immediate)** | Security / Bug | Fix `TerminateSessionById` to delete `session:<hash>` in Redis | Eliminates unauthorized access after session termination | ✅ Completed |
+| **P0 (Immediate)** | Security / Bug | Invalidate Redis sessions when employees are deactivated/terminated | Closes authorization leak for terminated staff | ✅ Completed |
+| **P1 (High)** | Concurrency | Convert `is4tc_session` from JSON array to Redis Hash (`HSET`) | Resolves race conditions and prevents lost empty hole scans | ✅ Completed |
+| **P1 (High)** | Performance | Implement 2-tier barcode caching (`radius:v1:catalog:barcode`) | **90% reduction in database load** during floor scanning | ✅ Completed |
+| **P1 (High)** | Reliability | Write-time cache invalidation on sales, bin moves, PO receiving, adjustments | Associates never see stale stock levels | ✅ Completed |
+| **P1 (High)** | Reliability | Negative caching (`__NOT_FOUND__`) for invalid/missing barcodes | Eliminates DB penalty on bad scans | ✅ Completed |
+| **P1 (High)** | Performance | Embed `store_id` in JWT or cache `GetEmployeeByEmail` in Redis | Eliminates redundant DB lookup on every single authenticated request | ✅ Completed |
+| **P2 (Medium)** | Reliability | Add `singleflight` deduplication across inventory, product & category services | Protects PostgreSQL from cache stampedes on key expiry | ✅ Completed |
+| **P2 (Medium)** | Database | Add `pg_trgm` GIN indexes on `products(name, sku)` | 20x faster product catalog search across 10,000 SKUs | ✅ Completed |
+| **P2 (Medium)** | Performance | Cache Store Operations Dashboard (`radius:v1:store:ops`) for 30s | Shields database during peak manager shift transitions | ✅ Completed |
+| **P3 (Planned)** | Mobile Client | Implement Stale-While-Revalidate (SWR) cache in `apiFetch` | Instant UI screen transitions (< 16ms) in React Native | ✅ Completed |
+| **P3 (Planned)** | Network | Add `ETag` support for static entities (`/categories`, `/stores`) | Bandwidth and battery optimization for mobile devices | ⏳ Planned |
+| **P3 (Planned)** | Mobile Client | Input debouncing (300ms) with `AbortController` cancellation | Prevents redundant in-flight search requests | ⏳ Planned |

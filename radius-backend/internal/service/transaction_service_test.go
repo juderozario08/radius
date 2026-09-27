@@ -2,11 +2,15 @@ package service_test
 
 import (
 	"context"
+	"fmt"
 	"radius/internal/models"
 	"radius/internal/service"
 	"radius/internal/service/mocks"
 	"testing"
+	"time"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/mock/gomock"
 )
 
@@ -129,5 +133,86 @@ func TestTransactionService_GetAllTransactions_NonAdmin(t *testing.T) {
 	}
 	if len(txns) != 1 {
 		t.Fatalf("expected 1 transaction, got %d", len(txns))
+	}
+}
+
+func TestTransactionService_CreateTransaction_InvalidatesInventoryCache(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	defer mr.Close()
+
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+
+	mockSalesRepo := mocks.NewMockSalesRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockFillReportRepo := mocks.NewMockFillReportRepository(ctrl)
+
+	svc := service.NewTransactionService(mockSalesRepo, mockEmployeeRepo, nil, mockFillReportRepo, rdb)
+
+	storeId := 3
+	empId := 42
+	barcode := "123456789012"
+
+	tier2Key := fmt.Sprintf("radius:v1:inventory:store:%d:product:%d", storeId, 101)
+	legacyKey := fmt.Sprintf("inventory:%d:barcode:%s", storeId, barcode)
+	rdb.Set(context.Background(), tier2Key, "cached_data", time.Hour)
+	rdb.Set(context.Background(), legacyKey, "cached_data", time.Hour)
+
+	req := models.CreateTransactionRequest{
+		RegisterId:  "REG-01",
+		TotalAmount: 20.00,
+		Items: []models.CreateTransactionItemRequest{
+			{
+				ProductId: 101,
+				Quantity:  1,
+				UnitPrice: 20.00,
+			},
+		},
+	}
+
+	expectedItems := []models.TransactionItem{
+		{
+			TransactionId:  99,
+			ProductId:      101,
+			Quantity:       1,
+			UnitPrice:      20.00,
+			ScannedBarcode: &barcode,
+		},
+	}
+
+	mockSalesRepo.EXPECT().
+		CreateTransaction(gomock.Any(), storeId, &empId, req).
+		Return(&models.Transaction{
+			TransactionId: 99,
+			StoreId:       storeId,
+			RegisterId:    "REG-01",
+			TotalAmount:   20.00,
+		}, expectedItems, nil)
+
+	mockFillReportRepo.EXPECT().
+		AddSoldItems(gomock.Any(), storeId, expectedItems).
+		Return(nil)
+
+	tx, err := svc.CreateTransaction(context.Background(), storeId, empId, models.RoleSales, req)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if tx == nil {
+		t.Fatalf("expected transaction, got nil")
+	}
+
+	t2Exists, _ := rdb.Exists(context.Background(), tier2Key).Result()
+	if t2Exists != 0 {
+		t.Fatalf("expected tier2Key to be deleted, but still exists")
+	}
+	legacyExists, _ := rdb.Exists(context.Background(), legacyKey).Result()
+	if legacyExists != 0 {
+		t.Fatalf("expected legacyKey to be deleted, but still exists")
 	}
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"radius/internal/models"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type TransactionService struct {
@@ -13,6 +15,7 @@ type TransactionService struct {
 	sessionRepo    SessionRepository
 	fillReportRepo FillReportRepository
 	broadcaster    EventBroadcaster
+	redisClient    *redis.Client
 }
 
 func NewTransactionService(
@@ -20,7 +23,7 @@ func NewTransactionService(
 	employeeRepo EmployeeRepository,
 	sessionRepo SessionRepository,
 	fillReportRepo FillReportRepository,
-	broadcaster ...EventBroadcaster,
+	deps ...any,
 ) *TransactionService {
 	svc := &TransactionService{
 		salesRepo:      salesRepo,
@@ -28,8 +31,13 @@ func NewTransactionService(
 		sessionRepo:    sessionRepo,
 		fillReportRepo: fillReportRepo,
 	}
-	if len(broadcaster) > 0 && broadcaster[0] != nil {
-		svc.broadcaster = broadcaster[0]
+	for _, dep := range deps {
+		switch v := dep.(type) {
+		case EventBroadcaster:
+			svc.broadcaster = v
+		case *redis.Client:
+			svc.redisClient = v
+		}
 	}
 	return svc
 }
@@ -56,6 +64,17 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, storeId int,
 	tx, items, err := s.salesRepo.CreateTransaction(ctx, targetStoreID, empID, req)
 	if err != nil {
 		return nil, err
+	}
+
+	if s.redisClient != nil && len(items) > 0 {
+		for _, itm := range items {
+			tier2Key := fmt.Sprintf("radius:v1:inventory:store:%d:product:%d", targetStoreID, itm.ProductId)
+			_ = s.redisClient.Del(ctx, tier2Key).Err()
+			if itm.ScannedBarcode != nil && *itm.ScannedBarcode != "" {
+				legacyKey := fmt.Sprintf("inventory:%d:barcode:%s", targetStoreID, *itm.ScannedBarcode)
+				_ = s.redisClient.Del(ctx, legacyKey).Err()
+			}
+		}
 	}
 
 	if s.fillReportRepo != nil && len(items) > 0 {

@@ -3,19 +3,27 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"radius/internal/models"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type ReceivingService struct {
 	receivingRepo ReceivingRepository
 	employeeRepo  EmployeeRepository
+	redisClient   *redis.Client
 }
 
-func NewReceivingService(receivingRepo ReceivingRepository, employeeRepo EmployeeRepository) *ReceivingService {
-	return &ReceivingService{
+func NewReceivingService(receivingRepo ReceivingRepository, employeeRepo EmployeeRepository, redisClient ...*redis.Client) *ReceivingService {
+	svc := &ReceivingService{
 		receivingRepo: receivingRepo,
 		employeeRepo:  employeeRepo,
 	}
+	if len(redisClient) > 0 && redisClient[0] != nil {
+		svc.redisClient = redisClient[0]
+	}
+	return svc
 }
 
 func (s *ReceivingService) GetPurchaseOrders(ctx context.Context, storeId int, role string, storeIDOverride *int) ([]models.PurchaseOrderSummary, error) {
@@ -65,7 +73,24 @@ func (s *ReceivingService) ReceivePO(ctx context.Context, storeId int, employeeI
 		return errors.New("cannot receive for a different store")
 	}
 
-	return s.receivingRepo.ReceivePOItems(ctx, detail.StoreId, req.PoId, employeeId, req.Items)
+	err = s.receivingRepo.ReceivePOItems(ctx, detail.StoreId, req.PoId, employeeId, req.Items)
+	if err != nil {
+		return err
+	}
+
+	if s.redisClient != nil {
+		for _, itm := range detail.Items {
+			tier2Key := fmt.Sprintf("radius:v1:inventory:store:%d:product:%d", detail.StoreId, itm.ProductId)
+			_ = s.redisClient.Del(ctx, tier2Key).Err()
+			if itm.Upc != "" {
+				_ = s.redisClient.Del(ctx, fmt.Sprintf("inventory:%d:barcode:%s", detail.StoreId, itm.Upc)).Err()
+			}
+			if itm.Sku != "" {
+				_ = s.redisClient.Del(ctx, fmt.Sprintf("inventory:%d:barcode:%s", detail.StoreId, itm.Sku)).Err()
+			}
+		}
+	}
+	return nil
 }
 
 func (s *ReceivingService) ReceiveLPR(ctx context.Context, storeId int, employeeId int, role string, req models.ReceiveLPRRequest) error {
@@ -81,7 +106,18 @@ func (s *ReceivingService) ReceiveLPR(ctx context.Context, storeId int, employee
 		return errors.New("cannot receive for a different store")
 	}
 
-	return s.receivingRepo.ReceiveLPR(ctx, detail.StoreId, req.PoId, req.LprBarcode, employeeId)
+	err = s.receivingRepo.ReceiveLPR(ctx, detail.StoreId, req.PoId, req.LprBarcode, employeeId)
+	if err != nil {
+		return err
+	}
+
+	if s.redisClient != nil {
+		iter := s.redisClient.Scan(ctx, 0, fmt.Sprintf("radius:v1:inventory:store:%d:*", detail.StoreId), 100).Iterator()
+		for iter.Next(ctx) {
+			_ = s.redisClient.Del(ctx, iter.Val()).Err()
+		}
+	}
+	return nil
 }
 
 func (s *ReceivingService) GetStockTransfers(ctx context.Context, storeId int, role string) ([]models.StockTransferSummary, error) {

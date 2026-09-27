@@ -5,11 +5,38 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"math/rand/v2"
 	"radius/internal/models"
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/sync/singleflight"
 )
+
+type storeInventoryCache struct {
+	OnHandQty     int        `json:"on_hand_qty"`
+	ReservedQty   int        `json:"reserved_qty"`
+	AvailableQty  int        `json:"available_qty"`
+	ReorderQty    int        `json:"reorder_qty"`
+	Aisle         *string    `json:"aisle"`
+	MimsLocation  *string    `json:"mims_location"`
+	LastCountedAt *time.Time `json:"last_counted_at"`
+}
+
+type catalogBarcodeCache struct {
+	ProductId     int     `json:"product_id"`
+	Sku           string  `json:"sku"`
+	Upc           string  `json:"upc"`
+	Name          string  `json:"name"`
+	Brand         string  `json:"brand"`
+	Description   *string `json:"description"`
+	UnitOfMeasure string  `json:"unit_of_measure"`
+	UnitsPerCase  int     `json:"units_per_case"`
+	Weight        float32 `json:"weight"`
+	IsActive      bool    `json:"is_active"`
+	NotFound      bool    `json:"not_found,omitempty"`
+}
 
 type InventoryService struct {
 	storeRepo     StoreRepository
@@ -18,6 +45,7 @@ type InventoryService struct {
 	inventoryRepo InventoryRepository
 	productsRepo  ProductRepository
 	redisClient   *redis.Client
+	sfGroup       singleflight.Group
 }
 
 func NewInventoryService(
@@ -38,10 +66,111 @@ func NewInventoryService(
 	}
 }
 
+func (s *InventoryService) InvalidateInventoryCache(ctx context.Context, storeId int, productId int, optionalBarcode ...string) {
+	if s.redisClient == nil {
+		return
+	}
+	tier2Key := fmt.Sprintf("radius:v1:inventory:store:%d:product:%d", storeId, productId)
+	if err := s.redisClient.Del(ctx, tier2Key).Err(); err != nil && !errors.Is(err, redis.Nil) {
+		log.Printf("[WARN] Failed to invalidate %s: %v", tier2Key, err)
+	}
+	for _, b := range optionalBarcode {
+		if b != "" {
+			legacyKey := fmt.Sprintf("inventory:%d:barcode:%s", storeId, b)
+			_ = s.redisClient.Del(ctx, legacyKey).Err()
+		}
+	}
+}
+
+func (s *InventoryService) InvalidateStoreInventoryCache(ctx context.Context, storeId int) {
+	if s.redisClient == nil {
+		return
+	}
+	patterns := []string{
+		fmt.Sprintf("radius:v1:inventory:store:%d:*", storeId),
+		fmt.Sprintf("inventory:%d:*", storeId),
+	}
+	for _, pat := range patterns {
+		iter := s.redisClient.Scan(ctx, 0, pat, 100).Iterator()
+		for iter.Next(ctx) {
+			_ = s.redisClient.Del(ctx, iter.Val()).Err()
+		}
+	}
+}
+
 func (s *InventoryService) ScanProduct(ctx context.Context, storeId int, employeeId int, barcode string) (*models.ScanProductResponse, error) {
-	cacheKey := fmt.Sprintf("inventory:%d:barcode:%s", storeId, barcode)
+	tier1Key := fmt.Sprintf("radius:v1:catalog:barcode:%s", barcode)
+	legacyKey := fmt.Sprintf("inventory:%d:barcode:%s", storeId, barcode)
+
 	if s.redisClient != nil {
-		if val, err := s.redisClient.Get(ctx, cacheKey).Result(); err == nil {
+		t1Val, t1Err := s.redisClient.Get(ctx, tier1Key).Result()
+		if t1Err == nil {
+			var t1 catalogBarcodeCache
+			if json.Unmarshal([]byte(t1Val), &t1) == nil {
+				if t1.NotFound {
+					go func() {
+						_ = s.inventoryRepo.LogScan(context.Background(), models.MimsScanLog{
+							StoreId:        storeId,
+							EmployeeId:     employeeId,
+							ProductId:      nil,
+							ScannedBarcode: barcode,
+							ScanType:       "MIMS",
+						})
+					}()
+					return &models.ScanProductResponse{
+						Product: nil,
+						Message: "No product found for this barcode",
+					}, nil
+				}
+
+				tier2Key := fmt.Sprintf("radius:v1:inventory:store:%d:product:%d", storeId, t1.ProductId)
+				t2Val, t2Err := s.redisClient.Get(ctx, tier2Key).Result()
+				if t2Err == nil {
+					var t2 storeInventoryCache
+					if json.Unmarshal([]byte(t2Val), &t2) == nil {
+						combined := models.MimsProductInventory{
+							ProductId:     t1.ProductId,
+							Sku:           t1.Sku,
+							Upc:           t1.Upc,
+							Name:          t1.Name,
+							Brand:         t1.Brand,
+							Description:   t1.Description,
+							UnitOfMeasure: t1.UnitOfMeasure,
+							UnitsPerCase:  t1.UnitsPerCase,
+							Weight:        t1.Weight,
+							IsActive:      t1.IsActive,
+							OnHandQty:     t2.OnHandQty,
+							ReservedQty:   t2.ReservedQty,
+							AvailableQty:  t2.AvailableQty,
+							ReorderQty:    t2.ReorderQty,
+							Aisle:         t2.Aisle,
+							MimsLocation:  t2.MimsLocation,
+							LastCountedAt: t2.LastCountedAt,
+						}
+						go func() {
+							_ = s.inventoryRepo.LogScan(context.Background(), models.MimsScanLog{
+								StoreId:        storeId,
+								EmployeeId:     employeeId,
+								ProductId:      &combined.ProductId,
+								ScannedBarcode: barcode,
+								ScanType:       "MIMS",
+							})
+						}()
+						return &models.ScanProductResponse{
+							Product: &combined,
+							Message: "Product found",
+						}, nil
+					}
+				} else if !errors.Is(t2Err, redis.Nil) {
+					log.Printf("[WARN] Redis get failed for %s: %v", tier2Key, t2Err)
+				}
+			}
+		} else if !errors.Is(t1Err, redis.Nil) {
+			log.Printf("[WARN] Redis get failed for %s: %v", tier1Key, t1Err)
+		}
+
+		val, err := s.redisClient.Get(ctx, legacyKey).Result()
+		if err == nil {
 			var product models.MimsProductInventory
 			if json.Unmarshal([]byte(val), &product) == nil {
 				go func() {
@@ -58,44 +187,97 @@ func (s *InventoryService) ScanProduct(ctx context.Context, storeId int, employe
 					Message: "Product found",
 				}, nil
 			}
+		} else if !errors.Is(err, redis.Nil) {
+			log.Printf("[WARN] Redis get failed for %s: %v", legacyKey, err)
 		}
 	}
 
-	product, err := s.inventoryRepo.GetInventoryByBarcode(ctx, storeId, barcode)
+	sfKey := fmt.Sprintf("scan:%d:%s", storeId, barcode)
+	v, err, _ := s.sfGroup.Do(sfKey, func() (any, error) {
+		product, dbErr := s.inventoryRepo.GetInventoryByBarcode(ctx, storeId, barcode)
+		if dbErr != nil {
+			return nil, dbErr
+		}
+
+		var productId *int
+		if product != nil {
+			productId = &product.ProductId
+		}
+
+		_ = s.inventoryRepo.LogScan(ctx, models.MimsScanLog{
+			StoreId:        storeId,
+			EmployeeId:     employeeId,
+			ProductId:      productId,
+			ScannedBarcode: barcode,
+			ScanType:       "MIMS",
+		})
+
+		if product == nil {
+			if s.redisClient != nil {
+				negPayload, _ := json.Marshal(catalogBarcodeCache{NotFound: true})
+				negTTL := 60*time.Second + time.Duration(rand.IntN(15))*time.Second
+				if setErr := s.redisClient.Set(ctx, tier1Key, negPayload, negTTL).Err(); setErr != nil {
+					log.Printf("[WARN] Redis negative cache set failed for %s: %v", tier1Key, setErr)
+				}
+			}
+			return &models.ScanProductResponse{
+				Product: nil,
+				Message: "No product found for this barcode",
+			}, nil
+		}
+
+		if s.redisClient != nil {
+			t1Data, mErr := json.Marshal(catalogBarcodeCache{
+				ProductId:     product.ProductId,
+				Sku:           product.Sku,
+				Upc:           product.Upc,
+				Name:          product.Name,
+				Brand:         product.Brand,
+				Description:   product.Description,
+				UnitOfMeasure: product.UnitOfMeasure,
+				UnitsPerCase:  product.UnitsPerCase,
+				Weight:        product.Weight,
+				IsActive:      product.IsActive,
+			})
+			if mErr == nil {
+				t1TTL := 24*time.Hour + time.Duration(rand.IntN(7200))*time.Second
+				if setErr := s.redisClient.Set(ctx, tier1Key, t1Data, t1TTL).Err(); setErr != nil {
+					log.Printf("[WARN] Redis Tier 1 cache set failed for %s: %v", tier1Key, setErr)
+				}
+			}
+
+			t2Data, mErr := json.Marshal(storeInventoryCache{
+				OnHandQty:     product.OnHandQty,
+				ReservedQty:   product.ReservedQty,
+				AvailableQty:  product.AvailableQty,
+				ReorderQty:    product.ReorderQty,
+				Aisle:         product.Aisle,
+				MimsLocation:  product.MimsLocation,
+				LastCountedAt: product.LastCountedAt,
+			})
+			if mErr == nil {
+				tier2Key := fmt.Sprintf("radius:v1:inventory:store:%d:product:%d", storeId, product.ProductId)
+				t2TTL := 5*time.Minute + time.Duration(rand.IntN(30))*time.Second
+				if setErr := s.redisClient.Set(ctx, tier2Key, t2Data, t2TTL).Err(); setErr != nil {
+					log.Printf("[WARN] Redis Tier 2 cache set failed for %s: %v", tier2Key, setErr)
+				}
+			}
+
+			if data, err := json.Marshal(product); err == nil {
+				_ = s.redisClient.Set(ctx, legacyKey, data, 5*time.Minute).Err()
+			}
+		}
+
+		return &models.ScanProductResponse{
+			Product: product,
+			Message: "Product found",
+		}, nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-
-	var productId *int
-	if product != nil {
-		productId = &product.ProductId
-	}
-
-	_ = s.inventoryRepo.LogScan(ctx, models.MimsScanLog{
-		StoreId:        storeId,
-		EmployeeId:     employeeId,
-		ProductId:      productId,
-		ScannedBarcode: barcode,
-		ScanType:       "MIMS",
-	})
-
-	if product == nil {
-		return &models.ScanProductResponse{
-			Product: nil,
-			Message: "No product found for this barcode",
-		}, nil
-	}
-
-	if s.redisClient != nil {
-		if data, err := json.Marshal(product); err == nil {
-			_ = s.redisClient.Set(ctx, cacheKey, data, 60*time.Second).Err()
-		}
-	}
-
-	return &models.ScanProductResponse{
-		Product: product,
-		Message: "Product found",
-	}, nil
+	return v.(*models.ScanProductResponse), nil
 }
 
 func (s *InventoryService) GetLocationProducts(ctx context.Context, storeId int, employeeId int, locationID string) (*models.LocationProductsResponse, error) {
@@ -169,6 +351,7 @@ func (s *InventoryService) BinItem(ctx context.Context, storeId int, employeeId 
 		if err != nil {
 			return nil, err
 		}
+		s.InvalidateInventoryCache(ctx, storeId, inventory.ProductId, req.Barcode)
 	} else if req.Action == "IN" {
 		err = s.inventoryRepo.LinkProductToLocation(ctx, storeId, req.LocationId, inventory.ProductId)
 		if err != nil {
@@ -178,13 +361,18 @@ func (s *InventoryService) BinItem(ctx context.Context, storeId int, employeeId 
 		if err != nil {
 			return nil, err
 		}
+		s.InvalidateInventoryCache(ctx, storeId, inventory.ProductId, req.Barcode)
 	}
 
 	return s.inventoryRepo.GetInventoryByBarcode(ctx, storeId, req.Barcode)
 }
 
 func (s *InventoryService) UpdateQuantity(ctx context.Context, storeId int, req models.UpdateQuantityRequest) error {
-	return s.inventoryRepo.UpdateInventoryQuantity(ctx, storeId, req.ProductId, req.Quantity)
+	err := s.inventoryRepo.UpdateInventoryQuantity(ctx, storeId, req.ProductId, req.Quantity)
+	if err == nil {
+		s.InvalidateInventoryCache(ctx, storeId, req.ProductId)
+	}
+	return err
 }
 
 func (s *InventoryService) GetProductScreenDetails(ctx context.Context, storeId int, productID int) (*models.ProductScreenDetails, error) {
@@ -204,7 +392,11 @@ func (s *InventoryService) SyncLocations(ctx context.Context, storeId int, req m
 		}
 	}
 
-	return s.inventoryRepo.SyncLocations(ctx, storeId, req.InventoryId, req.Locations)
+	err := s.inventoryRepo.SyncLocations(ctx, storeId, req.InventoryId, req.Locations)
+	if err == nil {
+		s.InvalidateStoreInventoryCache(ctx, storeId)
+	}
+	return err
 }
 
 func (s *InventoryService) CreateMimsLocation(ctx context.Context, storeId int, req models.CreateMimsLocationRequest) error {
@@ -234,5 +426,9 @@ func (s *InventoryService) ReviewAdjustments(ctx context.Context, storeId int, e
 		return errors.New("unauthorized")
 	}
 
-	return s.inventoryRepo.ReviewAdjustments(ctx, storeId, employeeId, req.Reviews)
+	err := s.inventoryRepo.ReviewAdjustments(ctx, storeId, employeeId, req.Reviews)
+	if err == nil {
+		s.InvalidateStoreInventoryCache(ctx, storeId)
+	}
+	return err
 }

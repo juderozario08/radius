@@ -149,3 +149,71 @@ func TestProductService_GetProductByID_SingleflightDeduplication(t *testing.T) {
 		t.Errorf("Expected singleflight to collapse calls into 1, got %d", atomic.LoadInt64(&callCount))
 	}
 }
+
+func TestProductService_GetProductByID_NilRedisClient(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockProductRepo := &MockProductRepo{}
+	mockStoreRepo := mocks.NewMockStoreRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+
+	productService := service.NewProductService(mockProductRepo, mockStoreRepo, mockEmployeeRepo, mockSessionRepo, nil)
+
+	expectedProduct := &models.Product{
+		ProductId: 10,
+		Name:      "Nil Redis Product",
+	}
+
+	mockProductRepo.GetProductByIDFunc = func(ctx context.Context, id int) (*models.Product, error) {
+		return expectedProduct, nil
+	}
+
+	prod, err := productService.GetProductByID(context.Background(), 10)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if prod.Name != "Nil Redis Product" {
+		t.Errorf("Expected product name 'Nil Redis Product', got %s", prod.Name)
+	}
+}
+
+func TestProductService_GetProductByID_RedisFailOpen(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	client := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+	})
+	s.Close()
+
+	mockProductRepo := &MockProductRepo{}
+	mockStoreRepo := mocks.NewMockStoreRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+
+	productService := service.NewProductService(mockProductRepo, mockStoreRepo, mockEmployeeRepo, mockSessionRepo, client)
+
+	expectedProduct := &models.Product{
+		ProductId: 20,
+		Name:      "FailOpen Product",
+	}
+
+	mockProductRepo.GetProductByIDFunc = func(ctx context.Context, id int) (*models.Product, error) {
+		return expectedProduct, nil
+	}
+
+	prod, err := productService.GetProductByID(context.Background(), 20)
+	if err != nil {
+		t.Fatalf("Expected fail-open to succeed without error, got %v", err)
+	}
+	if prod.Name != "FailOpen Product" {
+		t.Errorf("Expected product name 'FailOpen Product', got %s", prod.Name)
+	}
+}
+

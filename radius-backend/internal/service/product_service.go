@@ -3,7 +3,10 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
+	"math/rand/v2"
 	"radius/internal/models"
 	"time"
 
@@ -38,11 +41,15 @@ func NewProductService(
 
 func (s *ProductService) GetProductByID(ctx context.Context, id int) (*models.Product, error) {
 	cacheKey := fmt.Sprintf("product:%d", id)
-	val, err := s.redisClient.Get(ctx, cacheKey).Result()
-	if err == nil {
-		var product models.Product
-		if err := json.Unmarshal([]byte(val), &product); err == nil {
-			return &product, nil
+	if s.redisClient != nil {
+		val, err := s.redisClient.Get(ctx, cacheKey).Result()
+		if err == nil {
+			var product models.Product
+			if err := json.Unmarshal([]byte(val), &product); err == nil {
+				return &product, nil
+			}
+		} else if !errors.Is(err, redis.Nil) {
+			log.Printf("[WARN] Redis get failed for %s: %v", cacheKey, err)
 		}
 	}
 
@@ -51,9 +58,12 @@ func (s *ProductService) GetProductByID(ctx context.Context, id int) (*models.Pr
 		if dbErr != nil {
 			return nil, dbErr
 		}
-		if prod != nil {
+		if prod != nil && s.redisClient != nil {
 			if data, marshalErr := json.Marshal(prod); marshalErr == nil {
-				s.redisClient.Set(ctx, cacheKey, data, 5*time.Minute)
+				ttl := 5*time.Minute + time.Duration(rand.IntN(30))*time.Second
+				if setErr := s.redisClient.Set(ctx, cacheKey, data, ttl).Err(); setErr != nil {
+					log.Printf("[WARN] Redis set failed for %s: %v", cacheKey, setErr)
+				}
 			}
 		}
 		return prod, nil

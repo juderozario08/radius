@@ -152,11 +152,14 @@ func (s *StoreService) GetStore(ctx context.Context, storeId string) (*models.St
 func (s *StoreService) GetStoreOperations(ctx context.Context) ([]models.StoreOperationSummary, error) {
 	cacheKey := "radius:v1:store:ops"
 	if s.redisClient != nil {
-		if val, err := s.redisClient.Get(ctx, cacheKey).Result(); err == nil {
+		val, err := s.redisClient.Get(ctx, cacheKey).Result()
+		if err == nil {
 			var ops []models.StoreOperationSummary
 			if json.Unmarshal([]byte(val), &ops) == nil {
 				return ops, nil
 			}
+		} else if !errors.Is(err, redis.Nil) {
+			log.Printf("[WARN] Redis get failed for %s: %v", cacheKey, err)
 		}
 	}
 
@@ -167,7 +170,9 @@ func (s *StoreService) GetStoreOperations(ctx context.Context) ([]models.StoreOp
 
 	if s.redisClient != nil {
 		if data, err := json.Marshal(ops); err == nil {
-			_ = s.redisClient.Set(ctx, cacheKey, data, 30*time.Second).Err()
+			if setErr := s.redisClient.Set(ctx, cacheKey, data, 30*time.Second).Err(); setErr != nil {
+				log.Printf("[WARN] Redis set failed for %s: %v", cacheKey, setErr)
+			}
 		}
 	}
 

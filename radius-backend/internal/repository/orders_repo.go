@@ -370,21 +370,21 @@ func (r *OrdersRepo) GetAllPrintOrders(ctx context.Context, limit, offset int, s
 	args = append(args, limit, offset)
 
 	query = `
-		SELECT 
-			po.print_order_id, 
-			po.store_id, 
-			po.customer_name, 
-			COALESCE(po.customer_email, ''), 
-			COALESCE(po.customer_phone, ''), 
-			po.order_type, 
-			po.status, 
-			po.subtotal, 
-			po.tax_amount, 
-			po.shipping_fee, 
-			po.total_amount, 
-			COALESCE(po.shipping_address, ''), 
-			COALESCE(po.notes, ''), 
-			po.placed_at, 
+		SELECT
+			po.print_order_id,
+			po.store_id,
+			po.customer_name,
+			COALESCE(po.customer_email, ''),
+			COALESCE(po.customer_phone, ''),
+			po.order_type,
+			po.status,
+			po.subtotal,
+			po.tax_amount,
+			po.shipping_fee,
+			po.total_amount,
+			COALESCE(po.shipping_address, ''),
+			COALESCE(po.notes, ''),
+			po.placed_at,
 			po.fulfilled_at
 		FROM print_orders po
 		WHERE ` + baseConditions + fmt.Sprintf(`
@@ -432,7 +432,7 @@ func (r *OrdersRepo) GetPrintOrderByID(ctx context.Context, id int, storeID *int
 
 	if storeID != nil {
 		query = `
-			SELECT 
+			SELECT
 				print_order_id, store_id, customer_name, COALESCE(customer_email, ''), COALESCE(customer_phone, ''),
 				order_type, status, subtotal, tax_amount, shipping_fee, total_amount, COALESCE(shipping_address, ''),
 				COALESCE(notes, ''), placed_at, fulfilled_at
@@ -442,7 +442,7 @@ func (r *OrdersRepo) GetPrintOrderByID(ctx context.Context, id int, storeID *int
 		args = []any{id, *storeID}
 	} else {
 		query = `
-			SELECT 
+			SELECT
 				print_order_id, store_id, customer_name, COALESCE(customer_email, ''), COALESCE(customer_phone, ''),
 				order_type, status, subtotal, tax_amount, shipping_fee, total_amount, COALESCE(shipping_address, ''),
 				COALESCE(notes, ''), placed_at, fulfilled_at
@@ -604,4 +604,3 @@ func (r *OrdersRepo) AutoCancelExpiredBOPISOrders(ctx context.Context, olderThan
 	}
 	return cancelled, rows.Err()
 }
-

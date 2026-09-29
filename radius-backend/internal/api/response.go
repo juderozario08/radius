@@ -1,20 +1,27 @@
 package api
 
 import (
+	"radius/internal/models"
+
 	"github.com/gin-gonic/gin"
 )
 
-// Success responds with a standard JSON success payload
-func Success(c *gin.Context, status int, data interface{}) {
+func Success(c *gin.Context, status int, data any) {
 	c.JSON(status, data)
 }
 
-// Error responds with a standard JSON error payload
-func Error(c *gin.Context, status int, message string) {
-	c.JSON(status, gin.H{"error": message})
+func Message(c *gin.Context, status int, message string) {
+	c.JSON(status, models.APIMessage{Message: message})
 }
 
-// ErrorWithDetails responds with an error payload including detailed context
+func Error(c *gin.Context, status int, message string) {
+	c.JSON(status, models.APIError{Error: message})
+}
+
+func AbortError(c *gin.Context, status int, message string) {
+	c.AbortWithStatusJSON(status, models.APIError{Error: message})
+}
+
 func ErrorWithDetails(c *gin.Context, status int, message string, details string) {
 	c.JSON(status, gin.H{
 		"error":   message,

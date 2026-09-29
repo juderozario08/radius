@@ -68,48 +68,47 @@ func (r *ProductRepo) SearchProducts(
 	unitOfMeasure *string,
 	limit, offset int,
 ) ([]models.Product, int, error) {
-	var conditions []string
-	var args []interface{}
+	b := queryutil.NewBuilder()
 
 	if query != "" {
-		conditions, args = queryutil.AppendCondition(conditions, args, fmt.Sprintf("(name ILIKE $%d OR sku ILIKE $%d OR COALESCE(description, '') ILIKE $%d)", len(args)+1, len(args)+1, len(args)+1), "%"+query+"%")
+		b.AddWithSameArg("(name ILIKE $%d OR sku ILIKE $%d OR COALESCE(description, '') ILIKE $%d)", "%"+query+"%")
 	}
 
 	if categoryID != nil {
-		conditions, args = queryutil.AppendCondition(conditions, args, fmt.Sprintf("category_id = $%d", len(args)+1), *categoryID)
+		b.Add("category_id = $%d", *categoryID)
 	}
 
 	if brand != nil && *brand != "" {
-		conditions, args = queryutil.AppendCondition(conditions, args, fmt.Sprintf("brand ILIKE $%d", len(args)+1), "%"+*brand+"%")
+		b.Add("brand ILIKE $%d", "%"+*brand+"%")
 	}
 
 	if isActive != nil {
-		conditions, args = queryutil.AppendCondition(conditions, args, fmt.Sprintf("is_active = $%d", len(args)+1), *isActive)
+		b.Add("is_active = $%d", *isActive)
 	}
 
 	if unitOfMeasure != nil && *unitOfMeasure != "" {
-		conditions, args = queryutil.AppendCondition(conditions, args, fmt.Sprintf("unit_of_measure = $%d", len(args)+1), *unitOfMeasure)
+		b.Add("unit_of_measure = $%d", *unitOfMeasure)
 	}
 
-	whereClause := queryutil.BuildWhereClause(conditions)
+	whereClause := b.WhereClause()
 	countQuery := "SELECT COUNT(*) FROM products " + whereClause
 
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, countQuery, b.Args()...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	baseDataQuery := fmt.Sprintf(
+	paginateClause := b.Paginate(limit, offset)
+
+	dataQuery := fmt.Sprintf(
 		`SELECT product_id, sku, upc, name, description, category_id, brand, unit_of_measure, units_per_case, weight, is_active, created_at
 		FROM products %s
-		ORDER BY name ASC`,
-		whereClause,
+		ORDER BY name ASC
+		%s`,
+		whereClause, paginateClause,
 	)
 
-	dataQuery, paginatedArgs := queryutil.PaginateQuery(baseDataQuery, limit, offset, len(args)+1)
-	args = append(args, paginatedArgs...)
-
-	rows, err := r.db.QueryContext(ctx, dataQuery, args...)
+	rows, err := r.db.QueryContext(ctx, dataQuery, b.Args()...)
 	if err != nil {
 		return nil, 0, err
 	}

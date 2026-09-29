@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"radius/internal/models"
+	"radius/internal/util/queryutil"
 	"time"
 )
 
@@ -17,7 +18,13 @@ func NewReceivingRepo(db *sql.DB) *ReceivingRepo {
 }
 
 func (r *ReceivingRepo) GetPurchaseOrders(ctx context.Context, storeID *int) ([]models.PurchaseOrderSummary, error) {
-	query := `
+	b := queryutil.NewBuilder()
+	b.Add("po.status IN ('SHIPPED', 'DELIVERING', 'DELIVERED', 'PARTIAL')")
+	if storeID != nil {
+		b.Add("po.store_id = $%d", *storeID)
+	}
+
+	query := fmt.Sprintf(`
 		SELECT po.po_id, po.store_id, s.name, sup.name, po.status,
 			COUNT(poi.po_item_id), po.ordered_at, po.expected_at, po.arrived_at,
 			EXISTS (SELECT 1 FROM purchase_order_lprs lpr WHERE lpr.po_id = po.po_id)
@@ -25,16 +32,12 @@ func (r *ReceivingRepo) GetPurchaseOrders(ctx context.Context, storeID *int) ([]
 		JOIN stores s ON po.store_id = s.store_id
 		JOIN suppliers sup ON po.supplier_id = sup.supplier_id
 		JOIN purchase_orders_items poi ON poi.po_id = po.po_id
-		WHERE po.status IN ('SHIPPED', 'DELIVERING', 'DELIVERED', 'PARTIAL')
-	`
-	var args []any
-	if storeID != nil {
-		args = append(args, *storeID)
-		query += fmt.Sprintf(" AND po.store_id = $%d", len(args))
-	}
-	query += " GROUP BY po.po_id, s.name, sup.name ORDER BY po.ordered_at DESC"
+		%s
+		GROUP BY po.po_id, s.name, sup.name
+		ORDER BY po.ordered_at DESC
+	`, b.WhereClause())
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	rows, err := r.db.QueryContext(ctx, query, b.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -346,23 +349,25 @@ func updatePOStatusInTx(ctx context.Context, tx *sql.Tx, poID int) error {
 }
 
 func (r *ReceivingRepo) GetStockTransfers(ctx context.Context, storeID *int) ([]models.StockTransferSummary, error) {
-	query := `
+	b := queryutil.NewBuilder()
+	b.Add("st.status = 'IN_TRANSIT'")
+	if storeID != nil {
+		b.Add("st.to_store_id = $%d", *storeID)
+	}
+
+	query := fmt.Sprintf(`
 		SELECT st.transfer_id, st.from_store_id, fs.name, st.to_store_id, ts.name,
 			st.status, COALESCE(st.manual_check_required, false), COUNT(sti.transfer_item_id), st.created_at
 		FROM stock_transfers st
 		JOIN stores fs ON st.from_store_id = fs.store_id
 		JOIN stores ts ON st.to_store_id = ts.store_id
 		JOIN stock_transfer_items sti ON sti.transfer_id = st.transfer_id
-		WHERE st.status = 'IN_TRANSIT'
-	`
-	var args []any
-	if storeID != nil {
-		args = append(args, *storeID)
-		query += fmt.Sprintf(" AND st.to_store_id = $%d", len(args))
-	}
-	query += " GROUP BY st.transfer_id, fs.name, ts.name ORDER BY st.created_at DESC"
+		%s
+		GROUP BY st.transfer_id, fs.name, ts.name
+		ORDER BY st.created_at DESC
+	`, b.WhereClause())
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	rows, err := r.db.QueryContext(ctx, query, b.Args()...)
 	if err != nil {
 		return nil, err
 	}

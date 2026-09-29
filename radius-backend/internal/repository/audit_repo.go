@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"radius/internal/models"
+	"radius/internal/util/queryutil"
 )
 
 type AuditRepo struct {
@@ -31,40 +32,30 @@ func (r *AuditRepo) LogInventoryTransaction(ctx context.Context, tx *sql.Tx, ent
 }
 
 func (r *AuditRepo) GetProductAuditTrail(ctx context.Context, productID int, storeID *int, filter models.AuditFilter, limit, offset int) ([]models.AuditTrailEntry, int, error) {
-	baseWhere := `WHERE it.product_id = $1`
-	args := []any{productID}
-	paramIdx := 2
+	b := queryutil.NewBuilder()
+	b.Add("it.product_id = $%d", productID)
 
 	if storeID != nil {
-		baseWhere += fmt.Sprintf(` AND (it.from_store_id = $%d OR it.to_store_id = $%d)`, paramIdx, paramIdx)
-		args = append(args, *storeID)
-		paramIdx++
+		b.Add("(it.from_store_id = $%d OR it.to_store_id = $%d)", *storeID, *storeID)
 	}
 
 	if filter.StartDate != nil {
-		baseWhere += fmt.Sprintf(` AND it.created_at >= $%d`, paramIdx)
-		args = append(args, *filter.StartDate)
-		paramIdx++
+		b.Add("it.created_at >= $%d", *filter.StartDate)
 	}
 	if filter.EndDate != nil {
-		baseWhere += fmt.Sprintf(` AND it.created_at <= $%d`, paramIdx)
-		args = append(args, *filter.EndDate)
-		paramIdx++
+		b.Add("it.created_at <= $%d", *filter.EndDate)
 	}
 	if filter.TransactionType != nil && *filter.TransactionType != "" {
-		baseWhere += fmt.Sprintf(` AND it.transaction_type = $%d`, paramIdx)
-		args = append(args, *filter.TransactionType)
-		paramIdx++
+		b.Add("it.transaction_type = $%d", *filter.TransactionType)
 	}
 	if filter.EmployeeId != nil {
-		baseWhere += fmt.Sprintf(` AND it.employee_id = $%d`, paramIdx)
-		args = append(args, *filter.EmployeeId)
-		paramIdx++
+		b.Add("it.employee_id = $%d", *filter.EmployeeId)
 	}
 
-	countQuery := `SELECT COUNT(*) FROM inventory_transactions it ` + baseWhere
+	whereClause := b.WhereClause()
+	countQuery := `SELECT COUNT(*) FROM inventory_transactions it ` + whereClause
 	var total int
-	err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total)
+	err := r.db.QueryRowContext(ctx, countQuery, b.Args()...).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -73,6 +64,8 @@ func (r *AuditRepo) GetProductAuditTrail(ctx context.Context, productID int, sto
 	if filter.SortOrder == "ASC" {
 		sortOrder = "ASC"
 	}
+
+	paginateClause := b.Paginate(limit, offset)
 
 	dataQuery := fmt.Sprintf(`
 		SELECT
@@ -89,11 +82,9 @@ func (r *AuditRepo) GetProductAuditTrail(ctx context.Context, productID int, sto
 		LEFT JOIN stores fs ON it.from_store_id = fs.store_id
 		LEFT JOIN stores ts ON it.to_store_id = ts.store_id
 		%s
-		ORDER BY it.created_at %s LIMIT $%d OFFSET $%d`, baseWhere, sortOrder, paramIdx, paramIdx+1)
+		ORDER BY it.created_at %s %s`, whereClause, sortOrder, paginateClause)
 
-	args = append(args, limit, offset)
-
-	rows, err := r.db.QueryContext(ctx, dataQuery, args...)
+	rows, err := r.db.QueryContext(ctx, dataQuery, b.Args()...)
 	if err != nil {
 		return nil, 0, err
 	}

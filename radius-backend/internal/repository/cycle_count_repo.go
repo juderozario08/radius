@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"radius/internal/models"
+	"radius/internal/util/queryutil"
 	"strings"
 	"time"
 )
@@ -533,7 +534,35 @@ func (r *CycleCountRepo) TransferOwnership(ctx context.Context, storeID int, cou
 }
 
 func (r *CycleCountRepo) SearchCycleCounts(ctx context.Context, storeID int, criteria models.CycleCountSearchCriteria) ([]models.CycleCountSummary, error) {
-	baseQuery := `
+	b := queryutil.NewBuilder(storeID)
+	b.Add("($1 <= 0 OR cc.store_id = $1)")
+
+	if criteria.Query != "" {
+		q := "%" + strings.ToLower(criteria.Query) + "%"
+		b.AddWithSameArg(`(
+			LOWER(c.name) LIKE $%d OR 
+			LOWER(COALESCE(e.first_name || ' ' || e.last_name, '')) LIKE $%d OR 
+			CAST(cc.count_id AS TEXT) LIKE $%d
+		)`, q)
+	}
+
+	if criteria.Status != "" && criteria.Status != "ALL" {
+		b.Add("cc.status = $%d", criteria.Status)
+	}
+
+	if criteria.CategoryId != nil {
+		b.Add("cc.category_id = $%d", *criteria.CategoryId)
+	}
+
+	if criteria.DateFrom != nil && *criteria.DateFrom != "" {
+		b.Add("cc.count_date >= $%d::date", *criteria.DateFrom)
+	}
+
+	if criteria.DateTo != nil && *criteria.DateTo != "" {
+		b.Add("cc.count_date <= $%d::date", *criteria.DateTo)
+	}
+
+	baseQuery := fmt.Sprintf(`
 		SELECT 
 			cc.count_id, cc.store_id, c.name AS category_name, cc.category_id, cc.status,
 			CASE WHEN e.employee_id IS NOT NULL THEN e.first_name || ' ' || e.last_name ELSE NULL END AS counted_by_name,
@@ -541,49 +570,11 @@ func (r *CycleCountRepo) SearchCycleCounts(ctx context.Context, storeID int, cri
 		FROM cycle_counts cc
 		JOIN categories c ON cc.category_id = c.category_id
 		LEFT JOIN employees e ON cc.counted_by = e.employee_id
-		WHERE ($1 <= 0 OR cc.store_id = $1)
-	`
-	args := []any{storeID}
-	paramIdx := 2
+		%s
+		ORDER BY cc.count_date DESC, cc.count_id DESC LIMIT 100
+	`, b.WhereClause())
 
-	if criteria.Query != "" {
-		q := "%" + strings.ToLower(criteria.Query) + "%"
-		baseQuery += fmt.Sprintf(` AND (
-			LOWER(c.name) LIKE $%d OR 
-			LOWER(COALESCE(e.first_name || ' ' || e.last_name, '')) LIKE $%d OR 
-			CAST(cc.count_id AS TEXT) LIKE $%d
-		)`, paramIdx, paramIdx, paramIdx)
-		args = append(args, q)
-		paramIdx++
-	}
-
-	if criteria.Status != "" && criteria.Status != "ALL" {
-		baseQuery += fmt.Sprintf(` AND cc.status = $%d`, paramIdx)
-		args = append(args, criteria.Status)
-		paramIdx++
-	}
-
-	if criteria.CategoryId != nil {
-		baseQuery += fmt.Sprintf(` AND cc.category_id = $%d`, paramIdx)
-		args = append(args, *criteria.CategoryId)
-		paramIdx++
-	}
-
-	if criteria.DateFrom != nil && *criteria.DateFrom != "" {
-		baseQuery += fmt.Sprintf(` AND cc.count_date >= $%d::date`, paramIdx)
-		args = append(args, *criteria.DateFrom)
-		paramIdx++
-	}
-
-	if criteria.DateTo != nil && *criteria.DateTo != "" {
-		baseQuery += fmt.Sprintf(` AND cc.count_date <= $%d::date`, paramIdx)
-		args = append(args, *criteria.DateTo)
-		paramIdx++
-	}
-
-	baseQuery += ` ORDER BY cc.count_date DESC, cc.count_id DESC LIMIT 100`
-
-	rows, err := r.db.QueryContext(ctx, baseQuery, args...)
+	rows, err := r.db.QueryContext(ctx, baseQuery, b.Args()...)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 	"net/http"
+	"radius/internal/api"
 	"radius/internal/models"
 	"radius/internal/service"
 	"strconv"
@@ -193,7 +194,7 @@ func (h *CycleCountHandler) SubmitForApproval(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Cycle count submitted for approval successfully"})
+	api.Message(ctx, http.StatusOK, "Cycle count submitted for approval successfully")
 }
 
 func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
@@ -223,7 +224,7 @@ func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Cycle count approved successfully and inventory reconciled"})
+	api.Message(ctx, http.StatusOK, "Cycle count approved successfully and inventory reconciled")
 }
 
 func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
@@ -252,7 +253,7 @@ func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Cycle count ownership transferred successfully"})
+	api.Message(ctx, http.StatusOK, "Cycle count ownership transferred successfully")
 }
 
 func (h *CycleCountHandler) SearchCycleCounts(ctx *gin.Context) {

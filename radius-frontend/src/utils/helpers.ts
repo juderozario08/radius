@@ -14,6 +14,7 @@ export interface ApiCallOptions {
     method?: string;
     body?: any;
     swr?: boolean;
+    signal?: AbortSignal;
 }
 
 export async function callApi<T>(
@@ -33,13 +34,18 @@ export async function callApi<T>(
             return await apiFetchSWR<T>(endpoint, {
                 method,
                 body,
+                signal: options?.signal,
             });
         }
         return await apiFetch<T>(endpoint, {
             method,
             body,
+            signal: options?.signal,
         });
     } catch (err) {
+        if (err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"))) {
+            return null;
+        }
         const errorMessage = err instanceof Error ? err.message : String(err);
         console.log(`API Call Failed [${method} ${endpoint}]: ${errorMessage}`);
         showToast("error", errorMessage);

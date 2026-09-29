@@ -63,32 +63,85 @@ async function refreshAccessToken(): Promise<string | null> {
     return refreshPromise;
 }
 
+interface ETagCacheEntry {
+    etag: string;
+    data: any;
+}
+
+const etagCache = new Map<string, ETagCacheEntry>();
+
+export function clearETagCache(prefixOrKey?: string): void {
+    if (!prefixOrKey) {
+        etagCache.clear();
+        return;
+    }
+    for (const key of etagCache.keys()) {
+        if (key.startsWith(prefixOrKey)) {
+            etagCache.delete(key);
+        }
+    }
+}
+
 export async function apiFetch<T>(
     path: string,
     options?: RequestInit,
 ): Promise<T> {
+    const isGet = !options?.method || options.method.toUpperCase() === "GET";
+    const cachedEntry = isGet ? etagCache.get(path) : undefined;
+
     const token = await getToken();
+
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    if (cachedEntry?.etag) {
+        headers["If-None-Match"] = cachedEntry.etag;
+    }
+
+    if (options?.headers) {
+        if (options.headers instanceof Headers) {
+            options.headers.forEach((value, key) => {
+                headers[key] = value;
+            });
+        } else if (Array.isArray(options.headers)) {
+            options.headers.forEach(([key, value]) => {
+                headers[key] = value;
+            });
+        } else {
+            Object.assign(headers, options.headers);
+        }
+    }
 
     const response = await fetch(`${BASE_URL}${path}`, {
         ...options,
-        headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            ...options?.headers,
-        },
+        headers,
     });
+
+    if (response.status === 304 && cachedEntry) {
+        return cachedEntry.data as T;
+    }
 
     if (response.status === 401) {
         const newToken = await refreshAccessToken();
         if (newToken) {
+            const retryHeaders = {
+                ...headers,
+                Authorization: `Bearer ${newToken}`,
+            };
+
             const retryResponse = await fetch(`${BASE_URL}${path}`, {
                 ...options,
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${newToken}`,
-                    ...options?.headers,
-                },
+                headers: retryHeaders,
             });
+
+            if (retryResponse.status === 304 && cachedEntry) {
+                return cachedEntry.data as T;
+            }
 
             if (retryResponse.status === 401) {
                 throw new UnauthorizedError("Invalid or expired session");
@@ -107,7 +160,14 @@ export async function apiFetch<T>(
                 throw new Error(errorMessage);
             }
 
-            return retryResponse.json() as Promise<T>;
+            const data = (await retryResponse.json()) as T;
+            if (isGet) {
+                const etag = retryResponse.headers.get("etag") || retryResponse.headers.get("ETag");
+                if (etag) {
+                    etagCache.set(path, { etag, data });
+                }
+            }
+            return data;
         }
 
         throw new UnauthorizedError("Invalid or expired session");
@@ -126,7 +186,14 @@ export async function apiFetch<T>(
         throw new Error(errorMessage);
     }
 
-    return response.json() as Promise<T>;
+    const data = (await response.json()) as T;
+    if (isGet) {
+        const etag = response.headers.get("etag") || response.headers.get("ETag");
+        if (etag) {
+            etagCache.set(path, { etag, data });
+        }
+    }
+    return data;
 }
 
 const swrCache = new Map<string, { data: any; timestamp: number }>();
@@ -134,11 +201,17 @@ const swrCache = new Map<string, { data: any; timestamp: number }>();
 export function clearSWRCache(prefixOrKey?: string): void {
     if (!prefixOrKey) {
         swrCache.clear();
+        etagCache.clear();
         return;
     }
     for (const key of swrCache.keys()) {
         if (key.startsWith(prefixOrKey)) {
             swrCache.delete(key);
+        }
+    }
+    for (const key of etagCache.keys()) {
+        if (key.startsWith(prefixOrKey)) {
+            etagCache.delete(key);
         }
     }
 }

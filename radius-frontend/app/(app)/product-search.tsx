@@ -289,6 +289,7 @@ export default function ProductSearchScreen() {
     const [brands, setBrands] = useState<string[]>([]);
 
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
     const searchInputRef = useRef<TextInput>(null);
 
     useEffect(() => {
@@ -305,7 +306,7 @@ export default function ProductSearchScreen() {
         if (brnds) setBrands(brnds);
     };
 
-    const searchProducts = useCallback(async (query: string, activeFilters: SearchFilters, pageOffset: number = 0) => {
+    const searchProducts = useCallback(async (query: string, activeFilters: SearchFilters, pageOffset: number = 0, signal?: AbortSignal) => {
         if (pageOffset === 0) {
             setIsLoading(true);
         } else {
@@ -322,7 +323,11 @@ export default function ProductSearchScreen() {
         params.append("offset", String(pageOffset));
 
         const endpoint = `${ENDPOINTS.SALES_FLOOR.PRODUCTS.search}?${params.toString()}`;
-        const data = await callApi<SearchProductsResponse>(endpoint, { method: "GET" }, logout);
+        const data = await callApi<SearchProductsResponse>(endpoint, { method: "GET", signal }, logout);
+
+        if (signal?.aborted) {
+            return;
+        }
 
         if (data) {
             if (pageOffset === 0) {
@@ -341,17 +346,27 @@ export default function ProductSearchScreen() {
 
     useEffect(() => {
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         debounceTimer.current = setTimeout(() => {
-            searchProducts(searchText, filters, 0);
+            searchProducts(searchText, filters, 0, controller.signal);
         }, 300);
+
         return () => {
             if (debounceTimer.current) clearTimeout(debounceTimer.current);
+            controller.abort();
         };
-    }, [searchText, filters]);
+    }, [searchText, filters, searchProducts]);
 
     const handleLoadMore = () => {
         if (!isLoadingMore && !isLoading && products.length < total) {
-            searchProducts(searchText, filters, offset);
+            const controller = new AbortController();
+            abortControllerRef.current = controller;
+            searchProducts(searchText, filters, offset, controller.signal);
         }
     };
 

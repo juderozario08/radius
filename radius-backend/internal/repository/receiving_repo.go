@@ -190,7 +190,7 @@ func (r *ReceivingRepo) ReceivePOItems(ctx context.Context, storeID int, poID in
 		}
 
 		_, err = tx.ExecContext(ctx,
-			`UPDATE inventory SET on_hand_qty = on_hand_qty + $1, updated_at = NOW() WHERE product_id = $2 AND store_id = $3`,
+			`UPDATE inventory SET new_qty = new_qty + $1, updated_at = NOW() WHERE product_id = $2 AND store_id = $3`,
 			item.QtyReceived, productID, storeID,
 		)
 		if err != nil {
@@ -289,7 +289,7 @@ func (r *ReceivingRepo) ReceiveLPR(ctx context.Context, storeID int, poID int, l
 		}
 
 		_, err = tx.ExecContext(ctx,
-			`UPDATE inventory SET on_hand_qty = on_hand_qty + $1, updated_at = NOW() WHERE product_id = $2 AND store_id = $3`,
+			`UPDATE inventory SET new_qty = new_qty + $1, updated_at = NOW() WHERE product_id = $2 AND store_id = $3`,
 			li.qty, li.productID, storeID,
 		)
 		if err != nil {
@@ -491,7 +491,7 @@ func (r *ReceivingRepo) ReceiveTransferItems(ctx context.Context, storeID int, t
 		}
 
 		_, err = tx.ExecContext(ctx,
-			`UPDATE inventory SET on_hand_qty = on_hand_qty + $1, updated_at = NOW() WHERE product_id = $2 AND store_id = $3`,
+			`UPDATE inventory SET new_qty = new_qty + $1, updated_at = NOW() WHERE product_id = $2 AND store_id = $3`,
 			item.QtyReceived, productID, storeID,
 		)
 		if err != nil {
@@ -561,7 +561,7 @@ func (r *ReceivingRepo) QuickReceiveTransfer(ctx context.Context, storeID int, t
 		}
 
 		_, err = tx.ExecContext(ctx,
-			`UPDATE inventory SET on_hand_qty = on_hand_qty + $1, updated_at = NOW() WHERE product_id = $2 AND store_id = $3`,
+			`UPDATE inventory SET new_qty = new_qty + $1, updated_at = NOW() WHERE product_id = $2 AND store_id = $3`,
 			ti.qty, ti.productID, storeID,
 		)
 		if err != nil {

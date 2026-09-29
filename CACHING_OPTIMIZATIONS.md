@@ -287,5 +287,5 @@ Ensure all text search fields on the React Native frontend debounce user keystro
 | **P2 (Medium)** | Database | Add `pg_trgm` GIN indexes on `products(name, sku)` | 20x faster product catalog search across 10,000 SKUs | ✅ Completed |
 | **P2 (Medium)** | Performance | Cache Store Operations Dashboard (`radius:v1:store:ops`) for 30s | Shields database during peak manager shift transitions | ✅ Completed |
 | **P3 (Planned)** | Mobile Client | Implement Stale-While-Revalidate (SWR) cache in `apiFetch` | Instant UI screen transitions (< 16ms) in React Native | ✅ Completed |
-| **P3 (Planned)** | Network | Add `ETag` support for static entities (`/categories`, `/stores`) | Bandwidth and battery optimization for mobile devices | ⏳ Planned |
-| **P3 (Planned)** | Mobile Client | Input debouncing (300ms) with `AbortController` cancellation | Prevents redundant in-flight search requests | ⏳ Planned |
+| **P3 (Planned)** | Network | Add `ETag` support for static entities (`/categories`, `/stores`) | Bandwidth and battery optimization for mobile devices | ✅ Completed |
+| **P3 (Planned)** | Mobile Client | Input debouncing (300ms) with `AbortController` cancellation | Prevents redundant in-flight search requests | ✅ Completed |

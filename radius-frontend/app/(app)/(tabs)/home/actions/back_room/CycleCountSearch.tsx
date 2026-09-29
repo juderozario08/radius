@@ -36,9 +36,10 @@ export default function CycleCountSearch() {
     const [results, setResults] = useState<CycleCountSummary[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
+    const abortControllerRef = React.useRef<AbortController | null>(null);
 
     const performSearch = useCallback(
-        async (searchQuery: string, status: string) => {
+        async (searchQuery: string, status: string, signal?: AbortSignal) => {
             setIsLoading(true);
             try {
                 const params = new URLSearchParams();
@@ -46,25 +47,40 @@ export default function CycleCountSearch() {
                 if (status && status !== "ALL") params.append("status", status);
 
                 const url = `${ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.search}?${params.toString()}`;
-                const data = await callApi<CycleCountSummary[]>(url, { method: "GET" }, logout);
+                const data = await callApi<CycleCountSummary[]>(url, { method: "GET", signal }, logout);
+                if (signal?.aborted) {
+                    return;
+                }
                 if (data) {
                     setResults(data);
                 }
             } catch (err) {
                 console.error("Search failed:", err);
             } finally {
-                setIsLoading(false);
-                setHasSearched(true);
+                if (!signal?.aborted) {
+                    setIsLoading(false);
+                    setHasSearched(true);
+                }
             }
         },
         [logout]
     );
 
     useEffect(() => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         const timer = setTimeout(() => {
-            performSearch(query, statusFilter);
+            performSearch(query, statusFilter, controller.signal);
         }, 300);
-        return () => clearTimeout(timer);
+
+        return () => {
+            clearTimeout(timer);
+            controller.abort();
+        };
     }, [query, statusFilter, performSearch]);
 
     const totalNetVariance = results.reduce(

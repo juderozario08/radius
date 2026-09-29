@@ -92,7 +92,7 @@ func (r *SalesRepo) CreateTransaction(ctx context.Context, storeID int, employee
 
 	updateInventoryStmt, err := tx.PrepareContext(ctx, `
 		UPDATE inventory
-		SET on_hand_qty = on_hand_qty - $1, updated_at = NOW()
+		SET new_qty = new_qty - $1, updated_at = NOW()
 		WHERE store_id = $2 AND product_id = $3
 	`)
 	if err != nil {

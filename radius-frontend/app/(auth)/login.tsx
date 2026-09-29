@@ -2,20 +2,14 @@ import { apiFetch, ConflictError } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LoginResponse } from "@/types/auth.types";
 import { useRef, useState } from "react";
-import { Platform } from "react-native";
-import {
-    Alert,
-    KeyboardAvoidingView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Platform, Alert, KeyboardAvoidingView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { COLORS } from "@/constants/colors";
 import { ENDPOINTS } from "@/constants/routes";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
+import { Button } from "@/components/common/Button";
+import { Input } from "@/components/common/Input";
+import { globalStyles } from "@/constants/styles";
 
 function checkEmail(email: string): boolean {
     let atSeen = false;
@@ -82,13 +76,12 @@ export default function LoginScreen() {
     }
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={globalStyles.container}>
             <TopSafeAreaView style={styles.container}>
                 <Text style={styles.title}>Radius</Text>
-                <TextInput
-                    style={[styles.input, { marginBottom: 5 }]}
+                <Input
+                    style={styles.inputMargin}
                     placeholder="Email"
-                    placeholderTextColor={COLORS.placeholder}
                     value={email}
                     onChangeText={(t) => {
                         setEmail(t);
@@ -100,16 +93,15 @@ export default function LoginScreen() {
                     submitBehavior="submit"
                     onSubmitEditing={() => passwordRef.current?.focus()}
                 />
-                <View style={{ height: 20 }}>
+                <View style={styles.errorWrapper}>
                     {!validEmail && email && (
-                        <Text style={{ color: "red" }}>{" Please enter a valid email address."}</Text>
+                        <Text style={styles.errorLabel}>{" Please enter a valid email address."}</Text>
                     )}
                 </View>
-                <View style={{ marginTop: 5, marginBottom: 12, justifyContent: "center" }}>
-                    <TextInput
-                        style={[styles.input, { marginTop: 0, marginBottom: 0, paddingRight: 60 }]}
+                <View style={styles.passwordContainer}>
+                    <Input
+                        style={styles.passwordInput}
                         placeholder="Password"
-                        placeholderTextColor={COLORS.placeholder}
                         value={password}
                         onChangeText={(t) => {
                             setPassword(t);
@@ -126,20 +118,11 @@ export default function LoginScreen() {
                         <Text style={styles.hidingText}>{hiding ? "Show" : "Hide"}</Text>
                     </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                    style={[
-                        styles.button,
-                        (loading || !email || !password) && { opacity: 0.7 },
-                    ]}
-                    onPress={() => {
-                        submitLogin(false);
-                    }}
+                <Button
+                    title={loading ? "Logging in..." : "Log In"}
+                    onPress={() => submitLogin(false)}
                     disabled={loading || !email || !password}
-                >
-                    <Text style={styles.buttonText}>
-                        {loading ? "Logging in..." : "Log In"}
-                    </Text>
-                </TouchableOpacity>
+                />
             </TopSafeAreaView>
         </KeyboardAvoidingView>
     );
@@ -150,40 +133,39 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         padding: 24,
-        backgroundColor: "#fff",
+        backgroundColor: COLORS.surface,
     },
     title: {
         fontSize: 32,
         fontWeight: "700",
         marginBottom: 40,
         alignSelf: "center",
+        color: COLORS.textPrimary,
     },
-    input: {
-        borderWidth: 2,
-        borderColor: "#aaa",
-        borderRadius: 8,
-        padding: 14,
-        marginBottom: 12,
-        fontSize: 16,
+    inputMargin: {
+        marginBottom: 5,
     },
-    button: {
-        backgroundColor: "#CC0000",
-        padding: 16,
-        borderRadius: 8,
-        alignItems: "center",
+    errorWrapper: {
+        height: 20,
     },
-    buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-    hidingText: { color: "#666" },
+    errorLabel: {
+        color: COLORS.danger,
+    },
+    passwordContainer: {
+        marginTop: 5, 
+        marginBottom: 12, 
+        justifyContent: "center"
+    },
+    passwordInput: {
+        marginTop: 0, 
+        marginBottom: 0, 
+        paddingRight: 60,
+    },
+    hidingText: { color: COLORS.textSecondary },
     hidingContainer: {
         position: "absolute",
         right: 15,
         height: "100%",
         justifyContent: "center",
-    },
-    errorContainer: {
-        minHeight: 80,
-        position: "absolute",
-        marginLeft: 25,
-        marginTop: 360,
     },
 });

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"radius/internal/models"
+	"radius/internal/util/queryutil"
 )
 
 type ProductRepo struct {
@@ -67,57 +68,46 @@ func (r *ProductRepo) SearchProducts(
 	unitOfMeasure *string,
 	limit, offset int,
 ) ([]models.Product, int, error) {
-	baseWhere := "WHERE 1=1"
-	args := []interface{}{}
-	argIdx := 1
+	var conditions []string
+	var args []interface{}
 
 	if query != "" {
-		baseWhere += fmt.Sprintf(
-			" AND (name ILIKE $%d OR sku ILIKE $%d OR COALESCE(description, '') ILIKE $%d)",
-			argIdx, argIdx, argIdx,
-		)
-		args = append(args, "%"+query+"%")
-		argIdx++
+		conditions, args = queryutil.AppendCondition(conditions, args, fmt.Sprintf("(name ILIKE $%d OR sku ILIKE $%d OR COALESCE(description, '') ILIKE $%d)", len(args)+1, len(args)+1, len(args)+1), "%"+query+"%")
 	}
 
 	if categoryID != nil {
-		baseWhere += fmt.Sprintf(" AND category_id = $%d", argIdx)
-		args = append(args, *categoryID)
-		argIdx++
+		conditions, args = queryutil.AppendCondition(conditions, args, fmt.Sprintf("category_id = $%d", len(args)+1), *categoryID)
 	}
 
 	if brand != nil && *brand != "" {
-		baseWhere += fmt.Sprintf(" AND brand ILIKE $%d", argIdx)
-		args = append(args, "%"+*brand+"%")
-		argIdx++
+		conditions, args = queryutil.AppendCondition(conditions, args, fmt.Sprintf("brand ILIKE $%d", len(args)+1), "%"+*brand+"%")
 	}
 
 	if isActive != nil {
-		baseWhere += fmt.Sprintf(" AND is_active = $%d", argIdx)
-		args = append(args, *isActive)
-		argIdx++
+		conditions, args = queryutil.AppendCondition(conditions, args, fmt.Sprintf("is_active = $%d", len(args)+1), *isActive)
 	}
 
 	if unitOfMeasure != nil && *unitOfMeasure != "" {
-		baseWhere += fmt.Sprintf(" AND unit_of_measure = $%d", argIdx)
-		args = append(args, *unitOfMeasure)
-		argIdx++
+		conditions, args = queryutil.AppendCondition(conditions, args, fmt.Sprintf("unit_of_measure = $%d", len(args)+1), *unitOfMeasure)
 	}
 
-	countQuery := "SELECT COUNT(*) FROM products " + baseWhere
+	whereClause := queryutil.BuildWhereClause(conditions)
+	countQuery := "SELECT COUNT(*) FROM products " + whereClause
+
 	var total int
 	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	dataQuery := fmt.Sprintf(
+	baseDataQuery := fmt.Sprintf(
 		`SELECT product_id, sku, upc, name, description, category_id, brand, unit_of_measure, units_per_case, weight, is_active, created_at
 		FROM products %s
-		ORDER BY name ASC
-		LIMIT $%d OFFSET $%d`,
-		baseWhere, argIdx, argIdx+1,
+		ORDER BY name ASC`,
+		whereClause,
 	)
-	args = append(args, limit, offset)
+
+	dataQuery, paginatedArgs := queryutil.PaginateQuery(baseDataQuery, limit, offset, len(args)+1)
+	args = append(args, paginatedArgs...)
 
 	rows, err := r.db.QueryContext(ctx, dataQuery, args...)
 	if err != nil {

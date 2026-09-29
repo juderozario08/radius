@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"radius/internal/api"
+
 	"log"
 	"net/http"
 	"radius/internal/models"
@@ -33,20 +35,20 @@ func (h *FillReportHandler) resolveStoreID(c *gin.Context) (int, error) {
 func (h *FillReportHandler) GetFillReport(c *gin.Context) {
 	storeID, err := h.resolveStoreID(c)
 	if err != nil || storeID <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
+		api.Error(c, http.StatusBadRequest, "Invalid or missing store ID")
 		return
 	}
 
 	var filter models.FillReportFilter
 	if err := c.ShouldBindQuery(&filter); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid query parameters", "details": err.Error()})
+		api.ErrorWithDetails(c, http.StatusBadRequest, "Invalid query parameters", err.Error())
 		return
 	}
 
 	resp, err := h.service.GetStoreFillReport(c.Request.Context(), storeID, filter)
 	if err != nil {
 		log.Printf("Error getting fill report for store %d: %v", storeID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve fill report", "details": err.Error()})
+		api.ErrorWithDetails(c, http.StatusInternalServerError, "Failed to retrieve fill report", err.Error())
 		return
 	}
 
@@ -56,13 +58,13 @@ func (h *FillReportHandler) GetFillReport(c *gin.Context) {
 func (h *FillReportHandler) ScanEmptyHole(c *gin.Context) {
 	storeID, err := h.resolveStoreID(c)
 	if err != nil || storeID <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
+		api.Error(c, http.StatusBadRequest, "Invalid or missing store ID")
 		return
 	}
 
 	var req models.ScanEmptyHoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload", "details": err.Error()})
+		api.ErrorWithDetails(c, http.StatusBadRequest, "Invalid request payload", err.Error())
 		return
 	}
 
@@ -73,7 +75,7 @@ func (h *FillReportHandler) ScanEmptyHole(c *gin.Context) {
 
 	if err := h.service.LogEmptyHole(c.Request.Context(), storeID, req.ProductID, empID); err != nil {
 		log.Printf("Error logging empty hole: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to log empty hole", "details": err.Error()})
+		api.ErrorWithDetails(c, http.StatusInternalServerError, "Failed to log empty hole", err.Error())
 		return
 	}
 
@@ -83,13 +85,13 @@ func (h *FillReportHandler) ScanEmptyHole(c *gin.Context) {
 func (h *FillReportHandler) GetIS4TCSession(c *gin.Context) {
 	storeID, err := h.resolveStoreID(c)
 	if err != nil || storeID <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
+		api.Error(c, http.StatusBadRequest, "Invalid or missing store ID")
 		return
 	}
 
 	items, err := h.service.GetActiveIS4TCSession(c.Request.Context(), storeID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve session"})
+		api.Error(c, http.StatusInternalServerError, "Failed to retrieve session")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "items": items})
@@ -98,7 +100,7 @@ func (h *FillReportHandler) GetIS4TCSession(c *gin.Context) {
 func (h *FillReportHandler) AddToIS4TCSession(c *gin.Context) {
 	storeID, err := h.resolveStoreID(c)
 	if err != nil || storeID <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
+		api.Error(c, http.StatusBadRequest, "Invalid or missing store ID")
 		return
 	}
 
@@ -107,7 +109,7 @@ func (h *FillReportHandler) AddToIS4TCSession(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("Bind error in AddToIS4TCSession: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload", "details": err.Error()})
+		api.ErrorWithDetails(c, http.StatusBadRequest, "Invalid payload", err.Error())
 		return
 	}
 
@@ -118,7 +120,7 @@ func (h *FillReportHandler) AddToIS4TCSession(c *gin.Context) {
 
 	items, err := h.service.AddToIS4TCSession(c.Request.Context(), storeID, req.Product, empID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add to session"})
+		api.Error(c, http.StatusInternalServerError, "Failed to add to session")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "items": items})
@@ -127,13 +129,13 @@ func (h *FillReportHandler) AddToIS4TCSession(c *gin.Context) {
 func (h *FillReportHandler) ClearIS4TCSession(c *gin.Context) {
 	storeID, err := h.resolveStoreID(c)
 	if err != nil || storeID <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing store ID"})
+		api.Error(c, http.StatusBadRequest, "Invalid or missing store ID")
 		return
 	}
 
 	err = h.service.ClearIS4TCSession(c.Request.Context(), storeID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear session"})
+		api.Error(c, http.StatusInternalServerError, "Failed to clear session")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Session cleared"})

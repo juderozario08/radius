@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"radius/internal/api"
+
 	"log"
 	"net/http"
 	"radius/internal/models"
@@ -25,7 +27,7 @@ func (h *AuditHandler) GetProductAuditTrail(c *gin.Context) {
 
 	barcode := c.Query("barcode")
 	if barcode == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "barcode query parameter is required"})
+		api.Error(c, http.StatusBadRequest, "barcode query parameter is required")
 		return
 	}
 
@@ -71,7 +73,7 @@ func (h *AuditHandler) GetProductAuditTrail(c *gin.Context) {
 	res, err := h.auditService.GetProductAuditTrail(c.Request.Context(), storeId, role, barcode, filter, limit, offset)
 	if err != nil {
 		log.Printf("[ERROR] AuditHandler.GetProductAuditTrail: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		api.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 

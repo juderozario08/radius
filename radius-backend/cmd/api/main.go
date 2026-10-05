@@ -94,7 +94,7 @@ func main() {
 		WriteBufferSize:  4096,
 		HandshakeTimeout: 10 * time.Second,
 		AllowedOrigins:   cfg.AllowedOriginsList(),
-		FailClosed:       cfg.IsRelease,
+		FailClosed:       cfg.IsRelease && len(cfg.AllowedOriginsList()) > 0,
 	})
 	wsHandler := handler.NewWSHandler(
 		wsHub,

@@ -1,4 +1,4 @@
-import { apiFetch } from "@/api/client";
+import { apiFetch, setClientContext, resetClientContext } from "@/api/client";
 import { deleteToken, getToken, saveToken, saveRefreshToken, deleteRefreshToken } from "@/utils/token";
 import { createContext, ReactNode, useEffect, useState, useMemo } from "react";
 import Toast from "react-native-toast-message";
@@ -38,7 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 const userInfoStr = await SecureStore.getItemAsync("user_info");
                 if (userInfoStr) {
-                    setUser(JSON.parse(userInfoStr));
+                    const parsedUser = JSON.parse(userInfoStr);
+                    setUser(parsedUser);
+                    setClientContext({
+                        storeId: parsedUser.store_id,
+                        employeeId: parsedUser.employee_id,
+                    });
                 }
 
                 const currentToken = await getToken();
@@ -50,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     visibilityTime: 1000,
                 });
             } catch (err) {
+                resetClientContext();
                 await deleteToken();
                 await deleteRefreshToken();
                 await SecureStore.deleteItemAsync("user_info");
@@ -72,6 +78,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await saveToken(userData.token);
         await saveRefreshToken(userData.refresh_token);
         await SecureStore.setItemAsync("user_info", JSON.stringify(userData));
+        setClientContext({
+            storeId: userData.store_id,
+            employeeId: userData.employee_id,
+        });
         setToken(userData.token);
 
         const { token, refresh_token, ...userInfo } = userData;
@@ -85,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
         } catch {
         }
+        resetClientContext();
         await deleteToken();
         await deleteRefreshToken();
         await SecureStore.deleteItemAsync("user_info");

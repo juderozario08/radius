@@ -3,6 +3,8 @@
     "compilerOptions": {
         "module": "esnext",
         "strict": true,
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
         "paths": {
             "@/*": [
                 "./src/*"

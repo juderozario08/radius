@@ -1,6 +1,30 @@
 import { getToken, saveToken, getRefreshToken, deleteToken, deleteRefreshToken } from "@/utils/token";
 import { ENDPOINTS } from "@/constants/routes";
 import { RefreshTokenResponse } from "@/types/auth.types";
+import {
+    CachePolicy,
+    setClientContext,
+    resetClientContext,
+    getSessionGeneration,
+    buildCacheKey,
+    swrCache,
+    etagStore,
+    inFlightRequests,
+    setWithEviction,
+    clearSWRCache,
+    subscribeCache,
+    notifyCacheUpdate,
+} from "./cache_manager";
+
+export type { CachePolicy };
+export {
+    setClientContext,
+    resetClientContext,
+    getSessionGeneration,
+    buildCacheKey,
+    clearSWRCache,
+    subscribeCache,
+};
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -20,6 +44,10 @@ export class UnauthorizedError extends Error {
         super(message);
         this.name = "UnauthorizedError";
     }
+}
+
+export interface FetchOptions extends RequestInit {
+    cachePolicy?: CachePolicy;
 }
 
 let refreshPromise: Promise<string | null> | null = null;
@@ -63,32 +91,50 @@ async function refreshAccessToken(): Promise<string | null> {
     return refreshPromise;
 }
 
-export async function apiFetch<T>(
+async function executeNetworkFetch<T>(
     path: string,
-    options?: RequestInit,
+    options: FetchOptions | undefined,
+    cacheKey: string,
+    method: string,
+    useETag: boolean,
 ): Promise<T> {
     const token = await getToken();
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options?.headers as Record<string, string> | undefined),
+    };
+
+    const cachedEtag = useETag ? etagStore.get(cacheKey) : undefined;
+    if (method === "GET" && cachedEtag) {
+        headers["If-None-Match"] = cachedEtag.etag;
+    }
 
     const response = await fetch(`${BASE_URL}${path}`, {
         ...options,
-        headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            ...options?.headers,
-        },
+        headers,
     });
+
+    if (response.status === 304 && cachedEtag) {
+        return cachedEtag.data as T;
+    }
 
     if (response.status === 401) {
         const newToken = await refreshAccessToken();
         if (newToken) {
+            const retryHeaders: Record<string, string> = {
+                ...headers,
+                Authorization: `Bearer ${newToken}`,
+            };
+
             const retryResponse = await fetch(`${BASE_URL}${path}`, {
                 ...options,
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${newToken}`,
-                    ...options?.headers,
-                },
+                headers: retryHeaders,
             });
+
+            if (retryResponse.status === 304 && cachedEtag) {
+                return cachedEtag.data as T;
+            }
 
             if (retryResponse.status === 401) {
                 throw new UnauthorizedError("Invalid or expired session");
@@ -103,11 +149,16 @@ export async function apiFetch<T>(
                 try {
                     const errorBody = await retryResponse.json();
                     errorMessage = errorBody.error || errorMessage;
-                } catch (e) { }
+                } catch {}
                 throw new Error(errorMessage);
             }
 
-            return retryResponse.json() as Promise<T>;
+            const retryData = (await retryResponse.json()) as T;
+            const etagHeader = retryResponse.headers.get("etag") || retryResponse.headers.get("ETag");
+            if (useETag && etagHeader && method === "GET") {
+                setWithEviction(etagStore, cacheKey, { etag: etagHeader, data: retryData, generation: getSessionGeneration() });
+            }
+            return retryData;
         }
 
         throw new UnauthorizedError("Invalid or expired session");
@@ -122,47 +173,93 @@ export async function apiFetch<T>(
         try {
             const errorBody = await response.json();
             errorMessage = errorBody.error || errorMessage;
-        } catch (e) { }
+        } catch {}
         throw new Error(errorMessage);
     }
 
-    return response.json() as Promise<T>;
+    const data = (await response.json()) as T;
+    const etagHeader = response.headers.get("etag") || response.headers.get("ETag");
+    if (useETag && etagHeader && method === "GET") {
+        setWithEviction(etagStore, cacheKey, { etag: etagHeader, data, generation: getSessionGeneration() });
+    }
+    return data;
 }
 
-const swrCache = new Map<string, { data: any; timestamp: number }>();
+export async function apiFetch<T>(
+    path: string,
+    options?: FetchOptions,
+): Promise<T> {
+    const method = (options?.method || "GET").toUpperCase();
+    const cachePolicy: CachePolicy = method !== "GET" ? "no-store" : (options?.cachePolicy || "network-first");
 
-export function clearSWRCache(prefixOrKey?: string): void {
-    if (!prefixOrKey) {
-        swrCache.clear();
-        return;
+    if (cachePolicy === "no-store") {
+        return executeNetworkFetch<T>(path, options, "", method, false);
     }
-    for (const key of swrCache.keys()) {
-        if (key.startsWith(prefixOrKey)) {
-            swrCache.delete(key);
+
+    const cacheKey = buildCacheKey(method, path);
+
+    if (cachePolicy === "cache-first") {
+        const cached = swrCache.get(cacheKey);
+        if (cached && (Date.now() - cached.timestamp < 10 * 60 * 1000) && cached.generation === getSessionGeneration()) {
+            return cached.data as T;
         }
+    }
+
+    if (cachePolicy === "swr") {
+        const cached = swrCache.get(cacheKey);
+        const currentGeneration = getSessionGeneration();
+        if (cached && cached.generation === currentGeneration) {
+            const isStale = (Date.now() - cached.timestamp > 5 * 60 * 1000);
+            if (isStale) {
+                executeNetworkFetch<T>(path, options, cacheKey, method, true)
+                    .then((data) => {
+                        if (getSessionGeneration() === currentGeneration) {
+                            setWithEviction(swrCache, cacheKey, { data, timestamp: Date.now(), generation: currentGeneration });
+                            notifyCacheUpdate(cacheKey, data);
+                        }
+                    })
+                    .catch(() => {});
+            }
+            return cached.data as T;
+        }
+    }
+
+    const inFlight = inFlightRequests.get(cacheKey);
+    if (inFlight) {
+        return inFlight as Promise<T>;
+    }
+
+    const requestPromise = (async () => {
+        try {
+            const data = await executeNetworkFetch<T>(path, options, cacheKey, method, true);
+            setWithEviction(swrCache, cacheKey, { data, timestamp: Date.now(), generation: getSessionGeneration() });
+            return data;
+        } catch (err) {
+            if (cachePolicy === "network-first") {
+                const cached = swrCache.get(cacheKey);
+                if (cached && cached.generation === getSessionGeneration()) {
+                    return cached.data as T;
+                }
+                const cachedEtag = etagStore.get(cacheKey);
+                if (cachedEtag && cachedEtag.generation === getSessionGeneration()) {
+                    return cachedEtag.data as T;
+                }
+            }
+            throw err;
+        }
+    })();
+
+    inFlightRequests.set(cacheKey, requestPromise);
+    try {
+        return await requestPromise;
+    } finally {
+        inFlightRequests.delete(cacheKey);
     }
 }
 
 export async function apiFetchSWR<T>(
     path: string,
-    options?: RequestInit,
+    options?: FetchOptions,
 ): Promise<T> {
-    const cacheKey = path;
-    const cached = swrCache.get(cacheKey);
-    const isStale = !cached || (Date.now() - cached.timestamp > 5 * 60 * 1000);
-
-    if (cached) {
-        if (isStale) {
-            apiFetch<T>(path, options)
-                .then((data) => {
-                    swrCache.set(cacheKey, { data, timestamp: Date.now() });
-                })
-                .catch(() => {});
-        }
-        return cached.data as T;
-    }
-
-    const data = await apiFetch<T>(path, options);
-    swrCache.set(cacheKey, { data, timestamp: Date.now() });
-    return data;
+    return apiFetch<T>(path, { ...options, cachePolicy: "swr" });
 }

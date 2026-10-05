@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchSWR, UnauthorizedError } from "@/api/client";
+import { apiFetch, apiFetchSWR, clearSWRCache, UnauthorizedError } from "@/api/client";
 import Toast from "react-native-toast-message";
 
 export function capitalize(value: string): string {
@@ -14,6 +14,31 @@ export interface ApiCallOptions {
     method?: string;
     body?: any;
     swr?: boolean;
+    signal?: AbortSignal;
+}
+
+function invalidateCachesForMutation(endpoint: string) {
+    if (endpoint.includes("/transfers") || endpoint.includes("/receiving")) {
+        clearSWRCache("/transfers");
+        clearSWRCache("/receiving");
+        clearSWRCache("/inventory");
+    } else if (endpoint.includes("/inventory")) {
+        clearSWRCache("/inventory");
+    } else if (endpoint.includes("/products")) {
+        clearSWRCache("/products");
+        clearSWRCache("/catalog");
+    } else if (endpoint.includes("/categories") || endpoint.includes("/brands")) {
+        clearSWRCache("/categories");
+        clearSWRCache("/brands");
+    } else if (endpoint.includes("/stores")) {
+        clearSWRCache("/stores");
+    } else if (endpoint.includes("/employees") || endpoint.includes("/sessions")) {
+        clearSWRCache("/employees");
+        clearSWRCache("/sessions");
+    } else if (endpoint.includes("/returns") || endpoint.includes("/transactions")) {
+        clearSWRCache("/inventory");
+        clearSWRCache("/transactions");
+    }
 }
 
 export async function callApi<T>(
@@ -29,17 +54,30 @@ export async function callApi<T>(
         : undefined;
 
     try {
+        let result: T;
         if (options?.swr && (!options.method || options.method === "GET")) {
-            return await apiFetchSWR<T>(endpoint, {
+            result = await apiFetchSWR<T>(endpoint, {
                 method,
                 body,
+                signal: options?.signal,
+            });
+        } else {
+            result = await apiFetch<T>(endpoint, {
+                method,
+                body,
+                signal: options?.signal,
             });
         }
-        return await apiFetch<T>(endpoint, {
-            method,
-            body,
-        });
-    } catch (err) {
+
+        if (method !== "GET" && method !== "HEAD") {
+            invalidateCachesForMutation(endpoint);
+        }
+
+        return result;
+    } catch (err: any) {
+        if (err?.name === "AbortError" || options?.signal?.aborted) {
+            return null;
+        }
         const errorMessage = err instanceof Error ? err.message : String(err);
         console.log(`API Call Failed [${method} ${endpoint}]: ${errorMessage}`);
         showToast("error", errorMessage);
@@ -49,4 +87,3 @@ export async function callApi<T>(
         return null;
     }
 }
-

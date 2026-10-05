@@ -290,10 +290,16 @@ export default function ProductSearchScreen() {
 
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const searchInputRef = useRef<TextInput>(null);
+    const searchSeqRef = useRef<number>(0);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
         loadFilterOptions();
         setTimeout(() => searchInputRef.current?.focus(), 300);
+        return () => {
+            if (debounceTimer.current) clearTimeout(debounceTimer.current);
+            if (abortControllerRef.current) abortControllerRef.current.abort();
+        };
     }, []);
 
     const loadFilterOptions = async () => {
@@ -308,9 +314,16 @@ export default function ProductSearchScreen() {
     const searchProducts = useCallback(async (query: string, activeFilters: SearchFilters, pageOffset: number = 0) => {
         if (pageOffset === 0) {
             setIsLoading(true);
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+            abortControllerRef.current = new AbortController();
         } else {
             setIsLoadingMore(true);
         }
+
+        const controller = abortControllerRef.current;
+        const currentSeq = ++searchSeqRef.current;
 
         const params = new URLSearchParams();
         if (query) params.append("q", query);
@@ -322,7 +335,11 @@ export default function ProductSearchScreen() {
         params.append("offset", String(pageOffset));
 
         const endpoint = `${ENDPOINTS.SALES_FLOOR.PRODUCTS.search}?${params.toString()}`;
-        const data = await callApi<SearchProductsResponse>(endpoint, { method: "GET" }, logout);
+        const data = await callApi<SearchProductsResponse>(endpoint, { method: "GET", signal: controller?.signal }, logout);
+
+        if (controller?.signal.aborted || currentSeq !== searchSeqRef.current) {
+            return;
+        }
 
         if (data) {
             if (pageOffset === 0) {

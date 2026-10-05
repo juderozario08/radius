@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
     View,
     Text,
@@ -283,7 +283,7 @@ export default function CycleCountDashboard() {
                                 <Ionicons name="clipboard-outline" size={56} color={COLORS.inactiveTint} />
                                 <Text style={styles.emptyTitle}>No active cycle counts</Text>
                                 <Text style={styles.emptySub}>
-                                    Tap "Start New Count" to begin counting inventory for a category.
+                                    Tap &quot;Start New Count&quot; to begin counting inventory for a category.
                                 </Text>
                             </View>
                         }

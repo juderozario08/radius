@@ -10,7 +10,6 @@ import { globalStyles } from "@/constants/styles";
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const DEFAULT_CAMERA_HEIGHT = Math.round(SCREEN_HEIGHT * 0.4);
 const DUPLICATE_COOLDOWN_MS = 2500;
-const BURST_THROTTLE_MS = 600;
 
 const SUPPORTED_BARCODE_TYPES: (
     "upc_a" | "upc_e" | "ean13" | "ean8" | "code128" | "code39" | "codabar"
@@ -28,6 +27,7 @@ interface BarcodeScannerProps {
     onBarcodeScanned: (barcode: string) => void;
     isActive?: boolean;
     height?: number;
+    duplicateCooldownMs?: number;
 }
 
 function sanitizeBarcode(raw: string): string | null {
@@ -39,7 +39,7 @@ function sanitizeBarcode(raw: string): string | null {
 }
 
 export const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
-    ({ onBarcodeScanned, isActive = true, height = DEFAULT_CAMERA_HEIGHT }, ref) => {
+    ({ onBarcodeScanned, isActive = true, height = DEFAULT_CAMERA_HEIGHT, duplicateCooldownMs = DUPLICATE_COOLDOWN_MS }, ref) => {
         const hasPermission = useCameraPermission();
         const isFocused = useIsFocused();
 
@@ -122,11 +122,7 @@ export const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>
                 lastScannedBarcode.current = null;
             }, 2000);
 
-            if (lastScannedBarcode.current === sanitized && now - lastScanTime.current < DUPLICATE_COOLDOWN_MS) {
-                return;
-            }
-
-            if (now - lastAnyScanTime.current < BURST_THROTTLE_MS) {
+            if (lastScannedBarcode.current === sanitized && now - lastScanTime.current < duplicateCooldownMs) {
                 return;
             }
 
@@ -135,7 +131,7 @@ export const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>
             lastAnyScanTime.current = now;
 
             onBarcodeScanned(sanitized);
-        }, [snapMode, manualSnapTrigger, onBarcodeScanned]);
+        }, [snapMode, manualSnapTrigger, onBarcodeScanned, duplicateCooldownMs]);
 
         const scannerIsActive = isActive && isFocused;
 
@@ -340,3 +336,5 @@ const styles = StyleSheet.create({
         transform: [{ translateX: 22 }],
     },
 });
+
+BarcodeScanner.displayName = "BarcodeScanner";

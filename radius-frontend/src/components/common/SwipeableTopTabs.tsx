@@ -16,40 +16,56 @@ interface SwipeableTopTabsProps {
     onTabChange?: (index: number) => void;
 }
 
+function TabBarWrapper({
+    tabBarProps,
+    renderAboveContent,
+    onTabChange,
+}: {
+    tabBarProps: any;
+    renderAboveContent?: () => React.ReactNode;
+    onTabChange?: (index: number) => void;
+}) {
+    const activeIndex = tabBarProps.state.index;
+    const prevIndexRef = useRef(activeIndex);
+    useEffect(() => {
+        if (prevIndexRef.current !== activeIndex) {
+            prevIndexRef.current = activeIndex;
+            onTabChange?.(activeIndex);
+        }
+    }, [activeIndex, onTabChange]);
+    let touchStartX = 0;
+
+    return (
+        <View
+            style={{ backgroundColor: COLORS.headerBackground }}
+            onTouchStart={(e) => (touchStartX = e.nativeEvent.pageX)}
+            onTouchEnd={(e) => {
+                const deltaX = touchStartX - e.nativeEvent.pageX;
+                const tabNames = tabBarProps.state.routeNames;
+                if (deltaX > 50 && activeIndex < tabNames.length - 1) {
+                    tabBarProps.navigation.navigate(tabNames[activeIndex + 1]);
+                }
+                if (deltaX < -50 && activeIndex > 0) {
+                    tabBarProps.navigation.navigate(tabNames[activeIndex - 1]);
+                }
+            }}
+        >
+            <MaterialTopTabBar {...tabBarProps} />
+            {renderAboveContent?.()}
+        </View>
+    );
+}
+
 export function SwipeableTopTabs({ tabs, renderAboveContent, onTabChange }: SwipeableTopTabsProps) {
     return (
         <Tab.Navigator
-            tabBar={(props) => {
-                const activeIndex = props.state.index;
-                const prevIndexRef = useRef(activeIndex);
-                useEffect(() => {
-                    if (prevIndexRef.current !== activeIndex) {
-                        prevIndexRef.current = activeIndex;
-                        onTabChange?.(activeIndex);
-                    }
-                }, [activeIndex]);
-                let touchStartX = 0;
-
-                return (
-                    <View
-                        style={{ backgroundColor: COLORS.headerBackground }}
-                        onTouchStart={(e) => (touchStartX = e.nativeEvent.pageX)}
-                        onTouchEnd={(e) => {
-                            const deltaX = touchStartX - e.nativeEvent.pageX;
-                            const tabNames = props.state.routeNames;
-                            if (deltaX > 50 && activeIndex < tabNames.length - 1) {
-                                props.navigation.navigate(tabNames[activeIndex + 1]);
-                            }
-                            if (deltaX < -50 && activeIndex > 0) {
-                                props.navigation.navigate(tabNames[activeIndex - 1]);
-                            }
-                        }}
-                    >
-                        <MaterialTopTabBar {...props} />
-                        {renderAboveContent?.()}
-                    </View>
-                );
-            }}
+            tabBar={(props) => (
+                <TabBarWrapper
+                    tabBarProps={props}
+                    renderAboveContent={renderAboveContent}
+                    onTabChange={onTabChange}
+                />
+            )}
             screenOptions={{
                 tabBarActiveTintColor: COLORS.textPrimary,
                 tabBarInactiveTintColor: COLORS.textSecondary,

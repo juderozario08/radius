@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
     View,
     Text,
@@ -80,6 +80,17 @@ export default function TransfersScreen() {
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [itemQtyText, setItemQtyText] = useState("1");
     const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
+
+    const productSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const productSearchSeq = useRef<number>(0);
+    const productSearchAbort = useRef<AbortController | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (productSearchTimer.current) clearTimeout(productSearchTimer.current);
+            if (productSearchAbort.current) productSearchAbort.current.abort();
+        };
+    }, []);
 
     const fetchTransfers = useCallback(async (page: number, size: number) => {
         setIsLoading(true);
@@ -191,21 +202,43 @@ export default function TransfersScreen() {
         setIsCreateModalVisible(true);
     };
 
-    const handleSearchProducts = async (query: string) => {
-        setProductSearchQuery(query);
-        const trimmed = query.trim();
-        if (trimmed.length < 2) {
-            setSearchResults([]);
+    const performProductSearch = async (trimmed: string) => {
+        if (productSearchAbort.current) {
+            productSearchAbort.current.abort();
+        }
+        const controller = new AbortController();
+        productSearchAbort.current = controller;
+        const currentSeq = ++productSearchSeq.current;
+
+        setIsSearchingProducts(true);
+        const endpoint = `${ENDPOINTS.SALES_FLOOR.PRODUCTS.search}?q=${encodeURIComponent(trimmed)}&limit=8&offset=0`;
+        const data = await callApi<SearchProductsResponse>(endpoint, { method: "GET", signal: controller.signal }, logout);
+
+        if (controller.signal.aborted || currentSeq !== productSearchSeq.current) {
             return;
         }
 
-        setIsSearchingProducts(true);
-        const endpoint = `${ENDPOINTS.SALES_FLOOR.PRODUCTS.search}?query=${encodeURIComponent(trimmed)}&limit=8&offset=0`;
-        const data = await callApi<SearchProductsResponse>(endpoint, { method: "GET" }, logout);
         if (data && data.products) {
             setSearchResults(data.products);
         }
         setIsSearchingProducts(false);
+    };
+
+    const handleSearchProducts = (query: string) => {
+        setProductSearchQuery(query);
+        const trimmed = query.trim();
+        if (trimmed.length < 2) {
+            if (productSearchTimer.current) clearTimeout(productSearchTimer.current);
+            if (productSearchAbort.current) productSearchAbort.current.abort();
+            setSearchResults([]);
+            setIsSearchingProducts(false);
+            return;
+        }
+
+        if (productSearchTimer.current) clearTimeout(productSearchTimer.current);
+        productSearchTimer.current = setTimeout(() => {
+            performProductSearch(trimmed);
+        }, 300);
     };
 
     const handleSelectProduct = (product: Product) => {

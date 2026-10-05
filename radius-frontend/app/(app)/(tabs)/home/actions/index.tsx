@@ -64,7 +64,7 @@ const Subsection = ({ title, mapping }: { title: string, mapping: ButtonConfig[]
 export default function Actions() {
     return (
         <TopSafeAreaView>
-            <HeaderComponent headerRight={[<NotificationIconComponent />, <LogoutComponent />]} />
+            <HeaderComponent headerRight={[<NotificationIconComponent key="notifications" />, <LogoutComponent key="logout" />]} />
             <ScrollView style={{ backgroundColor: COLORS.background }}>
                 <View style={[globalStyles.container, { paddingHorizontal: 10, gap: 50 }]}>
                     <Gate permission="view_admin_actions">

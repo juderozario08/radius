@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"radius/internal/models"
+	"radius/internal/util/queryutil"
 	"strings"
 	"time"
 )
@@ -638,32 +639,22 @@ func (r *ReturnsRepo) LookupTransactionsByProduct(ctx context.Context, barcodeOr
 }
 
 func (r *ReturnsRepo) GetRtvQueue(ctx context.Context, storeID *int, status *models.RtvStatus, limit, offset int) ([]models.RtvQueueItem, int, error) {
-	var conditions []string
-	var args []any
-	argIdx := 1
-
+	b := queryutil.NewBuilder()
 	if storeID != nil {
-		conditions = append(conditions, fmt.Sprintf("rq.store_id = $%d", argIdx))
-		args = append(args, *storeID)
-		argIdx++
+		b.Add("rq.store_id = $%d", *storeID)
 	}
-
 	if status != nil && *status != "" {
-		conditions = append(conditions, fmt.Sprintf("rq.status = $%d", argIdx))
-		args = append(args, *status)
-		argIdx++
+		b.Add("rq.status = $%d", *status)
 	}
 
-	whereClause := ""
-	if len(conditions) > 0 {
-		whereClause = "WHERE " + strings.Join(conditions, " AND ")
-	}
-
+	whereClause := b.WhereClauseEmptyIfNone()
 	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM rtv_queue rq %s`, whereClause)
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, countQuery, b.Args()...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
+
+	paginateClause := b.Paginate(limit, offset)
 
 	query := fmt.Sprintf(`
 		SELECT rq.rtv_id, rq.return_item_id, rq.store_id, rq.product_id,
@@ -675,12 +666,10 @@ func (r *ReturnsRepo) GetRtvQueue(ctx context.Context, storeID *int, status *mod
 		LEFT JOIN suppliers sup ON rq.supplier_id = sup.supplier_id
 		%s
 		ORDER BY rq.rtv_id DESC
-		LIMIT $%d OFFSET $%d
-	`, whereClause, argIdx, argIdx+1)
+		%s
+	`, whereClause, paginateClause)
 
-	args = append(args, limit, offset)
-
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	rows, err := r.db.QueryContext(ctx, query, b.Args()...)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -79,7 +79,6 @@ export async function callApi<T>(
             return null;
         }
         const errorMessage = err instanceof Error ? err.message : String(err);
-        console.log(`API Call Failed [${method} ${endpoint}]: ${errorMessage}`);
         showToast("error", errorMessage);
         if (err instanceof UnauthorizedError) {
             await logout();

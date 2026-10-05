@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"radius/internal/models"
+	"radius/internal/util/queryutil"
 	"strings"
 )
 
@@ -96,28 +97,26 @@ func (r *FillReportRepository) GetActiveFillReportForStore(ctx context.Context, 
 		WHERE fri.fill_report_id = $2
 	`
 
-	args := []any{storeID, report.FillReportId}
-	conditions := []string{}
+	b := queryutil.NewBuilder(storeID, report.FillReportId)
 
 	if strings.TrimSpace(filter.Query) != "" {
 		q := "%" + strings.TrimSpace(filter.Query) + "%"
-		args = append(args, q)
-		conditions = append(conditions, fmt.Sprintf("(p.name ILIKE $%d OR p.sku ILIKE $%d OR p.upc ILIKE $%d OR p.brand ILIKE $%d)", len(args), len(args), len(args), len(args)))
+		b.AddWithSameArg("(p.name ILIKE $%d OR p.sku ILIKE $%d OR p.upc ILIKE $%d OR p.brand ILIKE $%d)", q)
 	}
 
 	switch strings.ToUpper(strings.TrimSpace(filter.FilterType)) {
 	case "TRANSACTIONS":
-		conditions = append(conditions, "fri.is_empty_hole = FALSE")
+		b.Add("fri.is_empty_hole = FALSE")
 	case "IS4TC":
-		conditions = append(conditions, "fri.is_empty_hole = TRUE")
+		b.Add("fri.is_empty_hole = TRUE")
 	case "NEGATIVE":
-		conditions = append(conditions, "COALESCE(i.on_hand_qty, 0) < 0")
+		b.Add("COALESCE(i.on_hand_qty, 0) < 0")
 	case "IN_STOCK":
-		conditions = append(conditions, "COALESCE(i.on_hand_qty, 0) > 0")
+		b.Add("COALESCE(i.on_hand_qty, 0) > 0")
 	}
 
-	for _, cond := range conditions {
-		baseQuery += " AND " + cond
+	if andClause := b.AndClause(); andClause != "" {
+		baseQuery += " " + andClause
 	}
 
 	sortOrder := "ASC"
@@ -153,7 +152,7 @@ func (r *FillReportRepository) GetActiveFillReportForStore(ctx context.Context, 
 
 	fullQuery := baseQuery + " " + orderBy
 
-	rows, err := r.db.QueryContext(ctx, fullQuery, args...)
+	rows, err := r.db.QueryContext(ctx, fullQuery, b.Args()...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to query fill report items: %w", err)
 	}

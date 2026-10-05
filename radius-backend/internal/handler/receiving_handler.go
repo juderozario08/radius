@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 	"net/http"
+	"radius/internal/api"
 	"radius/internal/models"
 	"radius/internal/service"
 	"strconv"
@@ -125,7 +126,7 @@ func (h *ReceivingHandler) ReceivePO(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "PO items received successfully"})
+	api.Message(ctx, http.StatusOK, "PO items received successfully")
 }
 
 func (h *ReceivingHandler) ReceiveLPR(ctx *gin.Context) {
@@ -158,7 +159,7 @@ func (h *ReceivingHandler) ReceiveLPR(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "LPR received successfully"})
+	api.Message(ctx, http.StatusOK, "LPR received successfully")
 }
 
 func (h *ReceivingHandler) GetStockTransfers(ctx *gin.Context) {
@@ -232,7 +233,7 @@ func (h *ReceivingHandler) ReceiveTransfer(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Transfer items received successfully"})
+	api.Message(ctx, http.StatusOK, "Transfer items received successfully")
 }
 
 func (h *ReceivingHandler) QuickReceiveTransfer(ctx *gin.Context) {
@@ -264,7 +265,7 @@ func (h *ReceivingHandler) QuickReceiveTransfer(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Transfer received successfully"})
+	api.Message(ctx, http.StatusOK, "Transfer received successfully")
 }
 
 func (h *ReceivingHandler) CheckProductInTransfer(ctx *gin.Context) {

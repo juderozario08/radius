@@ -33,10 +33,10 @@ func ConnectDB(connectionString string) (*DB, error) {
 		return nil, err
 	}
 
-	maxOpen := getEnvInt("DB_MAX_OPEN_CONNS", 25)
+	maxOpen := getEnvInt("DB_MAX_OPEN_CONNS", 50)
 	maxIdle := getEnvInt("DB_MAX_IDLE_CONNS", 25)
-	connLifetime := getEnvDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute)
-	connIdleTime := getEnvDuration("DB_CONN_MAX_IDLE_TIME", 2*time.Minute)
+	connLifetime := getEnvDuration("DB_CONN_MAX_LIFETIME", 15*time.Minute)
+	connIdleTime := getEnvDuration("DB_CONN_MAX_IDLE_TIME", 5*time.Minute)
 
 	db.SetMaxOpenConns(maxOpen)
 	db.SetMaxIdleConns(maxIdle)

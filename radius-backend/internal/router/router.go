@@ -63,8 +63,8 @@ func NewRouter(cfg Config) *gin.Engine {
 
 	corsConfig := cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "If-None-Match"},
+		ExposeHeaders:    []string{"Content-Length", "ETag"},
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}
@@ -78,6 +78,7 @@ func NewRouter(cfg Config) *gin.Engine {
 	}
 
 	router.Use(cors.New(corsConfig))
+	router.Use(middleware.ETagMiddleware())
 
 	public := router.Group("/")
 	{

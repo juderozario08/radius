@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 	"net/http"
+	"radius/internal/api"
 	"radius/internal/models"
 	"radius/internal/service"
 	"strconv"
@@ -103,7 +104,7 @@ func (h *InventoryHandler) UpdateQuantity(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Quantity updated successfully"})
+	api.Message(ctx, http.StatusOK, "Quantity updated successfully")
 }
 
 func (h *InventoryHandler) GetProductScreenDetails(ctx *gin.Context) {
@@ -155,7 +156,7 @@ func (h *InventoryHandler) SyncLocations(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Locations synced successfully"})
+	api.Message(ctx, http.StatusOK, "Locations synced successfully")
 }
 
 func (h *InventoryHandler) CreateMimsLocation(ctx *gin.Context) {
@@ -174,7 +175,7 @@ func (h *InventoryHandler) CreateMimsLocation(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Location created successfully"})
+	api.Message(ctx, http.StatusOK, "Location created successfully")
 }
 
 func (h *InventoryHandler) CreateAdjustment(ctx *gin.Context) {
@@ -194,7 +195,7 @@ func (h *InventoryHandler) CreateAdjustment(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Adjustment submitted for review"})
+	api.Message(ctx, http.StatusOK, "Adjustment submitted for review")
 }
 
 func (h *InventoryHandler) GetPendingAdjustments(ctx *gin.Context) {
@@ -232,5 +233,5 @@ func (h *InventoryHandler) ReviewAdjustments(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Adjustments reviewed successfully"})
+	api.Message(ctx, http.StatusOK, "Adjustments reviewed successfully")
 }

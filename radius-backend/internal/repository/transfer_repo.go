@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"radius/internal/models"
+	"radius/internal/util/queryutil"
 	"time"
 )
 
@@ -115,19 +116,27 @@ func (r *TransferRepo) CreateTransfer(ctx context.Context, fromStoreID int, toSt
 }
 
 func (r *TransferRepo) GetOutboundTransfers(ctx context.Context, storeID *int, limit, offset int) ([]models.OutboundTransferSummary, int, error) {
-	countQuery := `SELECT COUNT(*) FROM stock_transfers st`
-	var countArgs []any
+	b := queryutil.NewBuilder()
 	if storeID != nil {
-		countArgs = append(countArgs, *storeID)
-		countQuery += fmt.Sprintf(" WHERE st.from_store_id = $%d", len(countArgs))
+		b.Add("st.from_store_id = $%d", *storeID)
 	}
 
+	whereClause := b.WhereClauseEmptyIfNone()
+	countQuery := "SELECT COUNT(*) FROM stock_transfers st " + whereClause
+
 	var total int
-	if err := r.db.QueryRowContext(ctx, countQuery, countArgs...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, countQuery, b.Args()...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	query := `
+	dataBuilder := queryutil.NewBuilder()
+	if storeID != nil {
+		dataBuilder.Add("st.from_store_id = $%d", *storeID)
+	}
+
+	paginateClause := dataBuilder.Paginate(limit, offset)
+
+	query := fmt.Sprintf(`
 		SELECT st.transfer_id, st.from_store_id, fs.name, st.to_store_id, ts.name,
 			st.status, COALESCE(st.manual_check_required, false),
 			COUNT(sti.transfer_item_id), COALESCE(st.total_transfer_cost, 0),
@@ -137,21 +146,13 @@ func (r *TransferRepo) GetOutboundTransfers(ctx context.Context, storeID *int, l
 		JOIN stores fs ON st.from_store_id = fs.store_id
 		JOIN stores ts ON st.to_store_id = ts.store_id
 		LEFT JOIN stock_transfer_items sti ON sti.transfer_id = st.transfer_id
-	`
-	var args []any
-	if storeID != nil {
-		args = append(args, *storeID)
-		query += fmt.Sprintf(" WHERE st.from_store_id = $%d", len(args))
-	}
-	query += " GROUP BY st.transfer_id, fs.name, ts.name ORDER BY st.created_at DESC"
+		%s
+		GROUP BY st.transfer_id, fs.name, ts.name
+		ORDER BY st.created_at DESC
+		%s
+	`, whereClause, paginateClause)
 
-	args = append(args, limit)
-	query += fmt.Sprintf(" LIMIT $%d", len(args))
-
-	args = append(args, offset)
-	query += fmt.Sprintf(" OFFSET $%d", len(args))
-
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	rows, err := r.db.QueryContext(ctx, query, dataBuilder.Args()...)
 	if err != nil {
 		return nil, 0, err
 	}

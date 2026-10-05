@@ -6,27 +6,17 @@ This document tracks application features, modules, and workflows that are **PLA
 
 ## 🚧 Active Backlog & Partially Implemented Features
 
-### 1. Customer Returns & RMA Pipeline
-- **Status:** Schema Foundation Only (~15% complete)
-- **Backend:** Transaction items store `return_reason` and `inventory_transactions` supports `RETURN` transaction types. Dedicated return authorization services, return receipt generation, and Return-to-Vendor (RTV) dispositioning need handlers.
-- **Frontend:** `Back Room > Returns` screen (`Returns.tsx`) is a placeholder.
-
-### 2. Fix Receiving Repo Generated Column Writes
-### 1. Fix Receiving Repo Generated Column Writes
-- **Status:** Bug (~5% complete)
-- **Backend:** `receiving_repo.go` writes to `on_hand_qty` directly, but migration `000031` converted it to a `GENERATED ALWAYS AS STORED` column. These writes will fail on the current schema. All receiving queries (PO receive, transfer receive, quick receive) need to update `new_qty` instead of `on_hand_qty`.
-
-### 3. Real-Time Push Notifications & Alerts
+### 1. Real-Time Push Notifications & Alerts
 - **Status:** UI Placeholder (~5% complete)
 - **Backend:** Notification dispatcher service for curbside BOPIS arrivals, manager adjustment approval alerts, and low stock warnings is pending.
 - **Frontend:** `Notifications` screen (`notifications.tsx`) is a placeholder.
 
-### 4. Mobile POS Checkout
+### 2. Mobile POS Checkout
 - **Status:** Not Started (~0% complete)
 - **Backend:** Needs secure payment processing integration (or mock), receipt generation, and tax calculation services.
 - **Frontend:** The application lacks a dedicated checkout flow for processing sales directly on the floor.
 
-### 5. Print Order Updates
+### 3. Print Order Updates
 - **Status:** Partial (~60% complete)
 - **Backend:** Endpoints for creating and viewing print orders exist, but updating order status (e.g., from 'IN PROGRESS' to 'COMPLETED') needs a complete flow.
 - **Frontend:** Need detailed update screens for managing print order lifecycles beyond just viewing them.
@@ -35,6 +25,7 @@ This document tracks application features, modules, and workflows that are **PLA
 
 ## 🧹 Completed Schema & Codebase Cleanups
 
+- [x] **Fix Receiving & Sales Repo Generated Column Writes**: Updated all inventory receiving and sale queries in `receiving_repo.go` and `sales_repo.go` to update `new_qty` instead of attempting direct updates to the PostgreSQL `GENERATED ALWAYS AS STORED` column `on_hand_qty`.
 - [x] **Customer Returns & RMA Pipeline**: End-to-end customer return authorization, receipt lookup and product scan fallback, return window enforcement (14 days tech, 30 days default), manager approval workflow for returns over $50, RTV queueing for defective items, inventory disposition re-stocking, immutable audit ledger integration, and interactive frontend back room Returns workflow.
 - [x] **Remove Planograms & Price Tag Generation**: Dropped `planograms` and `planogram_products` tables via migration `000038`, removed backend boilerplate services/handlers, and purged frontend planogram tabs and price tag screens.
 - [x] **Drop 7 Unused Database Tables & Custom Enums**: Removed dead tables (`audit_log`, `out_of_stock_log`, `price_history`, `price_tag_jobs`, `price_tag_job_items`, `print_supplies`, `print_services`) and 5 unused enums via `golang-migrate` migration `000037`.

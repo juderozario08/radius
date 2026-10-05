@@ -33,9 +33,15 @@ func ConnectDB(connectionString string) (*DB, error) {
 		return nil, err
 	}
 
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(25)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	maxOpen := getEnvInt("DB_MAX_OPEN_CONNS", 25)
+	maxIdle := getEnvInt("DB_MAX_IDLE_CONNS", 25)
+	connLifetime := getEnvDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute)
+	connIdleTime := getEnvDuration("DB_CONN_MAX_IDLE_TIME", 2*time.Minute)
+
+	db.SetMaxOpenConns(maxOpen)
+	db.SetMaxIdleConns(maxIdle)
+	db.SetConnMaxLifetime(connLifetime)
+	db.SetConnMaxIdleTime(connIdleTime)
 
 	log.Println("Successfully connected to Postgres Database")
 	return &DB{db}, nil

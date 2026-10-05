@@ -7,7 +7,6 @@ import (
 	"radius/internal/middleware"
 	"radius/internal/models"
 	"radius/internal/service"
-	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -42,6 +41,7 @@ type Handlers struct {
 	PrintOrderHandler  *handler.PrintOrderHandler
 	ReturnsHandler     *handler.ReturnsHandler
 	WSHandler          *handler.WSHandler
+	MetricsHandler     *handler.MetricsHandler
 }
 
 func NewRouter(cfg Config) *gin.Engine {
@@ -59,12 +59,7 @@ func NewRouter(cfg Config) *gin.Engine {
 	limiter := middleware.NewIPRateLimiter(5, 20)
 	router.Use(middleware.RateLimitMiddleware(limiter))
 
-	var allowOrigins []string
-	if cfg.AppConfig.GinMode == "release" {
-		if allowed := cfg.AppConfig.AllowedOrigins; allowed != "" {
-			allowOrigins = strings.Split(allowed, ",")
-		}
-	}
+	allowOrigins := cfg.AppConfig.AllowedOriginsList()
 
 	corsConfig := cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
@@ -76,8 +71,10 @@ func NewRouter(cfg Config) *gin.Engine {
 
 	if len(allowOrigins) > 0 {
 		corsConfig.AllowOrigins = allowOrigins
-	} else {
+	} else if !cfg.AppConfig.IsRelease {
 		corsConfig.AllowAllOrigins = true
+	} else {
+		corsConfig.AllowOrigins = []string{}
 	}
 
 	router.Use(cors.New(corsConfig))
@@ -92,6 +89,10 @@ func NewRouter(cfg Config) *gin.Engine {
 
 		public.POST("/login", cfg.Handlers.AuthHandler.Login)
 		public.POST("/api/refresh_token", cfg.Handlers.AuthHandler.RefreshToken)
+		if cfg.Handlers.MetricsHandler != nil {
+			public.GET("/metrics", cfg.Handlers.MetricsHandler.GetMetrics)
+			public.GET("/api/v1/metrics", cfg.Handlers.MetricsHandler.GetMetrics)
+		}
 	}
 
 	if cfg.Handlers.WSHandler != nil {

@@ -34,6 +34,7 @@ func TestNewRouter_NoPanics(t *testing.T) {
 		EmployeeHandler:    &handler.EmployeeHandler{},
 		PrintOrderHandler:  &handler.PrintOrderHandler{},
 		WSHandler:          &handler.WSHandler{},
+		MetricsHandler:     &handler.MetricsHandler{},
 	}
 
 	r := router.NewRouter(router.Config{

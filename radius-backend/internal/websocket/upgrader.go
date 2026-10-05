@@ -13,6 +13,7 @@ type UpgraderConfig struct {
 	WriteBufferSize  int
 	HandshakeTimeout time.Duration
 	AllowedOrigins   []string
+	FailClosed       bool
 }
 
 func DefaultUpgraderConfig() UpgraderConfig {
@@ -21,19 +22,20 @@ func DefaultUpgraderConfig() UpgraderConfig {
 		WriteBufferSize:  4096,
 		HandshakeTimeout: 10 * time.Second,
 		AllowedOrigins:   nil,
+		FailClosed:       false,
 	}
 }
 
-func CheckOriginFunc(allowedOrigins []string) func(r *http.Request) bool {
+func CheckOriginFunc(allowedOrigins []string, failClosed bool) func(r *http.Request) bool {
 	return func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
 
 		if origin == "" {
-			return true
+			return !failClosed
 		}
 
 		if len(allowedOrigins) == 0 {
-			return true
+			return !failClosed
 		}
 
 		for _, allowed := range allowedOrigins {
@@ -46,13 +48,6 @@ func CheckOriginFunc(allowedOrigins []string) func(r *http.Request) bool {
 	}
 }
 
-var Upgrader = websocket.Upgrader{
-	ReadBufferSize:   4096,
-	WriteBufferSize:  4096,
-	HandshakeTimeout: 10 * time.Second,
-	CheckOrigin:      CheckOriginFunc(nil),
-}
-
 func NewUpgrader(cfg ...UpgraderConfig) *websocket.Upgrader {
 	c := DefaultUpgraderConfig()
 	if len(cfg) > 0 {
@@ -63,6 +58,6 @@ func NewUpgrader(cfg ...UpgraderConfig) *websocket.Upgrader {
 		ReadBufferSize:   c.ReadBufferSize,
 		WriteBufferSize:  c.WriteBufferSize,
 		HandshakeTimeout: c.HandshakeTimeout,
-		CheckOrigin:      CheckOriginFunc(c.AllowedOrigins),
+		CheckOrigin:      CheckOriginFunc(c.AllowedOrigins, c.FailClosed),
 	}
 }

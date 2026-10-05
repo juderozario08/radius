@@ -24,11 +24,6 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	if len(cfg.JWTSecretKey) == 0 {
-		log.Printf("Could not find JWT_SECRET_KEY\n")
-		return
-	}
-
 	db, err := database.ConnectDB(cfg.DatabaseURL)
 	if err != nil {
 		log.Printf("Error connecting to database: %v\n", err)
@@ -43,13 +38,12 @@ func main() {
 	}
 	defer redisClient.Close()
 
-	if !cfg.IsRelease {
-		err = db.RunMigrations("migrations")
-		if err != nil {
-			log.Printf("Could not run migrations: %v\n", err)
+	if cfg.RunMigrations {
+		if err = db.RunMigrations("migrations"); err != nil {
+			log.Fatalf("Could not run migrations: %v", err)
 		}
 	} else {
-		log.Println("Skipping automatic migrations in release mode")
+		log.Println("Skipping automatic migrations (RUN_MIGRATIONS not enabled)")
 	}
 
 	employeeRepo := repository.NewEmployeeRepo(db.DB)
@@ -71,13 +65,15 @@ func main() {
 	go wsHub.Run()
 
 	sessionService := service.NewSessionService(sessionRepo, cfg.JWTSecretKey, redisClient)
-	employeeService := service.NewEmployeeService(employeeRepo, sessionService)
-	authService := service.NewAuthService(employeeRepo, sessionService)
+	employeeService := service.NewEmployeeService(employeeRepo, sessionService, redisClient)
+	authService := service.NewAuthService(employeeRepo, sessionService, employeeService)
 	barcodeService := service.NewBarcodeService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
 	cycleCountService := service.NewCycleCountService(cycleCountRepo, employeeRepo, storeRepo, productsRepo, inventoryRepo, sessionRepo, wsHub)
+	cycleCountService.SetRedisClient(redisClient)
 	fillReportService := service.NewFillReportService(fillReportRepo, storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo, redisClient)
 	inventoryService := service.NewInventoryService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo, redisClient)
 	onlineOrderService := service.NewOnlineOrderService(ordersRepo, productsRepo, inventoryRepo, sessionRepo, storeRepo, employeeRepo, wsHub)
+	onlineOrderService.SetRedisClient(redisClient)
 	workerCtx, workerCancel := context.WithCancel(context.Background())
 	defer workerCancel()
 	onlineOrderService.StartBOPISAutoCancelWorker(workerCtx, 1*time.Hour)
@@ -93,7 +89,13 @@ func main() {
 	printOrderService := service.NewPrintOrderService(ordersRepo, employeeRepo)
 	returnsService := service.NewReturnsService(returnsRepo, employeeRepo, productsRepo, salesRepo, wsHub)
 
-	upgrader := websocket.NewUpgrader()
+	upgrader := websocket.NewUpgrader(websocket.UpgraderConfig{
+		ReadBufferSize:   4096,
+		WriteBufferSize:  4096,
+		HandshakeTimeout: 10 * time.Second,
+		AllowedOrigins:   cfg.AllowedOriginsList(),
+		FailClosed:       cfg.IsRelease,
+	})
 	wsHandler := handler.NewWSHandler(
 		wsHub,
 		cfg.JWTSecretKey,
@@ -124,6 +126,7 @@ func main() {
 		PrintOrderHandler:  handler.NewPrintOrderHandler(printOrderService),
 		ReturnsHandler:     handler.NewReturnsHandler(returnsService),
 		WSHandler:          wsHandler,
+		MetricsHandler:     handler.NewMetricsHandler(db.DB, redisClient),
 	}
 
 	router := router.NewRouter(router.Config{

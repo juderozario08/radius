@@ -56,6 +56,25 @@ func NewWSHandler(
 	return handler
 }
 
+func canAccessAnyStore(role models.EmployeeRole) bool {
+	return role == models.RoleAdmin || role == models.RoleManager
+}
+
+func resolveRequestedStore(ctx *gin.Context, currentStore int, role models.EmployeeRole) (int, bool) {
+	reqStoreID := ctx.Query("store_id")
+	if reqStoreID == "" {
+		return currentStore, true
+	}
+	parsed, err := strconv.Atoi(reqStoreID)
+	if err != nil || parsed <= 0 {
+		return currentStore, true
+	}
+	if parsed == currentStore || canAccessAnyStore(role) {
+		return parsed, true
+	}
+	return currentStore, false
+}
+
 func (h *WSHandler) CreateTicket(ctx *gin.Context) {
 	if h.redisClient == nil {
 		log.Printf("[ERROR] WS CreateTicket: Redis client not configured")
@@ -68,14 +87,17 @@ func (h *WSHandler) CreateTicket(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 	storeID := ctx.GetInt("store_id")
 
-	if reqStoreID := ctx.Query("store_id"); reqStoreID != "" {
-		if parsed, err := strconv.Atoi(reqStoreID); err == nil && parsed > 0 {
-			storeID = parsed
-		}
+	resolvedStore, allowed := resolveRequestedStore(ctx, storeID, role)
+	if !allowed {
+		log.Printf("[WS FORBIDDEN] Employee %d (role %s) requested unauthorized store %s", employeeID, role, ctx.Query("store_id"))
+		ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "Not authorized for the requested store"})
+		return
 	}
+	storeID = resolvedStore
 
 	if storeID <= 0 {
-		storeID = 1
+		ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "No store associated with this account"})
+		return
 	}
 
 	b := make([]byte, 32)
@@ -151,11 +173,13 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 		role = ticketData.Role
 		storeID = ticketData.StoreID
 
-		if reqStoreID := ctx.Query("store_id"); reqStoreID != "" {
-			if parsed, err := strconv.Atoi(reqStoreID); err == nil && parsed > 0 {
-				storeID = parsed
-			}
+		resolvedStore, allowed := resolveRequestedStore(ctx, storeID, role)
+		if !allowed {
+			log.Printf("[WS FORBIDDEN] Employee %d (role %s) requested unauthorized store %s", employeeID, role, ctx.Query("store_id"))
+			ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "Not authorized for the requested store"})
+			return
 		}
+		storeID = resolvedStore
 	} else {
 		var tokenString string
 
@@ -168,11 +192,7 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 		}
 
 		if tokenString == "" {
-			tokenString = ctx.Query("token")
-		}
-
-		if tokenString == "" {
-			log.Printf("[WS UNAUTHORIZED] Missing authentication token in header and query")
+			log.Printf("[WS UNAUTHORIZED] Missing authentication token")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Authentication token required"})
 			return
 		}
@@ -234,22 +254,22 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 			}
 		}
 
-		if reqStoreID := ctx.Query("store_id"); reqStoreID != "" {
-			if parsed, err := strconv.Atoi(reqStoreID); err == nil && parsed > 0 {
-				storeID = parsed
+		if sidRaw, exists := claims["store_id"]; exists {
+			switch v := sidRaw.(type) {
+			case float64:
+				storeID = int(v)
+			case int:
+				storeID = v
 			}
 		}
 
-		if storeID <= 0 {
-			if sidRaw, exists := claims["store_id"]; exists {
-				switch v := sidRaw.(type) {
-				case float64:
-					storeID = int(v)
-				case int:
-					storeID = v
-				}
-			}
+		resolvedStore, allowed := resolveRequestedStore(ctx, storeID, role)
+		if !allowed {
+			log.Printf("[WS FORBIDDEN] Employee %d (role %s) requested unauthorized store %s", employeeID, role, ctx.Query("store_id"))
+			ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "Not authorized for the requested store"})
+			return
 		}
+		storeID = resolvedStore
 	}
 
 	if h.employeeRepo != nil {
@@ -284,12 +304,14 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 	}
 
 	if storeID <= 0 {
-		storeID = 1
+		log.Printf("[WS FORBIDDEN] Employee %d has no associated store", employeeID)
+		ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "No store associated with this account"})
+		return
 	}
 
 	upgrader := h.upgrader
 	if upgrader == nil {
-		upgrader = &ws.Upgrader
+		upgrader = ws.NewUpgrader()
 	}
 
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)

@@ -38,6 +38,10 @@ func setupTestWSServer(jwtSecret []byte) (*httptest.Server, *websocket.Hub) {
 	return server, hub
 }
 
+func bearerHeader(token string) http.Header {
+	return http.Header{"Authorization": []string{"Bearer " + token}}
+}
+
 func TestWSHandshake_MissingToken(t *testing.T) {
 	jwtSecret := []byte("test_secret_key_1234567890123456")
 	server, hub := setupTestWSServer(jwtSecret)
@@ -94,9 +98,9 @@ func TestWSHandshake_InvalidToken(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + tc.tokenParam
+			wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws"
 
-			conn, resp, err := gorilla.DefaultDialer.Dial(wsURL, nil)
+			conn, resp, err := gorilla.DefaultDialer.Dial(wsURL, bearerHeader(tc.tokenParam))
 			if conn != nil {
 				conn.Close()
 				t.Fatal("expected connection to fail, but got active websocket connection")
@@ -124,9 +128,9 @@ func TestWSHandshake_ValidJWT_Success(t *testing.T) {
 		t.Fatalf("failed to generate access token: %v", err)
 	}
 
-	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + validToken + "&store_id=2"
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=2"
 
-	conn, resp, err := gorilla.DefaultDialer.Dial(wsURL, nil)
+	conn, resp, err := gorilla.DefaultDialer.Dial(wsURL, bearerHeader(validToken))
 	if err != nil {
 		t.Fatalf("websocket dial failed: %v", err)
 	}
@@ -219,16 +223,16 @@ func TestWSHandshake_StoreIsolation_LiveSockets(t *testing.T) {
 	defer hub.Stop()
 
 	token2, _ := utils.GenerateAccessToken(51, "store2@test.com", models.RoleSales, 2, jwtSecret)
-	wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token2 + "&store_id=2"
-	conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, nil)
+	wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=2"
+	conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, bearerHeader(token2))
 	if err != nil {
 		t.Fatalf("failed to dial store 2 socket: %v", err)
 	}
 	defer conn2.Close()
 
 	token3, _ := utils.GenerateAccessToken(52, "store3@test.com", models.RoleSales, 3, jwtSecret)
-	wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token3 + "&store_id=3"
-	conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, nil)
+	wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=3"
+	conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, bearerHeader(token3))
 	if err != nil {
 		t.Fatalf("failed to dial store 3 socket: %v", err)
 	}
@@ -451,8 +455,8 @@ func TestWebSocket_OrderCreated_AC1(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to generate access token: %v", err)
 	}
-	wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token2 + "&store_id=2"
-	conn2, resp2, err := gorilla.DefaultDialer.Dial(wsURL2, nil)
+	wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=2"
+	conn2, resp2, err := gorilla.DefaultDialer.Dial(wsURL2, bearerHeader(token2))
 	if err != nil {
 		t.Fatalf("failed to dial store 2 socket: %v", err)
 	}
@@ -462,8 +466,8 @@ func TestWebSocket_OrderCreated_AC1(t *testing.T) {
 	}
 
 	token3, _ := utils.GenerateAccessToken(102, "sales3@store3.com", models.RoleSales, 3, jwtSecret)
-	wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token3 + "&store_id=3"
-	conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, nil)
+	wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=3"
+	conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, bearerHeader(token3))
 	if err != nil {
 		t.Fatalf("failed to dial store 3 socket: %v", err)
 	}
@@ -546,8 +550,8 @@ func TestWebSocket_CycleCountUpdated_AC2(t *testing.T) {
 		t.Fatalf("failed to generate access token: %v", err)
 	}
 
-	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token + "&store_id=2"
-	conn, resp, err := gorilla.DefaultDialer.Dial(wsURL, nil)
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=2"
+	conn, resp, err := gorilla.DefaultDialer.Dial(wsURL, bearerHeader(token))
 	if err != nil {
 		t.Fatalf("failed to dial websocket: %v", err)
 	}
@@ -691,16 +695,16 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 
 	t.Run("Store2_Event_Not_Leaked_To_Store3", func(t *testing.T) {
 		token2, _ := utils.GenerateAccessToken(201, "emp2@store2.com", models.RoleSales, 2, jwtSecret)
-		wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token2 + "&store_id=2"
-		conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, nil)
+		wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=2"
+		conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, bearerHeader(token2))
 		if err != nil {
 			t.Fatalf("failed to dial store 2 socket: %v", err)
 		}
 		defer conn2.Close()
 
 		token3, _ := utils.GenerateAccessToken(301, "emp3@store3.com", models.RoleSales, 3, jwtSecret)
-		wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token3 + "&store_id=3"
-		conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, nil)
+		wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=3"
+		conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, bearerHeader(token3))
 		if err != nil {
 			t.Fatalf("failed to dial store 3 socket: %v", err)
 		}
@@ -740,16 +744,16 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 
 	t.Run("Store3_Event_Not_Leaked_To_Store2", func(t *testing.T) {
 		token2, _ := utils.GenerateAccessToken(202, "emp2b@store2.com", models.RoleSales, 2, jwtSecret)
-		wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token2 + "&store_id=2"
-		conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, nil)
+		wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=2"
+		conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, bearerHeader(token2))
 		if err != nil {
 			t.Fatalf("failed to dial store 2 socket: %v", err)
 		}
 		defer conn2.Close()
 
 		token3, _ := utils.GenerateAccessToken(302, "emp3b@store3.com", models.RoleSales, 3, jwtSecret)
-		wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?token=" + token3 + "&store_id=3"
-		conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, nil)
+		wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=3"
+		conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, bearerHeader(token3))
 		if err != nil {
 			t.Fatalf("failed to dial store 3 socket: %v", err)
 		}
@@ -945,5 +949,3 @@ func TestWSHandshake_TicketAuth_SingleUse(t *testing.T) {
 		t.Fatalf("expected status 401 Unauthorized on reuse, got %v", wsResp2)
 	}
 }
-
-

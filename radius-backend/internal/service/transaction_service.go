@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"radius/internal/cache"
 	"radius/internal/models"
 	"time"
 
@@ -67,11 +68,12 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, storeId int,
 	}
 
 	if s.redisClient != nil && len(items) > 0 {
+		cache.InvalidateStoreOperations(ctx, s.redisClient, targetStoreID)
 		for _, itm := range items {
-			tier2Key := fmt.Sprintf("radius:v1:inventory:store:%d:product:%d", targetStoreID, itm.ProductId)
+			tier2Key := cache.InventoryProductKey(targetStoreID, itm.ProductId)
 			_ = s.redisClient.Del(ctx, tier2Key).Err()
 			if itm.ScannedBarcode != nil && *itm.ScannedBarcode != "" {
-				legacyKey := fmt.Sprintf("inventory:%d:barcode:%s", targetStoreID, *itm.ScannedBarcode)
+				legacyKey := cache.LegacyInventoryBarcodeKey(targetStoreID, *itm.ScannedBarcode)
 				_ = s.redisClient.Del(ctx, legacyKey).Err()
 			}
 		}

@@ -398,4 +398,3 @@ func (r *TransferRepo) GetDestinationStores(ctx context.Context, fromStoreID int
 
 	return stores, nil
 }
-

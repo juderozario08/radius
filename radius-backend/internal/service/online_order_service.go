@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"radius/internal/cache"
 	"radius/internal/models"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type OnlineOrderService struct {
@@ -16,6 +19,7 @@ type OnlineOrderService struct {
 	storeRepo     StoreRepository
 	employeeRepo  EmployeeRepository
 	broadcaster   EventBroadcaster
+	redisClient   *redis.Client
 }
 
 func NewOnlineOrderService(
@@ -39,6 +43,16 @@ func NewOnlineOrderService(
 		svc.broadcaster = broadcaster[0]
 	}
 	return svc
+}
+
+func (s *OnlineOrderService) SetRedisClient(redisClient *redis.Client) {
+	s.redisClient = redisClient
+}
+
+func (s *OnlineOrderService) invalidateStoreOperations(ctx context.Context, storeID int) {
+	if s.redisClient != nil && storeID > 0 {
+		cache.InvalidateStoreOperations(ctx, s.redisClient, storeID)
+	}
 }
 
 func (s *OnlineOrderService) SetBroadcaster(broadcaster EventBroadcaster) {
@@ -131,6 +145,10 @@ func (s *OnlineOrderService) AssignOnlineOrder(ctx context.Context, storeId int,
 				},
 			},
 		})
+	}
+
+	if wasAssigned && order != nil {
+		s.invalidateStoreOperations(ctx, order.StoreId)
 	}
 
 	return order, wasAssigned, nil
@@ -229,6 +247,10 @@ func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, storeId int,
 		s.broadcaster.BroadcastToStore(createdOrder.StoreId, event)
 	}
 
+	if createdOrder != nil {
+		s.invalidateStoreOperations(ctx, createdOrder.StoreId)
+	}
+
 	return createdOrder, nil
 }
 
@@ -278,6 +300,10 @@ func (s *OnlineOrderService) CompleteOrderPicking(ctx context.Context, email str
 				},
 			},
 		})
+	}
+
+	if updatedOrder != nil {
+		s.invalidateStoreOperations(ctx, updatedOrder.StoreId)
 	}
 
 	return updatedOrder, nil
@@ -331,6 +357,10 @@ func (s *OnlineOrderService) CancelOnlineOrder(ctx context.Context, email string
 		})
 	}
 
+	if updatedOrder != nil {
+		s.invalidateStoreOperations(ctx, updatedOrder.StoreId)
+	}
+
 	return updatedOrder, nil
 }
 
@@ -359,6 +389,16 @@ func (s *OnlineOrderService) AutoCancelExpiredBOPISOrders(ctx context.Context) (
 		}
 	}
 
+	if len(cancelled) > 0 {
+		seenStores := make(map[int]bool)
+		for _, o := range cancelled {
+			if !seenStores[o.StoreId] {
+				seenStores[o.StoreId] = true
+				s.invalidateStoreOperations(ctx, o.StoreId)
+			}
+		}
+	}
+
 	return len(cancelled), nil
 }
 
@@ -376,4 +416,3 @@ func (s *OnlineOrderService) StartBOPISAutoCancelWorker(ctx context.Context, int
 		}
 	}()
 }
-

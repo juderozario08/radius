@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"radius/internal/models"
 )
 
@@ -186,8 +187,15 @@ func (r *StoreRepo) GetStore(ctx context.Context, storeId int) (*models.Store, e
 	return &store, nil
 }
 
-func (r *StoreRepo) GetStoreOperationsSummaries(ctx context.Context) ([]models.StoreOperationSummary, error) {
-	query := `
+func (r *StoreRepo) GetStoreOperationsSummaries(ctx context.Context, storeID ...int) ([]models.StoreOperationSummary, error) {
+	whereClause := ""
+	var args []any
+	if len(storeID) > 0 && storeID[0] > 0 {
+		whereClause = "WHERE s.store_id = $1"
+		args = append(args, storeID[0])
+	}
+
+	query := fmt.Sprintf(`
 		SELECT
 			s.store_id,
 			s.name,
@@ -219,10 +227,11 @@ func (r *StoreRepo) GetStoreOperationsSummaries(ctx context.Context) ([]models.S
 			WHERE status::text IN ('SHIPPED', 'DELIVERING', 'DELIVERED', 'PARTIAL')
 			GROUP BY store_id
 		) po ON s.store_id = po.store_id
+		%s
 		ORDER BY s.store_id ASC;
-	`
+	`, whereClause)
 
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

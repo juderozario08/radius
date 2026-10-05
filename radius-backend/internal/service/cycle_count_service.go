@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"radius/internal/cache"
 	"radius/internal/models"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type CycleCountService struct {
@@ -16,6 +19,7 @@ type CycleCountService struct {
 	inventoryRepo  InventoryRepository
 	sessionRepo    SessionRepository
 	broadcaster    EventBroadcaster
+	redisClient    *redis.Client
 }
 
 func NewCycleCountService(
@@ -39,6 +43,16 @@ func NewCycleCountService(
 		svc.broadcaster = broadcaster[0]
 	}
 	return svc
+}
+
+func (s *CycleCountService) SetRedisClient(redisClient *redis.Client) {
+	s.redisClient = redisClient
+}
+
+func (s *CycleCountService) invalidateStoreOperations(ctx context.Context, storeID int) {
+	if s.redisClient != nil && storeID > 0 {
+		cache.InvalidateStoreOperations(ctx, s.redisClient, storeID)
+	}
 }
 
 func (s *CycleCountService) SetBroadcaster(broadcaster EventBroadcaster) {
@@ -156,6 +170,10 @@ func (s *CycleCountService) StartCount(ctx context.Context, storeId int, employe
 			Timestamp: time.Now().UTC(),
 			Payload:   payload,
 		})
+	}
+
+	if count != nil {
+		s.invalidateStoreOperations(ctx, count.StoreId)
 	}
 
 	return count, nil
@@ -280,6 +298,10 @@ func (s *CycleCountService) SubmitForApproval(ctx context.Context, storeId int, 
 		})
 	}
 
+	if count != nil {
+		s.invalidateStoreOperations(ctx, count.StoreId)
+	}
+
 	return nil
 }
 
@@ -328,6 +350,8 @@ func (s *CycleCountService) ApproveCount(ctx context.Context, storeId int, emplo
 			Payload:   payload,
 		})
 	}
+
+	s.invalidateStoreOperations(ctx, storeID)
 
 	return nil
 }

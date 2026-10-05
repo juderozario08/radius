@@ -157,9 +157,9 @@ func TestAuthService_Login_RequiresConfirmation_SameIP(t *testing.T) {
 		GetSessionsByEmployeeId(gomock.Any(), 1).
 		Return([]models.Session{
 			{
-				SessionId: 42,
+				SessionId:  42,
 				EmployeeId: 1,
-				IpAddress: net.ParseIP("127.0.0.1"),
+				IpAddress:  net.ParseIP("127.0.0.1"),
 			},
 		}, nil)
 

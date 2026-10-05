@@ -169,3 +169,53 @@ func TestFillReportService_IS4TCSessionAndAutoLog(t *testing.T) {
 		t.Errorf("Expected 0 items after clear, got %d", len(clearedItems))
 	}
 }
+
+func TestFillReportService_IS4TCLegacyStringMigrationAndMalformedDeletion(t *testing.T) {
+	mockRepo := &MockFillReportRepo{}
+	rdb := setupFillReportTestRedis()
+	ctx := context.Background()
+
+	fillService := service.NewFillReportService(mockRepo, nil, nil, nil, nil, nil, rdb)
+
+	legacyKey := "radius:v1:is4tc:store:5"
+	legacyJSON := `[{"product_id":501,"sku":"SKU501","upc":"111222333444","name":"Legacy Item","on_hand_qty":4}]`
+	if err := rdb.Set(ctx, legacyKey, legacyJSON, time.Hour).Err(); err != nil {
+		t.Fatalf("failed to set legacy key: %v", err)
+	}
+
+	migratedItems, err := fillService.GetActiveIS4TCSession(ctx, 5)
+	if err != nil {
+		t.Fatalf("failed to read/migrate legacy session: %v", err)
+	}
+	if len(migratedItems) != 1 || migratedItems[0].ProductId != 501 {
+		t.Fatalf("expected migrated item with ID 501, got: %+v", migratedItems)
+	}
+
+	keyType, err := rdb.Type(ctx, legacyKey).Result()
+	if err != nil {
+		t.Fatalf("failed to get key type: %v", err)
+	}
+	if keyType != "hash" {
+		t.Fatalf("expected key to be converted to hash, got: %s", keyType)
+	}
+
+	if err := rdb.HSet(ctx, legacyKey, "999", "not-a-valid-json").Err(); err != nil {
+		t.Fatalf("failed to set malformed hash field: %v", err)
+	}
+
+	cleanedItems, err := fillService.GetActiveIS4TCSession(ctx, 5)
+	if err != nil {
+		t.Fatalf("failed reading session with malformed field: %v", err)
+	}
+	if len(cleanedItems) != 1 || cleanedItems[0].ProductId != 501 {
+		t.Fatalf("expected valid item 501 after malformed field deleted, got: %+v", cleanedItems)
+	}
+
+	stillExists, err := rdb.HExists(ctx, legacyKey, "999").Result()
+	if err != nil {
+		t.Fatalf("failed checking malformed field existence: %v", err)
+	}
+	if stillExists {
+		t.Fatalf("expected malformed field 999 to be deleted from redis hash")
+	}
+}

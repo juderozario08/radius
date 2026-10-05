@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
+	"radius/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,7 +32,7 @@ func (h *CategoryHandler) GetAllCategories(ctx *gin.Context) {
 		categories = []models.Category{}
 	}
 
-	ctx.JSON(http.StatusOK, categories)
+	utils.RenderJSONWithETag(ctx, http.StatusOK, categories, "public, max-age=300")
 }
 
 func (h *CategoryHandler) GetDistinctBrands(ctx *gin.Context) {
@@ -46,5 +47,5 @@ func (h *CategoryHandler) GetDistinctBrands(ctx *gin.Context) {
 		brands = []string{}
 	}
 
-	ctx.JSON(http.StatusOK, brands)
+	utils.RenderJSONWithETag(ctx, http.StatusOK, brands, "public, max-age=300")
 }

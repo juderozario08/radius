@@ -266,4 +266,3 @@ func (h *ReturnsHandler) GetRtvQueue(ctx *gin.Context) {
 		"total_length": total,
 	})
 }
-

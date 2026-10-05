@@ -269,4 +269,3 @@ func (h *OnlineOrderHandler) CancelOnlineOrder(ctx *gin.Context) {
 		"online_order": order,
 	})
 }
-

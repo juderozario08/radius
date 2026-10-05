@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
+	"radius/internal/cache"
 	"radius/internal/models"
 
 	"github.com/redis/go-redis/v9"
@@ -78,15 +78,17 @@ func (s *ReceivingService) ReceivePO(ctx context.Context, storeId int, employeeI
 		return err
 	}
 
+	cache.InvalidateStoreOperations(ctx, s.redisClient, detail.StoreId)
+
 	if s.redisClient != nil {
 		for _, itm := range detail.Items {
-			tier2Key := fmt.Sprintf("radius:v1:inventory:store:%d:product:%d", detail.StoreId, itm.ProductId)
+			tier2Key := cache.InventoryProductKey(detail.StoreId, itm.ProductId)
 			_ = s.redisClient.Del(ctx, tier2Key).Err()
 			if itm.Upc != "" {
-				_ = s.redisClient.Del(ctx, fmt.Sprintf("inventory:%d:barcode:%s", detail.StoreId, itm.Upc)).Err()
+				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(detail.StoreId, itm.Upc)).Err()
 			}
 			if itm.Sku != "" {
-				_ = s.redisClient.Del(ctx, fmt.Sprintf("inventory:%d:barcode:%s", detail.StoreId, itm.Sku)).Err()
+				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(detail.StoreId, itm.Sku)).Err()
 			}
 		}
 	}
@@ -111,10 +113,18 @@ func (s *ReceivingService) ReceiveLPR(ctx context.Context, storeId int, employee
 		return err
 	}
 
+	cache.InvalidateStoreOperations(ctx, s.redisClient, detail.StoreId)
+
 	if s.redisClient != nil {
-		iter := s.redisClient.Scan(ctx, 0, fmt.Sprintf("radius:v1:inventory:store:%d:*", detail.StoreId), 100).Iterator()
-		for iter.Next(ctx) {
-			_ = s.redisClient.Del(ctx, iter.Val()).Err()
+		patterns := []string{
+			cache.InventoryStorePattern(detail.StoreId),
+			cache.LegacyInventoryStorePattern(detail.StoreId),
+		}
+		for _, pat := range patterns {
+			iter := s.redisClient.Scan(ctx, 0, pat, 100).Iterator()
+			for iter.Next(ctx) {
+				_ = s.redisClient.Del(ctx, iter.Val()).Err()
+			}
 		}
 	}
 	return nil
@@ -163,7 +173,23 @@ func (s *ReceivingService) ReceiveTransfer(ctx context.Context, storeId int, emp
 		return errors.New("transfer is not in transit")
 	}
 
-	return s.receivingRepo.ReceiveTransferItems(ctx, storeId, req.TransferId, employeeId, req.Items)
+	err = s.receivingRepo.ReceiveTransferItems(ctx, storeId, req.TransferId, employeeId, req.Items)
+	if err != nil {
+		return err
+	}
+	cache.InvalidateStoreOperations(ctx, s.redisClient, storeId)
+	if s.redisClient != nil {
+		for _, itm := range detail.Items {
+			_ = s.redisClient.Del(ctx, cache.InventoryProductKey(storeId, itm.ProductId)).Err()
+			if itm.Upc != "" {
+				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(storeId, itm.Upc)).Err()
+			}
+			if itm.Sku != "" {
+				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(storeId, itm.Sku)).Err()
+			}
+		}
+	}
+	return nil
 }
 
 func (s *ReceivingService) QuickReceiveTransfer(ctx context.Context, storeId int, employeeId int, req models.QuickReceiveTransferRequest) error {
@@ -181,5 +207,21 @@ func (s *ReceivingService) QuickReceiveTransfer(ctx context.Context, storeId int
 		return errors.New("this transfer requires manual check — cannot quick receive")
 	}
 
-	return s.receivingRepo.QuickReceiveTransfer(ctx, storeId, req.TransferId, employeeId)
+	err = s.receivingRepo.QuickReceiveTransfer(ctx, storeId, req.TransferId, employeeId)
+	if err != nil {
+		return err
+	}
+	cache.InvalidateStoreOperations(ctx, s.redisClient, storeId)
+	if s.redisClient != nil {
+		for _, itm := range detail.Items {
+			_ = s.redisClient.Del(ctx, cache.InventoryProductKey(storeId, itm.ProductId)).Err()
+			if itm.Upc != "" {
+				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(storeId, itm.Upc)).Err()
+			}
+			if itm.Sku != "" {
+				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(storeId, itm.Sku)).Err()
+			}
+		}
+	}
+	return nil
 }

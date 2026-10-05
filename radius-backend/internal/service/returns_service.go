@@ -300,4 +300,3 @@ func (s *ReturnsService) GetRtvQueue(ctx context.Context, storeId int, role mode
 
 	return s.returnsRepo.GetRtvQueue(ctx, storeID, status, limit, offset)
 }
-

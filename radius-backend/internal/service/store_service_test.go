@@ -160,3 +160,66 @@ func TestStoreService_GetStoreOperations_RedisCache(t *testing.T) {
 		t.Fatalf("unexpected res2: %+v", res2)
 	}
 }
+
+func TestStoreService_GetStoreOperations_CrossStoreIsolation(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	defer mr.Close()
+
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+
+	mockStoreRepo := mocks.NewMockStoreRepository(ctrl)
+	svc := service.NewStoreService(mockStoreRepo, nil, nil, rdb)
+
+	mockStoreRepo.EXPECT().
+		GetStoreOperationsSummaries(gomock.Any(), 10).
+		Return([]models.StoreOperationSummary{
+			{StoreID: 10, Name: "Store Ten", ActiveOrdersCount: 2},
+		}, nil).
+		Times(1)
+
+	mockStoreRepo.EXPECT().
+		GetStoreOperationsSummaries(gomock.Any(), 20).
+		Return([]models.StoreOperationSummary{
+			{StoreID: 20, Name: "Store Twenty", ActiveOrdersCount: 8},
+		}, nil).
+		Times(1)
+
+	resStore10, err := svc.GetStoreOperations(context.Background(), 10)
+	if err != nil {
+		t.Fatalf("Store 10 failed: %v", err)
+	}
+	if len(resStore10) != 1 || resStore10[0].StoreID != 10 {
+		t.Fatalf("Store 10 unexpected response: %+v", resStore10)
+	}
+
+	resStore20, err := svc.GetStoreOperations(context.Background(), 20)
+	if err != nil {
+		t.Fatalf("Store 20 failed: %v", err)
+	}
+	if len(resStore20) != 1 || resStore20[0].StoreID != 20 {
+		t.Fatalf("Store 20 unexpected response: %+v", resStore20)
+	}
+
+	cachedStore10, err := svc.GetStoreOperations(context.Background(), 10)
+	if err != nil {
+		t.Fatalf("Store 10 cache hit failed: %v", err)
+	}
+	if len(cachedStore10) != 1 || cachedStore10[0].StoreID != 10 {
+		t.Fatalf("Store 10 cache leak detected: %+v", cachedStore10)
+	}
+
+	cachedStore20, err := svc.GetStoreOperations(context.Background(), 20)
+	if err != nil {
+		t.Fatalf("Store 20 cache hit failed: %v", err)
+	}
+	if len(cachedStore20) != 1 || cachedStore20[0].StoreID != 20 {
+		t.Fatalf("Store 20 cache leak detected: %+v", cachedStore20)
+	}
+}

@@ -92,4 +92,3 @@ type WSTicketData struct {
 	Role       EmployeeRole `json:"role"`
 	Email      string       `json:"email"`
 }
-

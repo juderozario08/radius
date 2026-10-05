@@ -14,11 +14,11 @@ const (
 type ReturnDisposition string
 
 const (
-	ReturnDispositionRestock          ReturnDisposition = "RESTOCK"
-	ReturnDispositionOpenBox          ReturnDisposition = "OPEN_BOX"
-	ReturnDispositionDefectiveRtv     ReturnDisposition = "DEFECTIVE_RTV"
-	ReturnDispositionDamagedWriteOff  ReturnDisposition = "DAMAGED_WRITE_OFF"
-	ReturnDispositionQuarantine       ReturnDisposition = "QUARANTINE"
+	ReturnDispositionRestock         ReturnDisposition = "RESTOCK"
+	ReturnDispositionOpenBox         ReturnDisposition = "OPEN_BOX"
+	ReturnDispositionDefectiveRtv    ReturnDisposition = "DEFECTIVE_RTV"
+	ReturnDispositionDamagedWriteOff ReturnDisposition = "DAMAGED_WRITE_OFF"
+	ReturnDispositionQuarantine      ReturnDisposition = "QUARANTINE"
 )
 
 type RefundMethod string
@@ -59,17 +59,17 @@ type CustomerReturn struct {
 }
 
 type CustomerReturnItem struct {
-	ReturnItemId                int               `json:"return_item_id"`
-	ReturnId                    int               `json:"return_id"`
-	ProductId                   int               `json:"product_id"`
-	OriginalTransactionItemId   *int64            `json:"original_transaction_item_id"`
-	Quantity                    int               `json:"quantity"`
-	UnitPrice                   float64           `json:"unit_price"`
-	UnitCost                    float64           `json:"unit_cost"`
-	TaxAmount                   float64           `json:"tax_amount"`
-	ReturnReason                string            `json:"return_reason"`
-	Disposition                 ReturnDisposition `json:"disposition"`
-	CreatedAt                   time.Time         `json:"created_at"`
+	ReturnItemId              int               `json:"return_item_id"`
+	ReturnId                  int               `json:"return_id"`
+	ProductId                 int               `json:"product_id"`
+	OriginalTransactionItemId *int64            `json:"original_transaction_item_id"`
+	Quantity                  int               `json:"quantity"`
+	UnitPrice                 float64           `json:"unit_price"`
+	UnitCost                  float64           `json:"unit_cost"`
+	TaxAmount                 float64           `json:"tax_amount"`
+	ReturnReason              string            `json:"return_reason"`
+	Disposition               ReturnDisposition `json:"disposition"`
+	CreatedAt                 time.Time         `json:"created_at"`
 }
 
 type CustomerReturnItemDetail struct {
@@ -147,11 +147,11 @@ type CreateReturnRequest struct {
 }
 
 type ReturnSearchCriteria struct {
-	StoreId   *int          `json:"store_id"`
-	Status    *ReturnStatus `json:"status"`
-	DateFrom  *string       `json:"date_from"`
-	DateTo    *string       `json:"date_to"`
-	Query     *string       `json:"query"`
+	StoreId  *int          `json:"store_id"`
+	Status   *ReturnStatus `json:"status"`
+	DateFrom *string       `json:"date_from"`
+	DateTo   *string       `json:"date_to"`
+	Query    *string       `json:"query"`
 }
 
 type OriginalTransactionItemForReturn struct {
@@ -171,14 +171,14 @@ type OriginalTransactionItemForReturn struct {
 }
 
 type LookupTransactionResponse struct {
-	TransactionId   int64                              `json:"transaction_id"`
-	StoreId         int                                `json:"store_id"`
-	RegisterId      string                             `json:"register_id"`
-	CreatedAt       time.Time                          `json:"created_at"`
-	PaymentMethod   string                             `json:"payment_method"`
-	TotalAmount     float64                            `json:"total_amount"`
-	DaysSinceSale   int                                `json:"days_since_sale"`
-	Items           []OriginalTransactionItemForReturn `json:"items"`
+	TransactionId int64                              `json:"transaction_id"`
+	StoreId       int                                `json:"store_id"`
+	RegisterId    string                             `json:"register_id"`
+	CreatedAt     time.Time                          `json:"created_at"`
+	PaymentMethod string                             `json:"payment_method"`
+	TotalAmount   float64                            `json:"total_amount"`
+	DaysSinceSale int                                `json:"days_since_sale"`
+	Items         []OriginalTransactionItemForReturn `json:"items"`
 }
 
 type RecentTransactionSummary struct {
@@ -190,4 +190,3 @@ type RecentTransactionSummary struct {
 	QuantitySold  int       `json:"quantity_sold"`
 	UnitPrice     float64   `json:"unit_price"`
 }
-

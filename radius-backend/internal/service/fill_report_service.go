@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"radius/internal/cache"
+	"radius/internal/database"
 	"radius/internal/models"
 	"strings"
 	"time"
@@ -42,37 +44,74 @@ func NewFillReportService(
 }
 
 func (s *FillReportService) GetActiveIS4TCSession(ctx context.Context, storeID int) ([]models.MimsProductInventory, error) {
-	key := fmt.Sprintf("is4tc_session:%d", storeID)
-	result, err := s.redisClient.HGetAll(ctx, key).Result()
-	if err != nil {
-		if strings.Contains(err.Error(), "WRONGTYPE") {
-			val, getErr := s.redisClient.Get(ctx, key).Result()
+	if s.redisClient == nil {
+		return []models.MimsProductInventory{}, nil
+	}
+
+	newKey := cache.IS4TCStoreKey(storeID)
+	legacyKey := cache.LegacyIS4TCKey(storeID)
+
+	result, err := s.redisClient.HGetAll(ctx, newKey).Result()
+	if err != nil && strings.Contains(err.Error(), "WRONGTYPE") {
+		val, getErr := s.redisClient.Get(ctx, newKey).Result()
+		_ = s.redisClient.Del(ctx, newKey).Err()
+		if getErr == nil {
+			var oldItems []models.MimsProductInventory
+			if json.Unmarshal([]byte(val), &oldItems) == nil {
+				for _, item := range oldItems {
+					if d, mErr := json.Marshal(item); mErr == nil {
+						_ = s.redisClient.HSet(ctx, newKey, fmt.Sprintf("%d", item.ProductId), d).Err()
+					}
+				}
+				_ = s.redisClient.Expire(ctx, newKey, 24*time.Hour).Err()
+				return oldItems, nil
+			}
+		}
+		result = nil
+		err = nil
+	}
+
+	if (err == nil && len(result) == 0) || err != nil {
+		legacyResult, legErr := s.redisClient.HGetAll(ctx, legacyKey).Result()
+		if legErr == nil && len(legacyResult) > 0 {
+			result = legacyResult
+			for f, v := range legacyResult {
+				_ = s.redisClient.HSet(ctx, newKey, f, v).Err()
+			}
+			_ = s.redisClient.Expire(ctx, newKey, 24*time.Hour).Err()
+			_ = s.redisClient.Del(ctx, legacyKey).Err()
+		} else if legErr != nil && strings.Contains(legErr.Error(), "WRONGTYPE") {
+			val, getErr := s.redisClient.Get(ctx, legacyKey).Result()
 			if getErr == nil {
 				var oldItems []models.MimsProductInventory
 				if json.Unmarshal([]byte(val), &oldItems) == nil {
-					_ = s.redisClient.Del(ctx, key).Err()
+					_ = s.redisClient.Del(ctx, legacyKey).Err()
 					for _, item := range oldItems {
 						if d, mErr := json.Marshal(item); mErr == nil {
-							_ = s.redisClient.HSet(ctx, key, fmt.Sprintf("%d", item.ProductId), d).Err()
+							_ = s.redisClient.HSet(ctx, newKey, fmt.Sprintf("%d", item.ProductId), d).Err()
 						}
 					}
-					_ = s.redisClient.Expire(ctx, key, 24*time.Hour).Err()
+					_ = s.redisClient.Expire(ctx, newKey, 24*time.Hour).Err()
 					return oldItems, nil
 				}
 			}
 		}
-		return nil, err
 	}
 
 	if len(result) == 0 {
+		database.CacheMetrics.RecordMiss()
 		return []models.MimsProductInventory{}, nil
 	}
 
+	database.CacheMetrics.RecordHit()
 	items := make([]models.MimsProductInventory, 0, len(result))
-	for _, itemJSON := range result {
+	for field, itemJSON := range result {
 		var item models.MimsProductInventory
-		if err := json.Unmarshal([]byte(itemJSON), &item); err == nil {
+		if unmarshalErr := json.Unmarshal([]byte(itemJSON), &item); unmarshalErr == nil {
 			items = append(items, item)
+		} else {
+			database.CacheMetrics.RecordSerializationFailure()
+			_ = s.redisClient.HDel(ctx, newKey, field).Err()
 		}
 	}
 	return items, nil
@@ -83,31 +122,43 @@ func (s *FillReportService) AddToIS4TCSession(ctx context.Context, storeID int, 
 		_ = s.fillReportRepo.AddEmptyHole(ctx, storeID, product.ProductId, employeeID)
 	}
 
+	if s.redisClient == nil {
+		return []models.MimsProductInventory{product}, nil
+	}
+
 	data, err := json.Marshal(product)
 	if err != nil {
+		database.CacheMetrics.RecordSerializationFailure()
 		return nil, err
 	}
 
-	key := fmt.Sprintf("is4tc_session:%d", storeID)
+	newKey := cache.IS4TCStoreKey(storeID)
+	legacyKey := cache.LegacyIS4TCKey(storeID)
 	field := fmt.Sprintf("%d", product.ProductId)
 
-	err = s.redisClient.HSet(ctx, key, field, data).Err()
+	err = s.redisClient.HSet(ctx, newKey, field, data).Err()
 	if err != nil && strings.Contains(err.Error(), "WRONGTYPE") {
-		_ = s.redisClient.Del(ctx, key).Err()
-		err = s.redisClient.HSet(ctx, key, field, data).Err()
+		_ = s.redisClient.Del(ctx, newKey).Err()
+		err = s.redisClient.HSet(ctx, newKey, field, data).Err()
 	}
 	if err != nil {
+		database.CacheMetrics.RecordSetError()
 		return nil, err
 	}
 
-	_ = s.redisClient.Expire(ctx, key, 24*time.Hour).Err()
+	_ = s.redisClient.Expire(ctx, newKey, 24*time.Hour).Err()
+	_ = s.redisClient.Del(ctx, legacyKey).Err()
 
 	return s.GetActiveIS4TCSession(ctx, storeID)
 }
 
 func (s *FillReportService) ClearIS4TCSession(ctx context.Context, storeID int) error {
-	key := fmt.Sprintf("is4tc_session:%d", storeID)
-	return s.redisClient.Del(ctx, key).Err()
+	if s.redisClient == nil {
+		return nil
+	}
+	newKey := cache.IS4TCStoreKey(storeID)
+	legacyKey := cache.LegacyIS4TCKey(storeID)
+	return s.redisClient.Del(ctx, newKey, legacyKey).Err()
 }
 
 func (s *FillReportService) GetStoreFillReport(ctx context.Context, storeID int, filter models.FillReportFilter) (*models.FillReportResponse, error) {

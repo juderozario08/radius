@@ -65,3 +65,11 @@ type GetAllEmployeesResponse struct {
 type EmployeeIdRequest struct {
 	EmployeeId int `json:"employee_id" binding:"required"`
 }
+
+type EmployeeContext struct {
+	EmployeeId   int          `json:"employee_id"`
+	Role         EmployeeRole `json:"role"`
+	StoreId      int          `json:"store_id"`
+	IsActive     bool         `json:"is_active"`
+	IsTerminated bool         `json:"is_terminated"`
+}

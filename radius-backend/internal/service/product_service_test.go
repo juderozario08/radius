@@ -29,6 +29,7 @@ func setupProductTestRedis() *redis.Client {
 type MockProductRepo struct {
 	GetProductByIDFunc func(ctx context.Context, id int) (*models.Product, error)
 	SearchProductsFunc func(ctx context.Context, query string, categoryID *int, brand *string, isActive *bool, unitOfMeasure *string, limit, offset int) ([]models.Product, int, error)
+	UpdateProductFunc  func(ctx context.Context, product *models.Product) error
 }
 
 func (m *MockProductRepo) GetProductByID(ctx context.Context, id int) (*models.Product, error) {
@@ -45,6 +46,12 @@ func (m *MockProductRepo) SearchProducts(ctx context.Context, query string, cate
 }
 func (m *MockProductRepo) GetProductByBarcode(ctx context.Context, barcode string) (*models.Product, error) {
 	return nil, nil
+}
+func (m *MockProductRepo) UpdateProduct(ctx context.Context, product *models.Product) error {
+	if m.UpdateProductFunc != nil {
+		return m.UpdateProductFunc(ctx, product)
+	}
+	return nil
 }
 
 func TestProductService_GetProductByID_CacheMissAndHit(t *testing.T) {
@@ -217,3 +224,80 @@ func TestProductService_GetProductByID_RedisFailOpen(t *testing.T) {
 	}
 }
 
+func TestProductService_UpdateProduct_InvalidatesCache(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	rdb := setupProductTestRedis()
+	mockProductRepo := &MockProductRepo{}
+	mockStoreRepo := mocks.NewMockStoreRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+
+	productService := service.NewProductService(mockProductRepo, mockStoreRepo, mockEmployeeRepo, mockSessionRepo, rdb)
+
+	ctx := context.Background()
+	_ = rdb.Set(ctx, "radius:v1:catalog:product:10", `{"product_id":10,"name":"Old"}`, time.Hour).Err()
+	_ = rdb.Set(ctx, "radius:v1:catalog:barcode:123456", `{"product_id":10}`, time.Hour).Err()
+	_ = rdb.Set(ctx, "radius:v1:catalog:brands", `["BrandA"]`, time.Hour).Err()
+
+	mockProductRepo.UpdateProductFunc = func(ctx context.Context, product *models.Product) error {
+		return nil
+	}
+
+	prod := &models.Product{
+		ProductId: 10,
+		Name:      "New",
+		Upc:       "123456",
+		Brand:     "BrandA",
+	}
+
+	err := productService.UpdateProduct(ctx, prod)
+	if err != nil {
+		t.Fatalf("Expected update to succeed, got %v", err)
+	}
+
+	if exists := rdb.Exists(ctx, "radius:v1:catalog:product:10").Val(); exists != 0 {
+		t.Errorf("Expected product cache to be invalidated")
+	}
+	if exists := rdb.Exists(ctx, "radius:v1:catalog:barcode:123456").Val(); exists != 0 {
+		t.Errorf("Expected barcode cache to be invalidated")
+	}
+	if exists := rdb.Exists(ctx, "radius:v1:catalog:brands").Val(); exists != 0 {
+		t.Errorf("Expected brands cache to be invalidated")
+	}
+}
+
+func TestProductService_UpdateProduct_DBFailure(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	rdb := setupProductTestRedis()
+	mockProductRepo := &MockProductRepo{}
+	mockStoreRepo := mocks.NewMockStoreRepository(ctrl)
+	mockEmployeeRepo := mocks.NewMockEmployeeRepository(ctrl)
+	mockSessionRepo := mocks.NewMockSessionRepository(ctrl)
+
+	productService := service.NewProductService(mockProductRepo, mockStoreRepo, mockEmployeeRepo, mockSessionRepo, rdb)
+
+	ctx := context.Background()
+	_ = rdb.Set(ctx, "radius:v1:catalog:product:10", `{"product_id":10,"name":"Old"}`, time.Hour).Err()
+
+	mockProductRepo.UpdateProductFunc = func(ctx context.Context, product *models.Product) error {
+		return fmt.Errorf("db error")
+	}
+
+	prod := &models.Product{
+		ProductId: 10,
+		Name:      "New",
+	}
+
+	err := productService.UpdateProduct(ctx, prod)
+	if err == nil {
+		t.Fatalf("Expected error, got nil")
+	}
+
+	if exists := rdb.Exists(ctx, "radius:v1:catalog:product:10").Val(); exists == 0 {
+		t.Errorf("Expected product cache to be preserved on DB error")
+	}
+}

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
+	"radius/internal/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -33,7 +34,7 @@ func (h *StoreHandler) GetAllStores(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, response)
+	utils.RenderJSONWithETag(ctx, http.StatusOK, response, "private, must-revalidate")
 }
 
 func (h *StoreHandler) UpdateStore(ctx *gin.Context) {
@@ -150,7 +151,13 @@ func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
 }
 
 func (h *StoreHandler) GetStoreOperations(ctx *gin.Context) {
-	operations, err := h.storeService.GetStoreOperations(ctx.Request.Context())
+	var storeIDOpt []int
+	if storeIDStr := ctx.Query("store_id"); storeIDStr != "" {
+		if id, err := strconv.Atoi(storeIDStr); err == nil && id > 0 {
+			storeIDOpt = append(storeIDOpt, id)
+		}
+	}
+	operations, err := h.storeService.GetStoreOperations(ctx.Request.Context(), storeIDOpt...)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.GetStoreOperations (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve store operations"})

@@ -374,4 +374,3 @@ func TestOnlineOrderService_AutoCancelExpiredBOPISOrders(t *testing.T) {
 		t.Fatalf("expected 2 cancelled orders, got %d", count)
 	}
 }
-

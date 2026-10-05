@@ -710,4 +710,3 @@ func (r *ReturnsRepo) GetRtvQueue(ctx context.Context, storeID *int, status *mod
 
 	return items, total, nil
 }
-

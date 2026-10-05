@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"log"
@@ -49,6 +49,9 @@ func (h *ProductHandler) GetProductByID(ctx *gin.Context) {
 
 func (h *ProductHandler) SearchProducts(ctx *gin.Context) {
 	query := ctx.Query("q")
+	if query == "" {
+		query = ctx.Query("query")
+	}
 
 	var categoryID *int
 	if catStr := ctx.Query("category_id"); catStr != "" {
@@ -110,4 +113,3 @@ func (h *ProductHandler) SearchProducts(ctx *gin.Context) {
 		"total":    total,
 	})
 }
-

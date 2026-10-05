@@ -26,15 +26,15 @@ const (
 )
 
 type Product struct {
-	ProductId     int          `json:"product_id"`
-	Sku           string       `json:"sku"`
-	Upc           string       `json:"upc"`
-	Name          string       `json:"name"`
-	Description   *string      `json:"description"`
-	CategoryId    int          `json:"category_id"`
-	Brand         string       `json:"brand"`
-	UnitOfMeasure MeasureUnits `json:"unit_of_measure"`
-	UnitsPerCase  int          `json:"units_per_case"`
+	ProductId           int          `json:"product_id"`
+	Sku                 string       `json:"sku"`
+	Upc                 string       `json:"upc"`
+	Name                string       `json:"name"`
+	Description         *string      `json:"description"`
+	CategoryId          int          `json:"category_id"`
+	Brand               string       `json:"brand"`
+	UnitOfMeasure       MeasureUnits `json:"unit_of_measure"`
+	UnitsPerCase        int          `json:"units_per_case"`
 	Weight              float32      `json:"weight"`
 	IsActive            bool         `json:"is_active"`
 	IsReturnable        bool         `json:"is_returnable"`

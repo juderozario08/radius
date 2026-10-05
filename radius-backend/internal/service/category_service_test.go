@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"radius/internal/models"
 	"radius/internal/service"
 	"sync"
@@ -27,6 +28,9 @@ func setupCategoryTestRedis() *redis.Client {
 type MockCategoryRepo struct {
 	GetAllCategoriesFunc  func(ctx context.Context) ([]models.Category, error)
 	GetDistinctBrandsFunc func(ctx context.Context) ([]string, error)
+	CreateCategoryFunc    func(ctx context.Context, name string, parentID *int) (*models.Category, error)
+	UpdateCategoryFunc    func(ctx context.Context, id int, name string, parentID *int) error
+	DeleteCategoryFunc    func(ctx context.Context, id int) error
 }
 
 func (m *MockCategoryRepo) GetAllCategories(ctx context.Context) ([]models.Category, error) {
@@ -40,6 +44,24 @@ func (m *MockCategoryRepo) GetDistinctBrands(ctx context.Context) ([]string, err
 		return m.GetDistinctBrandsFunc(ctx)
 	}
 	return nil, nil
+}
+func (m *MockCategoryRepo) CreateCategory(ctx context.Context, name string, parentID *int) (*models.Category, error) {
+	if m.CreateCategoryFunc != nil {
+		return m.CreateCategoryFunc(ctx, name, parentID)
+	}
+	return nil, nil
+}
+func (m *MockCategoryRepo) UpdateCategory(ctx context.Context, id int, name string, parentID *int) error {
+	if m.UpdateCategoryFunc != nil {
+		return m.UpdateCategoryFunc(ctx, id, name, parentID)
+	}
+	return nil
+}
+func (m *MockCategoryRepo) DeleteCategory(ctx context.Context, id int) error {
+	if m.DeleteCategoryFunc != nil {
+		return m.DeleteCategoryFunc(ctx, id)
+	}
+	return nil
 }
 
 func TestCategoryService_GetAllCategories_CacheMissAndHit(t *testing.T) {
@@ -227,3 +249,66 @@ func TestCategoryService_GetAllCategories_RedisFailOpen(t *testing.T) {
 	}
 }
 
+func TestCategoryService_Mutations_InvalidateCategoriesCache(t *testing.T) {
+	rdb := setupCategoryTestRedis()
+	mockCategoryRepo := &MockCategoryRepo{}
+	categoryService := service.NewCategoryService(mockCategoryRepo, rdb)
+	ctx := context.Background()
+
+	_ = rdb.Set(ctx, "radius:v1:catalog:categories", `[{"category_id":1,"name":"Old"}]`, time.Hour).Err()
+	mockCategoryRepo.CreateCategoryFunc = func(ctx context.Context, name string, parentID *int) (*models.Category, error) {
+		return &models.Category{CategoryId: 2, Name: name}, nil
+	}
+
+	_, err := categoryService.CreateCategory(ctx, "New Cat", nil)
+	if err != nil {
+		t.Fatalf("CreateCategory failed: %v", err)
+	}
+	if exists := rdb.Exists(ctx, "radius:v1:catalog:categories").Val(); exists != 0 {
+		t.Errorf("Expected categories cache to be invalidated on create")
+	}
+
+	_ = rdb.Set(ctx, "radius:v1:catalog:categories", `[{"category_id":1,"name":"Old"}]`, time.Hour).Err()
+	mockCategoryRepo.UpdateCategoryFunc = func(ctx context.Context, id int, name string, parentID *int) error {
+		return nil
+	}
+	err = categoryService.UpdateCategory(ctx, 1, "Updated Cat", nil)
+	if err != nil {
+		t.Fatalf("UpdateCategory failed: %v", err)
+	}
+	if exists := rdb.Exists(ctx, "radius:v1:catalog:categories").Val(); exists != 0 {
+		t.Errorf("Expected categories cache to be invalidated on update")
+	}
+
+	_ = rdb.Set(ctx, "radius:v1:catalog:categories", `[{"category_id":1,"name":"Old"}]`, time.Hour).Err()
+	mockCategoryRepo.DeleteCategoryFunc = func(ctx context.Context, id int) error {
+		return nil
+	}
+	err = categoryService.DeleteCategory(ctx, 1)
+	if err != nil {
+		t.Fatalf("DeleteCategory failed: %v", err)
+	}
+	if exists := rdb.Exists(ctx, "radius:v1:catalog:categories").Val(); exists != 0 {
+		t.Errorf("Expected categories cache to be invalidated on delete")
+	}
+}
+
+func TestCategoryService_Mutations_DBFailurePreservesCache(t *testing.T) {
+	rdb := setupCategoryTestRedis()
+	mockCategoryRepo := &MockCategoryRepo{}
+	categoryService := service.NewCategoryService(mockCategoryRepo, rdb)
+	ctx := context.Background()
+
+	_ = rdb.Set(ctx, "radius:v1:catalog:categories", `[{"category_id":1,"name":"Old"}]`, time.Hour).Err()
+	mockCategoryRepo.CreateCategoryFunc = func(ctx context.Context, name string, parentID *int) (*models.Category, error) {
+		return nil, errors.New("db error")
+	}
+
+	_, err := categoryService.CreateCategory(ctx, "New Cat", nil)
+	if err == nil {
+		t.Fatalf("Expected error, got nil")
+	}
+	if exists := rdb.Exists(ctx, "radius:v1:catalog:categories").Val(); exists == 0 {
+		t.Errorf("Expected categories cache to be preserved on DB error")
+	}
+}

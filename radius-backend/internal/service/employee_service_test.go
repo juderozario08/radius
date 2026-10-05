@@ -2,11 +2,14 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"radius/internal/models"
 	"radius/internal/service"
 	"radius/internal/service/mocks"
 	"testing"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/mock/gomock"
 )
 
@@ -119,7 +122,7 @@ func TestEmployeeService_CreateEmployee_Success(t *testing.T) {
 	svc := service.NewEmployeeService(mockRepo, nil)
 
 	req := models.CreateEmployeeRequest{
-		Password:   "securepass",
+		Password: "securepass",
 		EmployeeBase: models.EmployeeBase{
 			Email:      "new@test.com",
 			FirstName:  "John",
@@ -146,5 +149,138 @@ func TestEmployeeService_CreateEmployee_Success(t *testing.T) {
 	}
 	if res.EmployeeId != 10 {
 		t.Fatalf("expected employee id 10, got %d", res.EmployeeId)
+	}
+}
+
+func TestEmployeeService_GetEmployeeContext_CacheAndInvalidate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	defer mr.Close()
+
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+
+	mockRepo := mocks.NewMockEmployeeRepository(ctrl)
+	svc := service.NewEmployeeService(mockRepo, nil, rdb)
+
+	mockRepo.EXPECT().
+		GetEmployeeById(gomock.Any(), 42).
+		Return(&models.Employee{
+			EmployeeId: 42,
+			EmployeeBase: models.EmployeeBase{
+				Role:         models.RoleSales,
+				Email:        "emp42@test.com",
+				StoreId:      3,
+				IsActive:     func() *bool { b := true; return &b }(),
+				IsTerminated: func() *bool { b := false; return &b }(),
+			},
+		}, nil).
+		Times(1)
+
+	ctx1, err := svc.GetEmployeeContext(context.Background(), 42)
+	if err != nil {
+		t.Fatalf("first GetEmployeeContext failed: %v", err)
+	}
+	if ctx1.EmployeeId != 42 || ctx1.StoreId != 3 || !ctx1.IsActive || ctx1.IsTerminated {
+		t.Fatalf("unexpected context 1: %+v", ctx1)
+	}
+
+	ctx2, err := svc.GetEmployeeContext(context.Background(), 42)
+	if err != nil {
+		t.Fatalf("second GetEmployeeContext failed: %v", err)
+	}
+	if ctx2.EmployeeId != 42 || ctx2.StoreId != 3 {
+		t.Fatalf("unexpected context 2: %+v", ctx2)
+	}
+
+	mockRepo.EXPECT().
+		TerminateEmployeeById(gomock.Any(), 42).
+		Return(nil).
+		Times(1)
+
+	_, err = svc.TerminateEmployee(context.Background(), 42)
+	if err != nil {
+		t.Fatalf("TerminateEmployee failed: %v", err)
+	}
+
+	mockRepo.EXPECT().
+		GetEmployeeById(gomock.Any(), 42).
+		Return(&models.Employee{
+			EmployeeId: 42,
+			EmployeeBase: models.EmployeeBase{
+				Role:         models.RoleSales,
+				Email:        "emp42@test.com",
+				StoreId:      3,
+				IsActive:     func() *bool { b := false; return &b }(),
+				IsTerminated: func() *bool { b := true; return &b }(),
+			},
+		}, nil).
+		Times(1)
+
+	ctx3, err := svc.GetEmployeeContext(context.Background(), 42)
+	if err != nil {
+		t.Fatalf("third GetEmployeeContext failed: %v", err)
+	}
+	if !ctx3.IsTerminated || ctx3.IsActive {
+		t.Fatalf("expected terminated employee context after invalidation, got: %+v", ctx3)
+	}
+}
+
+func TestEmployeeService_TerminateEmployee_DBFailurePreservesCache(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	defer mr.Close()
+
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+
+	mockRepo := mocks.NewMockEmployeeRepository(ctrl)
+	svc := service.NewEmployeeService(mockRepo, nil, rdb)
+
+	mockRepo.EXPECT().
+		GetEmployeeById(gomock.Any(), 99).
+		Return(&models.Employee{
+			EmployeeId: 99,
+			EmployeeBase: models.EmployeeBase{
+				Role:         models.RoleSales,
+				Email:        "emp99@test.com",
+				StoreId:      1,
+				IsActive:     func() *bool { b := true; return &b }(),
+				IsTerminated: func() *bool { b := false; return &b }(),
+			},
+		}, nil).
+		Times(1)
+
+	ctxBefore, err := svc.GetEmployeeContext(context.Background(), 99)
+	if err != nil || ctxBefore == nil {
+		t.Fatalf("failed to seed employee context cache: %v", err)
+	}
+
+	mockRepo.EXPECT().
+		TerminateEmployeeById(gomock.Any(), 99).
+		Return(errors.New("db connection failure")).
+		Times(1)
+
+	_, err = svc.TerminateEmployee(context.Background(), 99)
+	if err == nil {
+		t.Fatalf("expected error from TerminateEmployee when DB fails")
+	}
+
+	cachedCtx, err := svc.GetEmployeeContext(context.Background(), 99)
+	if err != nil {
+		t.Fatalf("failed to get employee context: %v", err)
+	}
+	if cachedCtx.IsTerminated || !cachedCtx.IsActive {
+		t.Fatalf("expected cached employee context to remain active and unevicted on DB failure")
 	}
 }

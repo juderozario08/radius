@@ -80,26 +80,38 @@ func RequireAuth(secret []byte, authService *service.AuthService) gin.HandlerFun
 			return
 		}
 
-		emailClaim, ok := claims["email"].(string)
-		if !ok {
-			log.Printf("[UNAUTHORIZED] RequireAuth: email claim missing or wrong type")
+		emailClaim, _ := claims["email"].(string)
+		roleClaim, _ := claims["role"].(string)
+
+		empId := int(employeeIdFloat)
+		empCtx, empErr := authService.GetEmployeeContext(ctx.Request.Context(), empId)
+		if empErr != nil {
+			log.Printf("[UNAUTHORIZED] RequireAuth: Employee context error: %v", empErr)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
 			return
 		}
-
-		roleClaim, ok := claims["role"].(string)
-		if !ok {
-			log.Printf("[UNAUTHORIZED] RequireAuth: role claim missing or wrong type")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
-			return
+		if empCtx != nil {
+			if empCtx.IsTerminated {
+				log.Printf("[UNAUTHORIZED] RequireAuth: Employee %d is terminated", empId)
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Terminated Account"})
+				return
+			}
+			if !empCtx.IsActive {
+				log.Printf("[UNAUTHORIZED] RequireAuth: Employee %d is inactive", empId)
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Inactive account"})
+				return
+			}
+			roleClaim = string(empCtx.Role)
 		}
 
-		ctx.Set("employee_id", int(employeeIdFloat))
+		ctx.Set("employee_id", empId)
 		ctx.Set("email", emailClaim)
 		ctx.Set("role", roleClaim)
 		ctx.Set("token_string", tokenString)
 
-		if storeIdRaw, ok := claims["store_id"]; ok {
+		if empCtx != nil && empCtx.StoreId > 0 {
+			ctx.Set("store_id", empCtx.StoreId)
+		} else if storeIdRaw, ok := claims["store_id"]; ok {
 			if storeIdFloat, ok := storeIdRaw.(float64); ok {
 				ctx.Set("store_id", int(storeIdFloat))
 			}

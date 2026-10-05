@@ -3,30 +3,30 @@ package models
 import "time"
 
 type Inventory struct {
-	InventoryId   int        `json:"inventory_id"`
-	StoreId       int        `json:"store_id"`
-	ProductId     int        `json:"product_id"`
-	OnHandQty          int        `json:"on_hand_qty"`
-	ReservedQty        int        `json:"reserved_qty"`
-	ReorderQty         int        `json:"reorder_qty"`
-	Aisle              *string    `json:"aisle"`
-	MimsLocation       *string    `json:"mims_location"`
-	LastCountedAt      *time.Time `json:"last_counted_at"`
-	UpdatedAt          *time.Time `json:"updated_at"`
-	AvailableQty       int        `json:"available_qty"`
-	OpenBoxQty         int        `json:"open_box_qty"`
-	NewQty             int        `json:"new_qty"`
-	RtvQty             int        `json:"rtv_qty"`
-	Code88Qty          int        `json:"code88_qty"`
-	BopisQty           int        `json:"bopis_qty"`
-	QuarantineQty      int        `json:"quarantine_qty"`
-	RepairQty          int        `json:"repair_qty"`
-	CustomerOnHoldQty  int        `json:"customer_on_hold_qty"`
-	FcOnHoldQty        int        `json:"fc_on_hold_qty"`
-	VerifyQty          int        `json:"verify_qty"`
-	DemoQty            int        `json:"demo_qty"`
-	OnOrderQty         int        `json:"on_order_qty"`
-	LastReceivedAt     *time.Time `json:"last_received_at"`
+	InventoryId       int        `json:"inventory_id"`
+	StoreId           int        `json:"store_id"`
+	ProductId         int        `json:"product_id"`
+	OnHandQty         int        `json:"on_hand_qty"`
+	ReservedQty       int        `json:"reserved_qty"`
+	ReorderQty        int        `json:"reorder_qty"`
+	Aisle             *string    `json:"aisle"`
+	MimsLocation      *string    `json:"mims_location"`
+	LastCountedAt     *time.Time `json:"last_counted_at"`
+	UpdatedAt         *time.Time `json:"updated_at"`
+	AvailableQty      int        `json:"available_qty"`
+	OpenBoxQty        int        `json:"open_box_qty"`
+	NewQty            int        `json:"new_qty"`
+	RtvQty            int        `json:"rtv_qty"`
+	Code88Qty         int        `json:"code88_qty"`
+	BopisQty          int        `json:"bopis_qty"`
+	QuarantineQty     int        `json:"quarantine_qty"`
+	RepairQty         int        `json:"repair_qty"`
+	CustomerOnHoldQty int        `json:"customer_on_hold_qty"`
+	FcOnHoldQty       int        `json:"fc_on_hold_qty"`
+	VerifyQty         int        `json:"verify_qty"`
+	DemoQty           int        `json:"demo_qty"`
+	OnOrderQty        int        `json:"on_order_qty"`
+	LastReceivedAt    *time.Time `json:"last_received_at"`
 }
 
 type MimsLocationItem struct {
@@ -44,14 +44,14 @@ type ProductScreenDetails struct {
 }
 
 type MimsScanLog struct {
-	ScanId          int       `json:"scan_id"`
-	StoreId         int       `json:"store_id"`
-	EmployeeId      int       `json:"employee_id"`
-	ProductId       *int      `json:"product_id"`
-	ScannedBarcode  string    `json:"scanned_barcode"`
-	MimsLocationId  *string   `json:"mims_location_id"`
-	ScanType        string    `json:"scan_type"`
-	ScannedAt       time.Time `json:"scanned_at"`
+	ScanId         int       `json:"scan_id"`
+	StoreId        int       `json:"store_id"`
+	EmployeeId     int       `json:"employee_id"`
+	ProductId      *int      `json:"product_id"`
+	ScannedBarcode string    `json:"scanned_barcode"`
+	MimsLocationId *string   `json:"mims_location_id"`
+	ScanType       string    `json:"scan_type"`
+	ScannedAt      time.Time `json:"scanned_at"`
 }
 
 type MimsProductInventory struct {
@@ -91,14 +91,14 @@ type SyncLocationsRequest struct {
 }
 
 type ScanProductResponse struct {
-	Product   *MimsProductInventory `json:"product"`
-	Message   string                `json:"message"`
+	Product *MimsProductInventory `json:"product"`
+	Message string                `json:"message"`
 }
 
 type LocationProductsResponse struct {
-	LocationId string                  `json:"location_id"`
-	Products   []MimsProductInventory  `json:"products"`
-	Message    string                  `json:"message"`
+	LocationId string                 `json:"location_id"`
+	Products   []MimsProductInventory `json:"products"`
+	Message    string                 `json:"message"`
 }
 
 type TransferStatus string
@@ -209,15 +209,15 @@ type CycleCountDetailResponse struct {
 }
 
 type CycleCountScheduleEntry struct {
-	ScheduleId    int        `json:"schedule_id"`
-	StoreId       int        `json:"store_id"`
-	CategoryId    int        `json:"category_id"`
-	CategoryName  string     `json:"category_name"`
-	ScheduledDate time.Time  `json:"scheduled_date"`
-	CreatedBy     *int       `json:"created_by"`
-	CreatedByName *string    `json:"created_by_name"`
-	CycleCountId  *int       `json:"cycle_count_id"`
-	CountStatus   *string    `json:"count_status"`
+	ScheduleId    int       `json:"schedule_id"`
+	StoreId       int       `json:"store_id"`
+	CategoryId    int       `json:"category_id"`
+	CategoryName  string    `json:"category_name"`
+	ScheduledDate time.Time `json:"scheduled_date"`
+	CreatedBy     *int      `json:"created_by"`
+	CreatedByName *string   `json:"created_by_name"`
+	CycleCountId  *int      `json:"cycle_count_id"`
+	CountStatus   *string   `json:"count_status"`
 }
 
 type CycleCountSearchCriteria struct {
@@ -510,36 +510,36 @@ type ReviewAdjustmentRequest struct {
 }
 
 type InventoryTransaction struct {
-	TransactionId   int        `json:"transaction_id"`
-	ProductId       int        `json:"product_id"`
-	FromStoreId     *int       `json:"from_store_id"`
-	ToStoreId       *int       `json:"to_store_id"`
-	TransactionType string     `json:"transaction_type"`
-	Quantity        int        `json:"quantity"`
-	UnitCost        *float64   `json:"unit_cost"`
-	UnitPrice       *float64   `json:"unit_price"`
-	ReasonCode      *string    `json:"reason_code"`
-	EmployeeId      *int       `json:"employee_id"`
-	ReferenceId     *string    `json:"reference_id"`
-	CreatedAt       time.Time  `json:"created_at"`
+	TransactionId   int       `json:"transaction_id"`
+	ProductId       int       `json:"product_id"`
+	FromStoreId     *int      `json:"from_store_id"`
+	ToStoreId       *int      `json:"to_store_id"`
+	TransactionType string    `json:"transaction_type"`
+	Quantity        int       `json:"quantity"`
+	UnitCost        *float64  `json:"unit_cost"`
+	UnitPrice       *float64  `json:"unit_price"`
+	ReasonCode      *string   `json:"reason_code"`
+	EmployeeId      *int      `json:"employee_id"`
+	ReferenceId     *string   `json:"reference_id"`
+	CreatedAt       time.Time `json:"created_at"`
 }
 
 type AuditTrailEntry struct {
-	TransactionId   int        `json:"transaction_id"`
-	TransactionType string     `json:"transaction_type"`
-	Quantity        int        `json:"quantity"`
-	ReasonCode      *string    `json:"reason_code"`
-	ReferenceId     *string    `json:"reference_id"`
-	EmployeeName    *string    `json:"employee_name"`
-	FromStoreName   *string    `json:"from_store_name"`
-	ToStoreName     *string    `json:"to_store_name"`
-	CreatedAt       time.Time  `json:"created_at"`
+	TransactionId   int       `json:"transaction_id"`
+	TransactionType string    `json:"transaction_type"`
+	Quantity        int       `json:"quantity"`
+	ReasonCode      *string   `json:"reason_code"`
+	ReferenceId     *string   `json:"reference_id"`
+	EmployeeName    *string   `json:"employee_name"`
+	FromStoreName   *string   `json:"from_store_name"`
+	ToStoreName     *string   `json:"to_store_name"`
+	CreatedAt       time.Time `json:"created_at"`
 }
 
 type AuditTrailResponse struct {
-	Product Product            `json:"product"`
-	Events  []AuditTrailEntry  `json:"events"`
-	Total   int                `json:"total"`
+	Product Product           `json:"product"`
+	Events  []AuditTrailEntry `json:"events"`
+	Total   int               `json:"total"`
 }
 
 type AuditFilter struct {
@@ -550,4 +550,3 @@ type AuditFilter struct {
 	StoreId         *int       `form:"store_id"`
 	SortOrder       string     `form:"sort_order"`
 }
-

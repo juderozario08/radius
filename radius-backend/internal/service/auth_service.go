@@ -10,15 +10,46 @@ import (
 )
 
 type AuthService struct {
-	employeeRepo   EmployeeRepository
-	sessionService *SessionService
+	employeeRepo    EmployeeRepository
+	sessionService  *SessionService
+	employeeService *EmployeeService
 }
 
-func NewAuthService(employeeRepo EmployeeRepository, sessionService *SessionService) *AuthService {
-	return &AuthService{
+func NewAuthService(employeeRepo EmployeeRepository, sessionService *SessionService, employeeService ...*EmployeeService) *AuthService {
+	svc := &AuthService{
 		employeeRepo:   employeeRepo,
 		sessionService: sessionService,
 	}
+	if len(employeeService) > 0 && employeeService[0] != nil {
+		svc.employeeService = employeeService[0]
+	}
+	return svc
+}
+
+func (s *AuthService) SetEmployeeService(empSvc *EmployeeService) {
+	s.employeeService = empSvc
+}
+
+func (s *AuthService) GetEmployeeContext(ctx context.Context, employeeId int) (*models.EmployeeContext, error) {
+	if s.employeeService != nil {
+		return s.employeeService.GetEmployeeContext(ctx, employeeId)
+	}
+	emp, err := s.employeeRepo.GetEmployeeById(ctx, employeeId)
+	if err != nil {
+		return nil, err
+	}
+	if emp == nil {
+		return nil, errors.New("employee not found")
+	}
+	isActive := emp.IsActive != nil && *emp.IsActive
+	isTerminated := emp.IsTerminated != nil && *emp.IsTerminated
+	return &models.EmployeeContext{
+		EmployeeId:   emp.EmployeeId,
+		Role:         emp.Role,
+		StoreId:      emp.StoreId,
+		IsActive:     isActive,
+		IsTerminated: isTerminated,
+	}, nil
 }
 
 func (s *AuthService) ValidateSession(ctx context.Context, tokenString string) error {

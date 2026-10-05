@@ -259,18 +259,23 @@ func (mr *MockStoreRepositoryMockRecorder) GetStore(ctx, storeId any) *gomock.Ca
 }
 
 // GetStoreOperationsSummaries mocks base method.
-func (m *MockStoreRepository) GetStoreOperationsSummaries(ctx context.Context) ([]models.StoreOperationSummary, error) {
+func (m *MockStoreRepository) GetStoreOperationsSummaries(ctx context.Context, storeID ...int) ([]models.StoreOperationSummary, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStoreOperationsSummaries", ctx)
+	varargs := []any{ctx}
+	for _, a := range storeID {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetStoreOperationsSummaries", varargs...)
 	ret0, _ := ret[0].([]models.StoreOperationSummary)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetStoreOperationsSummaries indicates an expected call of GetStoreOperationsSummaries.
-func (mr *MockStoreRepositoryMockRecorder) GetStoreOperationsSummaries(ctx any) *gomock.Call {
+func (mr *MockStoreRepositoryMockRecorder) GetStoreOperationsSummaries(ctx any, storeID ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStoreOperationsSummaries", reflect.TypeOf((*MockStoreRepository)(nil).GetStoreOperationsSummaries), ctx)
+	varargs := append([]any{ctx}, storeID...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStoreOperationsSummaries", reflect.TypeOf((*MockStoreRepository)(nil).GetStoreOperationsSummaries), varargs...)
 }
 
 // UpdateStore mocks base method.
@@ -830,6 +835,20 @@ func (mr *MockProductRepositoryMockRecorder) SearchProducts(ctx, query, category
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchProducts", reflect.TypeOf((*MockProductRepository)(nil).SearchProducts), ctx, query, categoryID, brand, isActive, unitOfMeasure, limit, offset)
 }
 
+// UpdateProduct mocks base method.
+func (m *MockProductRepository) UpdateProduct(ctx context.Context, product *models.Product) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateProduct", ctx, product)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateProduct indicates an expected call of UpdateProduct.
+func (mr *MockProductRepositoryMockRecorder) UpdateProduct(ctx, product any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProduct", reflect.TypeOf((*MockProductRepository)(nil).UpdateProduct), ctx, product)
+}
+
 // MockCategoryRepository is a mock of CategoryRepository interface.
 type MockCategoryRepository struct {
 	ctrl     *gomock.Controller
@@ -882,6 +901,49 @@ func (m *MockCategoryRepository) GetDistinctBrands(ctx context.Context) ([]strin
 func (mr *MockCategoryRepositoryMockRecorder) GetDistinctBrands(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDistinctBrands", reflect.TypeOf((*MockCategoryRepository)(nil).GetDistinctBrands), ctx)
+}
+
+// CreateCategory mocks base method.
+func (m *MockCategoryRepository) CreateCategory(ctx context.Context, name string, parentID *int) (*models.Category, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateCategory", ctx, name, parentID)
+	ret0, _ := ret[0].(*models.Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateCategory indicates an expected call of CreateCategory.
+func (mr *MockCategoryRepositoryMockRecorder) CreateCategory(ctx, name, parentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCategory", reflect.TypeOf((*MockCategoryRepository)(nil).CreateCategory), ctx, name, parentID)
+}
+
+// UpdateCategory mocks base method.
+func (m *MockCategoryRepository) UpdateCategory(ctx context.Context, id int, name string, parentID *int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCategory", ctx, id, name, parentID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateCategory indicates an expected call of UpdateCategory.
+func (mr *MockCategoryRepositoryMockRecorder) UpdateCategory(ctx, id, name, parentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCategory", reflect.TypeOf((*MockCategoryRepository)(nil).UpdateCategory), ctx, id, name, parentID)
+}
+
+// DeleteCategory mocks base method.
+func (m *MockCategoryRepository) DeleteCategory(ctx context.Context, id int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCategory", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCategory indicates an expected call of DeleteCategory.
+func (mr *MockCategoryRepositoryMockRecorder) DeleteCategory(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCategory", reflect.TypeOf((*MockCategoryRepository)(nil).DeleteCategory), ctx, id)
 }
 
 // MockMerchandisingRepository is a mock of MerchandisingRepository interface.

@@ -24,7 +24,7 @@ type StoreRepository interface {
 	ActivateStore(ctx context.Context, storeId int) error
 	DeactivateStore(ctx context.Context, storeId int) error
 	GetStore(ctx context.Context, storeId int) (*models.Store, error)
-	GetStoreOperationsSummaries(ctx context.Context) ([]models.StoreOperationSummary, error)
+	GetStoreOperationsSummaries(ctx context.Context, storeID ...int) ([]models.StoreOperationSummary, error)
 }
 
 type SalesRepository interface {
@@ -67,11 +67,15 @@ type ProductRepository interface {
 	GetProductByID(ctx context.Context, id int) (*models.Product, error)
 	GetProductByBarcode(ctx context.Context, barcode string) (*models.Product, error)
 	SearchProducts(ctx context.Context, query string, categoryID *int, brand *string, isActive *bool, unitOfMeasure *string, limit, offset int) ([]models.Product, int, error)
+	UpdateProduct(ctx context.Context, product *models.Product) error
 }
 
 type CategoryRepository interface {
 	GetAllCategories(ctx context.Context) ([]models.Category, error)
 	GetDistinctBrands(ctx context.Context) ([]string, error)
+	CreateCategory(ctx context.Context, name string, parentID *int) (*models.Category, error)
+	UpdateCategory(ctx context.Context, id int, name string, parentID *int) error
+	DeleteCategory(ctx context.Context, id int) error
 }
 
 type MerchandisingRepository interface {
@@ -153,5 +157,3 @@ type ReturnsRepository interface {
 	LookupTransactionsByProduct(ctx context.Context, barcodeOrUpc string, storeID int) ([]models.RecentTransactionSummary, error)
 	GetRtvQueue(ctx context.Context, storeID *int, status *models.RtvStatus, limit, offset int) ([]models.RtvQueueItem, int, error)
 }
-
-

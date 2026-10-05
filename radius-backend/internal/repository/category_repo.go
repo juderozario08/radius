@@ -55,3 +55,25 @@ func (r *CategoryRepo) GetDistinctBrands(ctx context.Context) ([]string, error) 
 
 	return brands, rows.Err()
 }
+
+func (r *CategoryRepo) CreateCategory(ctx context.Context, name string, parentID *int) (*models.Category, error) {
+	query := `INSERT INTO categories (name, parent_id) VALUES ($1, $2) RETURNING category_id, parent_id, name`
+	var c models.Category
+	err := r.db.QueryRowContext(ctx, query, name, parentID).Scan(&c.CategoryId, &c.ParentId, &c.Name)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
+func (r *CategoryRepo) UpdateCategory(ctx context.Context, id int, name string, parentID *int) error {
+	query := `UPDATE categories SET name = $1, parent_id = $2 WHERE category_id = $3`
+	_, err := r.db.ExecContext(ctx, query, name, parentID, id)
+	return err
+}
+
+func (r *CategoryRepo) DeleteCategory(ctx context.Context, id int) error {
+	query := `DELETE FROM categories WHERE category_id = $1`
+	_, err := r.db.ExecContext(ctx, query, id)
+	return err
+}

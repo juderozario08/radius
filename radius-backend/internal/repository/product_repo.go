@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"radius/internal/models"
+	"strings"
 )
 
 type ProductRepo struct {
@@ -71,9 +72,14 @@ func (r *ProductRepo) SearchProducts(
 	args := []interface{}{}
 	argIdx := 1
 
+	query = strings.TrimSpace(query)
+	if len(query) > 100 {
+		query = query[:100]
+	}
+
 	if query != "" {
 		baseWhere += fmt.Sprintf(
-			" AND (name ILIKE $%d OR sku ILIKE $%d OR COALESCE(description, '') ILIKE $%d)",
+			" AND (name ILIKE $%d OR sku ILIKE $%d OR description ILIKE $%d)",
 			argIdx, argIdx, argIdx,
 		)
 		args = append(args, "%"+query+"%")
@@ -113,7 +119,7 @@ func (r *ProductRepo) SearchProducts(
 	dataQuery := fmt.Sprintf(
 		`SELECT product_id, sku, upc, name, description, category_id, brand, unit_of_measure, units_per_case, weight, is_active, created_at
 		FROM products %s
-		ORDER BY name ASC
+		ORDER BY name ASC, product_id ASC
 		LIMIT $%d OFFSET $%d`,
 		baseWhere, argIdx, argIdx+1,
 	)
@@ -139,4 +145,21 @@ func (r *ProductRepo) SearchProducts(
 	}
 
 	return products, total, rows.Err()
+}
+
+func (r *ProductRepo) UpdateProduct(ctx context.Context, product *models.Product) error {
+	query := `
+		UPDATE products
+		SET sku = $1, upc = $2, name = $3, description = $4, category_id = $5,
+		    brand = $6, unit_of_measure = $7, units_per_case = $8, weight = $9,
+		    is_active = $10, is_returnable = $11, warranty_days = $12, retail_price = $13
+		WHERE product_id = $14
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		product.Sku, product.Upc, product.Name, product.Description, product.CategoryId,
+		product.Brand, product.UnitOfMeasure, product.UnitsPerCase, product.Weight,
+		product.IsActive, product.IsReturnable, product.WarrantyDays, product.RetailPrice,
+		product.ProductId,
+	)
+	return err
 }

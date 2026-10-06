@@ -298,10 +298,7 @@ func (s *CycleCountService) SubmitForApproval(ctx context.Context, storeId int, 
 		})
 	}
 
-	if count != nil {
-		s.invalidateStoreOperations(ctx, count.StoreId)
-	}
-
+	s.invalidateStoreOperations(ctx, count.StoreId)
 	return nil
 }
 

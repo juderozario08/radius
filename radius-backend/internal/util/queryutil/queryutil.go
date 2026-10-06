@@ -17,15 +17,15 @@ func BuildWhereClause(conditions []string) string {
 	return "WHERE " + strings.Join(conditions, " AND ")
 }
 
-func AppendCondition(conditions []string, args []interface{}, condition string, arg interface{}) ([]string, []interface{}) {
+func AppendCondition(conditions []string, args []any, condition string, arg any) ([]string, []any) {
 	conditions = append(conditions, condition)
 	args = append(args, arg)
 	return conditions, args
 }
 
-func PaginateQuery(query string, limit, offset int, argIdx int) (string, []interface{}) {
+func PaginateQuery(query string, limit, offset int, argIdx int) (string, []any) {
 	paginatedQuery := fmt.Sprintf("%s LIMIT $%d OFFSET $%d", query, argIdx, argIdx+1)
-	return paginatedQuery, []interface{}{limit, offset}
+	return paginatedQuery, []any{limit, offset}
 }
 
 type Builder struct {
@@ -71,7 +71,7 @@ func (b *Builder) AddWithSameArg(clauseFormat string, arg any) *Builder {
 	idx := len(b.args)
 	count := strings.Count(clauseFormat, "%d")
 	indices := make([]any, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		indices[i] = idx
 	}
 	clause := fmt.Sprintf(clauseFormat, indices...)

@@ -2,3 +2,9 @@ graphify-out/
 subagents.json
 __pycache__/
 *.pyc
+
+*.md
+!README.md
+!**/README.md
+!AGENTS.md
+!**/AGENTS.md

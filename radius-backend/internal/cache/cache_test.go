@@ -69,7 +69,7 @@ func TestApplyJitter(t *testing.T) {
 	baseTTL := 10 * time.Minute
 	jitterRange := 60 * time.Second
 
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		jittered := cache.ApplyJitter(baseTTL, jitterRange)
 		if jittered < baseTTL || jittered > baseTTL+jitterRange {
 			t.Fatalf("jittered TTL %v outside bounds [%v, %v]", jittered, baseTTL, baseTTL+jitterRange)

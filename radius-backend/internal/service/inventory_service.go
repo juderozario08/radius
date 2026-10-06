@@ -395,7 +395,8 @@ func (s *InventoryService) BinItem(ctx context.Context, storeId int, employeeId 
 		ScanType:       "BIN_" + req.Action,
 	})
 
-	if req.Action == "OUT" {
+	switch req.Action {
+	case "OUT":
 		inLocation, err := s.inventoryRepo.CheckProductInLocation(ctx, storeId, req.LocationId, inventory.ProductId)
 		if err != nil {
 			return nil, err
@@ -408,7 +409,7 @@ func (s *InventoryService) BinItem(ctx context.Context, storeId int, employeeId 
 			return nil, err
 		}
 		s.InvalidateInventoryCache(ctx, storeId, inventory.ProductId, req.Barcode)
-	} else if req.Action == "IN" {
+	case "IN":
 		err = s.inventoryRepo.LinkProductToLocation(ctx, storeId, req.LocationId, inventory.ProductId)
 		if err != nil {
 			return nil, err

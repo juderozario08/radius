@@ -25,7 +25,7 @@ func (e *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 	var body models.CreateEmployeeRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		log.Printf("[ERROR] EmployeeHandler.CreateEmployee (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -86,7 +86,7 @@ func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 	var body models.Employee
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		log.Printf("[ERROR] EmployeeHandler.UpdateEmployee (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -118,7 +118,7 @@ func (e *EmployeeHandler) TerminateEmployee(ctx *gin.Context) {
 		var body models.EmployeeIdRequest
 		if err := ctx.ShouldBindJSON(&body); err != nil {
 			log.Printf("[ERROR] EmployeeHandler.TerminateEmployee (BindJSON): %v", err)
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
 		}
 		employeeID = body.EmployeeId
@@ -145,7 +145,7 @@ func (e *EmployeeHandler) ActivateEmployee(ctx *gin.Context) {
 		var body models.EmployeeIdRequest
 		if err := ctx.ShouldBindJSON(&body); err != nil {
 			log.Printf("[ERROR] EmployeeHandler.ActivateEmployee (BindJSON): %v", err)
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
 		}
 		employeeID = body.EmployeeId

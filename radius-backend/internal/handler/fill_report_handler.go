@@ -41,14 +41,14 @@ func (h *FillReportHandler) GetFillReport(c *gin.Context) {
 
 	var filter models.FillReportFilter
 	if err := c.ShouldBindQuery(&filter); err != nil {
-		api.ErrorWithDetails(c, http.StatusBadRequest, "Invalid query parameters", err.Error())
+		api.Error(c, http.StatusBadRequest, "Invalid query parameters")
 		return
 	}
 
 	resp, err := h.service.GetStoreFillReport(c.Request.Context(), storeID, filter)
 	if err != nil {
 		log.Printf("Error getting fill report for store %d: %v", storeID, err)
-		api.ErrorWithDetails(c, http.StatusInternalServerError, "Failed to retrieve fill report", err.Error())
+		api.Error(c, http.StatusInternalServerError, "An internal error occurred")
 		return
 	}
 
@@ -64,7 +64,7 @@ func (h *FillReportHandler) ScanEmptyHole(c *gin.Context) {
 
 	var req models.ScanEmptyHoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		api.ErrorWithDetails(c, http.StatusBadRequest, "Invalid request payload", err.Error())
+		api.Error(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
@@ -75,7 +75,7 @@ func (h *FillReportHandler) ScanEmptyHole(c *gin.Context) {
 
 	if err := h.service.LogEmptyHole(c.Request.Context(), storeID, req.ProductID, empID); err != nil {
 		log.Printf("Error logging empty hole: %v", err)
-		api.ErrorWithDetails(c, http.StatusInternalServerError, "Failed to log empty hole", err.Error())
+		api.Error(c, http.StatusInternalServerError, "An internal error occurred")
 		return
 	}
 
@@ -109,7 +109,7 @@ func (h *FillReportHandler) AddToIS4TCSession(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("Bind error in AddToIS4TCSession: %v", err)
-		api.ErrorWithDetails(c, http.StatusBadRequest, "Invalid payload", err.Error())
+		api.Error(c, http.StatusBadRequest, "Invalid payload")
 		return
 	}
 

@@ -82,9 +82,9 @@ type GetTransactionResponse struct {
 type CreateTransactionItemRequest struct {
 	ProductId      int     `json:"product_id" binding:"required"`
 	Quantity       int     `json:"quantity" binding:"required,min=1"`
-	UnitPrice      float32 `json:"unit_price" binding:"required"`
-	UnitCost       float32 `json:"unit_cost"`
-	DiscountAmount float32 `json:"discount_amount"`
+	UnitPrice      float32 `json:"-"`
+	UnitCost       float32 `json:"-"`
+	DiscountAmount float32 `json:"-"`
 	ScannedBarcode *string `json:"scanned_barcode"`
 }
 
@@ -92,11 +92,11 @@ type CreateTransactionRequest struct {
 	StoreId           *int                           `json:"store_id"`
 	RegisterId        string                         `json:"register_id" binding:"required"`
 	TransactionType   TransactionType                `json:"transaction_type"`
-	Subtotal          float32                        `json:"subtotal"`
-	TaxAmount         float32                        `json:"tax_amount"`
-	DiscountTotal     float32                        `json:"discount_total"`
-	CostTotal         float32                        `json:"cost_total"`
-	TotalAmount       float32                        `json:"total_amount" binding:"required"`
+	Subtotal          float32                        `json:"-"`
+	TaxAmount         float32                        `json:"-"`
+	DiscountTotal     float32                        `json:"-"`
+	CostTotal         float32                        `json:"-"`
+	TotalAmount       float32                        `json:"-"`
 	PaymentMethod     *TransactionPaymentMethod      `json:"payment_method"`
 	CardType          *string                        `json:"card_type"`
 	CardNumber        *string                        `json:"card_number"`

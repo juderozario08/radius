@@ -66,7 +66,7 @@ func (h *PrintOrderHandler) GetPrintOrderByID(ctx *gin.Context) {
 		return
 	}
 
-	order, items, err := h.printOrderService.GetPrintOrderByID(ctx.Request.Context(), id)
+	order, items, err := h.printOrderService.GetPrintOrderByIDForStore(ctx.Request.Context(), id, ctx.GetInt("store_id"), models.EmployeeRole(ctx.GetString("role")))
 	if err != nil {
 		log.Printf("[ERROR] PrintOrderHandler.GetPrintOrderByID (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})

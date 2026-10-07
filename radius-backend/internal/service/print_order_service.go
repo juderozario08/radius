@@ -38,3 +38,11 @@ func (s *PrintOrderService) GetAllPrintOrders(ctx context.Context, storeId int, 
 func (s *PrintOrderService) GetPrintOrderByID(ctx context.Context, id int) (*models.PrintOrder, []models.PrintOrderItem, error) {
 	return s.ordersRepo.GetPrintOrderByID(ctx, id, nil)
 }
+
+func (s *PrintOrderService) GetPrintOrderByIDForStore(ctx context.Context, id, storeID int, role models.EmployeeRole) (*models.PrintOrder, []models.PrintOrderItem, error) {
+	var scope *int
+	if role != models.RoleAdmin {
+		scope = &storeID
+	}
+	return s.ordersRepo.GetPrintOrderByID(ctx, id, scope)
+}

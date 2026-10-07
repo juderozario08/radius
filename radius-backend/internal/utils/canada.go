@@ -6,6 +6,27 @@ import (
 	"strings"
 )
 
+func SalesTaxRatePer100000(province string) (int64, error) {
+	switch province {
+	case "Ontario":
+		return 13000, nil
+	case "New Brunswick", "Newfoundland and Labrador", "Prince Edward Island":
+		return 15000, nil
+	case "Nova Scotia":
+		return 14000, nil
+	case "British Columbia", "Manitoba":
+		return 12000, nil
+	case "Saskatchewan":
+		return 11000, nil
+	case "Quebec":
+		return 14975, nil
+	case "Alberta", "Northwest Territories", "Nunavut", "Yukon":
+		return 5000, nil
+	default:
+		return 0, errors.New("unsupported province")
+	}
+}
+
 var CanadianProvincesAndTerritories = []string{
 	"Alberta",
 	"British Columbia",

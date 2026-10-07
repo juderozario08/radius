@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"radius/internal/cache"
 	"radius/internal/models"
 
@@ -43,7 +43,7 @@ func (s *ReceivingService) GetPurchaseOrderDetail(ctx context.Context, poID int)
 		return nil, err
 	}
 	if detail == nil {
-		return nil, errors.New("purchase order not found")
+		return nil, fmt.Errorf("%w: purchase order not found", ErrNotFound)
 	}
 	return detail, nil
 }
@@ -66,11 +66,11 @@ func (s *ReceivingService) ReceivePO(ctx context.Context, storeId int, employeeI
 		return err
 	}
 	if detail == nil {
-		return errors.New("purchase order not found")
+		return fmt.Errorf("%w: purchase order not found", ErrNotFound)
 	}
 
 	if role != "ADMIN" && detail.StoreId != storeId {
-		return errors.New("cannot receive for a different store")
+		return fmt.Errorf("%w: cannot receive for a different store", ErrValidation)
 	}
 
 	err = s.receivingRepo.ReceivePOItems(ctx, detail.StoreId, req.PoId, employeeId, req.Items)
@@ -101,11 +101,11 @@ func (s *ReceivingService) ReceiveLPR(ctx context.Context, storeId int, employee
 		return err
 	}
 	if detail == nil {
-		return errors.New("purchase order not found")
+		return fmt.Errorf("%w: purchase order not found", ErrNotFound)
 	}
 
 	if role != "ADMIN" && detail.StoreId != storeId {
-		return errors.New("cannot receive for a different store")
+		return fmt.Errorf("%w: cannot receive for a different store", ErrValidation)
 	}
 
 	err = s.receivingRepo.ReceiveLPR(ctx, detail.StoreId, req.PoId, req.LprBarcode, employeeId)
@@ -144,7 +144,7 @@ func (s *ReceivingService) GetStockTransferDetail(ctx context.Context, transferI
 		return nil, err
 	}
 	if detail == nil {
-		return nil, errors.New("transfer not found")
+		return nil, fmt.Errorf("%w: transfer not found", ErrNotFound)
 	}
 	return detail, nil
 }
@@ -167,10 +167,10 @@ func (s *ReceivingService) ReceiveTransfer(ctx context.Context, storeId int, emp
 		return err
 	}
 	if detail == nil {
-		return errors.New("transfer not found")
+		return fmt.Errorf("%w: transfer not found", ErrNotFound)
 	}
 	if detail.Status != "IN_TRANSIT" {
-		return errors.New("transfer is not in transit")
+		return fmt.Errorf("%w: transfer is not in transit", ErrValidation)
 	}
 
 	err = s.receivingRepo.ReceiveTransferItems(ctx, storeId, req.TransferId, employeeId, req.Items)
@@ -198,13 +198,13 @@ func (s *ReceivingService) QuickReceiveTransfer(ctx context.Context, storeId int
 		return err
 	}
 	if detail == nil {
-		return errors.New("transfer not found")
+		return fmt.Errorf("%w: transfer not found", ErrNotFound)
 	}
 	if detail.Status != "IN_TRANSIT" {
-		return errors.New("transfer is not in transit")
+		return fmt.Errorf("%w: transfer is not in transit", ErrValidation)
 	}
 	if detail.ManualCheckRequired {
-		return errors.New("this transfer requires manual check — cannot quick receive")
+		return fmt.Errorf("%w: this transfer requires manual check", ErrValidation)
 	}
 
 	err = s.receivingRepo.QuickReceiveTransfer(ctx, storeId, req.TransferId, employeeId)

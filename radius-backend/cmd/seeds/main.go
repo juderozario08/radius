@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -15,6 +16,14 @@ import (
 )
 
 func main() {
+	allowWipe := flag.Bool("i-understand-this-wipes-data", false, "allow destructive seed wipe")
+	flag.Parse()
+	if strings.EqualFold(os.Getenv("GIN_MODE"), "release") && os.Getenv("ALLOW_SEED_WIPE") != "true" {
+		log.Fatal("refusing to run seeds in release mode without ALLOW_SEED_WIPE=true")
+	}
+	if !*allowWipe && os.Getenv("ALLOW_SEED_WIPE") != "true" {
+		log.Fatal("refusing to run destructive seeds without --i-understand-this-wipes-data or ALLOW_SEED_WIPE=true")
+	}
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Println("No .env file found, relying on existing environment variables")

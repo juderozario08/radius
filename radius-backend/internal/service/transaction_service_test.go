@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -72,13 +73,49 @@ func TestTransactionService_CreateTransaction_AutoReportsToFillReport(t *testing
 		AddSoldItems(gomock.Any(), storeId, expectedItems).
 		Return(nil)
 
-	tx, err := svc.CreateTransaction(context.Background(), storeId, empId, models.RoleSales, req)
+	tx, err := svc.CreateTransaction(context.Background(), storeId, empId, models.RoleAdmin, req)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
 	if tx.TransactionId != 99 {
 		t.Errorf("Expected transaction ID 99, got %d", tx.TransactionId)
+	}
+}
+
+func TestTransactionService_CreateTransaction_NonAdminForbidden(t *testing.T) {
+	tests := []struct {
+		name string
+		role models.EmployeeRole
+	}{
+		{name: "sales", role: models.RoleSales},
+		{name: "service", role: models.RoleService},
+		{name: "manager", role: models.RoleManager},
+		{name: "empty role", role: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockSalesRepo := mocks.NewMockSalesRepository(ctrl)
+			mockFillReportRepo := mocks.NewMockFillReportRepository(ctrl)
+			svc := service.NewTransactionService(mockSalesRepo, nil, nil, mockFillReportRepo)
+
+			req := models.CreateTransactionRequest{
+				RegisterId: "REG-01",
+				Items:      []models.CreateTransactionItemRequest{{ProductId: 101, Quantity: 1}},
+			}
+
+			tx, err := svc.CreateTransaction(context.Background(), 3, 42, tt.role, req)
+			if !errors.Is(err, service.ErrForbidden) {
+				t.Fatalf("expected ErrForbidden, got %v", err)
+			}
+			if tx != nil {
+				t.Fatalf("expected no transaction, got %+v", tx)
+			}
+		})
 	}
 }
 
@@ -199,7 +236,7 @@ func TestTransactionService_CreateTransaction_InvalidatesInventoryCache(t *testi
 		AddSoldItems(gomock.Any(), storeId, expectedItems).
 		Return(nil)
 
-	tx, err := svc.CreateTransaction(context.Background(), storeId, empId, models.RoleSales, req)
+	tx, err := svc.CreateTransaction(context.Background(), storeId, empId, models.RoleAdmin, req)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

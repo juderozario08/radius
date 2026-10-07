@@ -42,7 +42,7 @@ func (h *StoreHandler) UpdateStore(ctx *gin.Context) {
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.UpdateStore (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -66,7 +66,7 @@ func (h *StoreHandler) CreateStore(ctx *gin.Context) {
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.CreateStore (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -109,7 +109,7 @@ func (h *StoreHandler) ActivateStore(ctx *gin.Context) {
 		var body models.StoreIdRequest
 		if err := ctx.ShouldBindJSON(&body); err != nil {
 			log.Printf("[ERROR] StoreHandler.ActivateStore (BindJSON): %v", err)
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
 		}
 		storeID = body.StoreId
@@ -135,7 +135,7 @@ func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
 		var body models.StoreIdRequest
 		if err := ctx.ShouldBindJSON(&body); err != nil {
 			log.Printf("[ERROR] StoreHandler.DeactivateStore (BindJSON): %v", err)
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
 		}
 		storeID = body.StoreId

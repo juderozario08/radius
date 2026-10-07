@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"radius/internal/models"
@@ -68,12 +69,12 @@ func (h *TransferHandler) GetOutboundTransferDetail(ctx *gin.Context) {
 	detail, err := h.transferService.GetOutboundTransferDetail(ctx.Request.Context(), storeId, role, transferID)
 	if err != nil {
 		log.Printf("[ERROR] TransferHandler.GetOutboundTransferDetail: %v", err)
-		if err.Error() == "transfer not found" {
-			ctx.JSON(http.StatusNotFound, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrNotFound) {
+			ctx.JSON(http.StatusNotFound, models.APIError{Error: "Request could not be completed"})
 			return
 		}
-		if err.Error() == "unauthorized to view this transfer" {
-			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrForbidden) {
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve transfer details"})
@@ -90,14 +91,14 @@ func (h *TransferHandler) CreateTransfer(ctx *gin.Context) {
 
 	var req models.CreateTransferRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	transfer, err := h.transferService.CreateTransfer(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] TransferHandler.CreateTransfer: %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -113,7 +114,7 @@ func (h *TransferHandler) DispatchTransfer(ctx *gin.Context) {
 
 	var req models.DispatchTransferRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -126,7 +127,7 @@ func (h *TransferHandler) DispatchTransfer(ctx *gin.Context) {
 	err := h.transferService.DispatchTransfer(ctx.Request.Context(), storeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] TransferHandler.DispatchTransfer: %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -142,7 +143,7 @@ func (h *TransferHandler) CancelTransfer(ctx *gin.Context) {
 
 	var req models.CancelTransferRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -155,7 +156,7 @@ func (h *TransferHandler) CancelTransfer(ctx *gin.Context) {
 	err := h.transferService.CancelTransfer(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] TransferHandler.CancelTransfer: %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 

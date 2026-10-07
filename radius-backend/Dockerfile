@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------------
 # Stage 1: Build the Go binaries
 # ------------------------------------------------------------------------------
-FROM golang:1.26-alpine AS builder
+FROM golang:1.26.6-alpine AS builder
 
 WORKDIR /app
 
@@ -21,8 +21,7 @@ COPY . .
 
 # Build statically linked binaries for API server, migration runner, and seed runner
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/bin/api ./cmd/api && \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/bin/migrate ./cmd/migrate && \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/bin/seeds ./cmd/seeds
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/bin/migrate ./cmd/migrate
 
 # ------------------------------------------------------------------------------
 # Stage 2: Minimal runtime image
@@ -42,7 +41,6 @@ COPY --from=builder /app/bin/ /app/bin/
 
 # Copy migrations and seed directories required for runtime execution
 COPY --from=builder /app/migrations /app/migrations
-COPY --from=builder /app/seeds /app/seeds
 
 # Set file permissions for non-root user
 RUN chown -R appuser:appgroup /app

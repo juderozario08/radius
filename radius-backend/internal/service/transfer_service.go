@@ -87,11 +87,11 @@ func (s *TransferService) GetOutboundTransferDetail(ctx context.Context, storeId
 		return nil, err
 	}
 	if detail == nil {
-		return nil, errors.New("transfer not found")
+		return nil, fmt.Errorf("%w: transfer not found", ErrNotFound)
 	}
 
 	if role != models.RoleAdmin && detail.FromStoreId != storeId && detail.ToStoreId != storeId {
-		return nil, errors.New("unauthorized to view this transfer")
+		return nil, fmt.Errorf("%w: unauthorized to view this transfer", ErrForbidden)
 	}
 
 	return detail, nil
@@ -107,7 +107,7 @@ func (s *TransferService) DispatchTransfer(ctx context.Context, storeId int, rol
 		return err
 	}
 	if detail == nil {
-		return errors.New("transfer not found")
+		return fmt.Errorf("%w: transfer not found", ErrNotFound)
 	}
 
 	if role != models.RoleAdmin && detail.FromStoreId != storeId {
@@ -157,7 +157,7 @@ func (s *TransferService) CancelTransfer(ctx context.Context, storeId int, emplo
 		return err
 	}
 	if detail == nil {
-		return errors.New("transfer not found")
+		return fmt.Errorf("%w: transfer not found", ErrNotFound)
 	}
 
 	if role != models.RoleAdmin && detail.FromStoreId != storeId {

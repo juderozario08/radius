@@ -167,7 +167,7 @@ func (s *ReturnsService) ApproveReturn(ctx context.Context, storeId int, employe
 		return err
 	}
 	if retSummary == nil {
-		return errors.New("return not found")
+		return fmt.Errorf("%w: return not found", ErrNotFound)
 	}
 
 	if role != models.RoleAdmin && retSummary.StoreId != storeId {
@@ -213,7 +213,7 @@ func (s *ReturnsService) RejectReturn(ctx context.Context, storeId int, employee
 		return err
 	}
 	if retSummary == nil {
-		return errors.New("return not found")
+		return fmt.Errorf("%w: return not found", ErrNotFound)
 	}
 
 	if role != models.RoleAdmin && retSummary.StoreId != storeId {
@@ -250,11 +250,11 @@ func (s *ReturnsService) GetReturnDetail(ctx context.Context, storeId int, role 
 		return nil, err
 	}
 	if summary == nil {
-		return nil, errors.New("return not found")
+		return nil, fmt.Errorf("%w: return not found", ErrNotFound)
 	}
 
 	if role != models.RoleAdmin && summary.StoreId != storeId {
-		return nil, errors.New("unauthorized to view return for another store")
+		return nil, fmt.Errorf("%w: unauthorized to view return for another store", ErrForbidden)
 	}
 
 	return &models.CustomerReturnDetailResponse{
@@ -274,7 +274,7 @@ func (s *ReturnsService) LookupTransaction(ctx context.Context, storeId int, rol
 		return nil, err
 	}
 	if resp == nil {
-		return nil, errors.New("transaction not found")
+		return nil, fmt.Errorf("%w: transaction not found", ErrNotFound)
 	}
 
 	return resp, nil

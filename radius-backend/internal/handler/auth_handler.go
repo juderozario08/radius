@@ -21,14 +21,14 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 	var body models.EmployeeLoginRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		log.Printf("[ERROR] AuthHandler.Login (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	result, err := h.authService.Login(ctx.Request.Context(), body, ctx.ClientIP())
 	if err != nil {
 		log.Printf("[ERROR] AuthHandler.Login (Service): %v", err)
-		ctx.JSON(http.StatusUnauthorized, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusUnauthorized, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -75,7 +75,7 @@ func (h *AuthHandler) RefreshToken(ctx *gin.Context) {
 	result, err := h.authService.RefreshToken(ctx.Request.Context(), body.RefreshToken)
 	if err != nil {
 		log.Printf("[ERROR] AuthHandler.RefreshToken (Service): %v", err)
-		ctx.JSON(http.StatusUnauthorized, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusUnauthorized, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 

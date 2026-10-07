@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"radius/internal/api"
@@ -70,15 +71,15 @@ func (h *InventoryHandler) BinItem(ctx *gin.Context) {
 
 	var req models.BinItemRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	result, err := h.inventoryService.BinItem(ctx.Request.Context(), storeId, employeeId, req)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.BinItem: %v", err)
-		if err.Error() == "Product is not in this bin" {
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrNotFound) {
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -93,7 +94,7 @@ func (h *InventoryHandler) UpdateQuantity(ctx *gin.Context) {
 
 	var req models.UpdateQuantityRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -145,7 +146,7 @@ func (h *InventoryHandler) SyncLocations(ctx *gin.Context) {
 
 	var req models.SyncLocationsRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -164,7 +165,7 @@ func (h *InventoryHandler) CreateMimsLocation(ctx *gin.Context) {
 
 	var req models.CreateMimsLocationRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -184,7 +185,7 @@ func (h *InventoryHandler) CreateAdjustment(ctx *gin.Context) {
 
 	var req models.AdjustInventoryRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -218,17 +219,17 @@ func (h *InventoryHandler) ReviewAdjustments(ctx *gin.Context) {
 
 	var req models.ReviewAdjustmentRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	err := h.inventoryService.ReviewAdjustments(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] InventoryHandler.ReviewAdjustments: %v", err)
-		if err.Error() == "unauthorized" {
+		if errors.Is(err, service.ErrUnauthorized) {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: "unauthorized"})
 		} else {
-			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		}
 		return
 	}

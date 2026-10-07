@@ -1,4 +1,4 @@
-import { getToken, saveToken, getRefreshToken, deleteToken, deleteRefreshToken } from "@/utils/token";
+import { getToken, saveToken, saveRefreshToken, getRefreshToken, deleteToken, deleteRefreshToken } from "@/utils/token";
 import { ENDPOINTS } from "@/constants/routes";
 import { RefreshTokenResponse } from "@/types/auth.types";
 import {
@@ -52,6 +52,20 @@ export interface FetchOptions extends RequestInit {
 
 let refreshPromise: Promise<string | null> | null = null;
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const callerSignal = options.signal;
+    const abortCaller = () => controller.abort();
+    callerSignal?.addEventListener("abort", abortCaller, { once: true });
+    try {
+        return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+        clearTimeout(timeout);
+        callerSignal?.removeEventListener("abort", abortCaller);
+    }
+}
+
 async function refreshAccessToken(): Promise<string | null> {
     if (refreshPromise) {
         return refreshPromise;
@@ -64,7 +78,7 @@ async function refreshAccessToken(): Promise<string | null> {
                 return null;
             }
 
-            const response = await fetch(`${BASE_URL}${ENDPOINTS.AUTH.refreshToken}`, {
+            const response = await fetchWithTimeout(`${BASE_URL}${ENDPOINTS.AUTH.refreshToken}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ refresh_token: refreshToken }),
@@ -78,6 +92,9 @@ async function refreshAccessToken(): Promise<string | null> {
 
             const data = (await response.json()) as RefreshTokenResponse;
             await saveToken(data.token);
+            if (data.refresh_token) {
+                await saveRefreshToken(data.refresh_token);
+            }
             return data.token;
         } catch {
             await deleteToken();
@@ -110,7 +127,7 @@ async function executeNetworkFetch<T>(
         headers["If-None-Match"] = cachedEtag.etag;
     }
 
-    const response = await fetch(`${BASE_URL}${path}`, {
+    const response = await fetchWithTimeout(`${BASE_URL}${path}`, {
         ...options,
         headers,
     });
@@ -127,7 +144,7 @@ async function executeNetworkFetch<T>(
                 Authorization: `Bearer ${newToken}`,
             };
 
-            const retryResponse = await fetch(`${BASE_URL}${path}`, {
+            const retryResponse = await fetchWithTimeout(`${BASE_URL}${path}`, {
                 ...options,
                 headers: retryHeaders,
             });

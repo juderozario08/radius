@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"radius/internal/models"
@@ -27,14 +28,14 @@ func (h *ReturnsHandler) CreateReturn(ctx *gin.Context) {
 
 	var req models.CreateReturnRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	createdReturn, err := h.returnsService.CreateReturn(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] ReturnsHandler.CreateReturn: %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -103,12 +104,12 @@ func (h *ReturnsHandler) GetReturnDetail(ctx *gin.Context) {
 	detail, err := h.returnsService.GetReturnDetail(ctx.Request.Context(), storeId, role, returnID)
 	if err != nil {
 		log.Printf("[ERROR] ReturnsHandler.GetReturnDetail: %v", err)
-		if err.Error() == "return not found" {
-			ctx.JSON(http.StatusNotFound, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrNotFound) {
+			ctx.JSON(http.StatusNotFound, models.APIError{Error: "Request could not be completed"})
 			return
 		}
-		if err.Error() == "unauthorized to view return for another store" {
-			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrForbidden) {
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve return detail"})
@@ -140,7 +141,7 @@ func (h *ReturnsHandler) ApproveReturn(ctx *gin.Context) {
 
 	if err := h.returnsService.ApproveReturn(ctx.Request.Context(), storeId, employeeId, role, returnID); err != nil {
 		log.Printf("[ERROR] ReturnsHandler.ApproveReturn: %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -174,7 +175,7 @@ func (h *ReturnsHandler) RejectReturn(ctx *gin.Context) {
 
 	if err := h.returnsService.RejectReturn(ctx.Request.Context(), storeId, employeeId, role, returnID, req.Reason); err != nil {
 		log.Printf("[ERROR] ReturnsHandler.RejectReturn: %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -203,8 +204,8 @@ func (h *ReturnsHandler) LookupTransaction(ctx *gin.Context) {
 	resp, err := h.returnsService.LookupTransaction(ctx.Request.Context(), storeId, role, txID)
 	if err != nil {
 		log.Printf("[ERROR] ReturnsHandler.LookupTransaction: %v", err)
-		if err.Error() == "transaction not found" {
-			ctx.JSON(http.StatusNotFound, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrNotFound) {
+			ctx.JSON(http.StatusNotFound, models.APIError{Error: "Request could not be completed"})
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to lookup transaction"})

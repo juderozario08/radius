@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,7 +9,6 @@ import (
 	"radius/internal/service"
 	"radius/internal/utils"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -84,7 +84,7 @@ func (h *OnlineOrderHandler) GetOnlineOrderByID(ctx *gin.Context) {
 		return
 	}
 
-	order, items, err := h.onlineOrderService.GetOnlineOrderByID(ctx.Request.Context(), id)
+	order, items, err := h.onlineOrderService.GetOnlineOrderByIDForStore(ctx.Request.Context(), id, ctx.GetInt("store_id"), models.EmployeeRole(ctx.GetString("role")))
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.GetOnlineOrderByID (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
@@ -109,20 +109,18 @@ func (h *OnlineOrderHandler) CreateOnlineOrder(ctx *gin.Context) {
 	var order models.OnlineOrder
 	if err := ctx.ShouldBindJSON(&order); err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.CreateOnlineOrder (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid request payload: " + err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	createdOrder, err := h.onlineOrderService.CreateOnlineOrder(ctx.Request.Context(), storeId, role, &order)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.CreateOnlineOrder (Service): %v", err)
-		if strings.Contains(err.Error(), "invalid status") ||
-			strings.Contains(err.Error(), "required") ||
-			strings.Contains(err.Error(), "cannot be nil") {
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrValidation) {
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -137,7 +135,7 @@ func (h *OnlineOrderHandler) AssignOnlineOrder(ctx *gin.Context) {
 	var req models.AssignOnlineOrderRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.AssignOnlineOrder (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid request payload: " + err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -150,7 +148,7 @@ func (h *OnlineOrderHandler) AssignOnlineOrder(ctx *gin.Context) {
 	order, wasAssigned, err := h.onlineOrderService.AssignOnlineOrder(ctx.Request.Context(), storeId, employeeId, role, req.OrderID, req.EmployeeID)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.AssignOnlineOrder (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to assign order: " + err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -177,13 +175,12 @@ func (h *OnlineOrderHandler) AssignOnlineOrder(ctx *gin.Context) {
 }
 
 func (h *OnlineOrderHandler) UpdateOnlineOrderItem(ctx *gin.Context) {
-	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.UpdateOnlineOrderItemRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.UpdateOnlineOrderItem (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid request payload: " + err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -198,10 +195,10 @@ func (h *OnlineOrderHandler) UpdateOnlineOrderItem(ctx *gin.Context) {
 		}
 	}
 
-	err := h.onlineOrderService.UpdateOrderItem(ctx.Request.Context(), email, role, req.OrderID, req.OrderItemID, req.PickedQty, req.Status, req.Reason)
+	err := h.onlineOrderService.UpdateOrderItemForStore(ctx.Request.Context(), ctx.GetInt("store_id"), role, req.OrderID, req.OrderItemID, req.PickedQty, req.Status, req.Reason)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.UpdateOnlineOrderItem (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to update item: " + err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -211,13 +208,12 @@ func (h *OnlineOrderHandler) UpdateOnlineOrderItem(ctx *gin.Context) {
 }
 
 func (h *OnlineOrderHandler) CompleteOrderPicking(ctx *gin.Context) {
-	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.CompletePickRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.CompleteOrderPicking (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid request payload: " + err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -227,10 +223,10 @@ func (h *OnlineOrderHandler) CompleteOrderPicking(ctx *gin.Context) {
 		}
 	}
 
-	order, err := h.onlineOrderService.CompleteOrderPicking(ctx.Request.Context(), email, role, req.OrderID)
+	order, err := h.onlineOrderService.CompleteOrderPickingForStore(ctx.Request.Context(), ctx.GetInt("store_id"), role, req.OrderID)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.CompleteOrderPicking (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to complete picking: " + err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -241,13 +237,12 @@ func (h *OnlineOrderHandler) CompleteOrderPicking(ctx *gin.Context) {
 }
 
 func (h *OnlineOrderHandler) CancelOnlineOrder(ctx *gin.Context) {
-	email := ctx.GetString("email")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	var req models.CancelOnlineOrderRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.CancelOnlineOrder (BindJSON): %v", err)
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid request payload: " + err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -257,10 +252,10 @@ func (h *OnlineOrderHandler) CancelOnlineOrder(ctx *gin.Context) {
 		}
 	}
 
-	order, err := h.onlineOrderService.CancelOnlineOrder(ctx.Request.Context(), email, role, req.OrderID, req.Reason)
+	order, err := h.onlineOrderService.CancelOnlineOrderForStore(ctx.Request.Context(), ctx.GetInt("store_id"), role, req.OrderID, req.Reason)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.CancelOnlineOrder (Service): %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to cancel order: " + err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 

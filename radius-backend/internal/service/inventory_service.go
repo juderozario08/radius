@@ -402,7 +402,7 @@ func (s *InventoryService) BinItem(ctx context.Context, storeId int, employeeId 
 			return nil, err
 		}
 		if !inLocation {
-			return nil, errors.New("Product is not in this bin")
+			return nil, fmt.Errorf("%w: product is not in this bin", ErrNotFound)
 		}
 		err = s.inventoryRepo.IncrementInventoryQuantity(ctx, storeId, inventory.ProductId, -1)
 		if err != nil {
@@ -480,7 +480,7 @@ func (s *InventoryService) GetPendingAdjustments(ctx context.Context, storeId in
 
 func (s *InventoryService) ReviewAdjustments(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.ReviewAdjustmentRequest) error {
 	if role != models.RoleManager && role != models.RoleAdmin {
-		return errors.New("unauthorized")
+		return ErrUnauthorized
 	}
 
 	err := s.inventoryRepo.ReviewAdjustments(ctx, storeId, employeeId, req.Reviews)

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"radius/internal/cache"
 	"radius/internal/models"
@@ -81,7 +80,7 @@ func (s *CycleCountService) GetCycleCountDetail(ctx context.Context, storeId int
 		return nil, err
 	}
 	if count == nil {
-		return nil, fmt.Errorf("cycle count %d not found", countID)
+		return nil, fmt.Errorf("%w: cycle count %d", ErrNotFound, countID)
 	}
 
 	if count.CountedBy == nil && role != models.RoleAdmin {
@@ -94,11 +93,7 @@ func (s *CycleCountService) GetCycleCountDetail(ctx context.Context, storeId int
 		}
 	} else if count.CountedBy != nil && *count.CountedBy != employeeId {
 		if role != models.RoleManager && role != models.RoleAdmin {
-			assignee := "another employee"
-			if count.CountedByName != nil && *count.CountedByName != "" {
-				assignee = *count.CountedByName
-			}
-			return nil, fmt.Errorf("cycle count is currently assigned to %s and is in progress", assignee)
+			return nil, fmt.Errorf("%w: cycle count is currently assigned", ErrForbidden)
 		}
 	}
 
@@ -124,16 +119,12 @@ func (s *CycleCountService) GetCycleCountItems(ctx context.Context, storeId int,
 		return nil, err
 	}
 	if count == nil {
-		return nil, fmt.Errorf("cycle count %d not found", countID)
+		return nil, fmt.Errorf("%w: cycle count %d", ErrNotFound, countID)
 	}
 
 	if count.CountedBy != nil && *count.CountedBy != employeeId {
 		if role != models.RoleManager && role != models.RoleAdmin {
-			assignee := "another employee"
-			if count.CountedByName != nil && *count.CountedByName != "" {
-				assignee = *count.CountedByName
-			}
-			return nil, fmt.Errorf("cycle count is currently assigned to %s and is in progress", assignee)
+			return nil, fmt.Errorf("%w: cycle count is currently assigned", ErrForbidden)
 		}
 	}
 
@@ -190,16 +181,12 @@ func (s *CycleCountService) RecordScan(ctx context.Context, storeId int, employe
 		return nil, err
 	}
 	if count == nil {
-		return nil, fmt.Errorf("cycle count %d not found", req.CountId)
+		return nil, fmt.Errorf("%w: cycle count %d", ErrNotFound, req.CountId)
 	}
 
 	if count.CountedBy != nil && *count.CountedBy != employeeId {
 		if role != models.RoleManager && role != models.RoleAdmin {
-			assignee := "another employee"
-			if count.CountedByName != nil && *count.CountedByName != "" {
-				assignee = *count.CountedByName
-			}
-			return nil, fmt.Errorf("cycle count is currently assigned to %s and is in progress", assignee)
+			return nil, fmt.Errorf("%w: cycle count is currently assigned", ErrForbidden)
 		}
 	}
 
@@ -259,16 +246,12 @@ func (s *CycleCountService) SubmitForApproval(ctx context.Context, storeId int, 
 		return err
 	}
 	if count == nil {
-		return fmt.Errorf("cycle count %d not found", req.CountId)
+		return fmt.Errorf("%w: cycle count %d", ErrNotFound, req.CountId)
 	}
 
 	if count.CountedBy != nil && *count.CountedBy != employeeId {
 		if role != models.RoleManager && role != models.RoleAdmin {
-			assignee := "another employee"
-			if count.CountedByName != nil && *count.CountedByName != "" {
-				assignee = *count.CountedByName
-			}
-			return fmt.Errorf("cycle count is currently assigned to %s and is in progress", assignee)
+			return fmt.Errorf("%w: cycle count is currently assigned", ErrForbidden)
 		}
 	}
 
@@ -304,7 +287,7 @@ func (s *CycleCountService) SubmitForApproval(ctx context.Context, storeId int, 
 
 func (s *CycleCountService) ApproveCount(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.ApproveCycleCountRequest) error {
 	if role != models.RoleManager && role != models.RoleAdmin {
-		return errors.New("unauthorized: only managers and admins can approve cycle counts")
+		return fmt.Errorf("%w: only managers and admins can approve cycle counts", ErrForbidden)
 	}
 
 	storeID := storeId
@@ -314,7 +297,7 @@ func (s *CycleCountService) ApproveCount(ctx context.Context, storeId int, emplo
 			return err
 		}
 		if count == nil {
-			return fmt.Errorf("cycle count %d not found", req.CountId)
+			return fmt.Errorf("%w: cycle count %d", ErrNotFound, req.CountId)
 		}
 		storeID = count.StoreId
 	}
@@ -355,7 +338,7 @@ func (s *CycleCountService) ApproveCount(ctx context.Context, storeId int, emplo
 
 func (s *CycleCountService) TransferOwnership(ctx context.Context, storeId int, role models.EmployeeRole, req models.TransferCycleCountOwnershipRequest) error {
 	if role != models.RoleManager && role != models.RoleAdmin {
-		return errors.New("unauthorized: only managers and admins can transfer cycle count ownership")
+		return fmt.Errorf("%w: only managers and admins can transfer cycle count ownership", ErrForbidden)
 	}
 
 	targetStoreID := storeId
@@ -368,7 +351,7 @@ func (s *CycleCountService) TransferOwnership(ctx context.Context, storeId int, 
 		return err
 	}
 	if count == nil {
-		return fmt.Errorf("cycle count %d not found", req.CountId)
+		return fmt.Errorf("%w: cycle count %d", ErrNotFound, req.CountId)
 	}
 
 	targetEmployee, err := s.employeeRepo.GetEmployeeById(ctx, req.EmployeeId)
@@ -376,7 +359,7 @@ func (s *CycleCountService) TransferOwnership(ctx context.Context, storeId int, 
 		return err
 	}
 	if targetEmployee == nil || targetEmployee.StoreId != count.StoreId || (targetEmployee.IsTerminated != nil && *targetEmployee.IsTerminated) || (targetEmployee.IsActive != nil && !*targetEmployee.IsActive) {
-		return errors.New("target employee not found or not active in this store")
+		return fmt.Errorf("%w: target employee not found or not active in this store", ErrNotFound)
 	}
 
 	err = s.cycleCountRepo.TransferOwnership(ctx, count.StoreId, req.CountId, req.EmployeeId)
@@ -458,12 +441,12 @@ func (s *CycleCountService) GetSchedule(ctx context.Context, storeId int, role m
 
 func (s *CycleCountService) CreateScheduleEntry(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.CreateScheduleRequest) (*models.CycleCountScheduleEntry, error) {
 	if role != models.RoleManager && role != models.RoleAdmin {
-		return nil, errors.New("unauthorized: only managers and admins can schedule cycle counts")
+		return nil, fmt.Errorf("%w: only managers and admins can schedule cycle counts", ErrForbidden)
 	}
 
 	scheduledDate, err := time.Parse("2006-01-02", req.ScheduledDate)
 	if err != nil {
-		return nil, fmt.Errorf("invalid date format, expected YYYY-MM-DD: %w", err)
+		return nil, fmt.Errorf("%w: invalid date format, expected YYYY-MM-DD: %v", ErrValidation, err)
 	}
 
 	targetStoreID := storeId

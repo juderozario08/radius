@@ -83,6 +83,14 @@ func (s *OnlineOrderService) GetOnlineOrderByID(ctx context.Context, id int) (*m
 	return s.ordersRepo.GetOnlineOrderByID(ctx, id, nil)
 }
 
+func (s *OnlineOrderService) GetOnlineOrderByIDForStore(ctx context.Context, id, storeID int, role models.EmployeeRole) (*models.OnlineOrder, []models.OnlineOrderItem, error) {
+	var scope *int
+	if role != models.RoleAdmin {
+		scope = &storeID
+	}
+	return s.ordersRepo.GetOnlineOrderByID(ctx, id, scope)
+}
+
 func (s *OnlineOrderService) AssignOnlineOrder(ctx context.Context, storeId int, currentEmployeeId int, role models.EmployeeRole, orderID int, employeeID *int) (*models.OnlineOrder, bool, error) {
 	targetEmpID := employeeID
 	if targetEmpID == nil && currentEmployeeId > 0 {
@@ -156,26 +164,31 @@ func (s *OnlineOrderService) AssignOnlineOrder(ctx context.Context, storeId int,
 
 func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, storeId int, role models.EmployeeRole, order *models.OnlineOrder) (*models.OnlineOrder, error) {
 	if order == nil {
-		return nil, fmt.Errorf("order cannot be nil")
+		return nil, fmt.Errorf("%w: order cannot be nil", ErrValidation)
 	}
 
-	if order.StoreId <= 0 {
-		order.StoreId = storeId
+	if role != models.RoleAdmin {
+		if storeId > 0 {
+			order.StoreId = storeId
+		}
 	}
 	if order.StoreId <= 0 {
-		return nil, fmt.Errorf("store ID is required to create an online order")
+		return nil, fmt.Errorf("%w: store ID is required to create an online order", ErrValidation)
 	}
 
 	if order.OrderType == "" {
 		order.OrderType = models.OnlineOrderTypeBOPIS
 	}
-	if order.Status == "" {
-		switch order.OrderType {
-		case models.OnlineOrderTypeBOPIS:
-			order.Status = models.OnlineOrderStatusReadyForPickup
-		default:
-			order.Status = models.OnlineOrderStatusWorkInProgress
+	if order.Status != "" {
+		if err := order.ValidateStatus(); err != nil {
+			return nil, err
 		}
+	}
+	switch order.OrderType {
+	case models.OnlineOrderTypeBOPIS:
+		order.Status = models.OnlineOrderStatusReadyForPickup
+	default:
+		order.Status = models.OnlineOrderStatusWorkInProgress
 	}
 	if order.ShippingAddress == "" {
 		if order.OrderType == models.OnlineOrderTypeBOPIS {
@@ -189,7 +202,7 @@ func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, storeId int,
 	}
 
 	if err := order.ValidateStatus(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrValidation, err)
 	}
 
 	itemsCount := 0
@@ -254,6 +267,41 @@ func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, storeId int,
 	return createdOrder, nil
 }
 
+func (s *OnlineOrderService) authorizeOrder(ctx context.Context, orderID, storeID int, role models.EmployeeRole) error {
+	if role == models.RoleAdmin {
+		return nil
+	}
+	order, _, err := s.GetOnlineOrderByIDForStore(ctx, orderID, storeID, role)
+	if err != nil {
+		return err
+	}
+	if order == nil {
+		return fmt.Errorf("order not found")
+	}
+	return nil
+}
+
+func (s *OnlineOrderService) UpdateOrderItemForStore(ctx context.Context, storeID int, role models.EmployeeRole, orderID, itemID int, pickedQty *int, status string, reason *string) error {
+	if err := s.authorizeOrder(ctx, orderID, storeID, role); err != nil {
+		return err
+	}
+	return s.ordersRepo.UpdateOnlineOrderItem(ctx, orderID, itemID, pickedQty, status, reason)
+}
+
+func (s *OnlineOrderService) CompleteOrderPickingForStore(ctx context.Context, storeID int, role models.EmployeeRole, orderID int) (*models.OnlineOrder, error) {
+	if err := s.authorizeOrder(ctx, orderID, storeID, role); err != nil {
+		return nil, err
+	}
+	return s.CompleteOrderPicking(ctx, "", role, orderID)
+}
+
+func (s *OnlineOrderService) CancelOnlineOrderForStore(ctx context.Context, storeID int, role models.EmployeeRole, orderID int, reason string) (*models.OnlineOrder, error) {
+	if err := s.authorizeOrder(ctx, orderID, storeID, role); err != nil {
+		return nil, err
+	}
+	return s.CancelOnlineOrder(ctx, "", role, orderID, reason)
+}
+
 func (s *OnlineOrderService) UpdateOrderItem(ctx context.Context, email string, role models.EmployeeRole, orderID, itemID int, pickedQty *int, status string, reason *string) error {
 	return s.ordersRepo.UpdateOnlineOrderItem(ctx, orderID, itemID, pickedQty, status, reason)
 }
@@ -311,7 +359,7 @@ func (s *OnlineOrderService) CompleteOrderPicking(ctx context.Context, email str
 
 func (s *OnlineOrderService) CancelOnlineOrder(ctx context.Context, email string, role models.EmployeeRole, orderID int, reason string) (*models.OnlineOrder, error) {
 	if reason == "" {
-		return nil, fmt.Errorf("cancellation reason is required")
+		return nil, fmt.Errorf("%w: cancellation reason is required", ErrValidation)
 	}
 
 	updatedOrder, err := s.ordersRepo.UpdateOnlineOrderStatus(ctx, orderID, models.OnlineOrderStatusCancelled, &reason)

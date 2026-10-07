@@ -26,7 +26,8 @@ type RefreshTokenRequest struct {
 }
 
 type RefreshTokenResponse struct {
-	Token string `json:"token"`
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 type LoginConflictResponse struct {

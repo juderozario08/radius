@@ -1,6 +1,8 @@
 package router
 
 import (
+	"context"
+	"database/sql"
 	"net/http"
 	"radius/internal/config"
 	"radius/internal/handler"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 )
 
 type Config struct {
@@ -18,6 +21,8 @@ type Config struct {
 	JWTSecret   []byte
 	AuthService *service.AuthService
 	AppConfig   *config.Config
+	DB          *sql.DB
+	RedisClient *redis.Client
 }
 
 type Handlers struct {
@@ -54,10 +59,14 @@ func NewRouter(cfg Config) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Logger(), gin.Recovery())
+	_ = router.SetTrustedProxies(nil)
+	router.Use(middleware.SecurityHeaders(), middleware.RequestBodyLimit(1<<20))
 
 	limiter := middleware.NewIPRateLimiter(5, 20)
 	router.Use(middleware.RateLimitMiddleware(limiter))
+	loginLimiter := middleware.RateLimitPerMinute()
 
 	allowOrigins := cfg.AppConfig.AllowedOriginsList()
 
@@ -88,12 +97,26 @@ func NewRouter(cfg Config) *gin.Engine {
 			})
 		})
 
-		public.POST("/login", cfg.Handlers.AuthHandler.Login)
-		public.POST("/api/refresh_token", cfg.Handlers.AuthHandler.RefreshToken)
-		if cfg.Handlers.MetricsHandler != nil {
-			public.GET("/metrics", cfg.Handlers.MetricsHandler.GetMetrics)
-			public.GET("/api/v1/metrics", cfg.Handlers.MetricsHandler.GetMetrics)
-		}
+		public.POST("/login", middleware.LoginRateLimit(loginLimiter), middleware.RedisRateLimit(cfg.RedisClient, "radius:rate:login", 5, time.Minute), cfg.Handlers.AuthHandler.Login)
+		public.POST("/api/refresh_token", middleware.RedisRateLimit(cfg.RedisClient, "radius:rate:refresh", 10, time.Minute), cfg.Handlers.AuthHandler.RefreshToken)
+		public.GET("/ready", func(ctx *gin.Context) {
+			ready := true
+			if cfg.DB != nil {
+				pingCtx, cancel := context.WithTimeout(ctx.Request.Context(), 2*time.Second)
+				ready = cfg.DB.PingContext(pingCtx) == nil
+				cancel()
+			}
+			if ready && cfg.RedisClient != nil {
+				pingCtx, cancel := context.WithTimeout(ctx.Request.Context(), 2*time.Second)
+				ready = cfg.RedisClient.Ping(pingCtx).Err() == nil
+				cancel()
+			}
+			if !ready {
+				ctx.JSON(http.StatusServiceUnavailable, gin.H{"ready": false})
+				return
+			}
+			ctx.JSON(http.StatusOK, gin.H{"ready": true})
+		})
 	}
 
 	if cfg.Handlers.WSHandler != nil {
@@ -115,6 +138,9 @@ func NewRouter(cfg Config) *gin.Engine {
 	admin := router.Group("/api/admin")
 	admin.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewAdminActions))
 	{
+		if cfg.Handlers.MetricsHandler != nil {
+			admin.GET("/metrics", cfg.Handlers.MetricsHandler.GetMetrics)
+		}
 		employees := admin.Group("/employees")
 		{
 			employees.POST("", cfg.Handlers.EmployeeHandler.CreateEmployee)
@@ -184,8 +210,6 @@ func NewRouter(cfg Config) *gin.Engine {
 			transactions.GET("", cfg.Handlers.TransactionHandler.GetAllTransactions)
 			transactions.GET("/:id", cfg.Handlers.TransactionHandler.GetTransactionByID)
 			transactions.GET("/get", cfg.Handlers.TransactionHandler.GetTransactionByID)
-			transactions.POST("", cfg.Handlers.TransactionHandler.CreateTransaction)
-			transactions.POST("/create", cfg.Handlers.TransactionHandler.CreateTransaction)
 		}
 
 		orders := salesFloor.Group("/orders")
@@ -223,7 +247,6 @@ func NewRouter(cfg Config) *gin.Engine {
 			mims.POST("/adjust", cfg.Handlers.InventoryHandler.CreateAdjustment)
 			mims.POST("/adjustments", cfg.Handlers.InventoryHandler.CreateAdjustment)
 			mims.GET("/adjustments", cfg.Handlers.InventoryHandler.GetPendingAdjustments)
-			mims.POST("/adjustments/review", cfg.Handlers.InventoryHandler.ReviewAdjustments)
 		}
 
 		is4tc := salesFloor.Group("/is4tc")
@@ -266,12 +289,6 @@ func NewRouter(cfg Config) *gin.Engine {
 			transfers.GET("", cfg.Handlers.TransferHandler.GetOutboundTransfers)
 			transfers.GET("/:id", cfg.Handlers.TransferHandler.GetOutboundTransferDetail)
 			transfers.GET("/detail", cfg.Handlers.TransferHandler.GetOutboundTransferDetail)
-			transfers.POST("", cfg.Handlers.TransferHandler.CreateTransfer)
-			transfers.POST("/create", cfg.Handlers.TransferHandler.CreateTransfer)
-			transfers.POST("/:id/dispatch", cfg.Handlers.TransferHandler.DispatchTransfer)
-			transfers.POST("/dispatch", cfg.Handlers.TransferHandler.DispatchTransfer)
-			transfers.POST("/:id/cancel", cfg.Handlers.TransferHandler.CancelTransfer)
-			transfers.POST("/cancel", cfg.Handlers.TransferHandler.CancelTransfer)
 			transfers.GET("/stores", cfg.Handlers.TransferHandler.GetDestinationStores)
 		}
 
@@ -288,13 +305,8 @@ func NewRouter(cfg Config) *gin.Engine {
 			cycleCounts.POST("/scan", cfg.Handlers.CycleCountHandler.RecordScan)
 			cycleCounts.POST("/:id/submit", cfg.Handlers.CycleCountHandler.SubmitForApproval)
 			cycleCounts.POST("/submit", cfg.Handlers.CycleCountHandler.SubmitForApproval)
-			cycleCounts.POST("/:id/approve", cfg.Handlers.CycleCountHandler.ApproveCycleCount)
-			cycleCounts.POST("/approve", cfg.Handlers.CycleCountHandler.ApproveCycleCount)
-			cycleCounts.POST("/:id/transfer_ownership", cfg.Handlers.CycleCountHandler.TransferOwnership)
-			cycleCounts.POST("/transfer", cfg.Handlers.CycleCountHandler.TransferOwnership)
 			cycleCounts.GET("/search", cfg.Handlers.CycleCountHandler.SearchCycleCounts)
 			cycleCounts.GET("/schedule", cfg.Handlers.CycleCountHandler.GetSchedule)
-			cycleCounts.POST("/schedule", cfg.Handlers.CycleCountHandler.CreateScheduleEntry)
 		}
 
 		returns := salesFloor.Group("/returns")
@@ -304,15 +316,39 @@ func NewRouter(cfg Config) *gin.Engine {
 			returns.GET("/detail", cfg.Handlers.ReturnsHandler.GetReturnDetail)
 			returns.POST("", cfg.Handlers.ReturnsHandler.CreateReturn)
 			returns.POST("/create", cfg.Handlers.ReturnsHandler.CreateReturn)
-			returns.POST("/:id/approve", cfg.Handlers.ReturnsHandler.ApproveReturn)
-			returns.POST("/approve", cfg.Handlers.ReturnsHandler.ApproveReturn)
-			returns.POST("/:id/reject", cfg.Handlers.ReturnsHandler.RejectReturn)
-			returns.POST("/reject", cfg.Handlers.ReturnsHandler.RejectReturn)
 			returns.GET("/lookup/:id", cfg.Handlers.ReturnsHandler.LookupTransaction)
 			returns.GET("/lookup", cfg.Handlers.ReturnsHandler.LookupTransaction)
 			returns.GET("/search_by_product", cfg.Handlers.ReturnsHandler.LookupByProduct)
 			returns.GET("/rtv", cfg.Handlers.ReturnsHandler.GetRtvQueue)
 		}
+	}
+
+	managerActions := router.Group("/api/sales_floor")
+	managerActions.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewManagerActions))
+	{
+		managerActions.POST("/inventory/adjustments/review", cfg.Handlers.InventoryHandler.ReviewAdjustments)
+		managerActions.POST("/transfers", cfg.Handlers.TransferHandler.CreateTransfer)
+		managerActions.POST("/transfers/create", cfg.Handlers.TransferHandler.CreateTransfer)
+		managerActions.POST("/transfers/:id/dispatch", cfg.Handlers.TransferHandler.DispatchTransfer)
+		managerActions.POST("/transfers/dispatch", cfg.Handlers.TransferHandler.DispatchTransfer)
+		managerActions.POST("/transfers/:id/cancel", cfg.Handlers.TransferHandler.CancelTransfer)
+		managerActions.POST("/transfers/cancel", cfg.Handlers.TransferHandler.CancelTransfer)
+		managerActions.POST("/cycle_counts/:id/approve", cfg.Handlers.CycleCountHandler.ApproveCycleCount)
+		managerActions.POST("/cycle_counts/approve", cfg.Handlers.CycleCountHandler.ApproveCycleCount)
+		managerActions.POST("/cycle_counts/:id/transfer_ownership", cfg.Handlers.CycleCountHandler.TransferOwnership)
+		managerActions.POST("/cycle_counts/transfer", cfg.Handlers.CycleCountHandler.TransferOwnership)
+		managerActions.POST("/cycle_counts/schedule", cfg.Handlers.CycleCountHandler.CreateScheduleEntry)
+		managerActions.POST("/returns/:id/approve", cfg.Handlers.ReturnsHandler.ApproveReturn)
+		managerActions.POST("/returns/approve", cfg.Handlers.ReturnsHandler.ApproveReturn)
+		managerActions.POST("/returns/:id/reject", cfg.Handlers.ReturnsHandler.RejectReturn)
+		managerActions.POST("/returns/reject", cfg.Handlers.ReturnsHandler.RejectReturn)
+	}
+
+	adminActions := router.Group("/api/sales_floor")
+	adminActions.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewAdminActions))
+	{
+		adminActions.POST("/transactions", cfg.Handlers.TransactionHandler.CreateTransaction)
+		adminActions.POST("/transactions/create", cfg.Handlers.TransactionHandler.CreateTransaction)
 	}
 
 	return router

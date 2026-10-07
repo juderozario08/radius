@@ -14,9 +14,10 @@ import { globalStyles } from '@/constants/styles';
 import { COLORS } from '@/constants/colors';
 import { router } from 'expo-router';
 import Gate from '@/components/common/Gate';
+import { apiFetch } from '@/api/client';
 
 export default function Audit() {
-    const { token, user } = useAuth();
+    const { user } = useAuth();
     const [barcode, setBarcode] = useState('');
     const [data, setData] = useState<AuditTrailResponse | null>(null);
     const [loading, setLoading] = useState(false);
@@ -51,19 +52,13 @@ export default function Audit() {
         const currentOffset = reset ? 0 : offset;
 
         try {
-            const baseUrl = `${process.env.EXPO_PUBLIC_API_URL}${ENDPOINTS.SALES_FLOOR.PRODUCTS.audit}?barcode=${barcode.trim()}&limit=${LIMIT}&offset=${currentOffset}&sort_order=${sortOrder}`;
-            let url = filterTxnType ? `${baseUrl}&transaction_type=${filterTxnType}` : baseUrl;
+            const params = new URLSearchParams({ barcode: barcode.trim(), limit: String(LIMIT), offset: String(currentOffset), sort_order: sortOrder });
+            if (filterTxnType) params.set('transaction_type', filterTxnType);
             if (user?.role === 'ADMIN' && filterStoreId.trim()) {
-                url += `&store_id=${filterStoreId.trim()}`;
+                params.set('store_id', filterStoreId.trim());
             }
-
-            const res = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            const result = await res.json();
-            if (res.ok) {
+            const result = await apiFetch<AuditTrailResponse>(ENDPOINTS.SALES_FLOOR.PRODUCTS.audit(params.toString()));
+            {
                 if (reset) {
                     setData(result);
                 } else if (data) {
@@ -74,9 +69,6 @@ export default function Audit() {
                 }
                 setHasMore(result.events.length === LIMIT);
                 setOffset(currentOffset + LIMIT);
-            } else {
-                setError(result.error || 'Failed to fetch audit trail');
-                setData(null);
             }
         } catch (e: any) {
             setError(e.message);

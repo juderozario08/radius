@@ -152,14 +152,12 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 			return
 		}
 
-		val, err := h.redisClient.Get(ctx.Request.Context(), "ws_ticket:"+ticket).Result()
+		val, err := h.redisClient.GetDel(ctx.Request.Context(), "ws_ticket:"+ticket).Result()
 		if err != nil {
 			log.Printf("[WS UNAUTHORIZED] Invalid or expired connection ticket")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired connection ticket"})
 			return
 		}
-
-		_ = h.redisClient.Del(ctx.Request.Context(), "ws_ticket:"+ticket).Err()
 
 		var ticketData models.WSTicketData
 		if err := json.Unmarshal([]byte(val), &ticketData); err != nil {

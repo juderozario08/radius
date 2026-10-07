@@ -1,13 +1,13 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"radius/internal/api"
 	"radius/internal/models"
 	"radius/internal/service"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,7 +36,7 @@ func (h *CycleCountHandler) GetWeeklyCycleCounts(ctx *gin.Context) {
 	counts, err := h.cycleCountService.GetWeeklyCycleCounts(ctx.Request.Context(), storeId, role, storeIDOverride)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.GetWeeklyCycleCounts: %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -66,12 +66,12 @@ func (h *CycleCountHandler) GetCycleCountDetail(ctx *gin.Context) {
 	detail, err := h.cycleCountService.GetCycleCountDetail(ctx.Request.Context(), storeId, employeeId, role, countID)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.GetCycleCountDetail: %v", err)
-		if strings.Contains(err.Error(), "currently assigned to") || strings.HasPrefix(err.Error(), "unauthorized") {
-			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
-		} else if strings.Contains(err.Error(), "not found") {
-			ctx.JSON(http.StatusNotFound, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrForbidden) {
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
+		} else if errors.Is(err, service.ErrNotFound) {
+			ctx.JSON(http.StatusNotFound, models.APIError{Error: "Request could not be completed"})
 		} else {
-			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		}
 		return
 	}
@@ -102,12 +102,12 @@ func (h *CycleCountHandler) GetCycleCountItems(ctx *gin.Context) {
 	items, err := h.cycleCountService.GetCycleCountItems(ctx.Request.Context(), storeId, employeeId, role, countID)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.GetCycleCountItems: %v", err)
-		if strings.Contains(err.Error(), "currently assigned to") || strings.HasPrefix(err.Error(), "unauthorized") {
-			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
-		} else if strings.Contains(err.Error(), "not found") {
-			ctx.JSON(http.StatusNotFound, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrForbidden) {
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
+		} else if errors.Is(err, service.ErrNotFound) {
+			ctx.JSON(http.StatusNotFound, models.APIError{Error: "Request could not be completed"})
 		} else {
-			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		}
 		return
 	}
@@ -122,14 +122,14 @@ func (h *CycleCountHandler) StartCycleCount(ctx *gin.Context) {
 
 	var req models.StartCycleCountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	count, err := h.cycleCountService.StartCount(ctx.Request.Context(), storeId, employeeId, role, req.CategoryId, req.StoreId)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.StartCycleCount: %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -143,7 +143,7 @@ func (h *CycleCountHandler) RecordScan(ctx *gin.Context) {
 
 	var req models.RecordScanRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -156,10 +156,10 @@ func (h *CycleCountHandler) RecordScan(ctx *gin.Context) {
 	item, err := h.cycleCountService.RecordScan(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.RecordScan: %v", err)
-		if strings.Contains(err.Error(), "currently assigned to") || strings.HasPrefix(err.Error(), "unauthorized") {
-			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrForbidden) {
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else {
-			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		}
 		return
 	}
@@ -174,7 +174,7 @@ func (h *CycleCountHandler) SubmitForApproval(ctx *gin.Context) {
 
 	var req models.SubmitCycleCountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -186,10 +186,10 @@ func (h *CycleCountHandler) SubmitForApproval(ctx *gin.Context) {
 
 	if err := h.cycleCountService.SubmitForApproval(ctx.Request.Context(), storeId, employeeId, role, req); err != nil {
 		log.Printf("[ERROR] CycleCountHandler.SubmitForApproval: %v", err)
-		if strings.Contains(err.Error(), "currently assigned to") || strings.HasPrefix(err.Error(), "unauthorized") {
-			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrForbidden) {
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else {
-			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		}
 		return
 	}
@@ -204,7 +204,7 @@ func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
 
 	var req models.ApproveCycleCountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -216,10 +216,10 @@ func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
 
 	if err := h.cycleCountService.ApproveCount(ctx.Request.Context(), storeId, employeeId, role, req); err != nil {
 		log.Printf("[ERROR] CycleCountHandler.ApproveCycleCount: %v", err)
-		if strings.HasPrefix(err.Error(), "unauthorized") {
-			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrForbidden) {
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else {
-			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		}
 		return
 	}
@@ -233,7 +233,7 @@ func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
 
 	var req models.TransferCycleCountOwnershipRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -245,10 +245,10 @@ func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
 
 	if err := h.cycleCountService.TransferOwnership(ctx.Request.Context(), storeId, role, req); err != nil {
 		log.Printf("[ERROR] CycleCountHandler.TransferOwnership: %v", err)
-		if strings.HasPrefix(err.Error(), "unauthorized") {
-			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrForbidden) {
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else {
-			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		}
 		return
 	}
@@ -284,7 +284,7 @@ func (h *CycleCountHandler) SearchCycleCounts(ctx *gin.Context) {
 	results, err := h.cycleCountService.SearchCycleCounts(ctx.Request.Context(), storeId, role, criteria)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.SearchCycleCounts: %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -307,7 +307,7 @@ func (h *CycleCountHandler) GetSchedule(ctx *gin.Context) {
 	schedule, err := h.cycleCountService.GetSchedule(ctx.Request.Context(), storeId, role, from, to, storeIDOverride)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.GetSchedule: %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
@@ -321,17 +321,17 @@ func (h *CycleCountHandler) CreateScheduleEntry(ctx *gin.Context) {
 
 	var req models.CreateScheduleRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	entry, err := h.cycleCountService.CreateScheduleEntry(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] CycleCountHandler.CreateScheduleEntry: %v", err)
-		if strings.HasPrefix(err.Error(), "unauthorized") {
-			ctx.JSON(http.StatusForbidden, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrForbidden) {
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else {
-			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		}
 		return
 	}

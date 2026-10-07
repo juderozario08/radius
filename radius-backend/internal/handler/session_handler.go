@@ -47,7 +47,7 @@ func (h *SessionHandler) TerminateSession(ctx *gin.Context) {
 		var body models.TerminateSessionRequest
 		if err := ctx.ShouldBindJSON(&body); err != nil {
 			log.Printf("[ERROR] SessionHandler.TerminateSession (BindJSON): %v", err)
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: err.Error()})
+			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
 		}
 		sessionID = body.SessionId

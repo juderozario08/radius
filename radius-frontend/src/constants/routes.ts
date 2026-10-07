@@ -77,7 +77,7 @@ export const ENDPOINTS = {
             search: "/api/sales_floor/products/search",
             categories: "/api/sales_floor/products/categories",
             brands: "/api/sales_floor/products/brands",
-            audit: "/api/sales_floor/products/audit",
+            audit: (params: string) => `/api/sales_floor/products/audit?${params}`,
         },
         TRANSACTIONS: {
             getAll: "/api/sales_floor/transactions",

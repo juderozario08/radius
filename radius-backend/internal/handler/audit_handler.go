@@ -73,7 +73,7 @@ func (h *AuditHandler) GetProductAuditTrail(c *gin.Context) {
 	res, err := h.auditService.GetProductAuditTrail(c.Request.Context(), storeId, role, barcode, filter, limit, offset)
 	if err != nil {
 		log.Printf("[ERROR] AuditHandler.GetProductAuditTrail: %v", err)
-		api.Error(c, http.StatusInternalServerError, err.Error())
+		api.Error(c, http.StatusInternalServerError, "Request could not be completed")
 		return
 	}
 

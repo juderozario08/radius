@@ -26,15 +26,13 @@ func main() {
 
 	db, err := database.ConnectDB(cfg.DatabaseURL)
 	if err != nil {
-		log.Printf("Error connecting to database: %v\n", err)
-		return
+		log.Fatalf("Error connecting to database: %v\n", err)
 	}
 	defer db.Close()
 
 	redisClient, err := database.ConnectRedis(cfg.RedisURL)
 	if err != nil {
-		log.Printf("Error connecting to Redis: %v\n", err)
-		return
+		log.Fatalf("Error connecting to Redis: %v\n", err)
 	}
 	defer redisClient.Close()
 
@@ -67,6 +65,7 @@ func main() {
 	sessionService := service.NewSessionService(sessionRepo, cfg.JWTSecretKey, redisClient)
 	employeeService := service.NewEmployeeService(employeeRepo, sessionService, redisClient)
 	authService := service.NewAuthService(employeeRepo, sessionService, employeeService)
+	authService.SetRedisClient(redisClient)
 	barcodeService := service.NewBarcodeService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
 	cycleCountService := service.NewCycleCountService(cycleCountRepo, employeeRepo, storeRepo, productsRepo, inventoryRepo, sessionRepo, wsHub)
 	cycleCountService.SetRedisClient(redisClient)
@@ -134,6 +133,8 @@ func main() {
 		JWTSecret:   cfg.JWTSecretKey,
 		AuthService: authService,
 		AppConfig:   cfg,
+		DB:          db.DB,
+		RedisClient: redisClient,
 	})
 
 	if !cfg.IsRelease {
@@ -141,8 +142,12 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:    ":" + cfg.Port,
-		Handler: router,
+		Addr:              ":" + cfg.Port,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	go func() {
@@ -161,7 +166,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown:", err)
+		log.Printf("Server forced to shutdown: %v", err)
 	}
 
 	log.Println("Server exiting")

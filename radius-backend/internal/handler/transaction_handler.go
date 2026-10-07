@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"radius/internal/models"
@@ -28,14 +29,18 @@ func (h *TransactionHandler) CreateTransaction(ctx *gin.Context) {
 
 	var req models.CreateTransactionRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid request payload: " + err.Error()})
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	createdTx, err := h.transactionService.CreateTransaction(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		log.Printf("[ERROR] TransactionHandler.CreateTransaction: %v", err)
-		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: err.Error()})
+		if errors.Is(err, service.ErrForbidden) {
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
+		}
 		return
 	}
 

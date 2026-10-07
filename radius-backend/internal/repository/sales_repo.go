@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
 	"radius/internal/models"
+	"radius/internal/utils"
 )
 
 type SalesRepo struct {
@@ -27,6 +29,49 @@ func (r *SalesRepo) CreateTransaction(ctx context.Context, storeID int, employee
 		txType = models.TransactionTypeSale
 	}
 	status := models.TransactionStatusCompleted
+	computedItems := make([]models.CreateTransactionItemRequest, len(req.Items))
+	copy(computedItems, req.Items)
+	var province string
+	if err := tx.QueryRowContext(ctx, `SELECT province FROM stores WHERE store_id = $1`, storeID).Scan(&province); err != nil {
+		return nil, nil, fmt.Errorf("failed to load store tax region: %w", err)
+	}
+	taxRate, err := utils.SalesTaxRatePer100000(province)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to determine store tax rate: %w", err)
+	}
+	var subtotalCents, costTotalCents int64
+	for i := range computedItems {
+		if computedItems[i].Quantity <= 0 {
+			return nil, nil, fmt.Errorf("invalid quantity for product %d", computedItems[i].ProductId)
+		}
+		var price, cost float32
+		if err := tx.QueryRowContext(ctx, `
+			SELECT p.retail_price,
+			       COALESCE((SELECT ps.cost_price FROM product_suppliers ps
+			                 WHERE ps.product_id = p.product_id
+			                 ORDER BY ps.is_primary DESC, ps.cost_price ASC LIMIT 1), 0)
+			FROM products p
+			WHERE p.product_id = $1 AND p.is_active = TRUE
+		`, computedItems[i].ProductId).Scan(&price, &cost); err != nil {
+			return nil, nil, fmt.Errorf("failed to load product pricing: %w", err)
+		}
+		priceCents := int64(math.Round(float64(price) * 100))
+		if priceCents <= 0 {
+			return nil, nil, fmt.Errorf("product %d has no valid selling price", computedItems[i].ProductId)
+		}
+		costCents := int64(math.Round(float64(cost) * 100))
+		computedItems[i].UnitPrice = float32(priceCents) / 100
+		computedItems[i].UnitCost = float32(costCents) / 100
+		subtotalCents += priceCents * int64(computedItems[i].Quantity)
+		costTotalCents += costCents * int64(computedItems[i].Quantity)
+	}
+	req.Items = computedItems
+	req.Subtotal = float32(subtotalCents) / 100
+	taxCents := (subtotalCents*taxRate + 50000) / 100000
+	req.TaxAmount = float32(taxCents) / 100
+	req.CostTotal = float32(costTotalCents) / 100
+	req.DiscountTotal = 0
+	req.TotalAmount = float32(subtotalCents+taxCents) / 100
 
 	var createdTx models.Transaction
 	createdTx.StoreId = storeID

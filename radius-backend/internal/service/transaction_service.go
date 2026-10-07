@@ -48,8 +48,12 @@ func (s *TransactionService) SetBroadcaster(broadcaster EventBroadcaster) {
 }
 
 func (s *TransactionService) CreateTransaction(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, req models.CreateTransactionRequest) (*models.Transaction, error) {
+	if role != models.RoleAdmin {
+		return nil, fmt.Errorf("%w: only admins can create transactions", ErrForbidden)
+	}
+
 	targetStoreID := storeId
-	if targetStoreID == 0 && req.StoreId != nil && *req.StoreId > 0 {
+	if role == models.RoleAdmin && req.StoreId != nil && *req.StoreId > 0 {
 		targetStoreID = *req.StoreId
 	}
 

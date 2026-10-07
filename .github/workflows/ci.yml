@@ -22,6 +22,26 @@ jobs:
   backend:
     name: Go Backend Test & Verify
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: radius_ci
+          POSTGRES_USER: radius_ci
+          POSTGRES_PASSWORD: radius_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U radius_ci -d radius_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://radius_ci:radius_ci@localhost:5432/radius_ci?sslmode=disable
+      RADIUS_TEST_DATABASE_URL: postgres://radius_ci:radius_ci@localhost:5432/radius_ci?sslmode=disable
+      GIN_MODE: release
+      JWT_SECRET_KEY: radius-ci-secret-key-32-bytes-long-for-tests
+      REDIS_URL: redis://localhost:6379
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -50,6 +70,13 @@ jobs:
           version: v2.14.0
           working-directory: radius-backend
           args: --default=none --enable govet --enable ineffassign ./...
+
+      - name: Apply and verify migrations
+        working-directory: radius-backend
+        run: |
+          go run ./cmd/migrate
+          go run -tags 'postgres file' github.com/golang-migrate/migrate/v4/cmd/migrate -path migrations -database "$DATABASE_URL" down 1
+          go run -tags 'postgres file' github.com/golang-migrate/migrate/v4/cmd/migrate -path migrations -database "$DATABASE_URL" up 1
 
       - name: Run Go Tests & Migration Validation
         working-directory: radius-backend

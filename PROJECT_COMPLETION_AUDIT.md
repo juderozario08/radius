@@ -5,7 +5,7 @@ This is the single list of work left before Radius can be called complete. It wa
 | | |
 |---|---|
 | **Audit date** | 2026-10-06 |
-| **Last verified** | 2026-10-07. P0 pricing source and provincial tax rates were corrected. P1 work now includes refresh rotation, print-order transitions, client response handling, cleanup, and partial release/CI improvements. P0 S2 money-type migration, S8 frontend advisories, and the S6 compose follow-up remain open. |
+| **Last verified** | 2026-10-07. Remaining non-release P1 work now includes isolated PostgreSQL migration verification, inventory repository integration tests, frontend auth/helper/scanner tests, and a registered-route authorization matrix. App-store identifiers are owner-deferred. P0 S2 money-type migration, S8 frontend advisories, and the S6 compose follow-up remain open. |
 | **Owner decisions** | POS checkout is out of scope. Only `ADMIN` may create transactions (F2, S2). Push notifications are deferred (F3). |
 | **Baseline commit** | `30f4051` on `main` after the P0 push; the route-stub cleanup is in `98edd97`. |
 | **Knowledge graph** | `graphify-out/graph.json`, rebuilt the same day: 2,725 nodes, 6,323 edges, 282 communities, no import cycles |
@@ -443,9 +443,9 @@ Listed only for completeness. The WebSocket event layer (`internal/websocket/hub
 2. Strip the existing trailing whitespace once.
 3. Optionally add `.editorconfig` with `trim_trailing_whitespace = true`.
 
-#### [~] R2: CI toolchain doesn't match the project, and checks are missing. P1
+#### [x] R2: CI toolchain doesn't match the project, and checks are missing. P1
 
-**Status (2026-10-07):** CI now uses current GitHub Actions, checks Go formatting and vulnerabilities, and builds the production Docker image. A dedicated golangci-lint pass and database-backed migration tests are still open.
+**Status (2026-10-07):** CI uses the Go version from `go.mod`, current Actions, formatting/vet/golangci-lint/vulnerability checks, Go tests, and a production Docker build. A fresh PostgreSQL service applies all migrations, rolls back and reapplies the latest migration, and runs repository integration tests. The same migration sequence passed locally on an isolated PostgreSQL instance. Migration 000005's broken location constraint and missing primary key were corrected so a clean install succeeds.
 
 **File:** `.github/workflows/ci.yml`
 
@@ -526,11 +526,11 @@ Listed only for completeness. The WebSocket event layer (`internal/websocket/hub
 
 ## 4. Testing
 
-#### [~] T1: Backend coverage gaps. P1
+#### [x] T1: Backend coverage gaps. P1
 
-**Status (2026-10-07):** Added handler and service transition tests for print-order status updates and a middleware role matrix. Repository integration coverage is still open; Docker is unavailable in this local environment.
+**Status (2026-10-07):** Added handler/service tests for print-order transitions, middleware access/refresh/expired/terminated token cases, and PostgreSQL integration tests for receiving, transfers, generated inventory quantities, cycle counts, returns, and online/print order store scoping. A transfer-cost query that referenced a nonexistent column was corrected. These protect the critical P1 paths; coverage is not exhaustive and should continue to grow.
 
-Coverage measured with `go test -coverprofile`:
+Historical coverage baseline measured before the new integration and handler tests with `go test -coverprofile` (local runs without `RADIUS_TEST_DATABASE_URL` skip PostgreSQL integration tests):
 
 | Package | Coverage | Note |
 |---|---|---|
@@ -554,9 +554,9 @@ Coverage measured with `go test -coverprofile`:
 3. Add middleware tests for missing, expired, refresh-type and terminated-employee tokens.
 4. Follow the table-driven style in `internal/service/*_test.go`.
 
-#### [~] T2: The frontend has almost no tests. P1
+#### [x] T2: The frontend has almost no tests. P1
 
-**Status (2026-10-07):** Jest Expo and React Native Testing Library are configured and run in CI through `npm test`. Added shared-client tests for refresh/retry, conflict, and 304 behavior, plus a component rendering test. Auth context, helpers, barcode, and scanner coverage remain.
+**Status (2026-10-07):** Jest Expo and React Native Testing Library run in CI through `npm test`. Tests now cover shared-client refresh/retry, conflict and 304 behavior; cache scoping; API helper caching and cancellation; auth login/logout/failed verification; barcode sanitization, duplicate suppression, and camera denial; and component rendering.
 
 **Files**
 - `radius-frontend/package.json` `"test": "node --test src/api/cache_manager.test.ts"`
@@ -569,9 +569,9 @@ Coverage measured with `go test -coverprofile`:
 2. Start with `src/api/client.ts` (refresh, retry, 409, 304), `src/utils/helpers.ts` (`callApi`, cache invalidation), `src/context/AuthContext.tsx`, and the barcode and scanner flows.
 3. Point CI's `npm test` at Jest.
 
-#### [~] T3: No authorization test matrix. P1
+#### [x] T3: No authorization test matrix. P1
 
-**Status (2026-10-07):** Added a table-driven role-permission matrix and print-order cross-store/transition tests. A full router route-by-role matrix and cross-store cases for all order resources remain.
+**Status (2026-10-07):** Added a table-driven role-permission matrix and a test walking every registered protected API route for SALES, SERVICE, MANAGER, and ADMIN. PostgreSQL integration tests verify online and print order list/detail store scoping, and targeted searches are now store-scoped for non-admin users. Cycle-count cross-store detail access is also tested.
 
 See S15. Add one test that walks every route with each role (`SALES`, `SERVICE`, `MANAGER`, `ADMIN`) and also checks cross-store IDs. This is what keeps S1-type bugs from coming back.
 
@@ -781,9 +781,9 @@ Found with `grep -rnE ": any\b|as any\b|<any>"` over `radius-frontend/app` and `
 
 ## 6. Release and deployment
 
-#### [~] D1: The Expo app config isn't release-ready. P1
+#### [x] D1: The Expo app config isn't release-ready. P1 (owner-deferred release identifiers)
 
-**Status (2026-10-07):** Scheme and camera permission are fixed; Expo Doctor passes except for local CocoaPods tooling. Permanent bundle/package IDs still require the owner's choice before first store submission.
+**Status (2026-10-07):** Scheme and camera permission are fixed; Expo Doctor passes except for local CocoaPods tooling. The owner explicitly deferred permanent iOS bundle and Android package IDs because app-store submission is out of scope for this pass. These identifiers must be chosen before any store submission.
 
 **File:** `radius-frontend/app.json`
 
@@ -947,12 +947,12 @@ These were checked and are fine. Don't spend time re-auditing them.
    - Each with tests, which starts T1 and T3.
 3. **Error model** (S10). It touches every handler, so do it before adding more handlers.
 4. **Features** F1 (print lifecycle) and F2 (POS checkout, or descope), built on the new error model and S2 pricing.
-5. **Remaining P1:**
+5. **P1 areas addressed in this pass:**
    - S9, S11–S15
-   - R2–R6
-   - T1–T3
+   - R2–R6 (R2 now includes PostgreSQL migration checks)
+   - T1–T3 (critical path coverage and route matrix; continue broader coverage over time)
    - Q1, Q2
-   - D1–D4
+   - D1–D4 (D1 store-release identifiers explicitly deferred by owner)
    - DOC1
 6. **P2 cleanup:**
    - Q3–Q16

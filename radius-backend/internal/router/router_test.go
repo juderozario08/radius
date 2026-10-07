@@ -14,7 +14,22 @@ func TestNewRouter_NoPanics(t *testing.T) {
 		GinMode: "test",
 	}
 
-	appHandlers := router.Handlers{
+	appHandlers := testHandlers()
+
+	r := router.NewRouter(router.Config{
+		Handlers:    appHandlers,
+		JWTSecret:   []byte("test-secret"),
+		AuthService: &service.AuthService{},
+		AppConfig:   cfg,
+	})
+
+	if r == nil {
+		t.Fatal("expected router to not be nil")
+	}
+}
+
+func testHandlers() router.Handlers {
+	return router.Handlers{
 		AuditHandler:       &handler.AuditHandler{},
 		AuthHandler:        &handler.AuthHandler{},
 		CategoryHandler:    &handler.CategoryHandler{},
@@ -32,16 +47,5 @@ func TestNewRouter_NoPanics(t *testing.T) {
 		PrintOrderHandler:  &handler.PrintOrderHandler{},
 		WSHandler:          &handler.WSHandler{},
 		MetricsHandler:     &handler.MetricsHandler{},
-	}
-
-	r := router.NewRouter(router.Config{
-		Handlers:    appHandlers,
-		JWTSecret:   []byte("test-secret"),
-		AuthService: &service.AuthService{},
-		AppConfig:   cfg,
-	})
-
-	if r == nil {
-		t.Fatal("expected router to not be nil")
 	}
 }

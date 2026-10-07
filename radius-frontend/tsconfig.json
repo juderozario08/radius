@@ -5,7 +5,8 @@
         "strict": true,
         "allowImportingTsExtensions": true,
         "noEmit": true,
-        "types": ["jest"],
+        "types": ["jest", "node"],
+        "lib": ["DOM", "DOM.Iterable", "ESNext"],
         "paths": {
             "@/*": [
                 "./src/*"

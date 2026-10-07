@@ -189,7 +189,4 @@ Welcome to the comprehensive feature guide for **Radius**, a full-stack retail, 
 
 ## 15. Roadmap & Planned Features
 
-- **Outbound Stock Transfer Creation**: Picking, packing, and dispatching outbound stock transfers to neighboring store locations.
-- **Customer Returns & RMA Pipeline**: Dedicated return authorization flow with item inspection, damage dispositioning, and Return-to-Vendor (RTV) processing.
-- **Sales Floor Activities Stream**: Centralized associate task feed for shift assignments and customer assistance alerts.
-- **Real-Time Push Notifications**: In-app and push notifications for urgent curbside arrivals, receiving dock notices, and approval requests.
+- **Real-Time Push Notifications**: In-app and push notifications for urgent curbside arrivals, receiving dock notices, and approval requests. The WebSocket event layer (`useWebSocket.ts`, `EventBroadcaster`) already streams live events; a notification feed and Expo device push are not yet built.

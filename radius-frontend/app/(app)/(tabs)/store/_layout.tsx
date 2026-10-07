@@ -5,7 +5,6 @@ export default function Layout() {
             <Stack.Screen name={"index"} />
             <Stack.Screen name={"employees"} />
             <Stack.Screen name={"transfers"} />
-            <Stack.Screen name={"purchase_orders"} />
         </Stack>
     )
 }

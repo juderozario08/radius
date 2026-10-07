@@ -8,18 +8,18 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import React, { useEffect, useState, useCallback } from "react";
 import {
-    ActivityIndicator,
     FlatList,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import { callApi } from "@/utils/helpers";
 import Pagination from "@/components/common/Pagination";
 import { GetAllTransactionsResponse, Transaction } from "@/types/sales.types";
 import { router } from "expo-router";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export default function TransactionsList() {
     const { logout } = useAuth();
@@ -90,7 +90,7 @@ export default function TransactionsList() {
 
             <View style={[globalStyles.container, styles.listWrapper]}>
                 {isLoading && transactions.length === 0 ? (
-                    <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
+                    <LoadingSpinner style={globalStyles.centerElement} />
                 ) : error ? (
                     <Text style={globalStyles.errorText}>{error}</Text>
                 ) : (

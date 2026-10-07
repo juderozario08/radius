@@ -6,7 +6,6 @@ import {
     ScrollView,
     TouchableOpacity,
     RefreshControl,
-    ActivityIndicator,
     Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,6 +32,7 @@ import { CycleCountSummary } from "@/types/cyclecount.types";
 import { PurchaseOrderSummary } from "@/types/receiving.types";
 import { StoreOperationsCard } from "@/components/store/StoreOperationsCard";
 import { StoreOperationSummary } from "@/types/admin.types";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 type TabView = "overview" | "orders" | "cycle_counts" | "activities";
 type ScopeView = "my_tasks" | "store_wide";
@@ -774,7 +774,7 @@ export default function RealTimeDashboard() {
                     <View style={styles.storeListContainer}>
                         {loadingStores && storeOperations.length === 0 ? (
                             <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="large" color={COLORS.primary} />
+                                <LoadingSpinner />
                                 <Text style={styles.loadingText}>Loading store operational summaries...</Text>
                             </View>
                         ) : storeOperations.length === 0 ? (
@@ -1008,7 +1008,7 @@ export default function RealTimeDashboard() {
 
                     {initialLoading ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color={COLORS.primary} />
+                            <LoadingSpinner />
                             <Text style={styles.loadingText}>Connecting to store data feeds...</Text>
                         </View>
                     ) : (

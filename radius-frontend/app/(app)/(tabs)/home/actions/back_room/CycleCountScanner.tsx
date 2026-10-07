@@ -26,6 +26,7 @@ import {
     CycleCountDetailResponse,
 } from "@/types/cyclecount.types";
 import { Ionicons } from "@expo/vector-icons";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 type ScannerTab = "SCANNER" | "LIST";
 
@@ -269,7 +270,7 @@ export default function CycleCountScanner() {
                     headerCenter={<Text style={globalStyles.headerTitle}>Cycle Count</Text>}
                 />
                 <View style={globalStyles.centerElement}>
-                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <LoadingSpinner />
                 </View>
             </TopSafeAreaView>
         );

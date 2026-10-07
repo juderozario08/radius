@@ -29,6 +29,7 @@ import {
 import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { getCycleCountStatusStyle } from "./CycleCount";
 import { Ionicons } from "@expo/vector-icons";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 type FilterTab = "FULL" | "PARTIAL" | "NO_COUNT";
 
@@ -340,7 +341,7 @@ export default function CycleCountDetail() {
                     headerCenter={<Text style={globalStyles.headerTitle}>Cycle Count</Text>}
                 />
                 <View style={globalStyles.centerElement}>
-                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <LoadingSpinner />
                 </View>
             </TopSafeAreaView>
         );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, router } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
@@ -18,6 +18,7 @@ import { ENDPOINTS } from "@/constants/routes";
 import { callApi } from "@/utils/helpers";
 import { useAuth } from "@/hooks/useAuth";
 import { MimsProductInventory, LocationProductsResponse } from "@/types/inventory.types";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const SCANNER_HEIGHT = Math.round(Dimensions.get("window").height * 0.5);
 
@@ -181,7 +182,7 @@ function ScanTabContent({
             <View style={styles.contentContainer}>
                 {isLoading ? (
                     <View style={globalStyles.centerElement}>
-                        <ActivityIndicator size="large" color={COLORS.primary} />
+                        <LoadingSpinner />
                         <Text style={styles.loadingText}>Processing...</Text>
                     </View>
                 ) : scannedProduct ? (
@@ -221,7 +222,7 @@ function ListTabContent({
             <View style={[styles.contentContainer, { borderTopLeftRadius: 0, borderTopRightRadius: 0 }]}>
                 {isLoading ? (
                     <View style={globalStyles.centerElement}>
-                        <ActivityIndicator size="large" color={COLORS.primary} />
+                        <LoadingSpinner />
                         <Text style={styles.loadingText}>Loading location...</Text>
                     </View>
                 ) : (

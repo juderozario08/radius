@@ -25,6 +25,7 @@ import { router } from "expo-router";
 import { Product, SearchProductsResponse, Category, SearchFilters } from "@/types/inventory.types";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const PAGE_SIZE = 25;
 
@@ -482,7 +483,7 @@ export default function ProductSearchScreen() {
 
             {isLoading ? (
                 <View style={globalStyles.centerElement}>
-                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <LoadingSpinner />
                     <Text style={{ marginTop: 12, color: COLORS.textSecondary }}>Searching...</Text>
                 </View>
             ) : (

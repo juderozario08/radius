@@ -1,6 +1,7 @@
 import React from "react";
-import { StyleSheet, Text, View, StyleProp, ViewStyle, TextStyle } from "react-native";
+import { StyleSheet, StyleProp, ViewStyle, TextStyle } from "react-native";
 import { COLORS } from "@/constants/colors";
+import { Badge } from "@/components/common/Badge";
 
 export interface OrderStatusBadgeProps {
     status: string;
@@ -54,11 +55,13 @@ export const OrderStatusBadge: React.FC<OrderStatusBadgeProps> = ({ status, styl
     const { bg, text } = getOrderStatusColor(status);
 
     return (
-        <View style={[styles.badge, { backgroundColor: bg }, style]}>
-            <Text style={[styles.text, { color: text }, textStyle]}>
-                {status || "UNKNOWN"}
-            </Text>
-        </View>
+        <Badge
+            label={status || "UNKNOWN"}
+            backgroundColor={bg}
+            color={text}
+            style={[styles.badge, style]}
+            textStyle={[styles.text, textStyle]}
+        />
     );
 };
 
@@ -66,9 +69,6 @@ export default OrderStatusBadge;
 
 const styles = StyleSheet.create({
     badge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
         alignSelf: "flex-start",
         alignItems: "center",
         justifyContent: "center",

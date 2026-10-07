@@ -6,7 +6,6 @@ import {
     FlatList,
     TextInput,
     TouchableOpacity,
-    ActivityIndicator,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
@@ -20,6 +19,7 @@ import { router } from "expo-router";
 import { CycleCountSummary, CycleCountStatus } from "@/types/cyclecount.types";
 import { getCycleCountStatusStyle } from "./CycleCount";
 import { Ionicons } from "@expo/vector-icons";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const STATUS_FILTERS: { label: string; value: string }[] = [
     { label: "All", value: "ALL" },
@@ -264,7 +264,7 @@ export default function CycleCountSearch() {
 
                 {isLoading ? (
                     <View style={globalStyles.centerElement}>
-                        <ActivityIndicator size="large" color={COLORS.primary} />
+                        <LoadingSpinner />
                     </View>
                 ) : (
                     <FlatList

@@ -17,7 +17,6 @@ import { callApi, showToast } from "@/utils/helpers";
 import { Redirect, router } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
     Alert,
     FlatList,
     Image,
@@ -29,8 +28,9 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 type FormMode = "create" | "edit";
 
@@ -437,7 +437,7 @@ export default function Stores() {
 
             <View style={[globalStyles.container, styles.listWrapper]}>
                 {isLoading && stores.length === 0 ? (
-                    <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
+                    <LoadingSpinner style={globalStyles.centerElement} />
                 ) : error ? (
                     <Text style={globalStyles.errorText}>{error}</Text>
                 ) : (

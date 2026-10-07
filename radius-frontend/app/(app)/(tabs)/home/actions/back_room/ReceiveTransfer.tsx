@@ -14,6 +14,7 @@ import { BarcodeScanner } from "@/components/common/BarcodeScanner";
 import { ReceivingItemCard } from "@/components/receiving/ReceivingItemCard";
 import { POItemRow } from "@/components/receiving/POItemRow";
 import { COLORS } from "@/constants/colors";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export default function ReceiveTransfer() {
     const { transfer_id } = useLocalSearchParams<{ transfer_id: string }>();
@@ -178,7 +179,7 @@ export default function ReceiveTransfer() {
         return (
             <TopSafeAreaView>
                 <HeaderComponent headerLeft={<BackButton />} headerCenter={<View><Text style={styles.headerTitle}>Loading...</Text></View>} />
-                <View style={globalStyles.centerElement}><ActivityIndicator size="large" color={COLORS.primary} /></View>
+                <View style={globalStyles.centerElement}><LoadingSpinner /></View>
             </TopSafeAreaView>
         );
     }

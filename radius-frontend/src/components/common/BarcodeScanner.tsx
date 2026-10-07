@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { CameraView } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useCameraPermission } from "@/hooks/useBarcode";
 import { COLORS } from "@/constants/colors";
 import { globalStyles } from "@/constants/styles";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const DEFAULT_CAMERA_HEIGHT = Math.round(SCREEN_HEIGHT * 0.4);
@@ -148,7 +149,7 @@ export const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>
                 <View style={styles.cameraContainer}>
                     {hasPermission === null ? (
                         <View style={globalStyles.centerElement}>
-                            <ActivityIndicator size="large" color={COLORS.primary} />
+                            <LoadingSpinner />
                         </View>
                     ) : hasPermission === false ? (
                         <View style={globalStyles.centerElement}>

@@ -8,7 +8,6 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
     ScrollView,
     StyleSheet,
     Text,
@@ -19,6 +18,7 @@ import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import { callApi } from "@/utils/helpers";
 import { GetTransactionByIDResponse, Transaction, TransactionItem } from "@/types/sales.types";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export default function TransactionDetail() {
     const { id } = useLocalSearchParams();
@@ -57,7 +57,7 @@ export default function TransactionDetail() {
             <TopSafeAreaView>
                 <HeaderComponent headerLeft={<BackButton />} headerCenter={<Text style={globalStyles.headerTitle}>Loading...</Text>} />
                 <View style={globalStyles.container}>
-                    <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
+                    <LoadingSpinner style={globalStyles.centerElement} />
                 </View>
             </TopSafeAreaView>
         );

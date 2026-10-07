@@ -22,6 +22,7 @@ import { router, useFocusEffect } from "expo-router";
 import { CycleCountSummary, CycleCountStatus } from "@/types/cyclecount.types";
 import { Category } from "@/types/inventory.types";
 import { Ionicons } from "@expo/vector-icons";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export const getCycleCountStatusStyle = (status: CycleCountStatus) => {
     switch (status) {
@@ -250,7 +251,7 @@ export default function CycleCountDashboard() {
             <View style={styles.container}>
                 {isLoading ? (
                     <View style={globalStyles.centerElement}>
-                        <ActivityIndicator size="large" color={COLORS.primary} />
+                        <LoadingSpinner />
                     </View>
                 ) : error ? (
                     <View style={globalStyles.centerElement}>

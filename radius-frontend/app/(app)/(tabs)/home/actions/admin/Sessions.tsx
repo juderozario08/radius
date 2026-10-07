@@ -11,9 +11,10 @@ import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState, useCallback } from "react";
-import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import Pagination from "@/components/common/Pagination";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const SessionDetailModal: React.FC<{
     session: Session | null;
@@ -187,7 +188,7 @@ export default function Sessions() {
             <HeaderComponent headerLeft={<BackButton />} headerCenter={<Text style={globalStyles.headerTitle}>Active Sessions</Text>} />
             <View style={[globalStyles.container, styles.listWrapper]}>
                 {isLoading && sessions.length === 0 ? (
-                    <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
+                    <LoadingSpinner style={globalStyles.centerElement} />
                 ) : error ? (
                     <Text style={globalStyles.errorText}>{error}</Text>
                 ) : sessions.length === 0 ? (

@@ -4,6 +4,7 @@ This is the single list of work left before Radius can be called complete. It wa
 
 | | |
 |---|---|
+| **Paused** | 2026-10-07: work stopped here by owner decision. P1 is complete (iOS/Android release items N/A, since this is a personal project that won't be released). Open when resuming: P0 S2 (money still `float32`), S8 (frontend npm advisories) and the S6 compose follow-up, then the P2 items. |
 | **Audit date** | 2026-10-06 |
 | **Last verified** | 2026-10-07. Remaining non-release P1 work now includes isolated PostgreSQL migration verification, inventory repository integration tests, frontend auth/helper/scanner tests, and a registered-route authorization matrix. App-store identifiers are owner-deferred. P0 S2 money-type migration, S8 frontend advisories, and the S6 compose follow-up remain open. |
 | **Owner decisions** | POS checkout is out of scope. Only `ADMIN` may create transactions (F2, S2). Push notifications are deferred (F3). |
@@ -594,6 +595,19 @@ See S15. Add one test that walks every route with each role (`SALES`, `SERVICE`,
 **Fix:** Delete the files, their wiring, and any unused interface entries in `service/interfaces.go`. Regenerate mocks if needed.
 
 #### [x] Q2: Seven empty 0-byte frontend files. P1
+
+**Follow-up (2026-10-07):** The first audit missed seven more empty files. They have now been handled.
+
+**Two were filled with shared code:**
+- `src/components/common/Badge.tsx` is now the shared pill component. `StatusBadge`, `RoleBadge`, `TerminatedBadge` and `OrderStatusBadge` render through it, with the same look and props.
+- `src/components/common/LoadingSpinner.tsx` (large, `COLORS.primary` by default) replaces 34 identical inline `ActivityIndicator`s across 29 files.
+
+**Five were deleted:**
+- `src/types/store.types.ts` and `src/types/product.types.ts`: those types already live in `admin.types.ts` and `inventory.types.ts`.
+- `src/components/inventory/StockBadge.tsx` and `src/components/inventory/InventoryCard.tsx`: there was no repeated code to put in them.
+- `src/components/reports/OOSCard.tsx`: it belonged to the removed out-of-stock feature.
+
+No 0-byte source files remain.
 
 **Files**
 - `radius-frontend/src/constants/api.ts`

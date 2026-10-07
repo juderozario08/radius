@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
@@ -13,6 +13,7 @@ import { ProductLocations } from "@/components/inventory/ProductLocations";
 import { useAuth } from "@/hooks/useAuth";
 import { COLORS } from "@/constants/colors";
 import { globalStyles } from "@/constants/styles";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 type TabName = "Details" | "Protection" | "Locations";
 
@@ -97,7 +98,7 @@ export default function ProductScreen() {
             />
             {isLoading ? (
                 <View style={globalStyles.centerElement}>
-                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <LoadingSpinner />
                 </View>
             ) : error || !details ? (
                 <View style={globalStyles.centerElement}>

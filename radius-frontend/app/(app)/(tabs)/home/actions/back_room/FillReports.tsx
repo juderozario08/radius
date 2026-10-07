@@ -4,7 +4,6 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    ActivityIndicator,
     ScrollView,
     RefreshControl,
 } from 'react-native';
@@ -17,6 +16,7 @@ import { getFillReport } from '@/api/reports.api';
 import { FillReportResponse } from '@/types/report.types';
 import { COLORS } from '@/constants/colors';
 import { globalStyles } from '@/constants/styles';
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export default function BackRoomFillReportsScreen() {
     const router = useRouter();
@@ -75,7 +75,7 @@ export default function BackRoomFillReportsScreen() {
 
                 {loading && !refreshing ? (
                     <View style={globalStyles.centerElement}>
-                        <ActivityIndicator size="large" color={COLORS.primary} />
+                        <LoadingSpinner />
                     </View>
                 ) : (
                     <>

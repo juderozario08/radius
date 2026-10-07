@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
 import { COLORS } from "@/constants/colors";
 import { EmployeeRole } from "@/types/auth.types";
 import { capitalize } from "@/utils/helpers";
+import { Badge } from "@/components/common/Badge";
 
 const ROLE_COLORS: Record<EmployeeRole, { bg: string, text: string }> = {
     SALES: { bg: "#E3F2FD", text: "#1976D2" },
@@ -14,23 +14,5 @@ const ROLE_COLORS: Record<EmployeeRole, { bg: string, text: string }> = {
 export const RoleBadge: React.FC<{ role: EmployeeRole }> = ({ role }) => {
     const colors = ROLE_COLORS[role] || { bg: COLORS.inactiveBg, text: COLORS.inactiveText };
 
-    return (
-        <View style={[styles.roleBadge, { backgroundColor: colors.bg }]}>
-            <Text style={[styles.roleText, { color: colors.text }]}>
-                {capitalize(role)}
-            </Text>
-        </View>
-    );
+    return <Badge label={capitalize(role)} backgroundColor={colors.bg} color={colors.text} />;
 };
-
-const styles = StyleSheet.create({
-    roleBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    roleText: {
-        fontSize: 12,
-        fontWeight: "600",
-    },
-});

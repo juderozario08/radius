@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
@@ -15,6 +15,7 @@ import { ENDPOINTS } from "@/constants/routes";
 import { callApi } from "@/utils/helpers";
 import { useAuth } from "@/hooks/useAuth";
 import { MimsProductInventory, ScanProductResponse } from "@/types/inventory.types";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export default function MimsScreen() {
     const { logout } = useAuth();
@@ -139,7 +140,7 @@ function MimsTabContent({ isLoading }: { isLoading: boolean }) {
             <View style={styles.contentContainer}>
                 {isLoading ? (
                     <View style={globalStyles.centerElement}>
-                        <ActivityIndicator size="large" color={COLORS.primary} />
+                        <LoadingSpinner />
                         <Text style={styles.loadingText}>Fetching data...</Text>
                     </View>
                 ) : (

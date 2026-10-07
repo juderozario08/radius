@@ -14,7 +14,6 @@ import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
-    ActivityIndicator,
     Alert,
     FlatList,
     Image,
@@ -33,6 +32,7 @@ import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import PillGroup, { PillOption } from "@/components/common/PillGroup";
 import { CANADIAN_PROVINCES, isCanadianProvince, normalizeCanadianPostalCode } from "@/constants/canada";
 import Pagination from "@/components/common/Pagination";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const ROLES: EmployeeRole[] = ["SALES", "SERVICE", "MANAGER", "ADMIN"];
 
@@ -602,7 +602,7 @@ export default function Employees() {
 
             <View style={[globalStyles.container, styles.listWrapper]}>
                 {isLoading && employees.length === 0 ? (
-                    <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
+                    <LoadingSpinner style={globalStyles.centerElement} />
                 ) : error ? (
                     <Text style={globalStyles.errorText}>{error}</Text>
                 ) : (

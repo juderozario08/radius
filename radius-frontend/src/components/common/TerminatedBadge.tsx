@@ -1,26 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { Badge } from "@/components/common/Badge";
 
 export const TerminatedBadge: React.FC<{ isTerminated: boolean }> = ({ isTerminated }) => {
     if (!isTerminated) return null;
 
-    return (
-        <View style={styles.terminatedBadge}>
-            <Text style={styles.terminatedText}>Terminated</Text>
-        </View>
-    );
+    return <Badge label="Terminated" backgroundColor="#FFEBEB" color="#CC0000" />;
 };
-
-const styles = StyleSheet.create({
-    terminatedBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-        backgroundColor: "#FFEBEB",
-    },
-    terminatedText: {
-        fontSize: 12,
-        fontWeight: "600",
-        color: "#CC0000",
-    },
-});

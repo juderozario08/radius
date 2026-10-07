@@ -6,7 +6,6 @@ import {
     FlatList,
     TextInput,
     TouchableOpacity,
-    ActivityIndicator,
     RefreshControl,
     ScrollView,
     Modal,
@@ -27,6 +26,7 @@ import {
 } from '@/types/report.types';
 import { COLORS } from '@/constants/colors';
 import { globalStyles } from '@/constants/styles';
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const FILTER_TABS: { id: FillReportFilterType; label: string; icon: string }[] = [
     { id: 'ALL', label: 'All Items', icon: 'grid-outline' },
@@ -210,7 +210,7 @@ export default function FillReportScreen() {
 
             {loading && !refreshing ? (
                 <View style={globalStyles.centerElement}>
-                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <LoadingSpinner />
                     <Text style={styles.loadingText}>Loading Fill Report...</Text>
                 </View>
             ) : (

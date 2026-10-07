@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { DetailRow } from "@/components/common/DetailRow";
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
-    ActivityIndicator,
     FlatList,
     StyleSheet,
     Text,
@@ -22,6 +21,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -167,7 +167,7 @@ export default function PrintOrdersList() {
         return (
             <View style={[globalStyles.container, styles.listWrapper]}>
                 {isLoading && currentOrders.length === 0 ? (
-                    <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
+                    <LoadingSpinner style={globalStyles.centerElement} />
                 ) : error ? (
                     <Text style={globalStyles.errorText}>{error}</Text>
                 ) : (

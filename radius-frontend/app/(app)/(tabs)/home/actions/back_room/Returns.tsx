@@ -33,6 +33,7 @@ import {
     RtvQueueItem,
 } from "@/types/returns.types";
 import { Ionicons } from "@expo/vector-icons";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 type ActiveTab = "NEW_RETURN" | "HISTORY" | "RTV_QUEUE";
 type LookupMode = "TRANSACTION_ID" | "PRODUCT_BARCODE";
@@ -849,7 +850,7 @@ export default function Returns() {
 
                     {isLoadingHistory ? (
                         <View style={styles.centerContainer}>
-                            <ActivityIndicator size="large" color={COLORS.primary} />
+                            <LoadingSpinner />
                         </View>
                     ) : historyList.length === 0 ? (
                         <View style={styles.centerContainer}>
@@ -880,7 +881,7 @@ export default function Returns() {
                 <View style={styles.contentContainer}>
                     {isLoadingRtv ? (
                         <View style={styles.centerContainer}>
-                            <ActivityIndicator size="large" color={COLORS.primary} />
+                            <LoadingSpinner />
                         </View>
                     ) : rtvList.length === 0 ? (
                         <View style={styles.centerContainer}>
@@ -977,7 +978,7 @@ export default function Returns() {
 
                         {isLoadingDetail ? (
                             <View style={styles.centerContainer}>
-                                <ActivityIndicator size="large" color={COLORS.primary} />
+                                <LoadingSpinner />
                             </View>
                         ) : returnDetail ? (
                             <ScrollView style={styles.detailModalBody}>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
@@ -13,6 +13,7 @@ import { ENDPOINTS } from '@/constants/routes';
 import { callApi } from '@/utils/helpers';
 import { useAuth } from '@/hooks/useAuth';
 import { MimsProductInventory, ScanProductResponse } from '@/types/inventory.types';
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export default function IS4TCScanScreen() {
   const { logout, user } = useAuth();
@@ -136,7 +137,7 @@ export default function IS4TCScanScreen() {
       />
       {isProcessing && (
         <View style={styles.processingOverlay}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <LoadingSpinner />
           <Text style={styles.processingText}>Processing...</Text>
         </View>
       )}

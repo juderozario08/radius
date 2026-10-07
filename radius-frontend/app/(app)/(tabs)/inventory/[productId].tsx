@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
@@ -11,6 +11,7 @@ import { ProductDetails } from "@/components/inventory/ProductDetails";
 import { useAuth } from "@/hooks/useAuth";
 import { COLORS } from "@/constants/colors";
 import { globalStyles } from "@/constants/styles";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export default function ProductScreen() {
     const { productId } = useLocalSearchParams();
@@ -51,7 +52,7 @@ export default function ProductScreen() {
             />
             {isLoading ? (
                 <View style={globalStyles.centerElement}>
-                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <LoadingSpinner />
                 </View>
             ) : error || !productDetails ? (
                 <View style={globalStyles.centerElement}>

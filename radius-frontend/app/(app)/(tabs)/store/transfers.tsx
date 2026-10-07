@@ -33,6 +33,7 @@ import {
 } from "@/types/receiving.types";
 import { SearchProductsResponse, Product } from "@/types/inventory.types";
 import { Ionicons } from "@expo/vector-icons";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 interface NewItemEntry {
     product_id: number;
@@ -387,7 +388,7 @@ export default function TransfersScreen() {
             <View style={styles.listWrapper}>
                 {isLoading && transfers.length === 0 ? (
                     <View style={globalStyles.centerElement}>
-                        <ActivityIndicator size="large" color={COLORS.primary} />
+                        <LoadingSpinner />
                     </View>
                 ) : filteredTransfers.length === 0 ? (
                     <View style={styles.emptyContainer}>
@@ -438,7 +439,7 @@ export default function TransfersScreen() {
                         <View style={[globalStyles.modalCardContainer, styles.detailModalContainer]}>
                             {isDetailLoading || !transferDetail ? (
                                 <View style={styles.modalLoading}>
-                                    <ActivityIndicator size="large" color={COLORS.primary} />
+                                    <LoadingSpinner />
                                 </View>
                             ) : (
                                 <>

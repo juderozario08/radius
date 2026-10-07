@@ -15,6 +15,7 @@ import { ReceivingItemCard } from "@/components/receiving/ReceivingItemCard";
 import { POItemRow } from "@/components/receiving/POItemRow";
 import { LPRCard } from "@/components/receiving/LPRCard";
 import { COLORS } from "@/constants/colors";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export default function ReceivePO() {
     const { po_id } = useLocalSearchParams<{ po_id: string }>();
@@ -207,7 +208,7 @@ export default function ReceivePO() {
         return (
             <TopSafeAreaView>
                 <HeaderComponent headerLeft={<BackButton />} headerCenter={<View><Text style={styles.headerTitle}>Loading...</Text></View>} />
-                <View style={globalStyles.centerElement}><ActivityIndicator size="large" color={COLORS.primary} /></View>
+                <View style={globalStyles.centerElement}><LoadingSpinner /></View>
             </TopSafeAreaView>
         );
     }

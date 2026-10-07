@@ -14,7 +14,6 @@ import { DetailRow } from "@/components/common/DetailRow";
 import { ActionButtonRow } from "@/components/common/ActionButtonRow";
 import React, { useEffect, useState, useCallback } from "react";
 import {
-    ActivityIndicator,
     FlatList,
     Modal,
     StyleSheet,
@@ -24,6 +23,7 @@ import {
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import Pagination from "@/components/common/Pagination";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 interface EmployeeDetailModalProps {
     employee: Employee | null;
@@ -165,7 +165,7 @@ export default function StoreEmployees() {
 
             <View style={[globalStyles.container, styles.listWrapper]}>
                 {isLoading && employees.length === 0 ? (
-                    <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
+                    <LoadingSpinner style={globalStyles.centerElement} />
                 ) : error ? (
                     <Text style={globalStyles.errorText}>{error}</Text>
                 ) : (

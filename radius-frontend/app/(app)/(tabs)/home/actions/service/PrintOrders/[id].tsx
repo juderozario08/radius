@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { DetailRow } from "@/components/common/DetailRow";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
     ScrollView,
     StyleSheet,
     Text,
@@ -19,6 +18,7 @@ import { callApi } from "@/utils/helpers";
 import { GetPrintOrderResponse, PrintOrder, PrintOrderItem, PrintOrderStatus } from "@/types/print_order.types";
 import { useLocalSearchParams } from "expo-router";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -107,7 +107,7 @@ export default function PrintOrderDetail() {
                     headerCenter={<Text style={globalStyles.headerTitle}>Loading...</Text>}
                 />
                 <View style={globalStyles.container}>
-                    <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
+                    <LoadingSpinner style={globalStyles.centerElement} />
                 </View>
             </TopSafeAreaView>
         );

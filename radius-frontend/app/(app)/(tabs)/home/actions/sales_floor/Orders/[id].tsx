@@ -25,6 +25,7 @@ import { GetOnlineOrderByIDResponse, OnlineOrder, OnlineOrderItem, OrderItemStat
 import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 type TabType = "SCANNER" | "PRODUCTS";
 
@@ -389,7 +390,7 @@ export default function OnlineOrderDetail() {
                     headerCenter={<Text style={globalStyles.headerTitle}>Loading...</Text>}
                 />
                 <View style={globalStyles.container}>
-                    <ActivityIndicator size="large" color={COLORS.primary} style={globalStyles.centerElement} />
+                    <LoadingSpinner style={globalStyles.centerElement} />
                 </View>
             </TopSafeAreaView>
         );

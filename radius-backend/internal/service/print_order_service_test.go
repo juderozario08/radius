@@ -114,6 +114,19 @@ func TestPrintOrderService_GetAllPrintOrders_NonAdmin(t *testing.T) {
 	}
 }
 
+func TestPrintOrderService_TargetedSearchStaysInStore(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repo := mocks.NewMockOrdersRepository(ctrl)
+	svc := service.NewPrintOrderService(repo, nil)
+	storeID := 2
+	orderID := 42
+	criteria := models.PrintOrderSearchCriteria{OrderID: &orderID, CustomerEmail: "customer@example.invalid"}
+	repo.EXPECT().GetAllPrintOrders(gomock.Any(), 10, 0, &storeID, criteria).Return([]models.PrintOrder{}, 0, nil)
+	if _, _, err := svc.GetAllPrintOrders(context.Background(), storeID, models.RoleService, 1, 10, criteria); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestPrintOrderService_GetPrintOrderByID(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

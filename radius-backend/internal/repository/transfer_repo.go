@@ -30,9 +30,11 @@ func (r *TransferRepo) CreateTransfer(ctx context.Context, fromStoreID int, toSt
 		var availableQty int
 		var costPrice float64
 		err := tx.QueryRowContext(ctx,
-			`SELECT i.new_qty, COALESCE(p.cost_price, 0)
+			`SELECT i.new_qty,
+			        COALESCE((SELECT ps.cost_price FROM product_suppliers ps
+			                  WHERE ps.product_id = i.product_id
+			                  ORDER BY ps.is_primary DESC, ps.cost_price ASC LIMIT 1), 0)
 			 FROM inventory i
-			 JOIN products p ON i.product_id = p.product_id
 			 WHERE i.store_id = $1 AND i.product_id = $2`,
 			fromStoreID, item.ProductId,
 		).Scan(&availableQty, &costPrice)

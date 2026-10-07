@@ -1,7 +1,7 @@
 CREATE TABLE mims_location (
-    mims_location_id VARCHAR(20),
+    mims_location_id VARCHAR(20) PRIMARY KEY,
     store_id INT REFERENCES stores (store_id),
-    CONSTRAINT chk_mims_location_format CHECK (mims_location ~ '^[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{3}$'),
+    CONSTRAINT chk_mims_location_format CHECK (mims_location_id ~ '^[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{3}$'),
     UNIQUE (mims_location_id, store_id)
 );
 

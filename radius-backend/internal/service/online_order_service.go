@@ -60,18 +60,10 @@ func (s *OnlineOrderService) SetBroadcaster(broadcaster EventBroadcaster) {
 }
 
 func (s *OnlineOrderService) GetAllOnlineOrders(ctx context.Context, storeId int, role models.EmployeeRole, page, limit int, criteria models.OrderSearchCriteria) ([]models.OnlineOrder, int, error) {
-	isTargetedSearch := criteria.OrderID != nil ||
-		criteria.CustomerFirstName != "" ||
-		criteria.CustomerLastName != "" ||
-		criteria.CustomerEmail != "" ||
-		criteria.BillingPhone != "" ||
-		criteria.PaymentCard != "" ||
-		criteria.SKU != ""
-
 	var targetStoreID *int
 	if role == models.RoleAdmin && criteria.StoreID != nil {
 		targetStoreID = criteria.StoreID
-	} else if role != models.RoleAdmin && !isTargetedSearch {
+	} else if role != models.RoleAdmin {
 		targetStoreID = &storeId
 	}
 

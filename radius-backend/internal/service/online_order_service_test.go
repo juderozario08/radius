@@ -61,6 +61,19 @@ func TestOnlineOrderService_GetAllOnlineOrders_Manager(t *testing.T) {
 	}
 }
 
+func TestOnlineOrderService_TargetedSearchStaysInStore(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repo := mocks.NewMockOrdersRepository(ctrl)
+	svc := service.NewOnlineOrderService(repo, nil, nil, nil, nil, nil)
+	storeID := 2
+	orderID := 42
+	criteria := models.OrderSearchCriteria{OrderID: &orderID, CustomerEmail: "customer@example.invalid"}
+	repo.EXPECT().GetAllOnlineOrders(gomock.Any(), 10, 0, &storeID, criteria).Return([]models.OnlineOrder{}, 0, nil)
+	if _, _, err := svc.GetAllOnlineOrders(context.Background(), storeID, models.RoleSales, 1, 10, criteria); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestOnlineOrderService_CreateOnlineOrder_BroadcastsEvent(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

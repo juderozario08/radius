@@ -6,7 +6,7 @@ import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     ScrollView,
@@ -31,17 +31,12 @@ export default function TransactionDetail() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (id) {
-            fetchTransactionDetails();
-        }
-    }, [id]);
-
-    const fetchTransactionDetails = async () => {
+    const fetchTransactionDetails = useCallback(async () => {
+        if (!id || typeof id !== "string") return;
         setIsLoading(true);
         setError(null);
 
-        const endpoint = ENDPOINTS.SALES_FLOOR.TRANSACTIONS.get(id as string);
+        const endpoint = ENDPOINTS.SALES_FLOOR.TRANSACTIONS.get(id);
         const data = await callApi<GetTransactionByIDResponse>(endpoint, { method: "GET" }, logout);
 
         if (data) {
@@ -51,7 +46,11 @@ export default function TransactionDetail() {
             setError("Could not load transaction details. Please try again.");
         }
         setIsLoading(false);
-    };
+    }, [id, logout]);
+
+    useEffect(() => {
+        void fetchTransactionDetails();
+    }, [fetchTransactionDetails]);
 
     if (isLoading) {
         return (

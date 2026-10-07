@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"radius/internal/models"
 	"radius/internal/service"
 	"radius/internal/service/mocks"
@@ -9,6 +10,56 @@ import (
 
 	"go.uber.org/mock/gomock"
 )
+
+func TestPrintOrderService_UpdateStatus(t *testing.T) {
+	tests := []struct {
+		name    string
+		role    models.EmployeeRole
+		current models.PrintOrderStatus
+		next    models.PrintOrderStatus
+		found   bool
+		updated bool
+		wantErr error
+	}{
+		{"pending to production", models.RoleService, models.PrintOrderStatusPending, models.PrintOrderStatusInProgress, true, true, nil},
+		{"production to pickup", models.RoleManager, models.PrintOrderStatusInProgress, models.PrintOrderStatusReadyForPickup, true, true, nil},
+		{"shipped to complete", models.RoleAdmin, models.PrintOrderStatusShipped, models.PrintOrderStatusCompleted, true, true, nil},
+		{"sales forbidden", models.RoleSales, models.PrintOrderStatusPending, models.PrintOrderStatusInProgress, true, false, service.ErrForbidden},
+		{"other store", models.RoleService, models.PrintOrderStatusPending, models.PrintOrderStatusInProgress, false, false, service.ErrNotFound},
+		{"skip production", models.RoleService, models.PrintOrderStatusPending, models.PrintOrderStatusCompleted, true, false, service.ErrConflict},
+		{"stale update", models.RoleService, models.PrintOrderStatusPending, models.PrintOrderStatusInProgress, true, false, service.ErrConflict},
+		{"terminal", models.RoleService, models.PrintOrderStatusCancelled, models.PrintOrderStatusInProgress, true, false, service.ErrConflict},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			repo := mocks.NewMockOrdersRepository(ctrl)
+			svc := service.NewPrintOrderService(repo, nil)
+			if tt.role != models.RoleSales {
+				var order *models.PrintOrder
+				if tt.found {
+					order = &models.PrintOrder{PrintOrderId: 7, StoreId: 2, Status: tt.current}
+				}
+				var scope *int
+				if tt.role != models.RoleAdmin {
+					storeID := 2
+					scope = &storeID
+				}
+				repo.EXPECT().GetPrintOrderByID(gomock.Any(), 7, scope).Return(order, nil, nil)
+				if tt.found && (tt.wantErr == nil || tt.name == "stale update") {
+					repo.EXPECT().UpdatePrintOrderStatus(gomock.Any(), 7, 2, tt.current, tt.next).Return(tt.updated, nil)
+				}
+			}
+			result, err := svc.UpdateStatus(context.Background(), 7, 2, tt.role, tt.next)
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("got error %v, want %v", err, tt.wantErr)
+			}
+			if tt.wantErr == nil && (result == nil || result.Status != tt.next) {
+				t.Fatalf("unexpected result: %+v", result)
+			}
+		})
+	}
+}
 
 func TestPrintOrderService_GetAllPrintOrders_Admin(t *testing.T) {
 	ctrl := gomock.NewController(t)

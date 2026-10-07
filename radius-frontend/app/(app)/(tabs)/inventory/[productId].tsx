@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
@@ -20,17 +20,12 @@ export default function ProductScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (productId) {
-            fetchProduct();
-        }
-    }, [productId]);
-
-    const fetchProduct = async () => {
+    const fetchProduct = useCallback(async () => {
+        if (!productId || typeof productId !== "string") return;
         setIsLoading(true);
         setError(null);
         try {
-            const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails(productId as string);
+            const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails(productId);
             const data = await callApi<ProductScreenDetails>(endpoint, { method: "GET" }, logout);
             if (data) {
                 setProductDetails(data);
@@ -42,7 +37,11 @@ export default function ProductScreen() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [productId, logout]);
+
+    useEffect(() => {
+        void fetchProduct();
+    }, [fetchProduct]);
 
     return (
         <TopSafeAreaView style={[globalStyles.container, { backgroundColor: COLORS.headerBackground }]}>
@@ -64,4 +63,3 @@ export default function ProductScreen() {
         </TopSafeAreaView>
     );
 }
-

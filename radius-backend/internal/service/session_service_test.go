@@ -29,6 +29,7 @@ type MockSessionRepo struct {
 	TerminateSessionByIdFunc              func(ctx context.Context, id int) error
 	TerminateSessionByAccessTokenHashFunc func(ctx context.Context, accessTokenHash string) error
 	UpdateAccessTokenHashFunc             func(ctx context.Context, sessionId int, newAccessTokenHash string) error
+	RotateSessionTokensFunc               func(ctx context.Context, sessionID int, oldRefreshHash, newAccessHash, newRefreshHash string, expiresAt time.Time) (bool, error)
 	UpdateSessionExpiryFunc               func(ctx context.Context, sessionId int, newExpiresAt time.Time) error
 	CreateSessionFunc                     func(ctx context.Context, model models.CreateSessionRequest) (*models.CreateSessionResponse, error)
 	GetSessionsByEmployeeIdFunc           func(ctx context.Context, employeeId int) ([]models.Session, error)
@@ -78,6 +79,12 @@ func (m *MockSessionRepo) UpdateAccessTokenHash(ctx context.Context, sessionId i
 		return m.UpdateAccessTokenHashFunc(ctx, sessionId, newAccessTokenHash)
 	}
 	return nil
+}
+func (m *MockSessionRepo) RotateSessionTokens(ctx context.Context, sessionID int, oldRefreshHash, newAccessHash, newRefreshHash string, expiresAt time.Time) (bool, error) {
+	if m.RotateSessionTokensFunc != nil {
+		return m.RotateSessionTokensFunc(ctx, sessionID, oldRefreshHash, newAccessHash, newRefreshHash, expiresAt)
+	}
+	return false, nil
 }
 func (m *MockSessionRepo) UpdateSessionExpiry(ctx context.Context, sessionId int, newExpiresAt time.Time) error {
 	if m.UpdateSessionExpiryFunc != nil {
@@ -129,6 +136,91 @@ func TestValidateSession_Success(t *testing.T) {
 	err := sessionService.ValidateSession(context.Background(), token)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
+	}
+}
+
+func TestRefreshAccessToken_RotatesAndRevokesOnReuse(t *testing.T) {
+	ctx := context.Background()
+	secret := []byte("testsecret")
+	redisClient := setupSessionTestRedis()
+	defer redisClient.Close()
+	oldRefresh, err := utils.GenerateRefreshToken(7, "staff@example.com", models.RoleSales, 2, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldAccess, err := utils.GenerateAccessToken(7, "staff@example.com", models.RoleSales, 2, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	currentRefreshHash := utils.HashTokenForDB(oldRefresh)
+	currentAccessHash := utils.HashTokenForDB(oldAccess)
+	terminated := false
+	active := true
+	terminatedEmployee := false
+	repo := &MockSessionRepo{}
+	repo.GetSessionByRefreshTokenHashFunc = func(_ context.Context, hash string) (*models.GetSessionByHashedToken, error) {
+		if hash != currentRefreshHash || terminated {
+			return nil, errors.New("not found")
+		}
+		return &models.GetSessionByHashedToken{SessionId: 42, EmployeeId: 7, StoreId: 2, AccessTokenHash: currentAccessHash, ExpiresAt: time.Now().Add(time.Hour), IsActive: &active, IsTerminated: &terminatedEmployee}, nil
+	}
+	repo.RotateSessionTokensFunc = func(_ context.Context, sessionID int, oldHash, newAccessHash, newRefreshHash string, expiresAt time.Time) (bool, error) {
+		if sessionID != 42 || oldHash != currentRefreshHash || terminated || expiresAt.Before(time.Now()) {
+			return false, nil
+		}
+		currentRefreshHash = newRefreshHash
+		currentAccessHash = newAccessHash
+		return true, nil
+	}
+	repo.GetSessionByIdFunc = func(_ context.Context, id int) (*models.Session, error) {
+		return &models.Session{SessionId: id, AccessTokenHash: currentAccessHash}, nil
+	}
+	repo.TerminateSessionByIdFunc = func(_ context.Context, id int) error {
+		terminated = true
+		return nil
+	}
+	svc := NewSessionService(repo, secret, redisClient)
+	newAccess, newRefresh, err := svc.RefreshAccessToken(ctx, oldRefresh)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if newAccess == oldAccess || newRefresh == oldRefresh || currentRefreshHash != utils.HashTokenForDB(newRefresh) {
+		t.Fatal("tokens were not rotated")
+	}
+	if _, _, err := svc.RefreshAccessToken(ctx, oldRefresh); err == nil || !terminated {
+		t.Fatalf("reused refresh token must revoke the session, got %v", err)
+	}
+	if err := svc.ValidateSession(ctx, newAccess); err == nil {
+		t.Fatal("access token remained valid after replay revocation")
+	}
+}
+
+func TestRefreshAccessToken_RevokesIfReuseTrackingUnavailable(t *testing.T) {
+	secret := []byte("testsecret")
+	refresh, err := utils.GenerateRefreshToken(7, "staff@example.com", models.RoleSales, 2, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	active := true
+	terminatedEmployee := false
+	revoked := false
+	repo := &MockSessionRepo{}
+	repo.GetSessionByRefreshTokenHashFunc = func(context.Context, string) (*models.GetSessionByHashedToken, error) {
+		return &models.GetSessionByHashedToken{SessionId: 42, StoreId: 2, ExpiresAt: time.Now().Add(time.Hour), IsActive: &active, IsTerminated: &terminatedEmployee}, nil
+	}
+	repo.RotateSessionTokensFunc = func(context.Context, int, string, string, string, time.Time) (bool, error) {
+		return true, nil
+	}
+	repo.GetSessionByIdFunc = func(context.Context, int) (*models.Session, error) {
+		return &models.Session{SessionId: 42}, nil
+	}
+	repo.TerminateSessionByIdFunc = func(context.Context, int) error {
+		revoked = true
+		return nil
+	}
+	svc := NewSessionService(repo, secret, nil)
+	if _, _, err := svc.RefreshAccessToken(context.Background(), refresh); err == nil || !revoked {
+		t.Fatalf("refresh must fail closed without reuse tracking: error=%v revoked=%v", err, revoked)
 	}
 }
 

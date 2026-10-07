@@ -219,7 +219,7 @@ export default function Returns() {
         if (hasExpiredItem && refundMethod !== "STORE_CREDIT") {
             setRefundMethod("STORE_CREDIT");
         }
-    }, [hasExpiredItem]);
+    }, [hasExpiredItem, refundMethod]);
 
     const handleSubmitReturn = async () => {
         if (selectedItemsArray.length === 0) {

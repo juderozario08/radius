@@ -31,11 +31,7 @@ export default function TransactionsList() {
     const [pageSize, setPageSize] = useState(10);
     const [totalLength, setTotalLength] = useState(0);
 
-    useEffect(() => {
-        fetchTransactions(pageNumber, pageSize);
-    }, [pageNumber, pageSize]);
-
-    const fetchTransactions = async (page: number, limit: number) => {
+    const fetchTransactions = useCallback(async (page: number, limit: number) => {
         setIsLoading(true);
         setError(null);
 
@@ -49,7 +45,11 @@ export default function TransactionsList() {
             setError("Could not load transactions. Please try again.");
         }
         setIsLoading(false);
-    };
+    }, [logout]);
+
+    useEffect(() => {
+        void fetchTransactions(pageNumber, pageSize);
+    }, [fetchTransactions, pageNumber, pageSize]);
 
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);

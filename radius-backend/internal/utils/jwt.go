@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"radius/internal/models"
 	"time"
 
@@ -14,7 +16,12 @@ const (
 )
 
 func generateToken(id int, email string, role models.EmployeeRole, storeId int, tokenType string, expiry time.Duration, jwtSecret []byte) (string, error) {
+	var nonce [16]byte
+	if _, err := rand.Read(nonce[:]); err != nil {
+		return "", err
+	}
 	claims := jwt.MapClaims{
+		"jti":         hex.EncodeToString(nonce[:]),
 		"employee_id": id,
 		"email":       email,
 		"role":        role,

@@ -1,4 +1,5 @@
 import { OrderType, OrderStatus } from "./order.types";
+import { PrintOrderStatus } from "./print_order.types";
 
 export type ConnectionStatus =
     | "connected"
@@ -9,6 +10,7 @@ export type ConnectionStatus =
 export type WSEventType =
     | "order_created"
     | "order_status_updated"
+    | "print_order_status_updated"
     | "cycle_count_updated"
     | "store_activity"
     | "ping"
@@ -50,6 +52,13 @@ export interface OrderStatusUpdatedPayload {
     assigned_to_name?: string | null;
 }
 
+export interface PrintOrderStatusUpdatedPayload {
+    print_order_id: number;
+    store_id: number;
+    previous_status: PrintOrderStatus;
+    new_status: PrintOrderStatus;
+}
+
 export type CycleCountAction =
     | "started"
     | "scanned"
@@ -85,6 +94,7 @@ export interface StoreActivityPayload {
 
 export type OrderCreatedEvent = WSMessage<OrderCreatedPayload>;
 export type OrderStatusUpdatedEvent = WSMessage<OrderStatusUpdatedPayload>;
+export type PrintOrderStatusUpdatedEvent = WSMessage<PrintOrderStatusUpdatedPayload>;
 export type CycleCountUpdatedEvent = WSMessage<CycleCountUpdatedPayload>;
 export type StoreActivityEvent = WSMessage<StoreActivityPayload>;
 export type PingEvent = WSMessage<Record<string, unknown> | undefined>;
@@ -93,6 +103,7 @@ export type PongEvent = WSMessage<Record<string, unknown> | undefined>;
 export type TypedWSEvent =
     | ({ type: "order_created" } & OrderCreatedEvent)
     | ({ type: "order_status_updated" } & OrderStatusUpdatedEvent)
+    | ({ type: "print_order_status_updated" } & PrintOrderStatusUpdatedEvent)
     | ({ type: "cycle_count_updated" } & CycleCountUpdatedEvent)
     | ({ type: "store_activity" } & StoreActivityEvent)
     | ({ type: "ping" } & PingEvent)

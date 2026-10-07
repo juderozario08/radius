@@ -10,6 +10,7 @@ import (
 	"radius/internal/database"
 	"radius/internal/models"
 	"radius/internal/utils"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -88,8 +89,12 @@ func (s *SessionService) ValidateSession(ctx context.Context, tokenString string
 	legacyKey := cache.LegacyAuthTokenKey(hashedToken)
 
 	if s.redisClient != nil {
-		_, err := s.redisClient.Get(ctx, newKey).Result()
+		cachedSessionID, err := s.redisClient.Get(ctx, newKey).Result()
 		if err == nil {
+			revoked, revokedErr := s.redisClient.Exists(ctx, "radius:auth:revoked:"+cachedSessionID).Result()
+			if revokedErr != nil || revoked > 0 {
+				return errors.New("session revoked")
+			}
 			database.CacheMetrics.RecordHit()
 			return nil
 		}
@@ -98,6 +103,10 @@ func (s *SessionService) ValidateSession(ctx context.Context, tokenString string
 		} else {
 			legacyVal, legErr := s.redisClient.Get(ctx, legacyKey).Result()
 			if legErr == nil {
+				revoked, revokedErr := s.redisClient.Exists(ctx, "radius:auth:revoked:"+legacyVal).Result()
+				if revokedErr != nil || revoked > 0 {
+					return errors.New("session revoked")
+				}
 				database.CacheMetrics.RecordHit()
 				_ = s.redisClient.Set(ctx, newKey, legacyVal, utils.SessionInactivityTimeout).Err()
 				_ = s.redisClient.Del(ctx, legacyKey).Err()
@@ -109,8 +118,14 @@ func (s *SessionService) ValidateSession(ctx context.Context, tokenString string
 	database.CacheMetrics.RecordMiss()
 
 	session, err := s.sessionRepo.GetSessionByAccessTokenHash(ctx, hashedToken)
-	if err != nil {
+	if err != nil || session == nil {
 		return errors.New("Session not found or logged out")
+	}
+	if s.redisClient != nil {
+		revoked, revokedErr := s.redisClient.Exists(ctx, "radius:auth:revoked:"+strconv.Itoa(session.SessionId)).Result()
+		if revokedErr != nil || revoked > 0 {
+			return errors.New("session revoked")
+		}
 	}
 	if time.Now().After(session.ExpiresAt) {
 		_ = s.sessionRepo.TerminateSessionByAccessTokenHash(ctx, hashedToken)
@@ -160,7 +175,13 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 
 	refreshTokenHash := utils.HashTokenForDB(refreshTokenString)
 	session, err := s.sessionRepo.GetSessionByRefreshTokenHash(ctx, refreshTokenHash)
-	if err != nil {
+	if err != nil || session == nil {
+		if s.redisClient != nil {
+			sessionID, markerErr := s.redisClient.Get(ctx, "radius:auth:used-refresh:"+refreshTokenHash).Int()
+			if markerErr == nil && sessionID > 0 {
+				_, _ = s.TerminateSessionById(ctx, sessionID)
+			}
+		}
 		return "", "", errors.New("session not found or already logged out")
 	}
 
@@ -212,12 +233,25 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 	if err != nil {
 		return "", "", errors.New("failed to generate new refresh token")
 	}
-	if err := s.sessionRepo.TerminateSessionById(ctx, session.SessionId); err != nil {
+	newAccessHash := utils.HashTokenForDB(newAccessToken)
+	newRefreshHash := utils.HashTokenForDB(newRefreshToken)
+	rotated, err := s.sessionRepo.RotateSessionTokens(ctx, session.SessionId, refreshTokenHash, newAccessHash, newRefreshHash, time.Now().Add(utils.SessionInactivityTimeout))
+	if err != nil {
 		return "", "", errors.New("failed to rotate session")
 	}
-	newAccessToken, newRefreshToken, _, err = s.CreateSession(ctx, employeeId, role, email, "", storeId)
-	if err != nil {
-		return "", "", errors.New("failed to create rotated session")
+	if !rotated {
+		_, _ = s.TerminateSessionById(ctx, session.SessionId)
+		return "", "", errors.New("refresh token already used")
+	}
+	if s.redisClient == nil || s.redisClient.Set(ctx, "radius:auth:used-refresh:"+refreshTokenHash, session.SessionId, utils.MaxSessionLifetime).Err() != nil {
+		_, _ = s.TerminateSessionById(ctx, session.SessionId)
+		return "", "", errors.New("failed to record refresh token rotation")
+	}
+	if s.redisClient != nil {
+		if session.AccessTokenHash != "" {
+			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash), cache.LegacyAuthTokenKey(session.AccessTokenHash)).Err()
+		}
+		_ = s.redisClient.Set(ctx, cache.AuthTokenKey(newAccessHash), session.SessionId, utils.SessionInactivityTimeout).Err()
 	}
 	return newAccessToken, newRefreshToken, nil
 }
@@ -231,6 +265,9 @@ func (s *SessionService) Logout(ctx context.Context, tokenString string) error {
 }
 
 func (s *SessionService) TerminateSessionById(ctx context.Context, sessionId int) (*models.APIMessage, error) {
+	if s.redisClient != nil {
+		_ = s.redisClient.Set(ctx, "radius:auth:revoked:"+strconv.Itoa(sessionId), "1", utils.MaxSessionLifetime).Err()
+	}
 	session, err := s.sessionRepo.GetSessionById(ctx, sessionId)
 	if err == nil && session != nil && session.AccessTokenHash != "" && s.redisClient != nil {
 		_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash), cache.LegacyAuthTokenKey(session.AccessTokenHash)).Err()

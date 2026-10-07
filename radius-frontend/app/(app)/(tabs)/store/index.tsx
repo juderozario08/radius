@@ -15,7 +15,7 @@ import { clearSWRCache } from "@/api/client";
 import { GetAllStoresResponse, Store } from "@/types/admin.types";
 import { callApi, showToast } from "@/utils/helpers";
 import { Redirect, router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -352,11 +352,7 @@ export default function Stores() {
     const [formModalVisible, setFormModalVisible] = useState(false);
     const [formMode, setFormMode] = useState<FormMode>("create");
 
-    useEffect(() => {
-        fetchStores(pageNumber, pageSize);
-    }, [pageNumber, pageSize]);
-
-    const fetchStores = async (page: number, limit: number) => {
+    const fetchStores = useCallback(async (page: number, limit: number) => {
         setIsLoading(true);
         setError(null);
 
@@ -370,7 +366,11 @@ export default function Stores() {
             setError("Could not load stores. Please try again.");
         }
         setIsLoading(false);
-    };
+    }, [logout]);
+
+    useEffect(() => {
+        void fetchStores(pageNumber, pageSize);
+    }, [fetchStores, pageNumber, pageSize]);
 
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);

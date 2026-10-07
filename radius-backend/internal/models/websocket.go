@@ -7,12 +7,13 @@ type WSEventType string
 type WebSocketEventType = WSEventType
 
 const (
-	EventOrderCreated       WSEventType = "order_created"
-	EventOrderStatusUpdated WSEventType = "order_status_updated"
-	EventCycleCountUpdated  WSEventType = "cycle_count_updated"
-	EventStoreActivity      WSEventType = "store_activity"
-	EventPing               WSEventType = "ping"
-	EventPong               WSEventType = "pong"
+	EventOrderCreated            WSEventType = "order_created"
+	EventOrderStatusUpdated      WSEventType = "order_status_updated"
+	EventPrintOrderStatusUpdated WSEventType = "print_order_status_updated"
+	EventCycleCountUpdated       WSEventType = "cycle_count_updated"
+	EventStoreActivity           WSEventType = "store_activity"
+	EventPing                    WSEventType = "ping"
+	EventPong                    WSEventType = "pong"
 
 	WSEventOrderCreated       = EventOrderCreated
 	WSEventOrderStatusUpdated = EventOrderStatusUpdated
@@ -56,6 +57,13 @@ type OrderStatusUpdatedPayload struct {
 	UpdatedAt      time.Time         `json:"updated_at"`
 	AssignedTo     *int              `json:"assigned_to,omitempty"`
 	AssignedToName *string           `json:"assigned_to_name,omitempty"`
+}
+
+type PrintOrderStatusUpdatedPayload struct {
+	PrintOrderID   int              `json:"print_order_id"`
+	StoreID        int              `json:"store_id"`
+	PreviousStatus PrintOrderStatus `json:"previous_status"`
+	NewStatus      PrintOrderStatus `json:"new_status"`
 }
 
 type CycleCountUpdatedPayload struct {

@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React Native" />
   <img src="https://img.shields.io/badge/Expo_v54-1B1F23?style=for-the-badge&logo=expo&logoColor=white" alt="Expo v54" />
-  <img src="https://img.shields.io/badge/Go_1.24-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go" />
+  <img src="https://img.shields.io/badge/Go_1.26.6-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go" />
   <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Gin-0088CC?style=for-the-badge&logo=gin&logoColor=white" alt="Gin" />
   <img src="https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
@@ -15,7 +15,7 @@
     <strong>A Comprehensive Retail, Logistics & Inventory Management System</strong>
     <br />
     <br />
-    Radius is a powerful, production-grade, full-stack application connecting the physical retail sales floor with real-time digital inventory, logistics, receiving, POS transactions, and multi-channel fulfillment. It equips retail staff, department managers, and administrators with a mobile-first interface and a high-performance Go backend API.
+    Radius connects the retail sales floor with real-time inventory, logistics, receiving, admin-recorded transactions, and multi-channel fulfillment. It equips retail staff, department managers, and administrators with a mobile-first interface and a Go backend API.
   </p>
 </div>
 
@@ -38,9 +38,9 @@
   - In-Stock For The Customer (IS4TC) empty hole aisle scanning.
   - Collaborative, shared store scanning sessions.
   - Automated replenishment pick lists combining sales velocity and backroom overstock quantities.
-- **Point of Sale (POS) & Sales Analytics**:
-  - Full transaction ledger supporting multi-method payments (`Card`, `Cash`, `Gift Card`), tax calculations, and card last-4 tracking.
-  - Real-time inventory deduction and sales revenue metrics.
+- **Transaction History & Sales Analytics**:
+  - Read-only transaction history for staff, with occasional admin-recorded transactions. Radius does not provide mobile POS checkout.
+  - Sales revenue metrics and transaction-based inventory records.
 - **Omnichannel Digital Order Fulfillment**:
   - Multi-channel queue managing **BOPIS** (Buy Online, Pick Up In Store) and **STS** (Ship to Store).
   - Complete order lifecycle stage transitions (`Awaiting Pickup`, `Ready for Pickup`, `Work in Progress`, `Shipped`, `Delivered`, `Released`).
@@ -65,10 +65,10 @@
 - **Device Integrations**: `expo-camera` for barcode scanning, `expo-secure-store` for token security, `expo-haptics` for tactile feedback
 
 ### Backend (REST API Service)
-- **Language**: Go 1.24
+- **Language**: Go 1.26.6
 - **Web Framework**: Gin
 - **Database**: PostgreSQL with connection pooling
-- **Migrations**: `golang-migrate` (37 sequential versioned schema migrations)
+- **Migrations**: `golang-migrate` (43 sequential versioned schema migrations)
 - **Caching & Ephemeral State**: Redis (with embedded `miniredis` for zero-dependency local development)
 - **Architecture**: Layered Clean Architecture (`Handlers` ➔ `Services` ➔ `Repositories`)
 
@@ -95,7 +95,7 @@ radius/
 │   │   ├── middleware/          # JWT auth, RBAC, rate limiting, CORS
 │   │   ├── database/            # DB connection & migration helpers
 │   │   └── router/              # Route group registrations
-│   ├── migrations/              # 37 golang-migrate UP/DOWN SQL scripts
+│   ├── migrations/              # 43 golang-migrate UP/DOWN SQL scripts
 │   └── seeds/                   # Python synthetic data generation modules (00-14)
 ├── radius-frontend/
 │   ├── app/                     # Expo Router file-based screens & tabs
@@ -112,8 +112,8 @@ radius/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Node.js**: v18+
-- **Go**: v1.23+
+- **Node.js**: v22+
+- **Go**: v1.26.6+
 - **PostgreSQL**: v14+
 - **Python**: v3.10+ (for seed generation)
 - **Expo CLI**: `npx expo`

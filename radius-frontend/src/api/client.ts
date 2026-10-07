@@ -57,6 +57,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise
     const timeout = setTimeout(() => controller.abort(), 15000);
     const callerSignal = options.signal;
     const abortCaller = () => controller.abort();
+    if (callerSignal?.aborted) controller.abort();
     callerSignal?.addEventListener("abort", abortCaller, { once: true });
     try {
         return await fetch(url, { ...options, signal: controller.signal });
@@ -127,62 +128,33 @@ async function executeNetworkFetch<T>(
         headers["If-None-Match"] = cachedEtag.etag;
     }
 
-    const response = await fetchWithTimeout(`${BASE_URL}${path}`, {
+    let response = await fetchWithTimeout(`${BASE_URL}${path}`, {
         ...options,
         headers,
     });
+
+    if (response.status === 401) {
+        const newToken = await refreshAccessToken();
+        if (!newToken) {
+            throw new UnauthorizedError("Invalid or expired session");
+        }
+        response = await fetchWithTimeout(`${BASE_URL}${path}`, {
+            ...options,
+            headers: { ...headers, Authorization: `Bearer ${newToken}` },
+        });
+    }
 
     if (response.status === 304 && cachedEtag) {
         return cachedEtag.data as T;
     }
 
     if (response.status === 401) {
-        const newToken = await refreshAccessToken();
-        if (newToken) {
-            const retryHeaders: Record<string, string> = {
-                ...headers,
-                Authorization: `Bearer ${newToken}`,
-            };
-
-            const retryResponse = await fetchWithTimeout(`${BASE_URL}${path}`, {
-                ...options,
-                headers: retryHeaders,
-            });
-
-            if (retryResponse.status === 304 && cachedEtag) {
-                return cachedEtag.data as T;
-            }
-
-            if (retryResponse.status === 401) {
-                throw new UnauthorizedError("Invalid or expired session");
-            }
-
-            if (retryResponse.status === 409) {
-                throw new ConflictError("already_logged_in");
-            }
-
-            if (!retryResponse.ok) {
-                let errorMessage = "An unexpected error occurred";
-                try {
-                    const errorBody = await retryResponse.json();
-                    errorMessage = errorBody.error || errorMessage;
-                } catch {}
-                throw new Error(errorMessage);
-            }
-
-            const retryData = (await retryResponse.json()) as T;
-            const etagHeader = retryResponse.headers.get("etag") || retryResponse.headers.get("ETag");
-            if (useETag && etagHeader && method === "GET") {
-                setWithEviction(etagStore, cacheKey, { etag: etagHeader, data: retryData, generation: getSessionGeneration() });
-            }
-            return retryData;
-        }
-
         throw new UnauthorizedError("Invalid or expired session");
     }
 
     if (response.status === 409) {
-        throw new ConflictError("already_logged_in");
+        const body = await response.json().catch(() => null) as { error?: string } | null;
+        throw new ConflictError(body?.error || "Conflict");
     }
 
     if (!response.ok) {

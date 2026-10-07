@@ -44,6 +44,7 @@ type OrdersRepository interface {
 	AutoCancelExpiredBOPISOrders(ctx context.Context, olderThan time.Duration) ([]models.OnlineOrder, error)
 	GetAllPrintOrders(ctx context.Context, limit, offset int, storeID *int, criteria models.PrintOrderSearchCriteria) ([]models.PrintOrder, int, error)
 	GetPrintOrderByID(ctx context.Context, id int, storeID *int) (*models.PrintOrder, []models.PrintOrderItem, error)
+	UpdatePrintOrderStatus(ctx context.Context, id, storeID int, previous, next models.PrintOrderStatus) (bool, error)
 }
 
 type InventoryRepository interface {
@@ -94,6 +95,7 @@ type SessionRepository interface {
 	TerminateSessionById(ctx context.Context, id int) error
 	TerminateSessionByAccessTokenHash(ctx context.Context, accessTokenHash string) error
 	UpdateAccessTokenHash(ctx context.Context, sessionId int, newAccessTokenHash string) error
+	RotateSessionTokens(ctx context.Context, sessionID int, oldRefreshHash, newAccessHash, newRefreshHash string, expiresAt time.Time) (bool, error)
 	UpdateSessionExpiry(ctx context.Context, sessionId int, newExpiresAt time.Time) error
 	CreateSession(ctx context.Context, model models.CreateSessionRequest) (*models.CreateSessionResponse, error)
 	GetSessionsByEmployeeId(ctx context.Context, employeeId int) ([]models.Session, error)

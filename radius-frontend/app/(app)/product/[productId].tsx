@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
@@ -25,17 +25,12 @@ export default function ProductScreen() {
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<TabName>("Details");
 
-    useEffect(() => {
-        if (productId) {
-            fetchProductDetails();
-        }
-    }, [productId]);
-
-    const fetchProductDetails = async () => {
+    const fetchProductDetails = useCallback(async () => {
+        if (!productId || typeof productId !== "string") return;
         setIsLoading(true);
         setError(null);
         try {
-            const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails(productId as string);
+            const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails(productId);
             const data = await callApi<ProductScreenDetails>(endpoint, { method: "GET" }, logout);
             if (data) {
                 setDetails(data);
@@ -47,7 +42,11 @@ export default function ProductScreen() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [productId, logout]);
+
+    useEffect(() => {
+        void fetchProductDetails();
+    }, [fetchProductDetails]);
 
     const handleSaveLocations = async (updatedLocations: MimsLocationItem[]) => {
         if (!details) return;

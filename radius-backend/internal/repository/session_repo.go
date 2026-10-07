@@ -124,6 +124,19 @@ func (r *SessionRepo) UpdateAccessTokenHash(ctx context.Context, sessionId int, 
 	return err
 }
 
+func (r *SessionRepo) RotateSessionTokens(ctx context.Context, sessionID int, oldRefreshHash, newAccessHash, newRefreshHash string, expiresAt time.Time) (bool, error) {
+	result, err := r.db.ExecContext(ctx, `
+		UPDATE sessions
+		SET access_token_hash = $1, refresh_token_hash = $2, expires_at = $3
+		WHERE session_id = $4 AND refresh_token_hash = $5 AND expires_at > NOW()
+	`, newAccessHash, newRefreshHash, expiresAt, sessionID, oldRefreshHash)
+	if err != nil {
+		return false, err
+	}
+	rows, err := result.RowsAffected()
+	return rows == 1, err
+}
+
 func (r *SessionRepo) UpdateSessionExpiry(ctx context.Context, sessionId int, newExpiresAt time.Time) error {
 	query := `UPDATE sessions SET expires_at = $1 WHERE session_id = $2;`
 	_, err := r.db.ExecContext(ctx, query, newExpiresAt, sessionId)

@@ -5,18 +5,20 @@ import { globalStyles } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { DetailRow } from "@/components/common/DetailRow";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     ScrollView,
     StyleSheet,
     Text,
     View,
+    Pressable,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import { callApi } from "@/utils/helpers";
-import { GetPrintOrderResponse, PrintOrder, PrintOrderItem } from "@/types/print_order.types";
+import { GetPrintOrderResponse, PrintOrder, PrintOrderItem, PrintOrderStatus } from "@/types/print_order.types";
 import { useLocalSearchParams } from "expo-router";
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -42,24 +44,28 @@ const getStatusColor = (status: string) => {
 
 export default function PrintOrderDetail() {
     const { id } = useLocalSearchParams();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
 
     const [order, setOrder] = useState<PrintOrder | null>(null);
     const [items, setItems] = useState<PrintOrderItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isUpdating, setIsUpdating] = useState(false);
 
-    useEffect(() => {
-        if (id) {
-            fetchOrderDetails();
-        }
-    }, [id]);
+    useWebSocket({
+        onPrintOrderStatusUpdated: ({ print_order_id, new_status }) => {
+            if (String(print_order_id) === id) {
+                setOrder((current) => current ? { ...current, status: new_status } : current);
+            }
+        },
+    });
 
-    const fetchOrderDetails = async () => {
+    const fetchOrderDetails = useCallback(async () => {
+        if (!id || typeof id !== "string") return;
         setIsLoading(true);
         setError(null);
 
-        const endpoint = ENDPOINTS.SALES_FLOOR.ORDERS.PRINT.get(id as string);
+        const endpoint = ENDPOINTS.SALES_FLOOR.ORDERS.PRINT.get(id);
         const data = await callApi<GetPrintOrderResponse>(endpoint, { method: "GET" }, logout);
 
         if (data && data.print_order) {
@@ -69,6 +75,28 @@ export default function PrintOrderDetail() {
             setError("Could not load print order details. Please try again.");
         }
         setIsLoading(false);
+    }, [id, logout]);
+
+    useEffect(() => {
+        void fetchOrderDetails();
+    }, [fetchOrderDetails]);
+
+    const statusActions: Partial<Record<PrintOrderStatus, PrintOrderStatus[]>> = {
+        PENDING: ["IN PROGRESS", "CANCELLED"],
+        "IN PROGRESS": ["READY FOR PICKUP", "SHIPPED", "CANCELLED"],
+        "READY FOR PICKUP": ["COMPLETED", "CANCELLED"],
+        SHIPPED: ["COMPLETED", "CANCELLED"],
+    };
+
+    const updateStatus = async (status: PrintOrderStatus) => {
+        if (!id || typeof id !== "string" || isUpdating) return;
+        setIsUpdating(true);
+        const updated = await callApi<PrintOrder>(ENDPOINTS.SALES_FLOOR.ORDERS.PRINT.updateStatus(id), {
+            method: "PUT",
+            body: { status },
+        }, logout);
+        if (updated) setOrder(updated);
+        setIsUpdating(false);
     };
 
     if (isLoading) {
@@ -109,6 +137,18 @@ export default function PrintOrderDetail() {
             />
 
             <ScrollView style={globalStyles.container} showsVerticalScrollIndicator={false}>
+                {(user?.role === "SERVICE" || user?.role === "MANAGER" || user?.role === "ADMIN") && (statusActions[order.status]?.length ?? 0) > 0 && (
+                    <View style={styles.card}>
+                        <Text style={styles.sectionTitle}>Update status</Text>
+                        <View style={styles.actions}>
+                            {statusActions[order.status]?.map((status) => (
+                                <Pressable key={status} disabled={isUpdating} onPress={() => void updateStatus(status)} style={status === "CANCELLED" ? globalStyles.buttonSecondary : globalStyles.buttonPrimary}>
+                                    <Text style={status === "CANCELLED" ? globalStyles.buttonTextSecondary : globalStyles.buttonTextPrimary}>{status}</Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                    </View>
+                )}
                 <View style={styles.card}>
                     <View style={globalStyles.cardHeader}>
                         <Text style={styles.sectionTitle}>Details</Text>
@@ -179,6 +219,7 @@ export default function PrintOrderDetail() {
 }
 
 const styles = StyleSheet.create({
+    actions: { gap: 8, marginTop: 12 },
     card: {
         backgroundColor: COLORS.surface,
         borderRadius: 12,

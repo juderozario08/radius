@@ -5,6 +5,7 @@
         "strict": true,
         "allowImportingTsExtensions": true,
         "noEmit": true,
+        "types": ["jest"],
         "paths": {
             "@/*": [
                 "./src/*"

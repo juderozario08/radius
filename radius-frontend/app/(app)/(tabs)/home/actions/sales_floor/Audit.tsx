@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Modal, Image, LayoutAnimation, Platform, UIManager } from 'react-native';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -32,6 +32,8 @@ export default function Audit() {
     const [filterStoreId, setFilterStoreId] = useState<string>('');
     const [showSortModal, setShowSortModal] = useState(false);
     const [showFilterModal, setShowFilterModal] = useState(false);
+    const filterKey = `${sortOrder}:${filterTxnType}:${filterStoreId}`;
+    const lastFilterKey = useRef(filterKey);
 
     const TRANSACTION_TYPES = [
         { label: "All Transactions", value: "" },
@@ -44,7 +46,7 @@ export default function Audit() {
         { label: "Cycle Count", value: "CYCLE_COUNT" }
     ];
 
-    const fetchAuditTrail = async (reset: boolean = false) => {
+    const fetchAuditTrail = useCallback(async (reset: boolean = false) => {
         if (!barcode.trim()) return;
 
         setLoading(true);
@@ -75,17 +77,17 @@ export default function Audit() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [barcode, offset, sortOrder, filterTxnType, filterStoreId, user?.role, data]);
 
     const handleSearch = () => {
         fetchAuditTrail(true);
     };
 
     useEffect(() => {
-        if (data && barcode.trim()) {
-            fetchAuditTrail(true);
-        }
-    }, [sortOrder, filterTxnType]);
+        if (filterKey === lastFilterKey.current) return;
+        lastFilterKey.current = filterKey;
+        if (data && barcode.trim()) void fetchAuditTrail(true);
+    }, [filterKey, data, barcode, fetchAuditTrail]);
 
     const loadMore = () => {
         if (!loading && hasMore && data) {

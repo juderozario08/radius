@@ -115,9 +115,7 @@ export default function Sessions() {
     const [pageSize, setPageSize] = useState(10);
     const [totalLength, setTotalLength] = useState(0);
 
-    useEffect(() => { fetchSessions(pageNumber, pageSize); }, [pageNumber, pageSize]);
-
-    const fetchSessions = async (page: number, limit: number) => {
+    const fetchSessions = useCallback(async (page: number, limit: number) => {
         setIsLoading(true);
         setError(null);
         const data = await callApi<GetAllSessionsResponse>(`${ENDPOINTS.ADMIN.SESSIONS.getAll}?page_number=${page}&page_size=${limit}`, { method: "GET" }, logout);
@@ -132,20 +130,22 @@ export default function Sessions() {
             setError("Could not load sessions. Please try again.");
         }
         setIsLoading(false);
-    };
+    }, [logout]);
+
+    useEffect(() => { void fetchSessions(pageNumber, pageSize); }, [fetchSessions, pageNumber, pageSize]);
 
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);
         setPageNumber(1);
     };
 
-    const isCurrentSession = (item: Session) => {
+    const isCurrentSession = useCallback((item: Session) => {
         return Boolean(
             item.is_current ||
             (currentSessionId && item.session_id === currentSessionId) ||
             (user?.session_id && item.session_id === user.session_id)
         );
-    };
+    }, [currentSessionId, user?.session_id]);
 
     const renderSessionCard = useCallback(({ item }: { item: Session }) => {
         const isCurrent = isCurrentSession(item);
@@ -178,7 +178,7 @@ export default function Sessions() {
                 </View>
             </TouchableOpacity>
         );
-    }, [currentSessionId, user?.session_id]);
+    }, [isCurrentSession]);
 
     const totalPages = Math.max(1, Math.ceil(totalLength / pageSize));
 

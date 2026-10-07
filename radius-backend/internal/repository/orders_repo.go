@@ -499,6 +499,19 @@ func (r *OrdersRepo) GetPrintOrderByID(ctx context.Context, id int, storeID *int
 	return &o, items, nil
 }
 
+func (r *OrdersRepo) UpdatePrintOrderStatus(ctx context.Context, id, storeID int, previous, next models.PrintOrderStatus) (bool, error) {
+	result, err := r.db.ExecContext(ctx, `
+		UPDATE print_orders
+		SET status = $1, fulfilled_at = CASE WHEN $1 = 'COMPLETED' THEN NOW() ELSE fulfilled_at END
+		WHERE print_order_id = $2 AND store_id = $3 AND status = $4
+	`, next, id, storeID, previous)
+	if err != nil {
+		return false, err
+	}
+	rows, err := result.RowsAffected()
+	return rows == 1, err
+}
+
 func (r *OrdersRepo) AssignOnlineOrder(ctx context.Context, orderID int, employeeID *int, storeID *int, force bool) (*models.OnlineOrder, bool, error) {
 	var query string
 	var args []any

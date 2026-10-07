@@ -97,6 +97,7 @@ export const ENDPOINTS = {
             PRINT: {
                 getAll: "/api/sales_floor/orders/print",
                 get: createRoute("/api/sales_floor/orders/print/:id"),
+				updateStatus: createRoute("/api/sales_floor/orders/print/:id/status"),
             },
         },
         IS4TC: {

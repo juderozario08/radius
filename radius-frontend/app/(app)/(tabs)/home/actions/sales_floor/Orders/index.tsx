@@ -5,7 +5,7 @@ import { globalStyles } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { DetailRow } from "@/components/common/DetailRow";
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
     ActivityIndicator,
     FlatList,
@@ -13,7 +13,6 @@ import {
     Text,
     TouchableOpacity,
     View,
-    TextInput
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import { callApi } from "@/utils/helpers";
@@ -44,12 +43,13 @@ const getStatusColor = (status: string) => {
 };
 
 export default function OnlineOrdersList() {
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
     const params = useLocalSearchParams();
     const [bopisOrders, setBopisOrders] = useState<OnlineOrder[]>([]);
     const [stsOrders, setStsOrders] = useState<OnlineOrder[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const requestGeneration = useRef(0);
 
     const [bopisPage, setBopisPage] = useState(1);
     const [stsPage, setStsPage] = useState(1);
@@ -59,7 +59,7 @@ export default function OnlineOrdersList() {
 
     const [filter, setFilter] = useState<"BOPIS" | "STS">((params.filter as "BOPIS" | "STS") || "BOPIS");
 
-    const searchParams = {
+    const searchParams = useMemo(() => ({
         order_id: params.order_id as string || "",
         customer_first_name: params.customer_first_name as string || "",
         customer_last_name: params.customer_last_name as string || "",
@@ -69,35 +69,9 @@ export default function OnlineOrdersList() {
         payment_card: params.payment_card as string || "",
         status: params.status as string || "",
         order_type: params.order_type as string || "",
-    };
+    }), [params.order_id, params.customer_first_name, params.customer_last_name, params.customer_email, params.sku, params.billing_phone, params.payment_card, params.status, params.order_type]);
 
-    useEffect(() => {
-        loadAll();
-    }, [JSON.stringify(params)]);
-
-    useEffect(() => {
-        loadAll();
-    }, [pageSize]);
-
-    useEffect(() => {
-        if (!isLoading) fetchOrders("BOPIS", bopisPage, pageSize);
-    }, [bopisPage]);
-
-    useEffect(() => {
-        if (!isLoading) fetchOrders("STS", stsPage, pageSize);
-    }, [stsPage]);
-
-    const loadAll = async () => {
-        setIsLoading(true);
-        setError(null);
-        // Fetch sequentially to avoid overwhelming the Neon PgBouncer connection pool 
-        // which throws "unnamed prepared statement does not exist" on concurrent lib/pq queries
-        await fetchOrders("BOPIS", bopisPage, pageSize);
-        await fetchOrders("STS", stsPage, pageSize);
-        setIsLoading(false);
-    };
-
-    const fetchOrders = async (type: string, page: number, limit: number) => {
+    const fetchOrders = useCallback(async (type: string, page: number, limit: number, generation: number) => {
         let queryParams = new URLSearchParams({
             page_size: limit.toString(),
             page_number: page.toString(),
@@ -110,6 +84,7 @@ export default function OnlineOrdersList() {
 
         const endpoint = `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?${queryParams.toString()}`;
         const data = await callApi<GetAllOnlineOrdersResponse>(endpoint, { method: "GET" }, logout);
+        if (generation !== requestGeneration.current) return;
 
         if (data) {
             if (type === "BOPIS") {
@@ -122,7 +97,21 @@ export default function OnlineOrdersList() {
         } else {
             setError("Could not load online orders.");
         }
-    };
+    }, [logout, searchParams]);
+
+    const loadAll = useCallback(async () => {
+        const generation = ++requestGeneration.current;
+        setIsLoading(true);
+        setError(null);
+        await fetchOrders("BOPIS", bopisPage, pageSize, generation);
+        if (generation !== requestGeneration.current) return;
+        await fetchOrders("STS", stsPage, pageSize, generation);
+        if (generation === requestGeneration.current) setIsLoading(false);
+    }, [fetchOrders, bopisPage, stsPage, pageSize]);
+
+    useEffect(() => {
+        void loadAll();
+    }, [loadAll, user?.store_id]);
 
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);

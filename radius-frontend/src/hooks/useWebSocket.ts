@@ -11,10 +11,12 @@ import {
     TypedWSEvent,
     OrderCreatedPayload,
     OrderStatusUpdatedPayload,
+    PrintOrderStatusUpdatedPayload,
     CycleCountUpdatedPayload,
     StoreActivityPayload,
     OrderCreatedEvent,
     OrderStatusUpdatedEvent,
+    PrintOrderStatusUpdatedEvent,
     CycleCountUpdatedEvent,
     StoreActivityEvent,
 } from "@/types/websocket.types";
@@ -42,6 +44,7 @@ export interface UseWebSocketOptions {
     onEvent?: (event: TypedWSEvent) => void;
     onOrderCreated?: (payload: OrderCreatedPayload, raw: OrderCreatedEvent) => void;
     onOrderStatusUpdated?: (payload: OrderStatusUpdatedPayload, raw: OrderStatusUpdatedEvent) => void;
+    onPrintOrderStatusUpdated?: (payload: PrintOrderStatusUpdatedPayload, raw: PrintOrderStatusUpdatedEvent) => void;
     onCycleCountUpdated?: (payload: CycleCountUpdatedPayload, raw: CycleCountUpdatedEvent) => void;
     onStoreActivity?: (payload: StoreActivityPayload, raw: StoreActivityEvent) => void;
     onStatusChange?: (status: ConnectionStatus) => void;
@@ -278,6 +281,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
                             const p = parsed.payload as OrderStatusUpdatedPayload;
                             setLatestOrderStatusUpdated(p);
                             optionsRef.current.onOrderStatusUpdated?.(p, parsed as OrderStatusUpdatedEvent);
+                            break;
+                        }
+                        case "print_order_status_updated": {
+                            const p = parsed.payload as PrintOrderStatusUpdatedPayload;
+                            optionsRef.current.onPrintOrderStatusUpdated?.(p, parsed as PrintOrderStatusUpdatedEvent);
                             break;
                         }
                         case "cycle_count_updated": {

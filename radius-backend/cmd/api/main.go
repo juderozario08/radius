@@ -66,7 +66,6 @@ func main() {
 	employeeService := service.NewEmployeeService(employeeRepo, sessionService, redisClient)
 	authService := service.NewAuthService(employeeRepo, sessionService, employeeService)
 	authService.SetRedisClient(redisClient)
-	barcodeService := service.NewBarcodeService(storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo)
 	cycleCountService := service.NewCycleCountService(cycleCountRepo, employeeRepo, storeRepo, productsRepo, inventoryRepo, sessionRepo, wsHub)
 	cycleCountService.SetRedisClient(redisClient)
 	fillReportService := service.NewFillReportService(fillReportRepo, storeRepo, employeeRepo, sessionRepo, inventoryRepo, productsRepo, redisClient)
@@ -76,8 +75,6 @@ func main() {
 	workerCtx, workerCancel := context.WithCancel(context.Background())
 	defer workerCancel()
 	onlineOrderService.StartBOPISAutoCancelWorker(workerCtx, 1*time.Hour)
-	outOfStockService := service.NewOutOfStockService(productsRepo, inventoryRepo, sessionRepo, employeeRepo, storeRepo)
-	pricingService := service.NewPricingService(storeRepo, employeeRepo, sessionRepo, inventoryRepo)
 	productService := service.NewProductService(productsRepo, storeRepo, employeeRepo, sessionRepo, redisClient)
 	categoryService := service.NewCategoryService(categoryRepo, redisClient)
 	storeService := service.NewStoreService(storeRepo, employeeRepo, productsRepo, redisClient)
@@ -86,6 +83,7 @@ func main() {
 	receivingService := service.NewReceivingService(receivingRepo, employeeRepo, redisClient)
 	auditService := service.NewAuditService(auditRepo, employeeRepo, productsRepo)
 	printOrderService := service.NewPrintOrderService(ordersRepo, employeeRepo)
+	printOrderService.SetBroadcaster(wsHub)
 	returnsService := service.NewReturnsService(returnsRepo, employeeRepo, productsRepo, salesRepo, wsHub)
 
 	upgrader := websocket.NewUpgrader(websocket.UpgraderConfig{
@@ -107,14 +105,11 @@ func main() {
 	appHandlers := router.Handlers{
 		AuditHandler:       handler.NewAuditHandler(auditService),
 		AuthHandler:        handler.NewAuthHandler(authService),
-		BarcodeHandler:     handler.NewBarcodeHandler(barcodeService),
 		CategoryHandler:    handler.NewCategoryHandler(categoryService),
 		CycleCountHandler:  handler.NewCycleCountHandler(cycleCountService),
 		FillReportHandler:  handler.NewFillReportHandler(fillReportService),
 		InventoryHandler:   handler.NewInventoryHandler(inventoryService),
 		OnlineOrderHandler: handler.NewOnlineOrderHandler(onlineOrderService),
-		OutOfStockHandler:  handler.NewOutOfStockHandler(outOfStockService),
-		PricingHandler:     handler.NewPricingHandler(pricingService),
 		ProductHandler:     handler.NewProductHandler(productService),
 		ReceivingHandler:   handler.NewReceivingHandler(receivingService),
 		StoreHandler:       handler.NewStoreHandler(storeService),

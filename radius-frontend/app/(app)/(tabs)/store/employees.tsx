@@ -101,11 +101,7 @@ export default function StoreEmployees() {
     const [pageSize, setPageSize] = useState(10);
     const [totalLength, setTotalLength] = useState(0);
 
-    useEffect(() => {
-        fetchEmployees(pageNumber, pageSize);
-    }, [pageNumber, pageSize]);
-
-    const fetchEmployees = async (page: number, limit: number) => {
+    const fetchEmployees = useCallback(async (page: number, limit: number) => {
         setIsLoading(true);
         setError(null);
 
@@ -118,7 +114,11 @@ export default function StoreEmployees() {
             setError("Could not load employees. Please try again.");
         }
         setIsLoading(false);
-    };
+    }, [logout]);
+
+    useEffect(() => {
+        void fetchEmployees(pageNumber, pageSize);
+    }, [fetchEmployees, pageNumber, pageSize]);
 
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);

@@ -6,7 +6,7 @@ import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { DetailRow } from "@/components/common/DetailRow";
 import { BarcodeScanner, BarcodeScannerRef } from "@/components/common/BarcodeScanner";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -175,17 +175,12 @@ export default function OnlineOrderDetail() {
         }
     };
 
-    useEffect(() => {
-        if (id) {
-            fetchOrderDetails();
-        }
-    }, [id]);
-
-    const fetchOrderDetails = async () => {
+    const fetchOrderDetails = useCallback(async () => {
+        if (!id || typeof id !== "string") return;
         setIsLoading(true);
         setError(null);
 
-        const endpoint = ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.get(id as string);
+        const endpoint = ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.get(id);
         const data = await callApi<GetOnlineOrderByIDResponse>(endpoint, { method: "GET" }, logout);
 
         if (data && data.online_order) {
@@ -213,7 +208,11 @@ export default function OnlineOrderDetail() {
             setError("Could not load order details. Please try again.");
         }
         setIsLoading(false);
-    };
+    }, [id, logout, user?.employee_id, user?.role]);
+
+    useEffect(() => {
+        void fetchOrderDetails();
+    }, [fetchOrderDetails]);
 
     const handleBarcodeLookup = (barcode: string) => {
         if (isSaving) return;

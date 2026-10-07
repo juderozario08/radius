@@ -2,7 +2,6 @@ export type PrintOrderType = "WEB" | "WALK_IN";
 export type PrintOrderStatus =
     | "PENDING"
     | "IN PROGRESS"
-    | "WORK IN PROGRESS"
     | "READY FOR PICKUP"
     | "SHIPPED"
     | "COMPLETED"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
@@ -44,7 +44,7 @@ export default function ItemAdjust() {
     const [editedReason, setEditedReason] = useState<{ [key: number]: string }>({});
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-    const fetchAdjustments = async () => {
+    const fetchAdjustments = useCallback(async () => {
         setLoading(true);
         const res = await callApi<PendingAdjustmentDetail[]>(ENDPOINTS.SALES_FLOOR.INVENTORY.adjustments, { method: "GET" }, logout);
         if (res) {
@@ -61,11 +61,11 @@ export default function ItemAdjust() {
             setSelectedIds(new Set());
         }
         setLoading(false);
-    };
+    }, [logout]);
 
     useEffect(() => {
-        fetchAdjustments();
-    }, []);
+        void fetchAdjustments();
+    }, [fetchAdjustments]);
 
     const toggleSelection = (id: number) => {
         const newSet = new Set(selectedIds);

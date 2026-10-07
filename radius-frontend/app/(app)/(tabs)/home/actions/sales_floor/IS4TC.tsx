@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
@@ -24,11 +24,7 @@ export default function IS4TCScanScreen() {
   const [manualSku, setManualSku] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  React.useEffect(() => {
-    fetchSession();
-  }, []);
-
-  const fetchSession = async () => {
+  const fetchSession = useCallback(async () => {
     try {
       const url = user?.store_id
         ? `${ENDPOINTS.SALES_FLOOR.IS4TC.session}?store_id=${user.store_id}`
@@ -40,7 +36,11 @@ export default function IS4TCScanScreen() {
     } catch (error) {
       console.error("Failed to fetch IS4TC session:", error);
     }
-  };
+  }, [logout, user?.store_id]);
+
+  React.useEffect(() => {
+    void fetchSession();
+  }, [fetchSession]);
 
   const clearSession = async () => {
     Alert.alert("Clear Scan List", "Are you sure you want to clear the shared IS4TC scan list for the store?", [

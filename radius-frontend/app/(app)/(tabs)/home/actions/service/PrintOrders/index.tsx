@@ -5,7 +5,7 @@ import { globalStyles } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { DetailRow } from "@/components/common/DetailRow";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
     ActivityIndicator,
     FlatList,
@@ -21,6 +21,7 @@ import { GetAllPrintOrdersResponse, PrintOrder } from "@/types/print_order.types
 import { router, useLocalSearchParams } from "expo-router";
 import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
 import { Ionicons } from "@expo/vector-icons";
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -45,12 +46,13 @@ const getStatusColor = (status: string) => {
 };
 
 export default function PrintOrdersList() {
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
     const params = useLocalSearchParams();
     const [webOrders, setWebOrders] = useState<PrintOrder[]>([]);
     const [walkInOrders, setWalkInOrders] = useState<PrintOrder[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const requestGeneration = useRef(0);
 
     const [webPage, setWebPage] = useState(1);
     const [walkInPage, setWalkInPage] = useState(1);
@@ -60,40 +62,23 @@ export default function PrintOrdersList() {
 
     const [filter, setFilter] = useState<"WEB" | "WALK_IN">((params.filter as "WEB" | "WALK_IN") || "WEB");
 
-    const searchParams = {
+    useWebSocket({
+        onPrintOrderStatusUpdated: ({ print_order_id, new_status }) => {
+            setWebOrders((orders) => orders.map((order) => order.print_order_id === print_order_id ? { ...order, status: new_status } : order));
+            setWalkInOrders((orders) => orders.map((order) => order.print_order_id === print_order_id ? { ...order, status: new_status } : order));
+        },
+    });
+
+    const searchParams = useMemo(() => ({
         order_id: (params.order_id as string) || "",
         customer_name: (params.customer_name as string) || "",
         customer_email: (params.customer_email as string) || "",
         customer_phone: (params.customer_phone as string) || "",
         status: (params.status as string) || "",
         order_type: (params.order_type as string) || "",
-    };
+    }), [params.order_id, params.customer_name, params.customer_email, params.customer_phone, params.status, params.order_type]);
 
-    useEffect(() => {
-        loadAll();
-    }, [JSON.stringify(params)]);
-
-    useEffect(() => {
-        loadAll();
-    }, [pageSize]);
-
-    useEffect(() => {
-        if (!isLoading) fetchOrders("WEB", webPage, pageSize);
-    }, [webPage]);
-
-    useEffect(() => {
-        if (!isLoading) fetchOrders("WALK_IN", walkInPage, pageSize);
-    }, [walkInPage]);
-
-    const loadAll = async () => {
-        setIsLoading(true);
-        setError(null);
-        await fetchOrders("WEB", webPage, pageSize);
-        await fetchOrders("WALK_IN", walkInPage, pageSize);
-        setIsLoading(false);
-    };
-
-    const fetchOrders = async (type: string, page: number, limit: number) => {
+    const fetchOrders = useCallback(async (type: string, page: number, limit: number, generation: number) => {
         const queryParams = new URLSearchParams({
             page_size: limit.toString(),
             page_number: page.toString(),
@@ -106,6 +91,7 @@ export default function PrintOrdersList() {
 
         const endpoint = `${ENDPOINTS.SALES_FLOOR.ORDERS.PRINT.getAll}?${queryParams.toString()}`;
         const data = await callApi<GetAllPrintOrdersResponse>(endpoint, { method: "GET" }, logout);
+        if (generation !== requestGeneration.current) return;
 
         if (data) {
             if (type === "WEB") {
@@ -118,7 +104,21 @@ export default function PrintOrdersList() {
         } else {
             setError("Could not load print orders.");
         }
-    };
+    }, [logout, searchParams]);
+
+    const loadAll = useCallback(async () => {
+        const generation = ++requestGeneration.current;
+        setIsLoading(true);
+        setError(null);
+        await fetchOrders("WEB", webPage, pageSize, generation);
+        if (generation !== requestGeneration.current) return;
+        await fetchOrders("WALK_IN", walkInPage, pageSize, generation);
+        if (generation === requestGeneration.current) setIsLoading(false);
+    }, [fetchOrders, webPage, walkInPage, pageSize]);
+
+    useEffect(() => {
+        void loadAll();
+    }, [loadAll, user?.store_id]);
 
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);

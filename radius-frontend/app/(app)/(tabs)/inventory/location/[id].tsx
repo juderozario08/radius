@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, router } from "expo-router";
@@ -33,11 +33,8 @@ export default function LocationDetailScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [locationError, setLocationError] = useState<string | null>(null);
 
-    useEffect(() => {
-        validateAndFetchLocation();
-    }, []);
-
-    const validateAndFetchLocation = async () => {
+    const validateAndFetchLocation = useCallback(async () => {
+        if (!locationId) return;
         setIsLoading(true);
         const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.getLocationProducts(locationId);
         const response = await callApi<LocationProductsResponse>(endpoint, { method: "GET" }, logout);
@@ -50,16 +47,20 @@ export default function LocationDetailScreen() {
             setProducts(response.products);
         }
         setIsLoading(false);
-    };
+    }, [locationId, logout]);
 
-    const fetchProductsByLocation = async () => {
+    useEffect(() => {
+        void validateAndFetchLocation();
+    }, [validateAndFetchLocation]);
+
+    const fetchProductsByLocation = useCallback(async () => {
         if (locationError) return;
         setIsLoading(true);
         const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.getLocationProducts(locationId);
         const response = await callApi<LocationProductsResponse>(endpoint, { method: "GET" }, logout);
         setProducts(response?.products ?? []);
         setIsLoading(false);
-    };
+    }, [locationError, locationId, logout]);
 
     const handleBarcodeScanned = async (barcode: string) => {
         if (isLoading) return;
@@ -213,7 +214,7 @@ function ListTabContent({
 
     useEffect(() => {
         if (isFocused) onRefresh();
-    }, [isFocused]);
+    }, [isFocused, onRefresh]);
 
     return (
         <View style={{ flex: 1, backgroundColor: COLORS.background }}>

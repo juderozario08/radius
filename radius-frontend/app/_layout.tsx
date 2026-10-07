@@ -32,7 +32,7 @@ function LoadingLayout() {
         } else {
             router.replace("/(app)/(tabs)/home/dashboard");
         }
-    }, [isAuthenticated, isLoading]);
+    }, [isAuthenticated, isLoading, router]);
 
     if (isLoading) {
         return (

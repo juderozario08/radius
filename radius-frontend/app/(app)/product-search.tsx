@@ -50,7 +50,7 @@ function FilterPanel({
 
     useEffect(() => {
         if (visible) setLocalFilters(filters);
-    }, [visible]);
+    }, [visible, filters]);
 
     const selectedCategory = categories.find(c => c.category_id === localFilters.category_id);
 
@@ -293,23 +293,23 @@ export default function ProductSearchScreen() {
     const searchInputRef = useRef<TextInput>(null);
     const searchSeqRef = useRef<number>(0);
 
-    useEffect(() => {
-        loadFilterOptions();
-        setTimeout(() => searchInputRef.current?.focus(), 300);
-        return () => {
-            if (debounceTimer.current) clearTimeout(debounceTimer.current);
-            if (abortControllerRef.current) abortControllerRef.current.abort();
-        };
-    }, []);
-
-    const loadFilterOptions = async () => {
+    const loadFilterOptions = useCallback(async () => {
         const [cats, brnds] = await Promise.all([
             callApi<Category[]>(ENDPOINTS.SALES_FLOOR.PRODUCTS.categories, { method: "GET", swr: true }, logout),
             callApi<string[]>(ENDPOINTS.SALES_FLOOR.PRODUCTS.brands, { method: "GET", swr: true }, logout),
         ]);
         if (cats) setCategories(cats);
         if (brnds) setBrands(brnds);
-    };
+    }, [logout]);
+
+    useEffect(() => {
+        void loadFilterOptions();
+        setTimeout(() => searchInputRef.current?.focus(), 300);
+        return () => {
+            if (debounceTimer.current) clearTimeout(debounceTimer.current);
+            if (abortControllerRef.current) abortControllerRef.current.abort();
+        };
+    }, [loadFilterOptions]);
 
     const searchProducts = useCallback(async (query: string, activeFilters: SearchFilters, pageOffset: number = 0, signal?: AbortSignal) => {
         if (pageOffset === 0) {

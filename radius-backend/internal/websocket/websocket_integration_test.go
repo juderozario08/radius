@@ -316,6 +316,10 @@ func (r *testOrdersRepo) GetPrintOrderByID(ctx context.Context, id int, storeID 
 	return nil, nil, nil
 }
 
+func (r *testOrdersRepo) UpdatePrintOrderStatus(ctx context.Context, id, storeID int, previous, next models.PrintOrderStatus) (bool, error) {
+	return false, nil
+}
+
 type testCycleCountRepo struct {
 	count *models.CycleCount
 }
@@ -941,9 +945,14 @@ func TestWSHandshake_TicketAuth_SingleUse(t *testing.T) {
 	}
 
 	conn2, wsResp2, err := gorilla.DefaultDialer.Dial(wsURL, nil)
+	if err == nil {
+		if conn2 != nil {
+			conn2.Close()
+		}
+		t.Fatal("expected second dial with same ticket to fail")
+	}
 	if conn2 != nil {
 		conn2.Close()
-		t.Fatal("expected second dial with same ticket to fail")
 	}
 	if wsResp2 == nil || wsResp2.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("expected status 401 Unauthorized on reuse, got %v", wsResp2)

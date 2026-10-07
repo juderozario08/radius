@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"radius/internal/models"
@@ -13,6 +14,37 @@ import (
 
 type PrintOrderHandler struct {
 	printOrderService *service.PrintOrderService
+}
+
+func (h *PrintOrderHandler) UpdateStatus(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil || id <= 0 {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid order ID"})
+		return
+	}
+	var body struct {
+		Status models.PrintOrderStatus `json:"status" binding:"required"`
+	}
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Status is required"})
+		return
+	}
+	order, err := h.printOrderService.UpdateStatus(ctx.Request.Context(), id, ctx.GetInt("store_id"), models.EmployeeRole(ctx.GetString("role")), body.Status)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrForbidden):
+			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Forbidden"})
+		case errors.Is(err, service.ErrNotFound):
+			ctx.JSON(http.StatusNotFound, models.APIError{Error: "Order not found"})
+		case errors.Is(err, service.ErrConflict):
+			ctx.JSON(http.StatusConflict, models.APIError{Error: "Invalid or stale status transition"})
+		default:
+			log.Printf("[ERROR] PrintOrderHandler.UpdateStatus: %v", err)
+			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
+		}
+		return
+	}
+	ctx.JSON(http.StatusOK, order)
 }
 
 func NewPrintOrderHandler(printOrderService *service.PrintOrderService) *PrintOrderHandler {

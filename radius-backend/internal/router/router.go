@@ -29,14 +29,11 @@ type Handlers struct {
 	AuditHandler       *handler.AuditHandler
 	AuthHandler        *handler.AuthHandler
 	EmployeeHandler    *handler.EmployeeHandler
-	BarcodeHandler     *handler.BarcodeHandler
 	CategoryHandler    *handler.CategoryHandler
 	CycleCountHandler  *handler.CycleCountHandler
 	FillReportHandler  *handler.FillReportHandler
 	InventoryHandler   *handler.InventoryHandler
 	OnlineOrderHandler *handler.OnlineOrderHandler
-	OutOfStockHandler  *handler.OutOfStockHandler
-	PricingHandler     *handler.PricingHandler
 	ProductHandler     *handler.ProductHandler
 	ReceivingHandler   *handler.ReceivingHandler
 	StoreHandler       *handler.StoreHandler
@@ -230,6 +227,7 @@ func NewRouter(cfg Config) *gin.Engine {
 			orders.GET("/print", cfg.Handlers.PrintOrderHandler.GetAllPrintOrders)
 			orders.GET("/print/:id", cfg.Handlers.PrintOrderHandler.GetPrintOrderByID)
 			orders.GET("/print/get", cfg.Handlers.PrintOrderHandler.GetPrintOrderByID)
+			orders.PUT("/print/:id/status", middleware.RequirePermission(middleware.PermViewServiceActions), cfg.Handlers.PrintOrderHandler.UpdateStatus)
 		}
 
 		mims := salesFloor.Group("/inventory")

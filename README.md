@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React Native" />
   <img src="https://img.shields.io/badge/Expo_v54-1B1F23?style=for-the-badge&logo=expo&logoColor=white" alt="Expo v54" />
-  <img src="https://img.shields.io/badge/Go_1.26.6-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go" />
+  <img src="https://img.shields.io/badge/Go_1.26.9-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go" />
   <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Gin-0088CC?style=for-the-badge&logo=gin&logoColor=white" alt="Gin" />
   <img src="https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
@@ -65,7 +65,7 @@
 - **Device Integrations**: `expo-camera` for barcode scanning, `expo-secure-store` for token security, `expo-haptics` for tactile feedback
 
 ### Backend (REST API Service)
-- **Language**: Go 1.26.6
+- **Language**: Go 1.26.9
 - **Web Framework**: Gin
 - **Database**: PostgreSQL with connection pooling
 - **Migrations**: `golang-migrate` (43 sequential versioned schema migrations)
@@ -113,7 +113,7 @@ radius/
 
 ### Prerequisites
 - **Node.js**: v22+
-- **Go**: v1.26.6+
+- **Go**: v1.26.9+
 - **PostgreSQL**: v14+
 - **Python**: v3.10+ (for seed generation)
 - **Expo CLI**: `npx expo`

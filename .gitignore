@@ -8,3 +8,6 @@ __pycache__/
 !**/README.md
 !AGENTS.md
 !**/AGENTS.md
+.env
+.env.*
+!.env.example

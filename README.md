@@ -120,6 +120,19 @@ radius/
 
 ---
 
+### Docker Compose (Local Development Only)
+
+Runs the API, PostgreSQL, and Redis together. The compose file is for local development only and must not be used in production.
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+The API builds its `DATABASE_URL` and `REDIS_URL` from the values in `.env`, so keep passwords URL-safe (letters, digits, `-`, `_`). Migrations run on startup and the API is served at `http://localhost:8080`. Run `docker compose down -v` to remove the containers and data volumes.
+
+---
+
 ### Backend Setup
 
 1. **Navigate to the backend directory**:

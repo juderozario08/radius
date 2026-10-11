@@ -209,7 +209,10 @@ func TestReturnsRepositoryIntegration(t *testing.T) {
 	repo := NewReturnsRepo(db)
 	created, items, err := repo.CreateReturn(ctx, f.fromStore, f.employee, models.ReturnStatusCompleted, models.CreateReturnRequest{
 		RefundMethod: models.RefundMethodCash,
-		Items:        []models.CreateReturnItemRequest{{ProductId: f.product, Quantity: 1, UnitPrice: 2000, ReturnReason: "Customer return", Disposition: models.ReturnDispositionRestock}},
+		Subtotal:     2000,
+		TaxAmount:    260,
+		TotalRefund:  2260,
+		Items:        []models.CreateReturnItemRequest{{ProductId: f.product, Quantity: 1, UnitPrice: 2000, TaxAmount: 260, ReturnReason: "Customer return", Disposition: models.ReturnDispositionRestock}},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -217,8 +220,18 @@ func TestReturnsRepositoryIntegration(t *testing.T) {
 	if created == nil || len(items) != 1 {
 		t.Fatalf("created return = %v, items = %d", created, len(items))
 	}
-	if created.Subtotal != 2000 || created.TaxAmount != 100 || created.TotalRefund != 2100 || items[0].TaxAmount != 100 {
+	if created.Subtotal != 2000 || created.TaxAmount != 260 || created.TotalRefund != 2260 || items[0].UnitPrice != 2000 || items[0].TaxAmount != 260 {
 		t.Fatalf("return money = subtotal %s tax %s refund %s item tax %s", created.Subtotal, created.TaxAmount, created.TotalRefund, items[0].TaxAmount)
+	}
+	var storedTax, storedTotal, storedItemTax models.Money
+	if err := db.QueryRowContext(ctx, `SELECT tax_amount,total_refund FROM customer_returns WHERE return_id=$1`, created.ReturnId).Scan(&storedTax, &storedTotal); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.QueryRowContext(ctx, `SELECT tax_amount FROM customer_return_items WHERE return_id=$1`, created.ReturnId).Scan(&storedItemTax); err != nil {
+		t.Fatal(err)
+	}
+	if storedTax != 260 || storedTotal != 2260 || storedItemTax != 260 {
+		t.Fatalf("stored return money = tax %s refund %s item tax %s", storedTax, storedTotal, storedItemTax)
 	}
 	var newQty, onHand, ledger int
 	if err := db.QueryRowContext(ctx, `SELECT new_qty,on_hand_qty FROM inventory WHERE store_id=$1 AND product_id=$2`, f.fromStore, f.product).Scan(&newQty, &onHand); err != nil {

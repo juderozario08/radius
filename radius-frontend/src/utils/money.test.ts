@@ -1,4 +1,4 @@
-import { formatMoney, fromCents, multiplyMoney, toCents } from "./money";
+import { formatMoney, fromCents, multiplyMoney, prorateMoney, toCents } from "./money";
 
 describe("toCents", () => {
     it.each([
@@ -45,5 +45,18 @@ describe("formatMoney", () => {
         [undefined, "$0.00"],
     ])("formats %p as %p", (value, expected) => {
         expect(formatMoney(value)).toBe(expected);
+    });
+});
+
+describe("prorateMoney", () => {
+    it.each([
+        [12, 50, 100, 6],
+        [13.4, 1.03, 103.09, 0.13],
+        [0.03, 0.01, 0.02, 0.02],
+        [-0.03, 0.01, 0.02, -0.02],
+        [13.4, 103.09, 103.09, 13.4],
+        [13.4, 1.03, 0, 0],
+    ])("prorates %p by %p of %p to %p", (value, part, whole, expected) => {
+        expect(prorateMoney(value, part, whole)).toBe(expected);
     });
 });

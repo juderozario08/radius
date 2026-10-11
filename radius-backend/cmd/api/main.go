@@ -84,7 +84,7 @@ func main() {
 	auditService := service.NewAuditService(auditRepo, employeeRepo, productsRepo)
 	printOrderService := service.NewPrintOrderService(ordersRepo, employeeRepo)
 	printOrderService.SetBroadcaster(wsHub)
-	returnsService := service.NewReturnsService(returnsRepo, employeeRepo, productsRepo, salesRepo, wsHub)
+	returnsService := service.NewReturnsService(returnsRepo, employeeRepo, productsRepo, salesRepo, storeRepo, wsHub)
 
 	upgrader := websocket.NewUpgrader(websocket.UpgraderConfig{
 		ReadBufferSize:   4096,

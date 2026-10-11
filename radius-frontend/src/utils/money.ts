@@ -27,10 +27,11 @@ export function sumMoney(values: readonly (Money | null | undefined)[]): Money {
     return fromCents(values.reduce<number>((cents, value) => cents + toCents(value), 0));
 }
 
-export function taxAtRatePer100000(value: Money, ratePer100000: number): Money {
-    const cents = toCents(value);
-    const tax = Math.floor((Math.abs(cents) * ratePer100000 + 50000) / 100000);
-    return fromCents(Math.sign(cents) * tax || 0);
+export function prorateMoney(value: Money, part: Money, whole: Money): Money {
+    const wholeCents = toCents(whole);
+    if (wholeCents === 0) return 0;
+    const exact = (toCents(value) * toCents(part)) / wholeCents;
+    return fromCents(Math.sign(exact) * Math.round(Math.abs(exact)) || 0);
 }
 
 export function formatSignedMoney(value: Money | null | undefined): string {

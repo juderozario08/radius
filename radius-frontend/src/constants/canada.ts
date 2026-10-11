@@ -35,5 +35,3 @@ export function normalizeCanadianPostalCode(postalCode: string): string | null {
 export function isCanadianProvince(value: string): value is CanadianProvince {
     return (CANADIAN_PROVINCES as readonly string[]).includes(value);
 }
-
-export const GST_RATE_PER_100000 = 5000;

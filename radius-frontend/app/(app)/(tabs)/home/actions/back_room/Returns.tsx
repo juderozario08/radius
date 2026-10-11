@@ -34,8 +34,7 @@ import {
 } from "@/types/returns.types";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { type Money, formatMoney, multiplyMoney, sumMoney, taxAtRatePer100000 } from "@/utils/money";
-import { GST_RATE_PER_100000 } from "@/constants/canada";
+import { type Money, formatMoney, multiplyMoney, prorateMoney, sumMoney } from "@/utils/money";
 
 type ActiveTab = "NEW_RETURN" | "HISTORY" | "RTV_QUEUE";
 type LookupMode = "TRANSACTION_ID" | "PRODUCT_BARCODE";
@@ -72,6 +71,13 @@ const DISPOSITIONS: { key: ReturnDisposition; label: string }[] = [
 ];
 
 const REFUND_METHODS: RefundMethod[] = ["CASH", "CARD", "GIFT CARD", "STORE_CREDIT"];
+
+function receiptRefundTax(tx: LookupTransactionResponse, refundSubtotal: Money): Money {
+    const taxRefundedSoFar = prorateMoney(tx.tax_amount, tx.refunded_subtotal, tx.subtotal);
+    const taxThroughThisReturn = prorateMoney(tx.tax_amount, sumMoney([tx.refunded_subtotal, refundSubtotal]), tx.subtotal);
+    const taxRemaining = sumMoney([tx.tax_amount, -tx.refunded_tax]);
+    return Math.min(Math.max(sumMoney([taxThroughThisReturn, -taxRefundedSoFar]), 0), taxRemaining);
+}
 
 export default function Returns() {
     const { logout, user } = useAuth();
@@ -213,7 +219,7 @@ export default function Returns() {
 
     const selectedItemsArray = Object.values(selectedItems);
     const subtotal = sumMoney(selectedItemsArray.map((item) => multiplyMoney(item.unit_price, item.quantity)));
-    const estimatedTax = taxAtRatePer100000(subtotal, GST_RATE_PER_100000);
+    const estimatedTax = foundTx ? receiptRefundTax(foundTx, subtotal) : 0;
     const totalRefund = sumMoney([subtotal, estimatedTax]);
 
     const hasExpiredItem = selectedItemsArray.some((item) => item.is_outside_policy);
@@ -245,7 +251,6 @@ export default function Returns() {
                 product_id: item.product_id,
                 original_transaction_item_id: item.original_transaction_item_id,
                 quantity: item.quantity,
-                unit_price: item.unit_price,
                 return_reason: item.return_reason,
                 disposition: item.disposition,
             })),
@@ -747,7 +752,7 @@ export default function Returns() {
                                 <Text style={styles.calcValue}>{formatMoney(subtotal)}</Text>
                             </View>
                             <View style={styles.calcRow}>
-                                <Text style={styles.calcLabel}>Estimated Tax (5%):</Text>
+                                <Text style={styles.calcLabel}>Tax (as charged on receipt):</Text>
                                 <Text style={styles.calcValue}>{formatMoney(estimatedTax)}</Text>
                             </View>
                             <View style={[styles.calcRow, styles.calcRowTotal]}>

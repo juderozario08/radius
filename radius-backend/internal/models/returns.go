@@ -133,7 +133,8 @@ type CreateReturnItemRequest struct {
 	ProductId                 int               `json:"product_id" binding:"required"`
 	OriginalTransactionItemId *int64            `json:"original_transaction_item_id"`
 	Quantity                  int               `json:"quantity" binding:"required,min=1"`
-	UnitPrice                 Money             `json:"unit_price" binding:"required"`
+	UnitPrice                 Money             `json:"-"`
+	TaxAmount                 Money             `json:"-"`
 	ReturnReason              string            `json:"return_reason" binding:"required"`
 	Disposition               ReturnDisposition `json:"disposition" binding:"required"`
 }
@@ -143,6 +144,9 @@ type CreateReturnRequest struct {
 	OriginalTransactionId *int64                    `json:"original_transaction_id"`
 	RefundMethod          RefundMethod              `json:"refund_method" binding:"required"`
 	Notes                 *string                   `json:"notes"`
+	Subtotal              Money                     `json:"-"`
+	TaxAmount             Money                     `json:"-"`
+	TotalRefund           Money                     `json:"-"`
 	Items                 []CreateReturnItemRequest `json:"items" binding:"required,min=1"`
 }
 
@@ -171,14 +175,19 @@ type OriginalTransactionItemForReturn struct {
 }
 
 type LookupTransactionResponse struct {
-	TransactionId int64                              `json:"transaction_id"`
-	StoreId       int                                `json:"store_id"`
-	RegisterId    string                             `json:"register_id"`
-	CreatedAt     time.Time                          `json:"created_at"`
-	PaymentMethod string                             `json:"payment_method"`
-	TotalAmount   Money                              `json:"total_amount"`
-	DaysSinceSale int                                `json:"days_since_sale"`
-	Items         []OriginalTransactionItemForReturn `json:"items"`
+	TransactionId    int64                              `json:"transaction_id"`
+	StoreId          int                                `json:"store_id"`
+	RegisterId       string                             `json:"register_id"`
+	CreatedAt        time.Time                          `json:"created_at"`
+	PaymentMethod    string                             `json:"payment_method"`
+	Subtotal         Money                              `json:"subtotal"`
+	TaxAmount        Money                              `json:"tax_amount"`
+	TotalAmount      Money                              `json:"total_amount"`
+	RefundedSubtotal Money                              `json:"refunded_subtotal"`
+	RefundedTax      Money                              `json:"refunded_tax"`
+	RefundedTotal    Money                              `json:"refunded_total"`
+	DaysSinceSale    int                                `json:"days_since_sale"`
+	Items            []OriginalTransactionItemForReturn `json:"items"`
 }
 
 type RecentTransactionSummary struct {

@@ -16,6 +16,7 @@ type ReturnsService struct {
 	employeeRepo EmployeeRepository
 	productRepo  ProductRepository
 	salesRepo    SalesRepository
+	storeRepo    StoreRepository
 	broadcaster  EventBroadcaster
 }
 
@@ -24,6 +25,7 @@ func NewReturnsService(
 	employeeRepo EmployeeRepository,
 	productRepo ProductRepository,
 	salesRepo SalesRepository,
+	storeRepo StoreRepository,
 	broadcaster ...EventBroadcaster,
 ) *ReturnsService {
 	svc := &ReturnsService{
@@ -31,6 +33,7 @@ func NewReturnsService(
 		employeeRepo: employeeRepo,
 		productRepo:  productRepo,
 		salesRepo:    salesRepo,
+		storeRepo:    storeRepo,
 	}
 	if len(broadcaster) > 0 && broadcaster[0] != nil {
 		svc.broadcaster = broadcaster[0]
@@ -70,46 +73,81 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, storeId int, employee
 		}
 	}
 
+	req.Items = append([]models.CreateReturnItemRequest(nil), req.Items...)
+	requestedQty := make(map[int64]int)
 	var subtotal models.Money
-	for _, item := range req.Items {
+	for i := range req.Items {
+		item := &req.Items[i]
 		if item.Quantity <= 0 {
 			return nil, errors.New("quantity must be greater than zero")
-		}
-		if item.UnitPrice < 0 {
-			return nil, errors.New("unit price cannot be negative")
 		}
 
 		product, err := s.productRepo.GetProductByID(ctx, item.ProductId)
 		if err != nil {
+			return nil, fmt.Errorf("failed to load product %d: %w", item.ProductId, err)
+		}
+		if product == nil {
 			return nil, fmt.Errorf("product %d not found", item.ProductId)
 		}
 		if !product.IsReturnable {
 			return nil, fmt.Errorf("product '%s' is marked as non-returnable", product.Name)
 		}
 
-		if lookupTx != nil && item.OriginalTransactionItemId != nil {
+		if lookupTx == nil {
+			if item.OriginalTransactionItemId != nil {
+				return nil, errors.New("original_transaction_item_id requires original_transaction_id")
+			}
+			if product.RetailPrice <= 0 {
+				return nil, fmt.Errorf("product '%s' has no valid selling price", product.Name)
+			}
+			item.UnitPrice = product.RetailPrice
+		} else {
+			if item.OriginalTransactionItemId == nil {
+				return nil, fmt.Errorf("product '%s' must reference an item on transaction %d", product.Name, lookupTx.TransactionId)
+			}
 			var matchedItem *models.OriginalTransactionItemForReturn
-			for i := range lookupTx.Items {
-				if lookupTx.Items[i].TransactionItemId == *item.OriginalTransactionItemId {
-					matchedItem = &lookupTx.Items[i]
+			for j := range lookupTx.Items {
+				if lookupTx.Items[j].TransactionItemId == *item.OriginalTransactionItemId {
+					matchedItem = &lookupTx.Items[j]
 					break
 				}
 			}
-
-			if matchedItem != nil {
-				if item.Quantity > matchedItem.ReturnableQty {
-					return nil, fmt.Errorf("requested return qty (%d) exceeds returnable qty (%d) for '%s'", item.Quantity, matchedItem.ReturnableQty, matchedItem.ProductName)
-				}
-				if matchedItem.IsOutsidePolicyWindow && req.RefundMethod != models.RefundMethodStoreCredit {
-					return nil, fmt.Errorf("item '%s' is outside return policy window (%d days) and must be refunded via STORE_CREDIT", matchedItem.ProductName, matchedItem.ReturnWindowDays)
-				}
+			if matchedItem == nil || matchedItem.ProductId != item.ProductId {
+				return nil, fmt.Errorf("product '%s' was not sold on transaction %d", product.Name, lookupTx.TransactionId)
 			}
+
+			requestedQty[matchedItem.TransactionItemId] += item.Quantity
+			if requestedQty[matchedItem.TransactionItemId] > matchedItem.ReturnableQty {
+				return nil, fmt.Errorf("requested return qty (%d) exceeds returnable qty (%d) for '%s'", requestedQty[matchedItem.TransactionItemId], matchedItem.ReturnableQty, matchedItem.ProductName)
+			}
+			if matchedItem.IsOutsidePolicyWindow && req.RefundMethod != models.RefundMethodStoreCredit {
+				return nil, fmt.Errorf("item '%s' is outside return policy window (%d days) and must be refunded via STORE_CREDIT", matchedItem.ProductName, matchedItem.ReturnWindowDays)
+			}
+			item.UnitPrice = matchedItem.UnitPrice
 		}
 
 		subtotal += item.UnitPrice.Times(item.Quantity)
 	}
 
-	totalRefund := subtotal + subtotal.TaxAtRatePer100000(utils.GSTRatePer100000)
+	taxAmount, err := s.refundTax(ctx, storeID, lookupTx, subtotal)
+	if err != nil {
+		return nil, err
+	}
+	totalRefund := subtotal + taxAmount
+
+	if lookupTx != nil && lookupTx.RefundedTotal+totalRefund > lookupTx.TotalAmount {
+		return nil, fmt.Errorf("refund of $%s exceeds the $%s remaining on transaction %d", totalRefund, lookupTx.TotalAmount-lookupTx.RefundedTotal, lookupTx.TransactionId)
+	}
+
+	var allocatedSubtotal models.Money
+	for i := range req.Items {
+		lineSubtotal := req.Items[i].UnitPrice.Times(req.Items[i].Quantity)
+		req.Items[i].TaxAmount = taxAmount.Prorate(allocatedSubtotal+lineSubtotal, subtotal) - taxAmount.Prorate(allocatedSubtotal, subtotal)
+		allocatedSubtotal += lineSubtotal
+	}
+	req.Subtotal = subtotal
+	req.TaxAmount = taxAmount
+	req.TotalRefund = totalRefund
 
 	status := models.ReturnStatusCompleted
 	if totalRefund > returnApprovalThreshold && role != models.RoleManager && role != models.RoleAdmin {
@@ -158,6 +196,30 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, storeId int, employee
 	}
 
 	return createdReturn, nil
+}
+
+func (s *ReturnsService) refundTax(ctx context.Context, storeID int, lookupTx *models.LookupTransactionResponse, subtotal models.Money) (models.Money, error) {
+	if lookupTx != nil {
+		// Prorating the cumulative refunded subtotal (rather than each return on its own)
+		// keeps rounding from drifting, so returning every item refunds exactly the tax charged.
+		tax := lookupTx.TaxAmount.Prorate(lookupTx.RefundedSubtotal+subtotal, lookupTx.Subtotal) -
+			lookupTx.TaxAmount.Prorate(lookupTx.RefundedSubtotal, lookupTx.Subtotal)
+		remaining := lookupTx.TaxAmount - lookupTx.RefundedTax
+		return max(min(tax, remaining), 0), nil
+	}
+
+	store, err := s.storeRepo.GetStore(ctx, storeID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to load store tax region: %w", err)
+	}
+	if store == nil {
+		return 0, fmt.Errorf("%w: store not found", ErrNotFound)
+	}
+	rate, err := utils.SalesTaxRatePer100000(store.Province)
+	if err != nil {
+		return 0, fmt.Errorf("failed to determine store tax rate: %w", err)
+	}
+	return subtotal.TaxAtRatePer100000(rate), nil
 }
 
 func (s *ReturnsService) ApproveReturn(ctx context.Context, storeId int, employeeId int, role models.EmployeeRole, returnID int) error {

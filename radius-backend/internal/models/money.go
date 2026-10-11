@@ -85,6 +85,19 @@ func (m Money) TaxAtRatePer100000(rate int64) Money {
 	return Money((product + 50000) / 100000)
 }
 
+func (m Money) Prorate(part, whole Money) Money {
+	if whole == 0 {
+		return 0
+	}
+	numerator := new(big.Int).Mul(big.NewInt(int64(m)), big.NewInt(int64(part)))
+	denominator := big.NewInt(int64(whole))
+	quotient, remainder := new(big.Int).QuoRem(numerator, denominator, new(big.Int))
+	if new(big.Int).Mul(new(big.Int).Abs(remainder), big.NewInt(2)).Cmp(new(big.Int).Abs(denominator)) >= 0 {
+		quotient.Add(quotient, big.NewInt(int64(numerator.Sign()*denominator.Sign())))
+	}
+	return Money(quotient.Int64())
+}
+
 func (m Money) String() string {
 	sign := ""
 	cents := uint64(m)

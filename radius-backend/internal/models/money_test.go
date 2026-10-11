@@ -212,3 +212,45 @@ func TestCreateTransactionRequest_IgnoresClientMoney(t *testing.T) {
 		t.Errorf("client item prices were accepted: %+v", req.Items)
 	}
 }
+
+func TestMoney_Prorate(t *testing.T) {
+	tests := []struct {
+		name  string
+		value models.Money
+		part  models.Money
+		whole models.Money
+		want  models.Money
+	}{
+		{name: "exact share", value: 1200, part: 5000, whole: 10000, want: 600},
+		{name: "rounds down below half", value: 1340, part: 103, whole: 10309, want: 13},
+		{name: "rounds half up", value: 3, part: 1, whole: 2, want: 2},
+		{name: "negative rounds away from zero", value: -3, part: 1, whole: 2, want: -2},
+		{name: "whole share", value: 1340, part: 10309, whole: 10309, want: 1340},
+		{name: "zero whole", value: 1340, part: 103, whole: 0, want: 0},
+		{name: "no int64 overflow", value: 9999999999, part: 9999999999, whole: 9999999999, want: 9999999999},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.value.Prorate(tt.part, tt.whole); got != tt.want {
+				t.Errorf("Money(%d).Prorate(%d, %d) = %d, want %d", tt.value, tt.part, tt.whole, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCreateReturnRequest_IgnoresClientMoney(t *testing.T) {
+	body := `{"refund_method":"CASH","subtotal":999,"tax_amount":999,"total_refund":999,
+		"items":[{"product_id":1,"quantity":1,"unit_price":999,"tax_amount":999,"return_reason":"DEFECTIVE","disposition":"RESTOCK"}]}`
+
+	var req models.CreateReturnRequest
+	if err := json.Unmarshal([]byte(body), &req); err != nil {
+		t.Fatal(err)
+	}
+	if req.Subtotal != 0 || req.TaxAmount != 0 || req.TotalRefund != 0 {
+		t.Errorf("client totals were accepted: %+v", req)
+	}
+	if len(req.Items) != 1 || req.Items[0].UnitPrice != 0 || req.Items[0].TaxAmount != 0 {
+		t.Errorf("client item prices were accepted: %+v", req.Items)
+	}
+}

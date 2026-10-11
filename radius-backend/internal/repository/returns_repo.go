@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"radius/internal/models"
 	"radius/internal/util/queryutil"
-	"radius/internal/utils"
 	"strings"
 	"time"
 )
@@ -26,12 +25,15 @@ func (r *ReturnsRepo) CreateReturn(ctx context.Context, storeID int, employeeID 
 	}
 	defer tx.Rollback()
 
-	var subtotal models.Money
-	for _, item := range req.Items {
-		subtotal += item.UnitPrice.Times(item.Quantity)
+	if req.OriginalTransactionId != nil {
+		if err := r.verifyRefundableTx(ctx, tx, *req.OriginalTransactionId, req.TotalRefund); err != nil {
+			return nil, nil, err
+		}
 	}
-	taxAmount := subtotal.TaxAtRatePer100000(utils.GSTRatePer100000)
-	totalRefund := subtotal + taxAmount
+
+	subtotal := req.Subtotal
+	taxAmount := req.TaxAmount
+	totalRefund := req.TotalRefund
 	isStoreCredit := req.RefundMethod == models.RefundMethodStoreCredit
 
 	var approvedBy *int
@@ -111,7 +113,11 @@ func (r *ReturnsRepo) CreateReturn(ctx context.Context, storeID int, employeeID 
 		var unitCost models.Money
 		_ = tx.QueryRowContext(ctx, `SELECT COALESCE(default_cost, 0.0) FROM products WHERE product_id = $1`, itemReq.ProductId).Scan(&unitCost)
 
-		itemTax := itemReq.UnitPrice.Times(itemReq.Quantity).TaxAtRatePer100000(utils.GSTRatePer100000)
+		if req.OriginalTransactionId != nil && itemReq.OriginalTransactionItemId != nil {
+			if err := verifyReturnableQtyTx(ctx, tx, *req.OriginalTransactionId, *itemReq.OriginalTransactionItemId, itemReq.ProductId, itemReq.Quantity); err != nil {
+				return nil, nil, err
+			}
+		}
 
 		var item models.CustomerReturnItem
 		item.ReturnId = createdReturn.ReturnId
@@ -120,7 +126,7 @@ func (r *ReturnsRepo) CreateReturn(ctx context.Context, storeID int, employeeID 
 		item.Quantity = itemReq.Quantity
 		item.UnitPrice = itemReq.UnitPrice
 		item.UnitCost = unitCost
-		item.TaxAmount = itemTax
+		item.TaxAmount = itemReq.TaxAmount
 		item.ReturnReason = itemReq.ReturnReason
 		item.Disposition = itemReq.Disposition
 
@@ -132,7 +138,7 @@ func (r *ReturnsRepo) CreateReturn(ctx context.Context, storeID int, employeeID 
 			itemReq.Quantity,
 			itemReq.UnitPrice,
 			unitCost,
-			itemTax,
+			itemReq.TaxAmount,
 			itemReq.ReturnReason,
 			itemReq.Disposition,
 		).Scan(&item.ReturnItemId, &item.CreatedAt)
@@ -154,6 +160,58 @@ func (r *ReturnsRepo) CreateReturn(ctx context.Context, storeID int, employeeID 
 	}
 
 	return &createdReturn, createdItems, nil
+}
+
+func (r *ReturnsRepo) verifyRefundableTx(ctx context.Context, tx *sql.Tx, transactionID int64, totalRefund models.Money) error {
+	var totalPaid models.Money
+	if err := tx.QueryRowContext(ctx, `
+		SELECT total_amount FROM transactions WHERE transaction_id = $1 FOR UPDATE
+	`, transactionID).Scan(&totalPaid); err != nil {
+		return fmt.Errorf("failed to lock original transaction %d: %w", transactionID, err)
+	}
+
+	var refunded models.Money
+	if err := tx.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(total_refund), 0)
+		FROM customer_returns
+		WHERE original_transaction_id = $1 AND status != 'REJECTED'
+	`, transactionID).Scan(&refunded); err != nil {
+		return fmt.Errorf("failed to load prior refunds for transaction %d: %w", transactionID, err)
+	}
+
+	if refunded+totalRefund > totalPaid {
+		return fmt.Errorf("refund of %s exceeds the %s remaining on transaction %d", totalRefund, totalPaid-refunded, transactionID)
+	}
+	return nil
+}
+
+func verifyReturnableQtyTx(ctx context.Context, tx *sql.Tx, transactionID int64, transactionItemID int64, productID int, quantity int) error {
+	var soldProductID, returnableQty int
+	err := tx.QueryRowContext(ctx, `
+		SELECT ti.product_id,
+		       ti.quantity - COALESCE((
+		           SELECT SUM(cri.quantity)
+		           FROM customer_return_items cri
+		           JOIN customer_returns cr ON cri.return_id = cr.return_id
+		           WHERE cri.original_transaction_item_id = ti.transaction_item_id
+		             AND cr.status != 'REJECTED'
+		       ), 0)
+		FROM transaction_items ti
+		WHERE ti.transaction_item_id = $1 AND ti.transaction_id = $2
+	`, transactionItemID, transactionID).Scan(&soldProductID, &returnableQty)
+	if err == sql.ErrNoRows {
+		return fmt.Errorf("item %d is not on transaction %d", transactionItemID, transactionID)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to load returnable quantity for item %d: %w", transactionItemID, err)
+	}
+	if soldProductID != productID {
+		return fmt.Errorf("item %d on transaction %d is not product %d", transactionItemID, transactionID, productID)
+	}
+	if quantity > returnableQty {
+		return fmt.Errorf("requested return qty (%d) exceeds returnable qty (%d) for item %d", quantity, returnableQty, transactionItemID)
+	}
+	return nil
 }
 
 func (r *ReturnsRepo) processItemDispositionTx(ctx context.Context, tx *sql.Tx, storeID int, employeeID int, refID string, item models.CustomerReturnItem) error {
@@ -514,14 +572,14 @@ func (r *ReturnsRepo) LookupTransaction(ctx context.Context, transactionID int64
 	var args []any
 	if storeID != nil {
 		txQuery = `
-			SELECT transaction_id, store_id, register_id, created_at, COALESCE(payment_method::text, 'CARD'), total_amount
+			SELECT transaction_id, store_id, register_id, created_at, COALESCE(payment_method::text, 'CARD'), subtotal, tax_amount, total_amount
 			FROM transactions
 			WHERE transaction_id = $1 AND store_id = $2
 		`
 		args = []any{transactionID, *storeID}
 	} else {
 		txQuery = `
-			SELECT transaction_id, store_id, register_id, created_at, COALESCE(payment_method::text, 'CARD'), total_amount
+			SELECT transaction_id, store_id, register_id, created_at, COALESCE(payment_method::text, 'CARD'), subtotal, tax_amount, total_amount
 			FROM transactions
 			WHERE transaction_id = $1
 		`
@@ -531,7 +589,7 @@ func (r *ReturnsRepo) LookupTransaction(ctx context.Context, transactionID int64
 	var resp models.LookupTransactionResponse
 	err := r.db.QueryRowContext(ctx, txQuery, args...).Scan(
 		&resp.TransactionId, &resp.StoreId, &resp.RegisterId,
-		&resp.CreatedAt, &resp.PaymentMethod, &resp.TotalAmount,
+		&resp.CreatedAt, &resp.PaymentMethod, &resp.Subtotal, &resp.TaxAmount, &resp.TotalAmount,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -540,11 +598,20 @@ func (r *ReturnsRepo) LookupTransaction(ctx context.Context, transactionID int64
 		return nil, err
 	}
 
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(subtotal), 0), COALESCE(SUM(tax_amount), 0), COALESCE(SUM(total_refund), 0)
+		FROM customer_returns
+		WHERE original_transaction_id = $1 AND status != 'REJECTED'
+	`, transactionID).Scan(&resp.RefundedSubtotal, &resp.RefundedTax, &resp.RefundedTotal)
+	if err != nil {
+		return nil, err
+	}
+
 	resp.DaysSinceSale = int(time.Since(resp.CreatedAt).Hours() / 24)
 
 	itemsQuery := `
 		SELECT ti.transaction_item_id, ti.product_id, p.sku, p.name, p.brand,
-		       p.category_id, COALESCE(p.is_returnable, TRUE), COALESCE(p.warranty_days, 0),
+		       COALESCE(p.category_id, 0), COALESCE(p.is_returnable, TRUE), COALESCE(p.warranty_days, 0),
 		       ti.quantity, ti.unit_price, ti.unit_cost,
 		       COALESCE((
 		           SELECT SUM(cri.quantity)

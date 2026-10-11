@@ -78,7 +78,12 @@ export interface LookupTransactionResponse {
     register_id: string;
     created_at: string;
     payment_method: string;
+    subtotal: Money;
+    tax_amount: Money;
     total_amount: Money;
+    refunded_subtotal: Money;
+    refunded_tax: Money;
+    refunded_total: Money;
     days_since_sale: number;
     items: OriginalTransactionItemForReturn[];
 }
@@ -97,7 +102,6 @@ export interface CreateReturnItemRequest {
     product_id: number;
     original_transaction_item_id?: number;
     quantity: number;
-    unit_price: Money;
     return_reason: string;
     disposition: ReturnDisposition;
 }

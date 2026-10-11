@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,15 +14,58 @@ import (
 	"github.com/gin-gonic/gin"
 	gorilla "github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/mock/gomock"
 
 	"radius/internal/handler"
+	"radius/internal/middleware"
 	"radius/internal/models"
 	"radius/internal/service"
+	"radius/internal/service/mocks"
 	"radius/internal/utils"
 	"radius/internal/websocket"
 )
 
-func setupTestWSServer(jwtSecret []byte) (*httptest.Server, *websocket.Hub) {
+type wsStaff struct {
+	testEmployeeRepo
+	mu        sync.Mutex
+	employees map[int]*models.Employee
+}
+
+func (s *wsStaff) GetEmployeeById(ctx context.Context, id int) (*models.Employee, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.employees[id], nil
+}
+
+func (s *wsStaff) put(id int, role models.EmployeeRole, storeID int) {
+	active, terminated := true, false
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.employees[id] = &models.Employee{EmployeeId: id, EmployeeBase: models.EmployeeBase{Role: role, StoreId: storeID, IsActive: &active, IsTerminated: &terminated}}
+}
+
+func (s *wsStaff) setStatus(id int, active, terminated bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	updated := *s.employees[id]
+	updated.IsActive, updated.IsTerminated = &active, &terminated
+	s.employees[id] = &updated
+}
+
+func (s *wsStaff) accessToken(id int, email string, role models.EmployeeRole, storeID int, secret []byte) (string, error) {
+	s.put(id, role, storeID)
+	return utils.GenerateAccessToken(id, email, role, storeID, secret)
+}
+
+func newWSAuthService(t *testing.T, jwtSecret []byte) (*service.AuthService, *wsStaff) {
+	sessions := mocks.NewMockSessionRepository(gomock.NewController(t))
+	active, terminated := true, false
+	sessions.EXPECT().GetSessionByAccessTokenHash(gomock.Any(), gomock.Any()).Return(&models.GetSessionByHashedToken{SessionId: 1, ExpiresAt: time.Now().Add(time.Hour), IsActive: &active, IsTerminated: &terminated}, nil).AnyTimes()
+	staff := &wsStaff{employees: map[int]*models.Employee{}}
+	return service.NewAuthService(staff, service.NewSessionService(sessions, jwtSecret, nil)), staff
+}
+
+func setupTestWSServer(t *testing.T, jwtSecret []byte) (*httptest.Server, *websocket.Hub, *wsStaff) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	router.Use(gin.Recovery())
@@ -29,12 +73,13 @@ func setupTestWSServer(jwtSecret []byte) (*httptest.Server, *websocket.Hub) {
 	hub := websocket.NewHub()
 	go hub.Run()
 
-	wsHandler := handler.NewWSHandler(hub, jwtSecret, nil)
+	authService, staff := newWSAuthService(t, jwtSecret)
+	wsHandler := handler.NewWSHandler(hub, authService)
 
 	router.GET("/api/v1/ws", wsHandler.HandleWS)
 
 	server := httptest.NewServer(router)
-	return server, hub
+	return server, hub, staff
 }
 
 func bearerHeader(token string) http.Header {
@@ -43,7 +88,7 @@ func bearerHeader(token string) http.Header {
 
 func TestWSHandshake_MissingToken(t *testing.T) {
 	jwtSecret := []byte("test_secret_key_1234567890123456")
-	server, hub := setupTestWSServer(jwtSecret)
+	server, hub, _ := setupTestWSServer(t, jwtSecret)
 	defer server.Close()
 	defer hub.Stop()
 
@@ -66,7 +111,7 @@ func TestWSHandshake_MissingToken(t *testing.T) {
 
 func TestWSHandshake_InvalidToken(t *testing.T) {
 	jwtSecret := []byte("test_secret_key_1234567890123456")
-	server, hub := setupTestWSServer(jwtSecret)
+	server, hub, staff := setupTestWSServer(t, jwtSecret)
 	defer server.Close()
 	defer hub.Stop()
 
@@ -76,7 +121,7 @@ func TestWSHandshake_InvalidToken(t *testing.T) {
 	}
 
 	wrongSecret := []byte("completely_different_signing_key")
-	wrongSecretToken, err := utils.GenerateAccessToken(10, "test@example.com", models.RoleSales, 1, wrongSecret)
+	wrongSecretToken, err := staff.accessToken(10, "test@example.com", models.RoleSales, 1, wrongSecret)
 	if err != nil {
 		t.Fatalf("failed to generate wrong secret token: %v", err)
 	}
@@ -114,11 +159,11 @@ func TestWSHandshake_InvalidToken(t *testing.T) {
 
 func TestWSHandshake_ValidJWT_Success(t *testing.T) {
 	jwtSecret := []byte("test_secret_key_1234567890123456")
-	server, hub := setupTestWSServer(jwtSecret)
+	server, hub, staff := setupTestWSServer(t, jwtSecret)
 	defer server.Close()
 	defer hub.Stop()
 
-	validToken, err := utils.GenerateAccessToken(42, "employee@store2.com", models.RoleSales, 2, jwtSecret)
+	validToken, err := staff.accessToken(42, "employee@store2.com", models.RoleSales, 2, jwtSecret)
 	if err != nil {
 		t.Fatalf("failed to generate access token: %v", err)
 	}
@@ -178,11 +223,11 @@ func TestWSHandshake_ValidJWT_Success(t *testing.T) {
 
 func TestWSHandshake_ValidJWT_AuthorizationHeader(t *testing.T) {
 	jwtSecret := []byte("test_secret_key_1234567890123456")
-	server, hub := setupTestWSServer(jwtSecret)
+	server, hub, staff := setupTestWSServer(t, jwtSecret)
 	defer server.Close()
 	defer hub.Stop()
 
-	validToken, err := utils.GenerateAccessToken(43, "manager@store2.com", models.RoleManager, 2, jwtSecret)
+	validToken, err := staff.accessToken(43, "manager@store2.com", models.RoleManager, 2, jwtSecret)
 	if err != nil {
 		t.Fatalf("failed to generate access token: %v", err)
 	}
@@ -213,11 +258,11 @@ func TestWSHandshake_ValidJWT_AuthorizationHeader(t *testing.T) {
 
 func TestWSHandshake_StoreIsolation_LiveSockets(t *testing.T) {
 	jwtSecret := []byte("test_secret_key_1234567890123456")
-	server, hub := setupTestWSServer(jwtSecret)
+	server, hub, staff := setupTestWSServer(t, jwtSecret)
 	defer server.Close()
 	defer hub.Stop()
 
-	token2, _ := utils.GenerateAccessToken(51, "store2@test.com", models.RoleSales, 2, jwtSecret)
+	token2, _ := staff.accessToken(51, "store2@test.com", models.RoleSales, 2, jwtSecret)
 	wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=2"
 	conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, bearerHeader(token2))
 	if err != nil {
@@ -225,7 +270,7 @@ func TestWSHandshake_StoreIsolation_LiveSockets(t *testing.T) {
 	}
 	defer conn2.Close()
 
-	token3, _ := utils.GenerateAccessToken(52, "store3@test.com", models.RoleSales, 3, jwtSecret)
+	token3, _ := staff.accessToken(52, "store3@test.com", models.RoleSales, 3, jwtSecret)
 	wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=3"
 	conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, bearerHeader(token3))
 	if err != nil {
@@ -432,7 +477,8 @@ func TestWebSocket_OrderCreated_AC1(t *testing.T) {
 	go hub.Run()
 	defer hub.Stop()
 
-	wsHandler := handler.NewWSHandler(hub, jwtSecret, nil)
+	authService, staff := newWSAuthService(t, jwtSecret)
+	wsHandler := handler.NewWSHandler(hub, authService)
 	router.GET("/api/v1/ws", wsHandler.HandleWS)
 
 	testRepo := &testOrdersRepo{nextID: 5000}
@@ -450,7 +496,7 @@ func TestWebSocket_OrderCreated_AC1(t *testing.T) {
 	server := httptest.NewServer(router)
 	defer server.Close()
 
-	token2, err := utils.GenerateAccessToken(101, "sales2@store2.com", models.RoleSales, 2, jwtSecret)
+	token2, err := staff.accessToken(101, "sales2@store2.com", models.RoleSales, 2, jwtSecret)
 	if err != nil {
 		t.Fatalf("failed to generate access token: %v", err)
 	}
@@ -464,7 +510,7 @@ func TestWebSocket_OrderCreated_AC1(t *testing.T) {
 		t.Fatalf("expected 101 Switching Protocols, got %d", resp2.StatusCode)
 	}
 
-	token3, _ := utils.GenerateAccessToken(102, "sales3@store3.com", models.RoleSales, 3, jwtSecret)
+	token3, _ := staff.accessToken(102, "sales3@store3.com", models.RoleSales, 3, jwtSecret)
 	wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=3"
 	conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, bearerHeader(token3))
 	if err != nil {
@@ -540,11 +586,11 @@ func TestWebSocket_OrderCreated_AC1(t *testing.T) {
 
 func TestWebSocket_CycleCountUpdated_AC2(t *testing.T) {
 	jwtSecret := []byte("test_secret_key_1234567890123456")
-	server, hub := setupTestWSServer(jwtSecret)
+	server, hub, staff := setupTestWSServer(t, jwtSecret)
 	defer server.Close()
 	defer hub.Stop()
 
-	token, err := utils.GenerateAccessToken(102, "counter2@store2.com", models.RoleSales, 2, jwtSecret)
+	token, err := staff.accessToken(102, "counter2@store2.com", models.RoleSales, 2, jwtSecret)
 	if err != nil {
 		t.Fatalf("failed to generate access token: %v", err)
 	}
@@ -688,12 +734,12 @@ func TestWebSocket_CycleCountUpdated_AC2(t *testing.T) {
 
 func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 	jwtSecret := []byte("test_secret_key_1234567890123456")
-	server, hub := setupTestWSServer(jwtSecret)
+	server, hub, staff := setupTestWSServer(t, jwtSecret)
 	defer server.Close()
 	defer hub.Stop()
 
 	t.Run("Store2_Event_Not_Leaked_To_Store3", func(t *testing.T) {
-		token2, _ := utils.GenerateAccessToken(201, "emp2@store2.com", models.RoleSales, 2, jwtSecret)
+		token2, _ := staff.accessToken(201, "emp2@store2.com", models.RoleSales, 2, jwtSecret)
 		wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=2"
 		conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, bearerHeader(token2))
 		if err != nil {
@@ -701,7 +747,7 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 		}
 		defer conn2.Close()
 
-		token3, _ := utils.GenerateAccessToken(301, "emp3@store3.com", models.RoleSales, 3, jwtSecret)
+		token3, _ := staff.accessToken(301, "emp3@store3.com", models.RoleSales, 3, jwtSecret)
 		wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=3"
 		conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, bearerHeader(token3))
 		if err != nil {
@@ -742,7 +788,7 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 	})
 
 	t.Run("Store3_Event_Not_Leaked_To_Store2", func(t *testing.T) {
-		token2, _ := utils.GenerateAccessToken(202, "emp2b@store2.com", models.RoleSales, 2, jwtSecret)
+		token2, _ := staff.accessToken(202, "emp2b@store2.com", models.RoleSales, 2, jwtSecret)
 		wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=2"
 		conn2, _, err := gorilla.DefaultDialer.Dial(wsURL2, bearerHeader(token2))
 		if err != nil {
@@ -750,7 +796,7 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 		}
 		defer conn2.Close()
 
-		token3, _ := utils.GenerateAccessToken(302, "emp3b@store3.com", models.RoleSales, 3, jwtSecret)
+		token3, _ := staff.accessToken(302, "emp3b@store3.com", models.RoleSales, 3, jwtSecret)
 		wsURL3 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws?store_id=3"
 		conn3, _, err := gorilla.DefaultDialer.Dial(wsURL3, bearerHeader(token3))
 		if err != nil {
@@ -791,7 +837,7 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 	})
 }
 
-func setupTestWSServerWithRedis(jwtSecret []byte, redisClient *redis.Client) (*httptest.Server, *websocket.Hub) {
+func setupTestWSServerWithRedis(t *testing.T, jwtSecret []byte, redisClient *redis.Client) (*httptest.Server, *websocket.Hub) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	router.Use(gin.Recovery())
@@ -799,7 +845,9 @@ func setupTestWSServerWithRedis(jwtSecret []byte, redisClient *redis.Client) (*h
 	hub := websocket.NewHub()
 	go hub.Run()
 
-	wsHandler := handler.NewWSHandler(hub, jwtSecret, nil, redisClient)
+	authService, staff := newWSAuthService(t, jwtSecret)
+	staff.put(10, models.RoleSales, 2)
+	wsHandler := handler.NewWSHandler(hub, authService, redisClient)
 
 	router.GET("/api/v1/ws", wsHandler.HandleWS)
 	router.POST("/api/v1/ws/ticket", func(ctx *gin.Context) {
@@ -825,7 +873,7 @@ func TestWSHandshake_TicketAuth_Success(t *testing.T) {
 	defer rdb.Close()
 
 	jwtSecret := []byte("test_secret_key_1234567890123456")
-	server, hub := setupTestWSServerWithRedis(jwtSecret, rdb)
+	server, hub := setupTestWSServerWithRedis(t, jwtSecret, rdb)
 	defer server.Close()
 	defer hub.Stop()
 
@@ -883,7 +931,7 @@ func TestWSHandshake_TicketAuth_InvalidOrExpired(t *testing.T) {
 	defer rdb.Close()
 
 	jwtSecret := []byte("test_secret_key_1234567890123456")
-	server, hub := setupTestWSServerWithRedis(jwtSecret, rdb)
+	server, hub := setupTestWSServerWithRedis(t, jwtSecret, rdb)
 	defer server.Close()
 	defer hub.Stop()
 
@@ -912,7 +960,7 @@ func TestWSHandshake_TicketAuth_SingleUse(t *testing.T) {
 	defer rdb.Close()
 
 	jwtSecret := []byte("test_secret_key_1234567890123456")
-	server, hub := setupTestWSServerWithRedis(jwtSecret, rdb)
+	server, hub := setupTestWSServerWithRedis(t, jwtSecret, rdb)
 	defer server.Close()
 	defer hub.Stop()
 
@@ -950,5 +998,110 @@ func TestWSHandshake_TicketAuth_SingleUse(t *testing.T) {
 	}
 	if wsResp2 == nil || wsResp2.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("expected status 401 Unauthorized on reuse, got %v", wsResp2)
+	}
+}
+
+func TestWSHandshake_DemotedAdminLosesCrossStoreAccess(t *testing.T) {
+	mr := miniredis.RunT(t)
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+
+	jwtSecret := []byte("test_secret_key_1234567890123456")
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	hub := websocket.NewHub()
+	go hub.Run()
+	defer hub.Stop()
+
+	authService, staff := newWSAuthService(t, jwtSecret)
+	wsHandler := handler.NewWSHandler(hub, authService, rdb)
+	router.GET("/api/v1/ws", wsHandler.HandleWS)
+	router.POST("/api/v1/ws/ticket", middleware.RequireAuth(authService), wsHandler.CreateTicket)
+	server := httptest.NewServer(router)
+	defer server.Close()
+
+	adminToken, err := staff.accessToken(77, "admin@store2.com", models.RoleAdmin, 2, jwtSecret)
+	if err != nil {
+		t.Fatalf("failed to generate access token: %v", err)
+	}
+	wsBase := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws"
+
+	dial := func(url string, header http.Header) int {
+		conn, resp, err := gorilla.DefaultDialer.Dial(url, header)
+		if conn != nil {
+			conn.Close()
+		}
+		if resp == nil {
+			t.Fatalf("expected HTTP response, got nil (err: %v)", err)
+		}
+		return resp.StatusCode
+	}
+	createTicket := func() (int, string) {
+		req, _ := http.NewRequest(http.MethodPost, server.URL+"/api/v1/ws/ticket?store_id=3", nil)
+		req.Header = bearerHeader(adminToken)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("failed to request ticket: %v", err)
+		}
+		defer resp.Body.Close()
+		var ticketRes models.WSTicketResponse
+		_ = json.NewDecoder(resp.Body).Decode(&ticketRes)
+		return resp.StatusCode, ticketRes.Ticket
+	}
+
+	if code := dial(wsBase+"?store_id=3", bearerHeader(adminToken)); code != http.StatusSwitchingProtocols {
+		t.Fatalf("admin cross-store dial: expected 101, got %d", code)
+	}
+	status, staleTicket := createTicket()
+	if status != http.StatusOK || staleTicket == "" {
+		t.Fatalf("admin cross-store ticket: expected 200 with ticket, got %d", status)
+	}
+
+	staff.put(77, models.RoleSales, 2)
+
+	if code := dial(wsBase+"?store_id=3", bearerHeader(adminToken)); code != http.StatusForbidden {
+		t.Fatalf("demoted JWT cross-store dial: expected 403, got %d", code)
+	}
+	if code := dial(wsBase+"?ticket="+staleTicket+"&store_id=3", nil); code != http.StatusForbidden {
+		t.Fatalf("demoted stale-ticket cross-store dial: expected 403, got %d", code)
+	}
+	if status, _ := createTicket(); status != http.StatusForbidden {
+		t.Fatalf("demoted cross-store ticket: expected 403, got %d", status)
+	}
+	if code := dial(wsBase+"?store_id=2", bearerHeader(adminToken)); code != http.StatusSwitchingProtocols {
+		t.Fatalf("demoted home-store dial: expected 101, got %d", code)
+	}
+}
+
+func TestWSHandshake_RejectsInactiveOrTerminatedEmployee(t *testing.T) {
+	jwtSecret := []byte("test_secret_key_1234567890123456")
+	server, hub, staff := setupTestWSServer(t, jwtSecret)
+	defer server.Close()
+	defer hub.Stop()
+
+	for _, tc := range []struct {
+		name       string
+		active     bool
+		terminated bool
+	}{
+		{"inactive", false, false},
+		{"terminated", true, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			token, err := staff.accessToken(88, "gone@store2.com", models.RoleSales, 2, jwtSecret)
+			if err != nil {
+				t.Fatalf("failed to generate access token: %v", err)
+			}
+			staff.setStatus(88, tc.active, tc.terminated)
+
+			conn, resp, err := gorilla.DefaultDialer.Dial("ws"+strings.TrimPrefix(server.URL, "http")+"/api/v1/ws", bearerHeader(token))
+			if conn != nil {
+				conn.Close()
+				t.Fatal("expected dial to fail")
+			}
+			if resp == nil || resp.StatusCode != http.StatusUnauthorized {
+				t.Fatalf("expected 401, got %v (err: %v)", resp, err)
+			}
+		})
 	}
 }

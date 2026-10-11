@@ -34,3 +34,10 @@ type LoginConflictResponse struct {
 	RequiresConfirmation bool   `json:"requires_confirmation"`
 	Error                string `json:"error"`
 }
+
+type AuthContext struct {
+	EmployeeId int
+	Email      string
+	Role       EmployeeRole
+	StoreId    int
+}

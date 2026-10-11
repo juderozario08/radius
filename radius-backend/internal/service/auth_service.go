@@ -3,13 +3,22 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math"
 	"net"
 	"radius/internal/models"
 	"radius/internal/utils"
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
+)
+
+var (
+	ErrInvalidToken      = errors.New("invalid or expired token")
+	ErrAccountTerminated = errors.New("terminated account")
+	ErrAccountInactive   = errors.New("inactive account")
 )
 
 type AuthService struct {
@@ -73,6 +82,73 @@ func (s *AuthService) GetEmployeeContext(ctx context.Context, employeeId int) (*
 		IsActive:     isActive,
 		IsTerminated: isTerminated,
 	}, nil
+}
+
+func (s *AuthService) Authenticate(ctx context.Context, tokenString string) (*models.AuthContext, error) {
+	token, err := jwt.Parse(tokenString, func(*jwt.Token) (any, error) {
+		return s.sessionService.jwtSecret, nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidToken, err)
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, fmt.Errorf("%w: unreadable claims", ErrInvalidToken)
+	}
+	if claims["token_type"] != "access" {
+		return nil, fmt.Errorf("%w: not an access token", ErrInvalidToken)
+	}
+	employeeId, ok := positiveIntClaim(claims, "employee_id")
+	if !ok {
+		return nil, fmt.Errorf("%w: missing or invalid employee_id claim", ErrInvalidToken)
+	}
+	if err := s.ValidateSession(ctx, tokenString); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidToken, err)
+	}
+	empCtx, err := s.ActiveEmployeeContext(ctx, employeeId)
+	if err != nil {
+		return nil, err
+	}
+	email, _ := claims["email"].(string)
+	return &models.AuthContext{
+		EmployeeId: employeeId,
+		Email:      email,
+		Role:       empCtx.Role,
+		StoreId:    empCtx.StoreId,
+	}, nil
+}
+
+func AuthErrorMessage(err error) string {
+	switch {
+	case errors.Is(err, ErrAccountTerminated):
+		return "Terminated Account"
+	case errors.Is(err, ErrAccountInactive):
+		return "Inactive account"
+	default:
+		return "Invalid or expired token"
+	}
+}
+
+func (s *AuthService) ActiveEmployeeContext(ctx context.Context, employeeId int) (*models.EmployeeContext, error) {
+	empCtx, err := s.GetEmployeeContext(ctx, employeeId)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidToken, err)
+	}
+	if empCtx.IsTerminated {
+		return nil, ErrAccountTerminated
+	}
+	if !empCtx.IsActive {
+		return nil, ErrAccountInactive
+	}
+	return empCtx, nil
+}
+
+func positiveIntClaim(claims jwt.MapClaims, key string) (int, bool) {
+	value, ok := claims[key].(float64)
+	if !ok || value <= 0 || value > math.MaxInt32 || value != math.Trunc(value) {
+		return 0, false
+	}
+	return int(value), true
 }
 
 func (s *AuthService) ValidateSession(ctx context.Context, tokenString string) error {

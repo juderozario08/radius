@@ -18,7 +18,6 @@ func TestNewRouter_NoPanics(t *testing.T) {
 
 	r := router.NewRouter(router.Config{
 		Handlers:    appHandlers,
-		JWTSecret:   []byte("test-secret"),
 		AuthService: &service.AuthService{},
 		AppConfig:   cfg,
 	})

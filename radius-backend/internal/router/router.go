@@ -18,7 +18,6 @@ import (
 
 type Config struct {
 	Handlers    Handlers
-	JWTSecret   []byte
 	AuthService *service.AuthService
 	AppConfig   *config.Config
 	DB          *sql.DB
@@ -121,7 +120,7 @@ func NewRouter(cfg Config) *gin.Engine {
 	}
 
 	api := router.Group("/api")
-	api.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService))
+	api.Use(middleware.RequireAuth(cfg.AuthService))
 	{
 		api.POST("/logout", cfg.Handlers.AuthHandler.Logout)
 		api.POST("/verify_token", cfg.Handlers.AuthHandler.VerifyToken)
@@ -131,7 +130,7 @@ func NewRouter(cfg Config) *gin.Engine {
 	}
 
 	admin := router.Group("/api/admin")
-	admin.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewAdminActions))
+	admin.Use(middleware.RequireAuth(cfg.AuthService), middleware.RequirePermission(middleware.PermViewAdminActions))
 	{
 		if cfg.Handlers.MetricsHandler != nil {
 			admin.GET("/metrics", cfg.Handlers.MetricsHandler.GetMetrics)
@@ -164,7 +163,7 @@ func NewRouter(cfg Config) *gin.Engine {
 	}
 
 	manager := router.Group("/api/manager")
-	manager.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewManagerActions))
+	manager.Use(middleware.RequireAuth(cfg.AuthService), middleware.RequirePermission(middleware.PermViewManagerActions))
 	{
 		store := manager.Group("/store")
 		{
@@ -178,7 +177,7 @@ func NewRouter(cfg Config) *gin.Engine {
 	}
 
 	salesFloor := router.Group("/api/sales_floor")
-	salesFloor.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewSalesFloorAction))
+	salesFloor.Use(middleware.RequireAuth(cfg.AuthService), middleware.RequirePermission(middleware.PermViewSalesFloorAction))
 	{
 		products := salesFloor.Group("/products")
 		{
@@ -280,7 +279,7 @@ func NewRouter(cfg Config) *gin.Engine {
 	}
 
 	managerActions := router.Group("/api/sales_floor")
-	managerActions.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewManagerActions))
+	managerActions.Use(middleware.RequireAuth(cfg.AuthService), middleware.RequirePermission(middleware.PermViewManagerActions))
 	{
 		managerActions.POST("/inventory/adjustments/review", cfg.Handlers.InventoryHandler.ReviewAdjustments)
 		managerActions.POST("/transfers", cfg.Handlers.TransferHandler.CreateTransfer)
@@ -294,7 +293,7 @@ func NewRouter(cfg Config) *gin.Engine {
 	}
 
 	adminActions := router.Group("/api/sales_floor")
-	adminActions.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewAdminActions))
+	adminActions.Use(middleware.RequireAuth(cfg.AuthService), middleware.RequirePermission(middleware.PermViewAdminActions))
 	{
 		adminActions.POST("/transactions", cfg.Handlers.TransactionHandler.CreateTransaction)
 	}

@@ -58,7 +58,7 @@ func TestRequireAuthTokenCases(t *testing.T) {
 			}
 			auth := service.NewAuthService(employees, service.NewSessionService(sessions, secret, nil))
 			r := gin.New()
-			r.GET("/guarded", middleware.RequireAuth(secret, auth), func(c *gin.Context) { c.Status(http.StatusNoContent) })
+			r.GET("/guarded", middleware.RequireAuth(auth), func(c *gin.Context) { c.Status(http.StatusNoContent) })
 			request := httptest.NewRequest(http.MethodGet, "/guarded", nil)
 			if token := tc.token(); token != "" {
 				request.Header.Set("Authorization", "Bearer "+token)

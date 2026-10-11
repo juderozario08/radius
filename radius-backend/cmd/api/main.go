@@ -95,9 +95,7 @@ func main() {
 	})
 	wsHandler := handler.NewWSHandler(
 		wsHub,
-		cfg.JWTSecretKey,
 		authService,
-		employeeRepo,
 		upgrader,
 		redisClient,
 	)
@@ -125,7 +123,6 @@ func main() {
 
 	router := router.NewRouter(router.Config{
 		Handlers:    appHandlers,
-		JWTSecret:   cfg.JWTSecretKey,
 		AuthService: authService,
 		AppConfig:   cfg,
 		DB:          db.DB,

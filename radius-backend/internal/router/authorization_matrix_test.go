@@ -145,7 +145,7 @@ func TestRegisteredRouteRoleMatrix(t *testing.T) {
 		gin.DefaultWriter = previousWriter
 		gin.DefaultErrorWriter = previousErrorWriter
 	}()
-	app := router.NewRouter(router.Config{Handlers: testHandlers(), JWTSecret: secret, AuthService: auth, AppConfig: &config.Config{GinMode: "test"}})
+	app := router.NewRouter(router.Config{Handlers: testHandlers(), AuthService: auth, AppConfig: &config.Config{GinMode: "test"}})
 	registered := map[string]bool{}
 	for _, route := range app.Routes() {
 		if strings.HasPrefix(route.Path, "/api/") && route.Path != "/api/refresh_token" && route.Path != "/api/v1/ws" {

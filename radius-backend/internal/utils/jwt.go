@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"radius/internal/models"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -40,4 +41,12 @@ func GenerateAccessToken(id int, email string, role models.EmployeeRole, storeId
 
 func GenerateRefreshToken(id int, email string, role models.EmployeeRole, storeId int, jwtSecret []byte) (string, error) {
 	return generateToken(id, email, role, storeId, "refresh", MaxSessionLifetime, jwtSecret)
+}
+
+func ParseBearerToken(header string) (string, bool) {
+	scheme, token, ok := strings.Cut(strings.TrimSpace(header), " ")
+	if !ok || !strings.EqualFold(scheme, "Bearer") || token == "" || strings.ContainsAny(token, " \t") {
+		return "", false
+	}
+	return token, true
 }

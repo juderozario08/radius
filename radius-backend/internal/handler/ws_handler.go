@@ -4,48 +4,40 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"radius/internal/models"
 	"radius/internal/service"
+	"radius/internal/utils"
 	ws "radius/internal/websocket"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	gorilla "github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 )
 
 type WSHandler struct {
-	hub          *ws.Hub
-	jwtSecret    []byte
-	authService  *service.AuthService
-	employeeRepo service.EmployeeRepository
-	upgrader     *gorilla.Upgrader
-	redisClient  *redis.Client
+	hub         *ws.Hub
+	authService *service.AuthService
+	upgrader    *gorilla.Upgrader
+	redisClient *redis.Client
 }
 
 func NewWSHandler(
 	hub *ws.Hub,
-	jwtSecret []byte,
 	authService *service.AuthService,
 	args ...any,
 ) *WSHandler {
 	handler := &WSHandler{
 		hub:         hub,
-		jwtSecret:   jwtSecret,
 		authService: authService,
 	}
 
 	for _, arg := range args {
 		switch v := arg.(type) {
-		case service.EmployeeRepository:
-			handler.employeeRepo = v
 		case *gorilla.Upgrader:
 			handler.upgrader = v
 		case *redis.Client:
@@ -60,19 +52,12 @@ func canAccessAnyStore(role models.EmployeeRole) bool {
 	return role == models.RoleAdmin || role == models.RoleManager
 }
 
-func resolveRequestedStore(ctx *gin.Context, currentStore int, role models.EmployeeRole) (int, bool) {
-	reqStoreID := ctx.Query("store_id")
-	if reqStoreID == "" {
-		return currentStore, true
+func resolveRequestedStore(ctx *gin.Context, defaultStore int, homeStore int, role models.EmployeeRole) (int, bool) {
+	store := defaultStore
+	if parsed, err := strconv.Atoi(ctx.Query("store_id")); err == nil && parsed > 0 {
+		store = parsed
 	}
-	parsed, err := strconv.Atoi(reqStoreID)
-	if err != nil || parsed <= 0 {
-		return currentStore, true
-	}
-	if parsed == currentStore || canAccessAnyStore(role) {
-		return parsed, true
-	}
-	return currentStore, false
+	return store, store == homeStore || canAccessAnyStore(role)
 }
 
 func (h *WSHandler) CreateTicket(ctx *gin.Context) {
@@ -87,7 +72,7 @@ func (h *WSHandler) CreateTicket(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 	storeID := ctx.GetInt("store_id")
 
-	resolvedStore, allowed := resolveRequestedStore(ctx, storeID, role)
+	resolvedStore, allowed := resolveRequestedStore(ctx, storeID, storeID, role)
 	if !allowed {
 		log.Printf("[WS FORBIDDEN] Employee %d (role %s) requested unauthorized store %s", employeeID, role, ctx.Query("store_id"))
 		ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "Not authorized for the requested store"})
@@ -139,166 +124,56 @@ func (h *WSHandler) HandleWS(ctx *gin.Context) {
 }
 
 func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
-	var employeeID int
-	var email string
-	var role models.EmployeeRole
-	var storeID int
+	if h.authService == nil {
+		log.Printf("[ERROR] WS Upgrade: Auth service not configured")
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Authentication unavailable"})
+		return
+	}
 
-	ticket := ctx.Query("ticket")
-	if ticket != "" {
-		if h.redisClient == nil {
-			log.Printf("[WS UNAUTHORIZED] Redis not configured for ticket authentication")
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Ticket authentication unavailable"})
+	var auth *models.AuthContext
+	var defaultStore int
+
+	if ticket := ctx.Query("ticket"); ticket != "" {
+		ticketData, ok := h.consumeTicket(ctx, ticket)
+		if !ok {
 			return
 		}
-
-		val, err := h.redisClient.GetDel(ctx.Request.Context(), "ws_ticket:"+ticket).Result()
+		empCtx, err := h.authService.ActiveEmployeeContext(ctx.Request.Context(), ticketData.EmployeeID)
 		if err != nil {
-			log.Printf("[WS UNAUTHORIZED] Invalid or expired connection ticket")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired connection ticket"})
+			log.Printf("[WS UNAUTHORIZED] Ticket employee %d rejected: %v", ticketData.EmployeeID, err)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: service.AuthErrorMessage(err)})
 			return
 		}
-
-		var ticketData models.WSTicketData
-		if err := json.Unmarshal([]byte(val), &ticketData); err != nil {
-			log.Printf("[WS UNAUTHORIZED] Failed to deserialize ticket data: %v", err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid connection ticket"})
-			return
+		auth = &models.AuthContext{
+			EmployeeId: ticketData.EmployeeID,
+			Email:      ticketData.Email,
+			Role:       empCtx.Role,
+			StoreId:    empCtx.StoreId,
 		}
-
-		employeeID = ticketData.EmployeeID
-		email = ticketData.Email
-		role = ticketData.Role
-		storeID = ticketData.StoreID
-
-		resolvedStore, allowed := resolveRequestedStore(ctx, storeID, role)
-		if !allowed {
-			log.Printf("[WS FORBIDDEN] Employee %d (role %s) requested unauthorized store %s", employeeID, role, ctx.Query("store_id"))
-			ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "Not authorized for the requested store"})
-			return
-		}
-		storeID = resolvedStore
+		defaultStore = ticketData.StoreID
 	} else {
-		var tokenString string
-
-		authHeader := ctx.GetHeader("Authorization")
-		if authHeader != "" {
-			split := strings.Split(authHeader, " ")
-			if len(split) == 2 && strings.EqualFold(split[0], "Bearer") {
-				tokenString = split[1]
-			}
-		}
-
-		if tokenString == "" {
+		tokenString, ok := utils.ParseBearerToken(ctx.GetHeader("Authorization"))
+		if !ok {
 			log.Printf("[WS UNAUTHORIZED] Missing authentication token")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Authentication token required"})
 			return
 		}
-
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-			return h.jwtSecret, nil
-		})
-		if err != nil || !token.Valid {
-			log.Printf("[WS UNAUTHORIZED] Invalid or expired JWT: %v", err)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired token"})
+		authCtx, err := h.authService.Authenticate(ctx.Request.Context(), tokenString)
+		if err != nil {
+			log.Printf("[WS UNAUTHORIZED] %v", err)
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: service.AuthErrorMessage(err)})
 			return
 		}
-
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			log.Printf("[WS UNAUTHORIZED] Failed to extract claims")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid token claims"})
-			return
-		}
-
-		tokenType, exists := claims["token_type"]
-		if !exists || tokenType != "access" {
-			log.Printf("[WS UNAUTHORIZED] Non-access token provided")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid token type"})
-			return
-		}
-
-		employeeIdRaw, ok := claims["employee_id"]
-		if !ok {
-			log.Printf("[WS UNAUTHORIZED] Missing employee_id claim")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Missing employee_id claim"})
-			return
-		}
-		switch v := employeeIdRaw.(type) {
-		case float64:
-			employeeID = int(v)
-		case int:
-			employeeID = v
-		default:
-			log.Printf("[WS UNAUTHORIZED] Non-numeric employee_id claim")
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid employee_id claim"})
-			return
-		}
-
-		email, _ = claims["email"].(string)
-
-		if roleStr, ok := claims["role"].(string); ok && roleStr != "" {
-			role = models.EmployeeRole(roleStr)
-		}
-
-		if h.authService != nil {
-			if err := h.authService.ValidateSession(ctx.Request.Context(), tokenString); err != nil {
-				log.Printf("[WS UNAUTHORIZED] Session validation failed for employee %d: %v", employeeID, err)
-				ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Session expired or terminated"})
-				return
-			}
-		}
-
-		if sidRaw, exists := claims["store_id"]; exists {
-			switch v := sidRaw.(type) {
-			case float64:
-				storeID = int(v)
-			case int:
-				storeID = v
-			}
-		}
-
-		resolvedStore, allowed := resolveRequestedStore(ctx, storeID, role)
-		if !allowed {
-			log.Printf("[WS FORBIDDEN] Employee %d (role %s) requested unauthorized store %s", employeeID, role, ctx.Query("store_id"))
-			ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "Not authorized for the requested store"})
-			return
-		}
-		storeID = resolvedStore
+		auth = authCtx
+		defaultStore = authCtx.StoreId
 	}
 
-	if h.employeeRepo != nil {
-		employee, err := h.employeeRepo.GetEmployeeById(ctx.Request.Context(), employeeID)
-		if err != nil {
-			log.Printf("[ERROR] WS Upgrade: Database error resolving employee %d: %v", employeeID, err)
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Failed to resolve employee record"})
-			return
-		}
-		if employee == nil {
-			log.Printf("[WS UNAUTHORIZED] Employee %d not found in database", employeeID)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Employee not found"})
-			return
-		}
-		if employee.IsActive != nil && !(*employee.IsActive) {
-			log.Printf("[WS UNAUTHORIZED] Employee %d account is inactive", employeeID)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Account inactive"})
-			return
-		}
-		if employee.IsTerminated != nil && *employee.IsTerminated {
-			log.Printf("[WS UNAUTHORIZED] Employee %d account is terminated", employeeID)
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Account terminated"})
-			return
-		}
-
-		if storeID <= 0 {
-			storeID = employee.StoreId
-		}
-		if role == "" {
-			role = employee.Role
-		}
+	employeeID, role, email := auth.EmployeeId, auth.Role, auth.Email
+	storeID, allowed := resolveRequestedStore(ctx, defaultStore, auth.StoreId, role)
+	if !allowed {
+		log.Printf("[WS FORBIDDEN] Employee %d (role %s) requested unauthorized store %d", employeeID, role, storeID)
+		ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "Not authorized for the requested store"})
+		return
 	}
 
 	if storeID <= 0 {
@@ -323,4 +198,27 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 
 	go client.WritePump()
 	go client.ReadPump()
+}
+
+func (h *WSHandler) consumeTicket(ctx *gin.Context, ticket string) (*models.WSTicketData, bool) {
+	if h.redisClient == nil {
+		log.Printf("[WS UNAUTHORIZED] Redis not configured for ticket authentication")
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Ticket authentication unavailable"})
+		return nil, false
+	}
+
+	val, err := h.redisClient.GetDel(ctx.Request.Context(), "ws_ticket:"+ticket).Result()
+	if err != nil {
+		log.Printf("[WS UNAUTHORIZED] Invalid or expired connection ticket")
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired connection ticket"})
+		return nil, false
+	}
+
+	var ticketData models.WSTicketData
+	if err := json.Unmarshal([]byte(val), &ticketData); err != nil {
+		log.Printf("[WS UNAUTHORIZED] Failed to deserialize ticket data: %v", err)
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid connection ticket"})
+		return nil, false
+	}
+	return &ticketData, true
 }

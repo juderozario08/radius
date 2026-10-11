@@ -118,7 +118,6 @@ func NewRouter(cfg Config) *gin.Engine {
 
 	if cfg.Handlers.WSHandler != nil {
 		router.GET("/api/v1/ws", cfg.Handlers.WSHandler.HandleWebSocket)
-		router.GET("/ws", cfg.Handlers.WSHandler.HandleWebSocket)
 	}
 
 	api := router.Group("/api")
@@ -128,7 +127,6 @@ func NewRouter(cfg Config) *gin.Engine {
 		api.POST("/verify_token", cfg.Handlers.AuthHandler.VerifyToken)
 		if cfg.Handlers.WSHandler != nil {
 			api.POST("/v1/ws/ticket", cfg.Handlers.WSHandler.CreateTicket)
-			api.POST("/ws/ticket", cfg.Handlers.WSHandler.CreateTicket)
 		}
 	}
 
@@ -141,21 +139,16 @@ func NewRouter(cfg Config) *gin.Engine {
 		employees := admin.Group("/employees")
 		{
 			employees.POST("", cfg.Handlers.EmployeeHandler.CreateEmployee)
-			employees.POST("/create", cfg.Handlers.EmployeeHandler.CreateEmployee)
 			employees.GET("", cfg.Handlers.EmployeeHandler.GetAllEmployees)
 			employees.POST("/:id/terminate", cfg.Handlers.EmployeeHandler.TerminateEmployee)
-			employees.POST("/terminate", cfg.Handlers.EmployeeHandler.TerminateEmployee)
 			employees.POST("/:id/activate", cfg.Handlers.EmployeeHandler.ActivateEmployee)
-			employees.POST("/activate", cfg.Handlers.EmployeeHandler.ActivateEmployee)
 			employees.PUT("/:id", cfg.Handlers.EmployeeHandler.UpdateEmployee)
-			employees.PUT("/update", cfg.Handlers.EmployeeHandler.UpdateEmployee)
 		}
 
 		sessions := admin.Group("/sessions")
 		{
 			sessions.GET("", cfg.Handlers.SessionHandler.GetAllSessions)
 			sessions.DELETE("/:id", cfg.Handlers.SessionHandler.TerminateSession)
-			sessions.POST("/terminate", cfg.Handlers.SessionHandler.TerminateSession)
 		}
 
 		stores := admin.Group("/stores")
@@ -164,13 +157,9 @@ func NewRouter(cfg Config) *gin.Engine {
 			stores.GET("/operations", cfg.Handlers.StoreHandler.GetStoreOperations)
 			stores.GET("/:id", cfg.Handlers.StoreHandler.GetStore)
 			stores.POST("", cfg.Handlers.StoreHandler.CreateStore)
-			stores.POST("/create", cfg.Handlers.StoreHandler.CreateStore)
 			stores.PUT("/:id", cfg.Handlers.StoreHandler.UpdateStore)
-			stores.PUT("/update", cfg.Handlers.StoreHandler.UpdateStore)
 			stores.POST("/:id/activate", cfg.Handlers.StoreHandler.ActivateStore)
-			stores.POST("/activate", cfg.Handlers.StoreHandler.ActivateStore)
 			stores.POST("/:id/deactivate", cfg.Handlers.StoreHandler.DeactivateStore)
-			stores.POST("/deactivate", cfg.Handlers.StoreHandler.DeactivateStore)
 		}
 	}
 
@@ -179,7 +168,6 @@ func NewRouter(cfg Config) *gin.Engine {
 	{
 		store := manager.Group("/store")
 		{
-			store.GET("", cfg.Handlers.StoreHandler.GetStore)
 			store.GET("/:id", cfg.Handlers.StoreHandler.GetStore)
 		}
 
@@ -195,7 +183,6 @@ func NewRouter(cfg Config) *gin.Engine {
 		products := salesFloor.Group("/products")
 		{
 			products.GET("/:id", cfg.Handlers.ProductHandler.GetProductByID)
-			products.GET("/get", cfg.Handlers.ProductHandler.GetProductByID)
 			products.GET("/search", cfg.Handlers.ProductHandler.SearchProducts)
 			products.GET("/categories", cfg.Handlers.CategoryHandler.GetAllCategories)
 			products.GET("/brands", cfg.Handlers.CategoryHandler.GetDistinctBrands)
@@ -206,27 +193,19 @@ func NewRouter(cfg Config) *gin.Engine {
 		{
 			transactions.GET("", cfg.Handlers.TransactionHandler.GetAllTransactions)
 			transactions.GET("/:id", cfg.Handlers.TransactionHandler.GetTransactionByID)
-			transactions.GET("/get", cfg.Handlers.TransactionHandler.GetTransactionByID)
 		}
 
 		orders := salesFloor.Group("/orders")
 		{
 			orders.GET("/online", cfg.Handlers.OnlineOrderHandler.GetAllOnlineOrders)
 			orders.GET("/online/:id", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)
-			orders.GET("/online/get", cfg.Handlers.OnlineOrderHandler.GetOnlineOrderByID)
 			orders.POST("/online", cfg.Handlers.OnlineOrderHandler.CreateOnlineOrder)
 			orders.PUT("/online/:id/assign", cfg.Handlers.OnlineOrderHandler.AssignOnlineOrder)
-			orders.PUT("/online/assign", cfg.Handlers.OnlineOrderHandler.AssignOnlineOrder)
-			orders.PUT("/online/:id/items", cfg.Handlers.OnlineOrderHandler.UpdateOnlineOrderItem)
 			orders.PUT("/online/:id/items/:item_id", cfg.Handlers.OnlineOrderHandler.UpdateOnlineOrderItem)
-			orders.PUT("/online/items", cfg.Handlers.OnlineOrderHandler.UpdateOnlineOrderItem)
 			orders.POST("/online/:id/complete_pick", cfg.Handlers.OnlineOrderHandler.CompleteOrderPicking)
-			orders.POST("/online/complete_pick", cfg.Handlers.OnlineOrderHandler.CompleteOrderPicking)
 			orders.POST("/online/:id/cancel", cfg.Handlers.OnlineOrderHandler.CancelOnlineOrder)
-			orders.POST("/online/cancel", cfg.Handlers.OnlineOrderHandler.CancelOnlineOrder)
 			orders.GET("/print", cfg.Handlers.PrintOrderHandler.GetAllPrintOrders)
 			orders.GET("/print/:id", cfg.Handlers.PrintOrderHandler.GetPrintOrderByID)
-			orders.GET("/print/get", cfg.Handlers.PrintOrderHandler.GetPrintOrderByID)
 			orders.PUT("/print/:id/status", middleware.RequirePermission(middleware.PermViewServiceActions), cfg.Handlers.PrintOrderHandler.UpdateStatus)
 		}
 
@@ -234,15 +213,11 @@ func NewRouter(cfg Config) *gin.Engine {
 		{
 			mims.GET("/product", cfg.Handlers.InventoryHandler.ScanProduct)
 			mims.GET("/products/:id", cfg.Handlers.InventoryHandler.GetProductScreenDetails)
-			mims.GET("/product-details", cfg.Handlers.InventoryHandler.GetProductScreenDetails)
 			mims.GET("/locations/:id", cfg.Handlers.InventoryHandler.GetLocationProducts)
-			mims.GET("/location", cfg.Handlers.InventoryHandler.GetLocationProducts)
 			mims.POST("/bin", cfg.Handlers.InventoryHandler.BinItem)
 			mims.POST("/quantity", cfg.Handlers.InventoryHandler.UpdateQuantity)
 			mims.PUT("/locations/sync", cfg.Handlers.InventoryHandler.SyncLocations)
-			mims.POST("/location", cfg.Handlers.InventoryHandler.CreateMimsLocation)
 			mims.POST("/locations", cfg.Handlers.InventoryHandler.CreateMimsLocation)
-			mims.POST("/adjust", cfg.Handlers.InventoryHandler.CreateAdjustment)
 			mims.POST("/adjustments", cfg.Handlers.InventoryHandler.CreateAdjustment)
 			mims.GET("/adjustments", cfg.Handlers.InventoryHandler.GetPendingAdjustments)
 		}
@@ -264,29 +239,20 @@ func NewRouter(cfg Config) *gin.Engine {
 		{
 			receiving.GET("/purchase_orders", cfg.Handlers.ReceivingHandler.GetPurchaseOrders)
 			receiving.GET("/purchase_orders/:id", cfg.Handlers.ReceivingHandler.GetPurchaseOrderDetail)
-			receiving.GET("/purchase_order", cfg.Handlers.ReceivingHandler.GetPurchaseOrderDetail)
 			receiving.GET("/purchase_orders/:id/check_product", cfg.Handlers.ReceivingHandler.CheckProductInPO)
-			receiving.GET("/check_product", cfg.Handlers.ReceivingHandler.CheckProductInPO)
 			receiving.POST("/purchase_orders/:id/receive", cfg.Handlers.ReceivingHandler.ReceivePO)
-			receiving.POST("/receive_po", cfg.Handlers.ReceivingHandler.ReceivePO)
 			receiving.POST("/purchase_orders/:id/receive_lpr", cfg.Handlers.ReceivingHandler.ReceiveLPR)
-			receiving.POST("/receive_lpr", cfg.Handlers.ReceivingHandler.ReceiveLPR)
 			receiving.GET("/transfers", cfg.Handlers.ReceivingHandler.GetStockTransfers)
 			receiving.GET("/transfers/:id", cfg.Handlers.ReceivingHandler.GetStockTransferDetail)
-			receiving.GET("/transfer", cfg.Handlers.ReceivingHandler.GetStockTransferDetail)
 			receiving.GET("/transfers/:id/check_product", cfg.Handlers.ReceivingHandler.CheckProductInTransfer)
-			receiving.GET("/check_transfer_product", cfg.Handlers.ReceivingHandler.CheckProductInTransfer)
 			receiving.POST("/transfers/:id/receive", cfg.Handlers.ReceivingHandler.ReceiveTransfer)
-			receiving.POST("/receive_transfer", cfg.Handlers.ReceivingHandler.ReceiveTransfer)
 			receiving.POST("/transfers/:id/quick_receive", cfg.Handlers.ReceivingHandler.QuickReceiveTransfer)
-			receiving.POST("/quick_receive_transfer", cfg.Handlers.ReceivingHandler.QuickReceiveTransfer)
 		}
 
 		transfers := salesFloor.Group("/transfers")
 		{
 			transfers.GET("", cfg.Handlers.TransferHandler.GetOutboundTransfers)
 			transfers.GET("/:id", cfg.Handlers.TransferHandler.GetOutboundTransferDetail)
-			transfers.GET("/detail", cfg.Handlers.TransferHandler.GetOutboundTransferDetail)
 			transfers.GET("/stores", cfg.Handlers.TransferHandler.GetDestinationStores)
 		}
 
@@ -294,15 +260,10 @@ func NewRouter(cfg Config) *gin.Engine {
 		{
 			cycleCounts.GET("", cfg.Handlers.CycleCountHandler.GetWeeklyCycleCounts)
 			cycleCounts.GET("/:id", cfg.Handlers.CycleCountHandler.GetCycleCountDetail)
-			cycleCounts.GET("/detail", cfg.Handlers.CycleCountHandler.GetCycleCountDetail)
 			cycleCounts.GET("/:id/items", cfg.Handlers.CycleCountHandler.GetCycleCountItems)
-			cycleCounts.GET("/items", cfg.Handlers.CycleCountHandler.GetCycleCountItems)
 			cycleCounts.POST("", cfg.Handlers.CycleCountHandler.StartCycleCount)
-			cycleCounts.POST("/start", cfg.Handlers.CycleCountHandler.StartCycleCount)
 			cycleCounts.POST("/:id/scans", cfg.Handlers.CycleCountHandler.RecordScan)
-			cycleCounts.POST("/scan", cfg.Handlers.CycleCountHandler.RecordScan)
 			cycleCounts.POST("/:id/submit", cfg.Handlers.CycleCountHandler.SubmitForApproval)
-			cycleCounts.POST("/submit", cfg.Handlers.CycleCountHandler.SubmitForApproval)
 			cycleCounts.GET("/search", cfg.Handlers.CycleCountHandler.SearchCycleCounts)
 			cycleCounts.GET("/schedule", cfg.Handlers.CycleCountHandler.GetSchedule)
 		}
@@ -311,11 +272,8 @@ func NewRouter(cfg Config) *gin.Engine {
 		{
 			returns.GET("", cfg.Handlers.ReturnsHandler.GetReturns)
 			returns.GET("/:id", cfg.Handlers.ReturnsHandler.GetReturnDetail)
-			returns.GET("/detail", cfg.Handlers.ReturnsHandler.GetReturnDetail)
 			returns.POST("", cfg.Handlers.ReturnsHandler.CreateReturn)
-			returns.POST("/create", cfg.Handlers.ReturnsHandler.CreateReturn)
 			returns.GET("/lookup/:id", cfg.Handlers.ReturnsHandler.LookupTransaction)
-			returns.GET("/lookup", cfg.Handlers.ReturnsHandler.LookupTransaction)
 			returns.GET("/search_by_product", cfg.Handlers.ReturnsHandler.LookupByProduct)
 			returns.GET("/rtv", cfg.Handlers.ReturnsHandler.GetRtvQueue)
 		}
@@ -326,27 +284,19 @@ func NewRouter(cfg Config) *gin.Engine {
 	{
 		managerActions.POST("/inventory/adjustments/review", cfg.Handlers.InventoryHandler.ReviewAdjustments)
 		managerActions.POST("/transfers", cfg.Handlers.TransferHandler.CreateTransfer)
-		managerActions.POST("/transfers/create", cfg.Handlers.TransferHandler.CreateTransfer)
 		managerActions.POST("/transfers/:id/dispatch", cfg.Handlers.TransferHandler.DispatchTransfer)
-		managerActions.POST("/transfers/dispatch", cfg.Handlers.TransferHandler.DispatchTransfer)
 		managerActions.POST("/transfers/:id/cancel", cfg.Handlers.TransferHandler.CancelTransfer)
-		managerActions.POST("/transfers/cancel", cfg.Handlers.TransferHandler.CancelTransfer)
 		managerActions.POST("/cycle_counts/:id/approve", cfg.Handlers.CycleCountHandler.ApproveCycleCount)
-		managerActions.POST("/cycle_counts/approve", cfg.Handlers.CycleCountHandler.ApproveCycleCount)
 		managerActions.POST("/cycle_counts/:id/transfer_ownership", cfg.Handlers.CycleCountHandler.TransferOwnership)
-		managerActions.POST("/cycle_counts/transfer", cfg.Handlers.CycleCountHandler.TransferOwnership)
 		managerActions.POST("/cycle_counts/schedule", cfg.Handlers.CycleCountHandler.CreateScheduleEntry)
 		managerActions.POST("/returns/:id/approve", cfg.Handlers.ReturnsHandler.ApproveReturn)
-		managerActions.POST("/returns/approve", cfg.Handlers.ReturnsHandler.ApproveReturn)
 		managerActions.POST("/returns/:id/reject", cfg.Handlers.ReturnsHandler.RejectReturn)
-		managerActions.POST("/returns/reject", cfg.Handlers.ReturnsHandler.RejectReturn)
 	}
 
 	adminActions := router.Group("/api/sales_floor")
 	adminActions.Use(middleware.RequireAuth(cfg.JWTSecret, cfg.AuthService), middleware.RequirePermission(middleware.PermViewAdminActions))
 	{
 		adminActions.POST("/transactions", cfg.Handlers.TransactionHandler.CreateTransaction)
-		adminActions.POST("/transactions/create", cfg.Handlers.TransactionHandler.CreateTransaction)
 	}
 
 	return router

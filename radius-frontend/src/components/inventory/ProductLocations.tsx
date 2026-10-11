@@ -155,7 +155,7 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
         }
 
         try {
-            await callApi(ENDPOINTS.SALES_FLOOR.INVENTORY.adjustInventory, {
+            await callApi(ENDPOINTS.SALES_FLOOR.INVENTORY.adjustments, {
                 method: "POST",
                 body: {
                     inventory_id: inventoryId,

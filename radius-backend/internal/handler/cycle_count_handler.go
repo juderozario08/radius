@@ -49,13 +49,6 @@ func (h *CycleCountHandler) GetCycleCountDetail(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	countIDStr := ctx.Param("id")
-	if countIDStr == "" {
-		countIDStr = ctx.Query("id")
-	}
-	if countIDStr == "" {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "missing required query parameter: id"})
-		return
-	}
 
 	countID, err := strconv.Atoi(countIDStr)
 	if err != nil {
@@ -85,13 +78,6 @@ func (h *CycleCountHandler) GetCycleCountItems(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	countIDStr := ctx.Param("id")
-	if countIDStr == "" {
-		countIDStr = ctx.Query("id")
-	}
-	if countIDStr == "" {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "missing required query parameter: id"})
-		return
-	}
 
 	countID, err := strconv.Atoi(countIDStr)
 	if err != nil {
@@ -147,11 +133,12 @@ func (h *CycleCountHandler) RecordScan(ctx *gin.Context) {
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			req.CountId = id
-		}
+	id, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
+	req.CountId = id
 
 	item, err := h.cycleCountService.RecordScan(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
@@ -178,11 +165,12 @@ func (h *CycleCountHandler) SubmitForApproval(ctx *gin.Context) {
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			req.CountId = id
-		}
+	id, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
+	req.CountId = id
 
 	if err := h.cycleCountService.SubmitForApproval(ctx.Request.Context(), storeId, employeeId, role, req); err != nil {
 		log.Printf("[ERROR] CycleCountHandler.SubmitForApproval: %v", err)
@@ -202,19 +190,13 @@ func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
 	employeeId := ctx.GetInt("employee_id")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
-	var req models.ApproveCycleCountRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	id, ok := pathID(ctx, "id")
+	if !ok {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			req.CountId = id
-		}
-	}
-
-	if err := h.cycleCountService.ApproveCount(ctx.Request.Context(), storeId, employeeId, role, req); err != nil {
+	if err := h.cycleCountService.ApproveCount(ctx.Request.Context(), storeId, employeeId, role, models.ApproveCycleCountRequest{CountId: id}); err != nil {
 		log.Printf("[ERROR] CycleCountHandler.ApproveCycleCount: %v", err)
 		if errors.Is(err, service.ErrForbidden) {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
@@ -237,11 +219,12 @@ func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			req.CountId = id
-		}
+	id, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
+	req.CountId = id
 
 	if err := h.cycleCountService.TransferOwnership(ctx.Request.Context(), storeId, role, req); err != nil {
 		log.Printf("[ERROR] CycleCountHandler.TransferOwnership: %v", err)

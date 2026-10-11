@@ -113,20 +113,16 @@ type OnlineOrderItem struct {
 }
 
 type UpdateOnlineOrderItemRequest struct {
-	OrderID     int     `json:"order_id" binding:"required"`
-	OrderItemID int     `json:"order_item_id" binding:"required"`
+	OrderID     int     `json:"-"`
+	OrderItemID int     `json:"-"`
 	PickedQty   *int    `json:"picked_qty"`
 	Status      string  `json:"status"`
 	Reason      *string `json:"reason"`
 }
 
 type CancelOnlineOrderRequest struct {
-	OrderID int    `json:"order_id" binding:"required"`
+	OrderID int    `json:"-"`
 	Reason  string `json:"reason" binding:"required"`
-}
-
-type CompletePickRequest struct {
-	OrderID int `json:"order_id" binding:"required"`
 }
 
 type GetAllOnlineOrdersResponse struct {
@@ -140,7 +136,7 @@ type GetOnlineOrderResponse struct {
 }
 
 type AssignOnlineOrderRequest struct {
-	OrderID    int  `json:"order_id" binding:"required"`
+	OrderID    int  `json:"-"`
 	EmployeeID *int `json:"employee_id"`
 }
 

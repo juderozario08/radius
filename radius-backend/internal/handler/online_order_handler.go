@@ -74,9 +74,6 @@ func (h *OnlineOrderHandler) GetAllOnlineOrders(ctx *gin.Context) {
 
 func (h *OnlineOrderHandler) GetOnlineOrderByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	if idStr == "" {
-		idStr = ctx.Query("id")
-	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.GetOnlineOrderByID (Atoi): %v", err)
@@ -139,11 +136,12 @@ func (h *OnlineOrderHandler) AssignOnlineOrder(ctx *gin.Context) {
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			req.OrderID = id
-		}
+	id, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
+	req.OrderID = id
 
 	order, wasAssigned, err := h.onlineOrderService.AssignOnlineOrder(ctx.Request.Context(), storeId, employeeId, role, req.OrderID, req.EmployeeID)
 	if err != nil {
@@ -184,16 +182,18 @@ func (h *OnlineOrderHandler) UpdateOnlineOrderItem(ctx *gin.Context) {
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			req.OrderID = id
-		}
+	id, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
-	if itemIDStr := ctx.Param("item_id"); itemIDStr != "" {
-		if itemID, err := strconv.Atoi(itemIDStr); err == nil && itemID > 0 {
-			req.OrderItemID = itemID
-		}
+	req.OrderID = id
+	itemID, ok := pathID(ctx, "item_id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
+	req.OrderItemID = itemID
 
 	err := h.onlineOrderService.UpdateOrderItemForStore(ctx.Request.Context(), ctx.GetInt("store_id"), role, req.OrderID, req.OrderItemID, req.PickedQty, req.Status, req.Reason)
 	if err != nil {
@@ -210,20 +210,13 @@ func (h *OnlineOrderHandler) UpdateOnlineOrderItem(ctx *gin.Context) {
 func (h *OnlineOrderHandler) CompleteOrderPicking(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 
-	var req models.CompletePickRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.CompleteOrderPicking (BindJSON): %v", err)
+	id, ok := pathID(ctx, "id")
+	if !ok {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			req.OrderID = id
-		}
-	}
-
-	order, err := h.onlineOrderService.CompleteOrderPickingForStore(ctx.Request.Context(), ctx.GetInt("store_id"), role, req.OrderID)
+	order, err := h.onlineOrderService.CompleteOrderPickingForStore(ctx.Request.Context(), ctx.GetInt("store_id"), role, id)
 	if err != nil {
 		log.Printf("[ERROR] OnlineOrderHandler.CompleteOrderPicking (Service): %v", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
@@ -246,11 +239,12 @@ func (h *OnlineOrderHandler) CancelOnlineOrder(ctx *gin.Context) {
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			req.OrderID = id
-		}
+	id, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
+	req.OrderID = id
 
 	order, err := h.onlineOrderService.CancelOnlineOrderForStore(ctx.Request.Context(), ctx.GetInt("store_id"), role, req.OrderID, req.Reason)
 	if err != nil {

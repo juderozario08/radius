@@ -32,7 +32,6 @@ func setupTestWSServer(jwtSecret []byte) (*httptest.Server, *websocket.Hub) {
 	wsHandler := handler.NewWSHandler(hub, jwtSecret, nil)
 
 	router.GET("/api/v1/ws", wsHandler.HandleWS)
-	router.GET("/ws", wsHandler.HandleWS)
 
 	server := httptest.NewServer(router)
 	return server, hub
@@ -48,24 +47,20 @@ func TestWSHandshake_MissingToken(t *testing.T) {
 	defer server.Close()
 	defer hub.Stop()
 
-	testPaths := []string{"/api/v1/ws", "/ws"}
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws"
 
-	for _, path := range testPaths {
-		wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + path
+	conn, resp, err := gorilla.DefaultDialer.Dial(wsURL, nil)
+	if conn != nil {
+		conn.Close()
+		t.Fatal("expected dial to fail, but connection was established")
+	}
 
-		conn, resp, err := gorilla.DefaultDialer.Dial(wsURL, nil)
-		if conn != nil {
-			conn.Close()
-			t.Fatalf("expected dial to %s to fail, but connection was established", path)
-		}
+	if resp == nil {
+		t.Fatalf("expected HTTP response, got nil (err: %v)", err)
+	}
 
-		if resp == nil {
-			t.Fatalf("expected HTTP response from %s, got nil (err: %v)", path, err)
-		}
-
-		if resp.StatusCode != http.StatusUnauthorized {
-			t.Fatalf("path %s: expected status %d Unauthorized, got %d", path, http.StatusUnauthorized, resp.StatusCode)
-		}
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected status %d Unauthorized, got %d", http.StatusUnauthorized, resp.StatusCode)
 	}
 }
 
@@ -807,7 +802,6 @@ func setupTestWSServerWithRedis(jwtSecret []byte, redisClient *redis.Client) (*h
 	wsHandler := handler.NewWSHandler(hub, jwtSecret, nil, redisClient)
 
 	router.GET("/api/v1/ws", wsHandler.HandleWS)
-	router.GET("/ws", wsHandler.HandleWS)
 	router.POST("/api/v1/ws/ticket", func(ctx *gin.Context) {
 		ctx.Set("employee_id", 10)
 		ctx.Set("email", "test@example.com")

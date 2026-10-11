@@ -88,9 +88,6 @@ func (h *PrintOrderHandler) GetAllPrintOrders(ctx *gin.Context) {
 
 func (h *PrintOrderHandler) GetPrintOrderByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	if idStr == "" {
-		idStr = ctx.Query("id")
-	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		log.Printf("[ERROR] PrintOrderHandler.GetPrintOrderByID (Atoi): %v", err)

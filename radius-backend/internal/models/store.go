@@ -30,17 +30,13 @@ type GetAllStoresResponse struct {
 }
 
 type UpdateStoreRequest struct {
-	StoreId int `json:"store_id" binding:"required"`
+	StoreId int `json:"-"`
 	StoreBase
 }
 
 type StoreResponse struct {
 	Store   Store  `json:"store"`
 	Message string `json:"message"`
-}
-
-type StoreIdRequest struct {
-	StoreId int `json:"store_id" binding:"required"`
 }
 
 type StoreOperationSummary struct {

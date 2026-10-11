@@ -235,7 +235,7 @@ type StartCycleCountRequest struct {
 }
 
 type RecordScanRequest struct {
-	CountId    int     `json:"count_id" binding:"required"`
+	CountId    int     `json:"-"`
 	ProductId  *int    `json:"product_id"`
 	Barcode    *string `json:"barcode"`
 	CountedQty *int    `json:"counted_qty"`
@@ -243,16 +243,16 @@ type RecordScanRequest struct {
 }
 
 type SubmitCycleCountRequest struct {
-	CountId int     `json:"count_id" binding:"required"`
+	CountId int     `json:"-"`
 	Notes   *string `json:"notes"`
 }
 
 type ApproveCycleCountRequest struct {
-	CountId int `json:"count_id" binding:"required"`
+	CountId int `json:"-"`
 }
 
 type TransferCycleCountOwnershipRequest struct {
-	CountId    int `json:"count_id" binding:"required"`
+	CountId    int `json:"-"`
 	EmployeeId int `json:"employee_id" binding:"required"`
 }
 
@@ -308,7 +308,7 @@ type PurchaseOrderDetailResponse struct {
 }
 
 type ReceivePORequest struct {
-	PoId  int                  `json:"po_id" binding:"required"`
+	PoId  int                  `json:"-"`
 	Items []ReceivePOItemEntry `json:"items" binding:"required,min=1"`
 }
 
@@ -318,7 +318,7 @@ type ReceivePOItemEntry struct {
 }
 
 type ReceiveLPRRequest struct {
-	PoId       int    `json:"po_id" binding:"required"`
+	PoId       int    `json:"-"`
 	LprBarcode string `json:"lpr_barcode" binding:"required"`
 }
 
@@ -357,7 +357,7 @@ type StockTransferItemDetail struct {
 }
 
 type ReceiveTransferRequest struct {
-	TransferId int                        `json:"transfer_id" binding:"required"`
+	TransferId int                        `json:"-"`
 	Items      []ReceiveTransferItemEntry `json:"items" binding:"required,min=1"`
 }
 
@@ -367,7 +367,7 @@ type ReceiveTransferItemEntry struct {
 }
 
 type QuickReceiveTransferRequest struct {
-	TransferId int `json:"transfer_id" binding:"required"`
+	TransferId int `json:"-"`
 }
 
 type CheckProductInPOResponse struct {
@@ -394,13 +394,13 @@ type CreateTransferRequest struct {
 }
 
 type DispatchTransferRequest struct {
-	TransferId     int     `json:"transfer_id" binding:"required"`
+	TransferId     int     `json:"-"`
 	Carrier        *string `json:"carrier"`
 	TrackingNumber *string `json:"tracking_number"`
 }
 
 type CancelTransferRequest struct {
-	TransferId int `json:"transfer_id" binding:"required"`
+	TransferId int `json:"-"`
 }
 
 type OutboundTransferSummary struct {

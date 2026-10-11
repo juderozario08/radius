@@ -6,7 +6,6 @@ import (
 	"radius/internal/models"
 	"radius/internal/service"
 	"radius/internal/utils"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,21 +35,10 @@ func (h *SessionHandler) GetAllSessions(ctx *gin.Context) {
 }
 
 func (h *SessionHandler) TerminateSession(ctx *gin.Context) {
-	var sessionID int
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			sessionID = id
-		}
-	}
-
-	if sessionID == 0 {
-		var body models.TerminateSessionRequest
-		if err := ctx.ShouldBindJSON(&body); err != nil {
-			log.Printf("[ERROR] SessionHandler.TerminateSession (BindJSON): %v", err)
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
-			return
-		}
-		sessionID = body.SessionId
+	sessionID, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
 
 	sessionResponse, err := h.sessionService.TerminateSessionById(ctx.Request.Context(), sessionID)

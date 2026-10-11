@@ -75,9 +75,6 @@ func (h *TransactionHandler) GetTransactionByID(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	idStr := ctx.Param("id")
-	if idStr == "" {
-		idStr = ctx.Query("id")
-	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		log.Printf("[ERROR] TransactionHandler.GetTransactionByID (Atoi): %v", err)

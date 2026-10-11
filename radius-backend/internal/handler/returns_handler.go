@@ -87,13 +87,6 @@ func (h *ReturnsHandler) GetReturnDetail(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	returnIDStr := ctx.Param("id")
-	if returnIDStr == "" {
-		returnIDStr = ctx.Query("return_id")
-	}
-	if returnIDStr == "" {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "return_id is required"})
-		return
-	}
 
 	returnID, err := strconv.Atoi(returnIDStr)
 	if err != nil {
@@ -125,13 +118,6 @@ func (h *ReturnsHandler) ApproveReturn(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	returnIDStr := ctx.Param("id")
-	if returnIDStr == "" {
-		returnIDStr = ctx.Query("return_id")
-	}
-	if returnIDStr == "" {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "return_id is required"})
-		return
-	}
 
 	returnID, err := strconv.Atoi(returnIDStr)
 	if err != nil {
@@ -154,13 +140,6 @@ func (h *ReturnsHandler) RejectReturn(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	returnIDStr := ctx.Param("id")
-	if returnIDStr == "" {
-		returnIDStr = ctx.Query("return_id")
-	}
-	if returnIDStr == "" {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "return_id is required"})
-		return
-	}
 
 	returnID, err := strconv.Atoi(returnIDStr)
 	if err != nil {
@@ -187,13 +166,6 @@ func (h *ReturnsHandler) LookupTransaction(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	txIDStr := ctx.Param("id")
-	if txIDStr == "" {
-		txIDStr = ctx.Query("transaction_id")
-	}
-	if txIDStr == "" {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "transaction_id is required"})
-		return
-	}
 
 	txID, err := strconv.ParseInt(txIDStr, 10, 64)
 	if err != nil {

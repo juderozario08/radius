@@ -90,11 +90,12 @@ func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			body.EmployeeId = id
-		}
+	id, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
+	body.EmployeeId = id
 
 	updateEmployeeResponse, err := e.employeeService.UpdateEmployee(ctx.Request.Context(), body)
 	if err != nil {
@@ -107,21 +108,10 @@ func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 }
 
 func (e *EmployeeHandler) TerminateEmployee(ctx *gin.Context) {
-	var employeeID int
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			employeeID = id
-		}
-	}
-
-	if employeeID == 0 {
-		var body models.EmployeeIdRequest
-		if err := ctx.ShouldBindJSON(&body); err != nil {
-			log.Printf("[ERROR] EmployeeHandler.TerminateEmployee (BindJSON): %v", err)
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
-			return
-		}
-		employeeID = body.EmployeeId
+	employeeID, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
 
 	employeeResponse, err := e.employeeService.TerminateEmployee(ctx.Request.Context(), employeeID)
@@ -134,21 +124,10 @@ func (e *EmployeeHandler) TerminateEmployee(ctx *gin.Context) {
 }
 
 func (e *EmployeeHandler) ActivateEmployee(ctx *gin.Context) {
-	var employeeID int
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			employeeID = id
-		}
-	}
-
-	if employeeID == 0 {
-		var body models.EmployeeIdRequest
-		if err := ctx.ShouldBindJSON(&body); err != nil {
-			log.Printf("[ERROR] EmployeeHandler.ActivateEmployee (BindJSON): %v", err)
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
-			return
-		}
-		employeeID = body.EmployeeId
+	employeeID, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
 
 	response, err := e.employeeService.ActivateEmployee(ctx.Request.Context(), employeeID)

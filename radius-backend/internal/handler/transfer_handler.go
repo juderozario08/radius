@@ -53,13 +53,6 @@ func (h *TransferHandler) GetOutboundTransferDetail(ctx *gin.Context) {
 	role := models.EmployeeRole(ctx.GetString("role"))
 
 	transferIDStr := ctx.Param("id")
-	if transferIDStr == "" {
-		transferIDStr = ctx.Query("transfer_id")
-	}
-	if transferIDStr == "" {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "transfer_id is required"})
-		return
-	}
 	transferID, err := strconv.Atoi(transferIDStr)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid transfer_id"})
@@ -118,11 +111,12 @@ func (h *TransferHandler) DispatchTransfer(ctx *gin.Context) {
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			req.TransferId = id
-		}
+	id, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
+	req.TransferId = id
 
 	err := h.transferService.DispatchTransfer(ctx.Request.Context(), storeId, role, req)
 	if err != nil {
@@ -141,19 +135,13 @@ func (h *TransferHandler) CancelTransfer(ctx *gin.Context) {
 	employeeId := ctx.GetInt("employee_id")
 	role := models.EmployeeRole(ctx.GetString("role"))
 
-	var req models.CancelTransferRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	id, ok := pathID(ctx, "id")
+	if !ok {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			req.TransferId = id
-		}
-	}
-
-	err := h.transferService.CancelTransfer(ctx.Request.Context(), storeId, employeeId, role, req)
+	err := h.transferService.CancelTransfer(ctx.Request.Context(), storeId, employeeId, role, models.CancelTransferRequest{TransferId: id})
 	if err != nil {
 		log.Printf("[ERROR] TransferHandler.CancelTransfer: %v", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})

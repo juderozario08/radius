@@ -47,13 +47,6 @@ func (h *InventoryHandler) GetLocationProducts(ctx *gin.Context) {
 	employeeId := ctx.GetInt("employee_id")
 
 	locationID := ctx.Param("id")
-	if locationID == "" {
-		locationID = ctx.Query("location_id")
-	}
-	if locationID == "" {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Location ID is required"})
-		return
-	}
 
 	result, err := h.inventoryService.GetLocationProducts(ctx.Request.Context(), storeId, employeeId, locationID)
 	if err != nil {
@@ -112,13 +105,6 @@ func (h *InventoryHandler) GetProductScreenDetails(ctx *gin.Context) {
 	storeId := ctx.GetInt("store_id")
 
 	productIDStr := ctx.Param("id")
-	if productIDStr == "" {
-		productIDStr = ctx.Query("product_id")
-	}
-	if productIDStr == "" {
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "product_id is required"})
-		return
-	}
 
 	productID, err := strconv.Atoi(productIDStr)
 	if err != nil {

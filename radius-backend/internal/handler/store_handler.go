@@ -46,11 +46,12 @@ func (h *StoreHandler) UpdateStore(ctx *gin.Context) {
 		return
 	}
 
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			body.StoreId = id
-		}
+	id, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
+	body.StoreId = id
 
 	res, err := h.storeService.UpdateStore(ctx.Request.Context(), body)
 	if err != nil {
@@ -81,14 +82,6 @@ func (h *StoreHandler) CreateStore(ctx *gin.Context) {
 
 func (h *StoreHandler) GetStore(ctx *gin.Context) {
 	storeId := ctx.Param("id")
-	if storeId == "" {
-		storeId = ctx.Query("store_id")
-	}
-	if storeId == "" {
-		log.Printf("[ERROR] StoreHandler.GetStore: store_id parameter not found")
-		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid Request"})
-		return
-	}
 	res, err := h.storeService.GetStore(ctx.Request.Context(), storeId)
 	if err != nil {
 		log.Printf("[ERROR] StoreHandler.GetStore (Service): %v", err)
@@ -99,20 +92,10 @@ func (h *StoreHandler) GetStore(ctx *gin.Context) {
 }
 
 func (h *StoreHandler) ActivateStore(ctx *gin.Context) {
-	var storeID int
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			storeID = id
-		}
-	}
-	if storeID == 0 {
-		var body models.StoreIdRequest
-		if err := ctx.ShouldBindJSON(&body); err != nil {
-			log.Printf("[ERROR] StoreHandler.ActivateStore (BindJSON): %v", err)
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
-			return
-		}
-		storeID = body.StoreId
+	storeID, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
 
 	res, err := h.storeService.ActivateStore(ctx.Request.Context(), storeID)
@@ -125,20 +108,10 @@ func (h *StoreHandler) ActivateStore(ctx *gin.Context) {
 }
 
 func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
-	var storeID int
-	if idStr := ctx.Param("id"); idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil && id > 0 {
-			storeID = id
-		}
-	}
-	if storeID == 0 {
-		var body models.StoreIdRequest
-		if err := ctx.ShouldBindJSON(&body); err != nil {
-			log.Printf("[ERROR] StoreHandler.DeactivateStore (BindJSON): %v", err)
-			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
-			return
-		}
-		storeID = body.StoreId
+	storeID, ok := pathID(ctx, "id")
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
+		return
 	}
 
 	res, err := h.storeService.DeactivateStore(ctx.Request.Context(), storeID)

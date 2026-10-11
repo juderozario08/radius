@@ -62,10 +62,6 @@ type GetAllEmployeesResponse struct {
 	Message     string     `json:"message"`
 }
 
-type EmployeeIdRequest struct {
-	EmployeeId int `json:"employee_id" binding:"required"`
-}
-
 type EmployeeContext struct {
 	EmployeeId   int          `json:"employee_id"`
 	Role         EmployeeRole `json:"role"`

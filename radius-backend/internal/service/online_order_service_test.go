@@ -94,15 +94,15 @@ func TestOnlineOrderService_CreateOnlineOrder_BroadcastsEvent(t *testing.T) {
 		OrderType:     models.OnlineOrderTypeBOPIS,
 		Status:        models.OnlineOrderStatusReadyForPickup,
 		Items: []models.OnlineOrderItem{
-			{ProductId: 10, Quantity: 2, UnitPrice: 25.00},
+			{ProductId: 10, Quantity: 2, UnitPrice: 2500},
 		},
 	}
 
 	expectedSavedOrder := *inputOrder
 	expectedSavedOrder.OrderId = orderID
 	expectedSavedOrder.PlacedAt = placedAt
-	expectedSavedOrder.Subtotal = 50.00
-	expectedSavedOrder.TotalAmount = 50.00
+	expectedSavedOrder.Subtotal = 5000
+	expectedSavedOrder.TotalAmount = 5000
 	expectedSavedOrder.Items[0].OrderItemId = 501
 	expectedSavedOrder.Items[0].OrderId = orderID
 
@@ -127,7 +127,7 @@ func TestOnlineOrderService_CreateOnlineOrder_BroadcastsEvent(t *testing.T) {
 				payload.StoreId == storeID &&
 				payload.CustomerName == "Jane Smith" &&
 				payload.CustomerEmail == "jane@example.com" &&
-				payload.TotalAmount == 50.00 &&
+				payload.TotalAmount == 5000 &&
 				payload.ItemsCount == 2 &&
 				payload.Status == models.OnlineOrderStatusReadyForPickup
 		})).
@@ -177,7 +177,7 @@ func TestOnlineOrderService_CreateOnlineOrder_NilBroadcasterSafe(t *testing.T) {
 		CustomerEmail: "bob@example.com",
 		OrderType:     models.OnlineOrderTypeBOPIS,
 		Status:        models.OnlineOrderStatusReadyForPickup,
-		TotalAmount:   89.50,
+		TotalAmount:   8950,
 	}
 
 	mockOrdersRepo.EXPECT().
@@ -189,7 +189,7 @@ func TestOnlineOrderService_CreateOnlineOrder_NilBroadcasterSafe(t *testing.T) {
 			CustomerEmail: "bob@example.com",
 			OrderType:     models.OnlineOrderTypeBOPIS,
 			Status:        models.OnlineOrderStatusReadyForPickup,
-			TotalAmount:   89.50,
+			TotalAmount:   8950,
 		}, nil)
 
 	created, err := svc.CreateOnlineOrder(context.Background(), storeID, models.RoleSales, inputOrder)

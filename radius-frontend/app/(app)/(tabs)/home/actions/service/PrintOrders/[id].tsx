@@ -19,6 +19,7 @@ import { GetPrintOrderResponse, PrintOrder, PrintOrderItem, PrintOrderStatus } f
 import { useLocalSearchParams } from "expo-router";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { formatMoney, multiplyMoney } from "@/utils/money";
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -185,13 +186,13 @@ export default function PrintOrderDetail() {
 
                 <View style={styles.card}>
                     <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Financials</Text>
-                    <DetailRow label="Subtotal:" value={`$${(order.subtotal || 0).toFixed(2)}`} />
-                    <DetailRow label="Tax:" value={`$${(order.tax_amount || 0).toFixed(2)}`} />
+                    <DetailRow label="Subtotal:" value={formatMoney(order.subtotal)} />
+                    <DetailRow label="Tax:" value={formatMoney(order.tax_amount)} />
                     {order.shipping_fee > 0 && (
-                        <DetailRow label="Shipping Fee:" value={`$${(order.shipping_fee || 0).toFixed(2)}`} />
+                        <DetailRow label="Shipping Fee:" value={formatMoney(order.shipping_fee)} />
                     )}
                     <View style={globalStyles.divider} />
-                    <DetailRow label="Total:" value={`$${(order.total_amount || 0).toFixed(2)}`} />
+                    <DetailRow label="Total:" value={formatMoney(order.total_amount)} />
                 </View>
 
                 <View style={styles.card}>
@@ -201,11 +202,11 @@ export default function PrintOrderDetail() {
                             <View style={styles.itemInfo}>
                                 <Text style={styles.itemText}>{item.description}</Text>
                                 <Text style={styles.itemSubText}>
-                                    Qty: {item.quantity}  •  Unit Price: ${(item.unit_price || 0).toFixed(2)}
+                                    Qty: {item.quantity}  •  Unit Price: {formatMoney(item.unit_price)}
                                 </Text>
                             </View>
                             <Text style={styles.itemTotal}>
-                                ${(item.quantity * (item.unit_price || 0)).toFixed(2)}
+                                {formatMoney(multiplyMoney(item.unit_price, item.quantity))}
                             </Text>
                         </View>
                     ))}

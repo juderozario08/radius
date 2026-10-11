@@ -1,3 +1,5 @@
+import type { Money } from "@/utils/money";
+
 export type PurchaseOrderStatus = 'DRAFT' | 'SHIPPED' | 'DELIVERING' | 'DELIVERED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED';
 export type TransferStatus = "PENDING" | "IN_TRANSIT" | "RECEIVED" | "CANCELLED";
 
@@ -23,7 +25,7 @@ export interface PurchaseOrderItemDetail {
     brand: string;
     qty_ordered: number;
     qty_received: number;
-    unit_cost: number;
+    unit_cost: Money;
 }
 
 export interface PurchaseOrderLPR {
@@ -109,7 +111,7 @@ export interface OutboundTransferSummary {
     status: TransferStatus;
     manual_check_required: boolean;
     item_count: number;
-    total_transfer_cost: number;
+    total_transfer_cost: Money;
     transfer_reason: string | null;
     carrier: string | null;
     tracking_number: string | null;
@@ -130,7 +132,7 @@ export interface OutboundTransferDetailResponse {
     carrier: string | null;
     tracking_number: string | null;
     manual_check_required: boolean;
-    total_transfer_cost: number;
+    total_transfer_cost: Money;
     created_at: string;
     shipped_at: string | null;
     received_at: string | null;

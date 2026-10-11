@@ -92,7 +92,7 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, storeId int,
 		metadata := map[string]any{
 			"transaction_id": tx.TransactionId,
 			"register_id":    tx.RegisterId,
-			"total_amount":   float64(tx.TotalAmount),
+			"total_amount":   tx.TotalAmount,
 			"items_count":    len(items),
 		}
 		if empID != nil {
@@ -104,7 +104,7 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, storeId int,
 			StoreId:      targetStoreID,
 			ActivityType: "TRANSACTION_COMPLETED",
 			Title:        fmt.Sprintf("POS Sale #%d", tx.TransactionId),
-			Description:  fmt.Sprintf("Completed sale of %d item(s) for $%.2f at register %s", len(items), tx.TotalAmount, tx.RegisterId),
+			Description:  fmt.Sprintf("Completed sale of %d item(s) for $%s at register %s", len(items), tx.TotalAmount, tx.RegisterId),
 			Timestamp:    now,
 			Metadata:     metadata,
 		}

@@ -39,15 +39,15 @@ type Product struct {
 	IsActive            bool         `json:"is_active"`
 	IsReturnable        bool         `json:"is_returnable"`
 	WarrantyDays        int          `json:"warranty_days"`
-	RetailPrice         float64      `json:"retail_price"`
+	RetailPrice         Money        `json:"retail_price"`
 	ConstrainedEndAfter *time.Time   `json:"constrained_end_after"`
 	CreatedAt           time.Time    `json:"created_at"`
 }
 
 type ProductSupplier struct {
-	ProductId   int     `json:"product_id"`
-	SupplierId  int     `json:"supplier_id"`
-	SupplierSku string  `json:"supplier_sku"`
-	CostPrice   float64 `json:"cost_price"`
-	IsPrimary   bool    `json:"is_primary"`
+	ProductId   int    `json:"product_id"`
+	SupplierId  int    `json:"supplier_id"`
+	SupplierSku string `json:"supplier_sku"`
+	CostPrice   Money  `json:"cost_price"`
+	IsPrimary   bool   `json:"is_primary"`
 }

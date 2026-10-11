@@ -1,3 +1,5 @@
+import type { Money } from "@/utils/money";
+
 export type ReturnStatus = "PENDING_APPROVAL" | "APPROVED" | "COMPLETED" | "REJECTED";
 
 export type ReturnDisposition = "RESTOCK" | "OPEN_BOX" | "DEFECTIVE_RTV" | "DAMAGED_WRITE_OFF" | "QUARANTINE";
@@ -24,7 +26,7 @@ export interface CustomerReturnSummary {
     employee_name: string;
     status: ReturnStatus;
     refund_method: RefundMethod;
-    total_refund: number;
+    total_refund: Money;
     item_count: number;
     is_store_credit: boolean;
     created_at: string;
@@ -41,9 +43,9 @@ export interface CustomerReturnItemDetail {
     brand: string;
     original_transaction_item_id?: number;
     quantity: number;
-    unit_price: number;
-    unit_cost: number;
-    tax_amount: number;
+    unit_price: Money;
+    unit_cost: Money;
+    tax_amount: Money;
     return_reason: string;
     disposition: ReturnDisposition;
     created_at: string;
@@ -63,8 +65,8 @@ export interface OriginalTransactionItemForReturn {
     purchased_qty: number;
     returned_qty: number;
     returnable_qty: number;
-    unit_price: number;
-    unit_cost: number;
+    unit_price: Money;
+    unit_cost: Money;
     is_returnable: boolean;
     return_window_days: number;
     is_outside_policy_window: boolean;
@@ -76,7 +78,7 @@ export interface LookupTransactionResponse {
     register_id: string;
     created_at: string;
     payment_method: string;
-    total_amount: number;
+    total_amount: Money;
     days_since_sale: number;
     items: OriginalTransactionItemForReturn[];
 }
@@ -85,17 +87,17 @@ export interface RecentTransactionSummary {
     transaction_id: number;
     store_id: number;
     register_id: string;
-    total_amount: number;
+    total_amount: Money;
     created_at: string;
     quantity_sold: number;
-    unit_price: number;
+    unit_price: Money;
 }
 
 export interface CreateReturnItemRequest {
     product_id: number;
     original_transaction_item_id?: number;
     quantity: number;
-    unit_price: number;
+    unit_price: Money;
     return_reason: string;
     disposition: ReturnDisposition;
 }

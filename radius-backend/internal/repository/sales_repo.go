@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"math"
 	"radius/internal/models"
 	"radius/internal/utils"
 )
@@ -39,12 +38,12 @@ func (r *SalesRepo) CreateTransaction(ctx context.Context, storeID int, employee
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to determine store tax rate: %w", err)
 	}
-	var subtotalCents, costTotalCents int64
+	var subtotal, costTotal models.Money
 	for i := range computedItems {
 		if computedItems[i].Quantity <= 0 {
 			return nil, nil, fmt.Errorf("invalid quantity for product %d", computedItems[i].ProductId)
 		}
-		var price, cost float32
+		var price, cost models.Money
 		if err := tx.QueryRowContext(ctx, `
 			SELECT p.retail_price,
 			       COALESCE((SELECT ps.cost_price FROM product_suppliers ps
@@ -55,23 +54,23 @@ func (r *SalesRepo) CreateTransaction(ctx context.Context, storeID int, employee
 		`, computedItems[i].ProductId).Scan(&price, &cost); err != nil {
 			return nil, nil, fmt.Errorf("failed to load product pricing: %w", err)
 		}
-		priceCents := int64(math.Round(float64(price) * 100))
-		if priceCents <= 0 {
+		if price <= 0 {
 			return nil, nil, fmt.Errorf("product %d has no valid selling price", computedItems[i].ProductId)
 		}
-		costCents := int64(math.Round(float64(cost) * 100))
-		computedItems[i].UnitPrice = float32(priceCents) / 100
-		computedItems[i].UnitCost = float32(costCents) / 100
-		subtotalCents += priceCents * int64(computedItems[i].Quantity)
-		costTotalCents += costCents * int64(computedItems[i].Quantity)
+		computedItems[i].UnitPrice = price
+		computedItems[i].UnitCost = cost
+		subtotal += price.Times(computedItems[i].Quantity)
+		costTotal += cost.Times(computedItems[i].Quantity)
+	}
+	if subtotal <= 0 {
+		return nil, nil, fmt.Errorf("transaction total must be greater than zero")
 	}
 	req.Items = computedItems
-	req.Subtotal = float32(subtotalCents) / 100
-	taxCents := (subtotalCents*taxRate + 50000) / 100000
-	req.TaxAmount = float32(taxCents) / 100
-	req.CostTotal = float32(costTotalCents) / 100
+	req.Subtotal = subtotal
+	req.TaxAmount = subtotal.TaxAtRatePer100000(taxRate)
+	req.CostTotal = costTotal
 	req.DiscountTotal = 0
-	req.TotalAmount = float32(subtotalCents+taxCents) / 100
+	req.TotalAmount = subtotal + req.TaxAmount
 
 	var createdTx models.Transaction
 	createdTx.StoreId = storeID
@@ -189,15 +188,13 @@ func (r *SalesRepo) CreateTransaction(ctx context.Context, storeID int, employee
 				return nil, nil, fmt.Errorf("failed to update inventory for product %d: %w", itemReq.ProductId, err)
 			}
 
-			unitPriceFloat := float64(itemReq.UnitPrice)
-			unitCostFloat := float64(itemReq.UnitCost)
 			_, err = insertAuditStmt.ExecContext(
 				ctx,
 				itemReq.ProductId,
 				storeID,
 				itemReq.Quantity,
-				unitPriceFloat,
-				unitCostFloat,
+				itemReq.UnitPrice,
+				itemReq.UnitCost,
 				employeeID,
 				refID,
 			)

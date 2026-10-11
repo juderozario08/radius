@@ -19,6 +19,7 @@ import { callApi } from "@/utils/helpers";
 import { GetTransactionByIDResponse, Transaction, TransactionItem } from "@/types/sales.types";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { formatMoney, multiplyMoney, sumMoney } from "@/utils/money";
 
 export default function TransactionDetail() {
     const { id } = useLocalSearchParams();
@@ -106,14 +107,14 @@ export default function TransactionDetail() {
 
                 <View style={styles.card}>
                     <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Financials</Text>
-                    <DetailRow label="Subtotal:" value={`$${transaction.subtotal.toFixed(2)}`} />
-                    <DetailRow label="Tax:" value={`$${transaction.tax_amount.toFixed(2)}`} />
-                    <DetailRow label="Discount:" value={`$${transaction.discount_total.toFixed(2)}`} />
+                    <DetailRow label="Subtotal:" value={formatMoney(transaction.subtotal)} />
+                    <DetailRow label="Tax:" value={formatMoney(transaction.tax_amount)} />
+                    <DetailRow label="Discount:" value={formatMoney(transaction.discount_total)} />
                     <View style={globalStyles.divider} />
-                    <DetailRow label="Total:" value={`$${transaction.total_amount.toFixed(2)}`} />
+                    <DetailRow label="Total:" value={formatMoney(transaction.total_amount)} />
                     <View style={globalStyles.divider} />
-                    <DetailRow label="Cost Total:" value={`$${transaction.cost_total.toFixed(2)}`} />
-                    <DetailRow label="Est. Margin:" value={`$${(transaction.subtotal - transaction.cost_total).toFixed(2)}`} />
+                    <DetailRow label="Cost Total:" value={formatMoney(transaction.cost_total)} />
+                    <DetailRow label="Est. Margin:" value={formatMoney(sumMoney([transaction.subtotal, -transaction.cost_total]))} />
                 </View>
 
                 <View style={styles.card}>
@@ -127,11 +128,11 @@ export default function TransactionDetail() {
                             <View style={styles.itemInfo}>
                                 <Text style={styles.itemText}>{item.product_name || 'Unknown Product'}</Text>
                                 <Text style={styles.itemSubText}>SKU: {item.product_sku || 'N/A'}</Text>
-                                <Text style={styles.itemSubText}>Qty: {item.quantity} x ${item.unit_price.toFixed(2)}</Text>
+                                <Text style={styles.itemSubText}>Qty: {item.quantity} x {formatMoney(item.unit_price)}</Text>
                                 {item.scanned_barcode && <Text style={styles.itemSubText}>Barcode: {item.scanned_barcode}</Text>}
                             </View>
                             <Text style={styles.itemTotal}>
-                                ${((item.quantity * item.unit_price) - item.discount_amount).toFixed(2)}
+                                {formatMoney(sumMoney([multiplyMoney(item.unit_price, item.quantity), -item.discount_amount]))}
                             </Text>
                         </TouchableOpacity>
                     ))}

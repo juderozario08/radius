@@ -6,8 +6,8 @@ type PriceHistory struct {
 	PriceId       int        `json:"price_id"`
 	ProductId     int        `json:"product_id"`
 	StoreId       int        `json:"store_id"`
-	RegularPrice  float32    `json:"regular_price"`
-	SalePrice     *float32   `json:"sale_price"`
+	RegularPrice  Money      `json:"regular_price"`
+	SalePrice     *Money     `json:"sale_price"`
 	SaleStart     *time.Time `json:"sale_start"`
 	SaleEnd       *time.Time `json:"sale_end"`
 	EffectiveFrom *time.Time `json:"effective_from"`
@@ -41,11 +41,11 @@ type Transaction struct {
 	RegisterId        string                    `json:"register_id"`
 	EmployeeId        *int                      `json:"employee_id"`
 	TransactionType   TransactionType           `json:"transaction_type"`
-	Subtotal          float32                   `json:"subtotal"`
-	TaxAmount         float32                   `json:"tax_amount"`
-	DiscountTotal     float32                   `json:"discount_total"`
-	CostTotal         float32                   `json:"cost_total"`
-	TotalAmount       float32                   `json:"total_amount"`
+	Subtotal          Money                     `json:"subtotal"`
+	TaxAmount         Money                     `json:"tax_amount"`
+	DiscountTotal     Money                     `json:"discount_total"`
+	CostTotal         Money                     `json:"cost_total"`
+	TotalAmount       Money                     `json:"total_amount"`
 	PaymentMethod     *TransactionPaymentMethod `json:"payment_method"`
 	CardType          *string                   `json:"card_type"`
 	CardNumber        *string                   `json:"card_number"`
@@ -62,9 +62,9 @@ type TransactionItem struct {
 	ProductSku        *string `json:"product_sku"`
 	ProductName       *string `json:"product_name"`
 	Quantity          int     `json:"quantity"`
-	UnitPrice         float32 `json:"unit_price"`
-	UnitCost          float32 `json:"unit_cost"`
-	DiscountAmount    float32 `json:"discount_amount"`
+	UnitPrice         Money   `json:"unit_price"`
+	UnitCost          Money   `json:"unit_cost"`
+	DiscountAmount    Money   `json:"discount_amount"`
 	ReturnReason      *string `json:"return_reason"`
 	ScannedBarcode    *string `json:"scanned_barcode"`
 }
@@ -82,9 +82,9 @@ type GetTransactionResponse struct {
 type CreateTransactionItemRequest struct {
 	ProductId      int     `json:"product_id" binding:"required"`
 	Quantity       int     `json:"quantity" binding:"required,min=1"`
-	UnitPrice      float32 `json:"-"`
-	UnitCost       float32 `json:"-"`
-	DiscountAmount float32 `json:"-"`
+	UnitPrice      Money   `json:"-"`
+	UnitCost       Money   `json:"-"`
+	DiscountAmount Money   `json:"-"`
 	ScannedBarcode *string `json:"scanned_barcode"`
 }
 
@@ -92,11 +92,11 @@ type CreateTransactionRequest struct {
 	StoreId           *int                           `json:"store_id"`
 	RegisterId        string                         `json:"register_id" binding:"required"`
 	TransactionType   TransactionType                `json:"transaction_type"`
-	Subtotal          float32                        `json:"-"`
-	TaxAmount         float32                        `json:"-"`
-	DiscountTotal     float32                        `json:"-"`
-	CostTotal         float32                        `json:"-"`
-	TotalAmount       float32                        `json:"-"`
+	Subtotal          Money                          `json:"-"`
+	TaxAmount         Money                          `json:"-"`
+	DiscountTotal     Money                          `json:"-"`
+	CostTotal         Money                          `json:"-"`
+	TotalAmount       Money                          `json:"-"`
 	PaymentMethod     *TransactionPaymentMethod      `json:"payment_method"`
 	CardType          *string                        `json:"card_type"`
 	CardNumber        *string                        `json:"card_number"`

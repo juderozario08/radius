@@ -13,13 +13,14 @@ import { COLORS } from "@/constants/colors";
 import { globalStyles } from "@/constants/styles";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { OnlineOrder } from "@/types/order.types";
+import { type Money, formatMoney } from "@/utils/money";
 
 export interface OrderCardData {
     order_id: number;
     customer_name: string;
     order_type: string;
     status: string;
-    total_amount: number;
+    total_amount: Money;
     placed_at?: string;
     created_at?: string;
     items_count?: number;
@@ -184,7 +185,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                     </View>
 
                     <Text style={styles.totalAmount}>
-                        ${Number(order.total_amount || 0).toFixed(2)}
+                        {formatMoney(order.total_amount)}
                     </Text>
                 </View>
             </TouchableOpacity>

@@ -209,13 +209,16 @@ func TestReturnsRepositoryIntegration(t *testing.T) {
 	repo := NewReturnsRepo(db)
 	created, items, err := repo.CreateReturn(ctx, f.fromStore, f.employee, models.ReturnStatusCompleted, models.CreateReturnRequest{
 		RefundMethod: models.RefundMethodCash,
-		Items:        []models.CreateReturnItemRequest{{ProductId: f.product, Quantity: 1, UnitPrice: 20, ReturnReason: "Customer return", Disposition: models.ReturnDispositionRestock}},
+		Items:        []models.CreateReturnItemRequest{{ProductId: f.product, Quantity: 1, UnitPrice: 2000, ReturnReason: "Customer return", Disposition: models.ReturnDispositionRestock}},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if created == nil || len(items) != 1 {
 		t.Fatalf("created return = %v, items = %d", created, len(items))
+	}
+	if created.Subtotal != 2000 || created.TaxAmount != 100 || created.TotalRefund != 2100 || items[0].TaxAmount != 100 {
+		t.Fatalf("return money = subtotal %s tax %s refund %s item tax %s", created.Subtotal, created.TaxAmount, created.TotalRefund, items[0].TaxAmount)
 	}
 	var newQty, onHand, ledger int
 	if err := db.QueryRowContext(ctx, `SELECT new_qty,on_hand_qty FROM inventory WHERE store_id=$1 AND product_id=$2`, f.fromStore, f.product).Scan(&newQty, &onHand); err != nil {

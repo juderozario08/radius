@@ -288,7 +288,7 @@ func (r *OrdersRepo) CreateOnlineOrder(ctx context.Context, order *models.Online
 			if item.PickedQty != nil {
 				pickedQty = *item.PickedQty
 			}
-			totalPrice := float32(item.Quantity) * item.UnitPrice
+			totalPrice := item.UnitPrice.Times(item.Quantity)
 
 			var productID any
 			if item.ProductId > 0 {

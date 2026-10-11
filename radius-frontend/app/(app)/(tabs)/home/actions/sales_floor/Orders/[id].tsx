@@ -26,6 +26,7 @@ import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { formatMoney } from "@/utils/money";
 
 type TabType = "SCANNER" | "PRODUCTS";
 
@@ -622,7 +623,7 @@ export default function OnlineOrderDetail() {
                                             <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
                                         </View>
                                         <Text style={styles.scannedCardSub}>
-                                            Price: ${(scannedItem.item.unit_price || 0).toFixed(2)} | Ordered: {scannedItem.item.quantity}
+                                            Price: {formatMoney(scannedItem.item.unit_price)} | Ordered: {scannedItem.item.quantity}
                                         </Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
@@ -754,7 +755,7 @@ export default function OnlineOrderDetail() {
                                                     )}
                                                 </View>
                                                 <Text style={styles.productPrice}>
-                                                    ${(item.unit_price || 0).toFixed(2)} each
+                                                    {formatMoney(item.unit_price)} each
                                                 </Text>
                                             </TouchableOpacity>
 
@@ -1003,12 +1004,12 @@ export default function OnlineOrderDetail() {
                                 ) : null}
 
                                 <Text style={styles.detailSectionTitle}>Financials</Text>
-                                <DetailRow label="Subtotal:" value={`$${(order.subtotal || 0).toFixed(2)}`} />
-                                <DetailRow label="Tax:" value={`$${(order.tax_amount || 0).toFixed(2)}`} />
-                                <DetailRow label="Shipping Fee:" value={`$${(order.shipping_fee || 0).toFixed(2)}`} />
-                                <DetailRow label="Discount:" value={`$${(order.discount_total || 0).toFixed(2)}`} />
+                                <DetailRow label="Subtotal:" value={formatMoney(order.subtotal)} />
+                                <DetailRow label="Tax:" value={formatMoney(order.tax_amount)} />
+                                <DetailRow label="Shipping Fee:" value={formatMoney(order.shipping_fee)} />
+                                <DetailRow label="Discount:" value={formatMoney(order.discount_total)} />
                                 <View style={globalStyles.divider} />
-                                <DetailRow label="Total Amount:" value={`$${(order.total_amount || 0).toFixed(2)}`} />
+                                <DetailRow label="Total Amount:" value={formatMoney(order.total_amount)} />
                             </ScrollView>
 
                             <TouchableOpacity

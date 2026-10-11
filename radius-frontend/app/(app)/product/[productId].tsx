@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { COLORS } from "@/constants/colors";
 import { globalStyles } from "@/constants/styles";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { formatMoney } from "@/utils/money";
 
 type TabName = "Details" | "Protection" | "Locations";
 
@@ -112,7 +113,7 @@ export default function ProductScreen() {
                             <Text style={styles.headerSubtitle}>UPC:<Text style={{ fontWeight: "700" }}>{details.product.upc}</Text></Text>
                             <Text style={styles.headerTitle}>{details.product.name}</Text>
                             <View style={styles.priceRow}>
-                                <Text style={styles.price}>${details.product.retail_price.toFixed(2)}</Text>
+                                <Text style={styles.price}>{formatMoney(details.product.retail_price)}</Text>
                                 {details.product.constrained_end_after && (
                                     <Text style={styles.constrainedText}>Constrained SKU End After: {new Date(details.product.constrained_end_after).toLocaleDateString()}</Text>
                                 )}

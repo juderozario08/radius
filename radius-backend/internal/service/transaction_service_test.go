@@ -30,17 +30,17 @@ func TestTransactionService_CreateTransaction_AutoReportsToFillReport(t *testing
 
 	req := models.CreateTransactionRequest{
 		RegisterId:  "REG-01",
-		TotalAmount: 25.50,
+		TotalAmount: 2550,
 		Items: []models.CreateTransactionItemRequest{
 			{
 				ProductId: 101,
 				Quantity:  2,
-				UnitPrice: 10.00,
+				UnitPrice: 1000,
 			},
 			{
 				ProductId: 102,
 				Quantity:  1,
-				UnitPrice: 5.50,
+				UnitPrice: 550,
 			},
 		},
 	}
@@ -50,13 +50,13 @@ func TestTransactionService_CreateTransaction_AutoReportsToFillReport(t *testing
 			TransactionId: 99,
 			ProductId:     101,
 			Quantity:      2,
-			UnitPrice:     10.00,
+			UnitPrice:     1000,
 		},
 		{
 			TransactionId: 99,
 			ProductId:     102,
 			Quantity:      1,
-			UnitPrice:     5.50,
+			UnitPrice:     550,
 		},
 	}
 
@@ -66,7 +66,7 @@ func TestTransactionService_CreateTransaction_AutoReportsToFillReport(t *testing
 			TransactionId: 99,
 			StoreId:       storeId,
 			RegisterId:    "REG-01",
-			TotalAmount:   25.50,
+			TotalAmount:   2550,
 		}, expectedItems, nil)
 
 	mockFillReportRepo.EXPECT().
@@ -203,12 +203,12 @@ func TestTransactionService_CreateTransaction_InvalidatesInventoryCache(t *testi
 
 	req := models.CreateTransactionRequest{
 		RegisterId:  "REG-01",
-		TotalAmount: 20.00,
+		TotalAmount: 2000,
 		Items: []models.CreateTransactionItemRequest{
 			{
 				ProductId: 101,
 				Quantity:  1,
-				UnitPrice: 20.00,
+				UnitPrice: 2000,
 			},
 		},
 	}
@@ -218,7 +218,7 @@ func TestTransactionService_CreateTransaction_InvalidatesInventoryCache(t *testi
 			TransactionId:  99,
 			ProductId:      101,
 			Quantity:       1,
-			UnitPrice:      20.00,
+			UnitPrice:      2000,
 			ScannedBarcode: &barcode,
 		},
 	}
@@ -229,7 +229,7 @@ func TestTransactionService_CreateTransaction_InvalidatesInventoryCache(t *testi
 			TransactionId: 99,
 			StoreId:       storeId,
 			RegisterId:    "REG-01",
-			TotalAmount:   20.00,
+			TotalAmount:   2000,
 		}, expectedItems, nil)
 
 	mockFillReportRepo.EXPECT().

@@ -1,3 +1,5 @@
+import type { Money } from "@/utils/money";
+
 export type OrderType = "BOPIS" | "STS" | "DELIVERY" | "PICKUP" | "SHIPPING";
 export type OrderStatus =
     | "PENDING"
@@ -28,7 +30,7 @@ export interface OnlineOrder {
     customer_phone?: string | null;
     order_type: OrderType;
     status: OrderStatus;
-    total_amount: number;
+    total_amount: Money;
     placed_at: string;
     fulfilled_at: string | null;
 
@@ -37,12 +39,12 @@ export interface OnlineOrder {
     tracking_number: string;
     estimated_delivery_date: string;
     actual_delivery_date: string;
-    subtotal: number;
-    tax_amount: number;
-    shipping_fee: number;
-    discount_total: number;
+    subtotal: Money;
+    tax_amount: Money;
+    shipping_fee: Money;
+    discount_total: Money;
     promo_code: string;
-    cost_total: number;
+    cost_total: Money;
     assigned_to?: number | null;
     assigned_to_name?: string | null;
     cancellation_reason?: string | null;
@@ -57,9 +59,9 @@ export interface OnlineOrderItem {
     product_id: number;
     product_sku?: string | null;
     quantity: number;
-    unit_price: number;
+    unit_price: Money;
     picked_qty: number;
-    discount_amount?: number;
+    discount_amount?: Money;
     status?: OrderItemStatus;
     reason?: string | null;
 }

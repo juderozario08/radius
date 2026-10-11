@@ -33,6 +33,7 @@ import { PurchaseOrderSummary } from "@/types/receiving.types";
 import { StoreOperationsCard } from "@/components/store/StoreOperationsCard";
 import { StoreOperationSummary } from "@/types/admin.types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { formatMoney } from "@/utils/money";
 
 type TabView = "overview" | "orders" | "cycle_counts" | "activities";
 type ScopeView = "my_tasks" | "store_wide";
@@ -139,7 +140,7 @@ export default function RealTimeDashboard() {
                 return [payload, ...prev];
             });
             setNewOrderIds((prev) => new Set(prev).add(payload.order_id));
-            showToast(`⚡ Live Order #${payload.order_id} Received (${payload.order_type} - $${payload.total_amount.toFixed(2)})`);
+            showToast(`⚡ Live Order #${payload.order_id} Received (${payload.order_type} - ${formatMoney(payload.total_amount)})`);
 
             setLiveActivities((prev) => {
                 const newAct: StoreActivityPayload = {
@@ -1150,7 +1151,7 @@ export default function RealTimeDashboard() {
                                                                     : styles.variancePos,
                                                             ]}
                                                         >
-                                                            Variance: ${count.total_variance_cost.toFixed(2)}
+                                                            Variance: {formatMoney(count.total_variance_cost)}
                                                         </Text>
                                                     </View>
                                                 </TouchableOpacity>

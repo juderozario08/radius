@@ -354,7 +354,7 @@ func (r *testCycleCountRepo) StartCycleCount(ctx context.Context, storeID int, c
 		Status:            models.CycleCountStatusInProgress,
 		TotalItems:        45,
 		CountedItems:      12,
-		TotalVarianceCost: -35.50,
+		TotalVarianceCost: -3550,
 	}, nil
 }
 
@@ -591,7 +591,7 @@ func TestWebSocket_CycleCountUpdated_AC2(t *testing.T) {
 			Status:            models.CycleCountStatusInProgress,
 			TotalItems:        45,
 			CountedItems:      12,
-			TotalVarianceCost: -35.50,
+			TotalVarianceCost: -3550,
 		},
 	}
 	cycleService := service.NewCycleCountService(cycleRepo, empRepo, nil, nil, nil, nil, hub)
@@ -726,7 +726,7 @@ func TestWebSocket_StoreIsolation_AC1_AC2(t *testing.T) {
 			Payload: models.OrderCreatedPayload{
 				OrderId:      8888,
 				CustomerName: "Store 2 Buyer",
-				TotalAmount:  99.99,
+				TotalAmount:  9999,
 			},
 		})
 

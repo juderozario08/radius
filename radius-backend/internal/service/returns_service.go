@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"radius/internal/models"
+	"radius/internal/utils"
 	"time"
 )
+
+const returnApprovalThreshold models.Money = 5000
 
 type ReturnsService struct {
 	returnsRepo  ReturnsRepository
@@ -67,7 +70,7 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, storeId int, employee
 		}
 	}
 
-	var subtotal float64
+	var subtotal models.Money
 	for _, item := range req.Items {
 		if item.Quantity <= 0 {
 			return nil, errors.New("quantity must be greater than zero")
@@ -103,13 +106,13 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, storeId int, employee
 			}
 		}
 
-		subtotal += item.UnitPrice * float64(item.Quantity)
+		subtotal += item.UnitPrice.Times(item.Quantity)
 	}
 
-	totalRefund := subtotal * 1.05
+	totalRefund := subtotal + subtotal.TaxAtRatePer100000(utils.GSTRatePer100000)
 
 	status := models.ReturnStatusCompleted
-	if totalRefund > 50.0 && role != models.RoleManager && role != models.RoleAdmin {
+	if totalRefund > returnApprovalThreshold && role != models.RoleManager && role != models.RoleAdmin {
 		status = models.ReturnStatusPendingApproval
 	}
 
@@ -122,12 +125,12 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, storeId int, employee
 		now := time.Now().UTC()
 		activityType := "CUSTOMER_RETURN_COMPLETED"
 		title := fmt.Sprintf("Return #%d Processed", createdReturn.ReturnId)
-		desc := fmt.Sprintf("Processed refund of $%.2f (%s) for %d item(s)", createdReturn.TotalRefund, createdReturn.RefundMethod, len(items))
+		desc := fmt.Sprintf("Processed refund of $%s (%s) for %d item(s)", createdReturn.TotalRefund, createdReturn.RefundMethod, len(items))
 
 		if status == models.ReturnStatusPendingApproval {
 			activityType = "CUSTOMER_RETURN_PENDING_APPROVAL"
 			title = fmt.Sprintf("Return #%d Pending Approval", createdReturn.ReturnId)
-			desc = fmt.Sprintf("Return #%d of $%.2f exceeds $50.00 and requires manager approval", createdReturn.ReturnId, createdReturn.TotalRefund)
+			desc = fmt.Sprintf("Return #%d of $%s exceeds $50.00 and requires manager approval", createdReturn.ReturnId, createdReturn.TotalRefund)
 		}
 
 		payload := models.StoreActivityPayload{
@@ -189,7 +192,7 @@ func (s *ReturnsService) ApproveReturn(ctx context.Context, storeId int, employe
 				StoreId:      retSummary.StoreId,
 				ActivityType: "CUSTOMER_RETURN_APPROVED",
 				Title:        fmt.Sprintf("Return #%d Approved", returnID),
-				Description:  fmt.Sprintf("Manager approved return #%d for $%.2f", returnID, retSummary.TotalRefund),
+				Description:  fmt.Sprintf("Manager approved return #%d for $%s", returnID, retSummary.TotalRefund),
 				Timestamp:    now,
 				Metadata: map[string]any{
 					"return_id":    returnID,

@@ -1,3 +1,5 @@
+import type { Money } from "@/utils/money";
+
 export type PrintOrderType = "WEB" | "WALK_IN";
 export type PrintOrderStatus =
     | "PENDING"
@@ -12,7 +14,7 @@ export interface PrintService {
     name: string;
     description: string;
     category: string;
-    base_price: number;
+    base_price: Money;
     is_active: boolean;
     created_at: string;
 }
@@ -26,7 +28,7 @@ export interface PrintSupply {
     current_qty: number;
     reorder_threshold: number;
     reorder_qty: number;
-    unit_cost: number;
+    unit_cost: Money;
     supplier_name: string;
     is_active: boolean;
     is_low_stock: boolean;
@@ -41,10 +43,10 @@ export interface PrintOrder {
     customer_phone: string;
     order_type: PrintOrderType;
     status: PrintOrderStatus;
-    subtotal: number;
-    tax_amount: number;
-    shipping_fee: number;
-    total_amount: number;
+    subtotal: Money;
+    tax_amount: Money;
+    shipping_fee: Money;
+    total_amount: Money;
     shipping_address: string;
     notes: string;
     placed_at: string;
@@ -57,7 +59,7 @@ export interface PrintOrderItem {
     service_id: number | null;
     description: string;
     quantity: number;
-    unit_price: number;
+    unit_price: Money;
 }
 
 export interface GetAllPrintOrdersResponse {

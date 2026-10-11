@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+const GSTRatePer100000 int64 = 5000
+
 func SalesTaxRatePer100000(province string) (int64, error) {
 	switch province {
 	case "Ontario":
@@ -21,7 +23,7 @@ func SalesTaxRatePer100000(province string) (int64, error) {
 	case "Quebec":
 		return 14975, nil
 	case "Alberta", "Northwest Territories", "Nunavut", "Yukon":
-		return 5000, nil
+		return GSTRatePer100000, nil
 	default:
 		return 0, errors.New("unsupported province")
 	}

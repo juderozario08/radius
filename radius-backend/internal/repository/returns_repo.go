@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"radius/internal/models"
 	"radius/internal/util/queryutil"
+	"radius/internal/utils"
 	"strings"
 	"time"
 )
@@ -25,11 +26,11 @@ func (r *ReturnsRepo) CreateReturn(ctx context.Context, storeID int, employeeID 
 	}
 	defer tx.Rollback()
 
-	var subtotal float64
+	var subtotal models.Money
 	for _, item := range req.Items {
-		subtotal += item.UnitPrice * float64(item.Quantity)
+		subtotal += item.UnitPrice.Times(item.Quantity)
 	}
-	taxAmount := subtotal * 0.05
+	taxAmount := subtotal.TaxAtRatePer100000(utils.GSTRatePer100000)
 	totalRefund := subtotal + taxAmount
 	isStoreCredit := req.RefundMethod == models.RefundMethodStoreCredit
 
@@ -107,10 +108,10 @@ func (r *ReturnsRepo) CreateReturn(ctx context.Context, storeID int, employeeID 
 	refID := fmt.Sprintf("RET-%d", createdReturn.ReturnId)
 
 	for _, itemReq := range req.Items {
-		var unitCost float64
+		var unitCost models.Money
 		_ = tx.QueryRowContext(ctx, `SELECT COALESCE(default_cost, 0.0) FROM products WHERE product_id = $1`, itemReq.ProductId).Scan(&unitCost)
 
-		itemTax := (itemReq.UnitPrice * float64(itemReq.Quantity)) * 0.05
+		itemTax := itemReq.UnitPrice.Times(itemReq.Quantity).TaxAtRatePer100000(utils.GSTRatePer100000)
 
 		var item models.CustomerReturnItem
 		item.ReturnId = createdReturn.ReturnId

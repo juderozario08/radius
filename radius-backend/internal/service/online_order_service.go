@@ -116,7 +116,7 @@ func (s *OnlineOrderService) AssignOnlineOrder(ctx context.Context, storeId int,
 				OrderType:      order.OrderType,
 				PreviousStatus: order.Status,
 				NewStatus:      order.Status,
-				TotalAmount:    float64(order.TotalAmount),
+				TotalAmount:    order.TotalAmount,
 				UpdatedAt:      time.Now().UTC(),
 				AssignedTo:     order.AssignedTo,
 				AssignedToName: order.AssignedToName,
@@ -209,9 +209,9 @@ func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, storeId int,
 	}
 
 	if order.Subtotal == 0 && len(order.Items) > 0 {
-		var subtotal float32
+		var subtotal models.Money
 		for _, it := range order.Items {
-			subtotal += float32(it.Quantity) * it.UnitPrice
+			subtotal += it.UnitPrice.Times(it.Quantity)
 		}
 		order.Subtotal = subtotal
 	}
@@ -237,7 +237,7 @@ func (s *OnlineOrderService) CreateOnlineOrder(ctx context.Context, storeId int,
 			CustomerEmail: createdOrder.CustomerEmail,
 			OrderType:     createdOrder.OrderType,
 			Status:        createdOrder.Status,
-			TotalAmount:   float64(createdOrder.TotalAmount),
+			TotalAmount:   createdOrder.TotalAmount,
 			ItemsCount:    itemsCount,
 			PlacedAt:      placedAt,
 		}
@@ -316,7 +316,7 @@ func (s *OnlineOrderService) CompleteOrderPicking(ctx context.Context, email str
 				OrderType:      updatedOrder.OrderType,
 				PreviousStatus: models.OnlineOrderStatusWorkInProgress,
 				NewStatus:      updatedOrder.Status,
-				TotalAmount:    float64(updatedOrder.TotalAmount),
+				TotalAmount:    updatedOrder.TotalAmount,
 				UpdatedAt:      time.Now().UTC(),
 				AssignedTo:     updatedOrder.AssignedTo,
 				AssignedToName: updatedOrder.AssignedToName,
@@ -371,7 +371,7 @@ func (s *OnlineOrderService) CancelOnlineOrder(ctx context.Context, email string
 				OrderType:      updatedOrder.OrderType,
 				PreviousStatus: models.OnlineOrderStatusWorkInProgress,
 				NewStatus:      models.OnlineOrderStatusCancelled,
-				TotalAmount:    float64(updatedOrder.TotalAmount),
+				TotalAmount:    updatedOrder.TotalAmount,
 				UpdatedAt:      time.Now().UTC(),
 				AssignedTo:     updatedOrder.AssignedTo,
 				AssignedToName: updatedOrder.AssignedToName,
@@ -422,7 +422,7 @@ func (s *OnlineOrderService) AutoCancelExpiredBOPISOrders(ctx context.Context) (
 					CustomerName: o.CustomerName,
 					OrderType:    o.OrderType,
 					NewStatus:    models.OnlineOrderStatusCancelled,
-					TotalAmount:  float64(o.TotalAmount),
+					TotalAmount:  o.TotalAmount,
 					UpdatedAt:    time.Now().UTC(),
 				},
 			})

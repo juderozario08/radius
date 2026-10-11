@@ -183,7 +183,7 @@ func (r *ReceivingRepo) ReceivePOItems(ctx context.Context, storeID int, poID in
 		}
 
 		var productID int
-		var unitCost float64
+		var unitCost models.Money
 		err = tx.QueryRowContext(ctx,
 			`SELECT product_id, unit_cost FROM purchase_orders_items WHERE po_item_id = $1`,
 			item.PoItemId,
@@ -268,7 +268,7 @@ func (r *ReceivingRepo) ReceiveLPR(ctx context.Context, storeID int, poID int, l
 		poItemID  int
 		qty       int
 		productID int
-		unitCost  float64
+		unitCost  models.Money
 	}
 	var lprItems []lprItem
 	for rows.Next() {

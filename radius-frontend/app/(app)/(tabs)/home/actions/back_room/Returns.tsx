@@ -34,6 +34,8 @@ import {
 } from "@/types/returns.types";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { type Money, formatMoney, multiplyMoney, sumMoney, taxAtRatePer100000 } from "@/utils/money";
+import { GST_RATE_PER_100000 } from "@/constants/canada";
 
 type ActiveTab = "NEW_RETURN" | "HISTORY" | "RTV_QUEUE";
 type LookupMode = "TRANSACTION_ID" | "PRODUCT_BARCODE";
@@ -43,7 +45,7 @@ interface SelectedReturnItem {
     product_id: number;
     product_name: string;
     product_sku: string;
-    unit_price: number;
+    unit_price: Money;
     quantity: number;
     max_returnable: number;
     return_reason: ReturnReason;
@@ -90,7 +92,7 @@ export default function Returns() {
     const [submittedSuccessModal, setSubmittedSuccessModal] = useState<{
         returnId: number;
         status: string;
-        total: number;
+        total: Money;
     } | null>(null);
 
     const [historyList, setHistoryList] = useState<CustomerReturnSummary[]>([]);
@@ -210,9 +212,9 @@ export default function Returns() {
     };
 
     const selectedItemsArray = Object.values(selectedItems);
-    const subtotal = selectedItemsArray.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
-    const estimatedTax = subtotal * 0.05;
-    const totalRefund = subtotal + estimatedTax;
+    const subtotal = sumMoney(selectedItemsArray.map((item) => multiplyMoney(item.unit_price, item.quantity)));
+    const estimatedTax = taxAtRatePer100000(subtotal, GST_RATE_PER_100000);
+    const totalRefund = sumMoney([subtotal, estimatedTax]);
 
     const hasExpiredItem = selectedItemsArray.some((item) => item.is_outside_policy);
 
@@ -249,7 +251,7 @@ export default function Returns() {
             })),
         };
 
-        const res = await callApi<{ return_id: number; status: string; total_refund: number }>(
+        const res = await callApi<{ return_id: number; status: string; total_refund: Money }>(
             endpoint,
             { method: "POST", body },
             logout
@@ -540,7 +542,7 @@ export default function Returns() {
                                         </Text>
                                     </View>
                                     <View style={styles.recentTxRight}>
-                                        <Text style={styles.recentTxAmount}>${tx.total_amount.toFixed(2)}</Text>
+                                        <Text style={styles.recentTxAmount}>{formatMoney(tx.total_amount)}</Text>
                                         <Text style={styles.recentTxQty}>Qty: {tx.quantity_sold}</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -557,7 +559,7 @@ export default function Returns() {
                                 </Text>
                             </View>
                             <View style={styles.txSummaryRight}>
-                                <Text style={styles.txSummaryAmount}>${foundTx.total_amount.toFixed(2)}</Text>
+                                <Text style={styles.txSummaryAmount}>{formatMoney(foundTx.total_amount)}</Text>
                                 <Text style={styles.txSummaryMethod}>{foundTx.payment_method}</Text>
                             </View>
                         </View>
@@ -605,7 +607,7 @@ export default function Returns() {
                                             <View style={styles.itemInfo}>
                                                 <Text style={styles.itemName}>{item.product_name}</Text>
                                                 <Text style={styles.itemMeta}>
-                                                    SKU: {item.product_sku} • ${item.unit_price.toFixed(2)} ea
+                                                    SKU: {item.product_sku} • {formatMoney(item.unit_price)} ea
                                                 </Text>
                                             </View>
                                             <View style={styles.itemQtyBadge}>
@@ -742,15 +744,15 @@ export default function Returns() {
 
                             <View style={styles.calcRow}>
                                 <Text style={styles.calcLabel}>Subtotal ({selectedItemsArray.length} items):</Text>
-                                <Text style={styles.calcValue}>${subtotal.toFixed(2)}</Text>
+                                <Text style={styles.calcValue}>{formatMoney(subtotal)}</Text>
                             </View>
                             <View style={styles.calcRow}>
                                 <Text style={styles.calcLabel}>Estimated Tax (5%):</Text>
-                                <Text style={styles.calcValue}>${estimatedTax.toFixed(2)}</Text>
+                                <Text style={styles.calcValue}>{formatMoney(estimatedTax)}</Text>
                             </View>
                             <View style={[styles.calcRow, styles.calcRowTotal]}>
                                 <Text style={styles.totalRefundLabel}>Total Refund:</Text>
-                                <Text style={styles.totalRefundValue}>${totalRefund.toFixed(2)}</Text>
+                                <Text style={styles.totalRefundValue}>{formatMoney(totalRefund)}</Text>
                             </View>
 
                             {totalRefund > 50 && !isManagerOrAdmin && (
@@ -812,7 +814,7 @@ export default function Returns() {
                                     <ActivityIndicator size="small" color={COLORS.primaryText} />
                                 ) : (
                                     <Text style={styles.submitButtonText}>
-                                        Process Return (${totalRefund.toFixed(2)})
+                                        Process Return ({formatMoney(totalRefund)})
                                     </Text>
                                 )}
                             </TouchableOpacity>
@@ -941,7 +943,7 @@ export default function Returns() {
                         <Text style={styles.successTitle}>Return Processed</Text>
                         <Text style={styles.successReturnId}>Return #{submittedSuccessModal?.returnId}</Text>
                         <Text style={styles.successAmount}>
-                            Refund: ${submittedSuccessModal?.total.toFixed(2)}
+                            Refund: {formatMoney(submittedSuccessModal?.total)}
                         </Text>
                         <Text style={styles.successStatus}>
                             Status: {submittedSuccessModal?.status.replace("_", " ")}
@@ -998,7 +1000,7 @@ export default function Returns() {
                                     <View style={styles.detailSummaryRow}>
                                         <Text style={styles.detailSummaryLabel}>Total Refund:</Text>
                                         <Text style={styles.detailSummaryTotal}>
-                                            ${returnDetail.return.total_refund.toFixed(2)}
+                                            {formatMoney(returnDetail.return.total_refund)}
                                         </Text>
                                     </View>
                                     <View style={styles.detailSummaryRow}>
@@ -1033,7 +1035,7 @@ export default function Returns() {
                                         <View style={styles.detailItemRight}>
                                             <Text style={styles.detailItemQty}>Qty: {item.quantity}</Text>
                                             <Text style={styles.detailItemPrice}>
-                                                ${(item.unit_price * item.quantity).toFixed(2)}
+                                                {formatMoney(multiplyMoney(item.unit_price, item.quantity))}
                                             </Text>
                                         </View>
                                     </View>

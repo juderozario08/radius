@@ -23,6 +23,7 @@ import { CycleCountSummary, CycleCountStatus } from "@/types/cyclecount.types";
 import { Category } from "@/types/inventory.types";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { formatSignedMoney } from "@/utils/money";
 
 export const getCycleCountStatusStyle = (status: CycleCountStatus) => {
     switch (status) {
@@ -231,8 +232,7 @@ export default function CycleCountDashboard() {
                                     : styles.variancePositive,
                             ]}
                         >
-                            {item.total_variance_cost < 0 ? "-" : "+"}$
-                            {Math.abs(item.total_variance_cost).toFixed(2)}
+                            {formatSignedMoney(item.total_variance_cost)}
                         </Text>
                     </View>
                 )}

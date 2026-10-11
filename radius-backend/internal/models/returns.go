@@ -47,9 +47,9 @@ type CustomerReturn struct {
 	EmployeeId            int          `json:"employee_id"`
 	Status                ReturnStatus `json:"status"`
 	RefundMethod          RefundMethod `json:"refund_method"`
-	Subtotal              float64      `json:"subtotal"`
-	TaxAmount             float64      `json:"tax_amount"`
-	TotalRefund           float64      `json:"total_refund"`
+	Subtotal              Money        `json:"subtotal"`
+	TaxAmount             Money        `json:"tax_amount"`
+	TotalRefund           Money        `json:"total_refund"`
 	IsStoreCredit         bool         `json:"is_store_credit"`
 	Notes                 *string      `json:"notes"`
 	ApprovedBy            *int         `json:"approved_by"`
@@ -64,9 +64,9 @@ type CustomerReturnItem struct {
 	ProductId                 int               `json:"product_id"`
 	OriginalTransactionItemId *int64            `json:"original_transaction_item_id"`
 	Quantity                  int               `json:"quantity"`
-	UnitPrice                 float64           `json:"unit_price"`
-	UnitCost                  float64           `json:"unit_cost"`
-	TaxAmount                 float64           `json:"tax_amount"`
+	UnitPrice                 Money             `json:"unit_price"`
+	UnitCost                  Money             `json:"unit_cost"`
+	TaxAmount                 Money             `json:"tax_amount"`
 	ReturnReason              string            `json:"return_reason"`
 	Disposition               ReturnDisposition `json:"disposition"`
 	CreatedAt                 time.Time         `json:"created_at"`
@@ -82,9 +82,9 @@ type CustomerReturnItemDetail struct {
 	Brand                     string            `json:"brand"`
 	OriginalTransactionItemId *int64            `json:"original_transaction_item_id"`
 	Quantity                  int               `json:"quantity"`
-	UnitPrice                 float64           `json:"unit_price"`
-	UnitCost                  float64           `json:"unit_cost"`
-	TaxAmount                 float64           `json:"tax_amount"`
+	UnitPrice                 Money             `json:"unit_price"`
+	UnitCost                  Money             `json:"unit_cost"`
+	TaxAmount                 Money             `json:"tax_amount"`
 	ReturnReason              string            `json:"return_reason"`
 	Disposition               ReturnDisposition `json:"disposition"`
 	CreatedAt                 time.Time         `json:"created_at"`
@@ -99,7 +99,7 @@ type CustomerReturnSummary struct {
 	EmployeeName          string       `json:"employee_name"`
 	Status                ReturnStatus `json:"status"`
 	RefundMethod          RefundMethod `json:"refund_method"`
-	TotalRefund           float64      `json:"total_refund"`
+	TotalRefund           Money        `json:"total_refund"`
 	ItemCount             int          `json:"item_count"`
 	IsStoreCredit         bool         `json:"is_store_credit"`
 	CreatedAt             time.Time    `json:"created_at"`
@@ -133,7 +133,7 @@ type CreateReturnItemRequest struct {
 	ProductId                 int               `json:"product_id" binding:"required"`
 	OriginalTransactionItemId *int64            `json:"original_transaction_item_id"`
 	Quantity                  int               `json:"quantity" binding:"required,min=1"`
-	UnitPrice                 float64           `json:"unit_price" binding:"required"`
+	UnitPrice                 Money             `json:"unit_price" binding:"required"`
 	ReturnReason              string            `json:"return_reason" binding:"required"`
 	Disposition               ReturnDisposition `json:"disposition" binding:"required"`
 }
@@ -155,19 +155,19 @@ type ReturnSearchCriteria struct {
 }
 
 type OriginalTransactionItemForReturn struct {
-	TransactionItemId     int64   `json:"transaction_item_id"`
-	ProductId             int     `json:"product_id"`
-	ProductSku            string  `json:"product_sku"`
-	ProductName           string  `json:"product_name"`
-	Brand                 string  `json:"brand"`
-	PurchasedQty          int     `json:"purchased_qty"`
-	ReturnedQty           int     `json:"returned_qty"`
-	ReturnableQty         int     `json:"returnable_qty"`
-	UnitPrice             float64 `json:"unit_price"`
-	UnitCost              float64 `json:"unit_cost"`
-	IsReturnable          bool    `json:"is_returnable"`
-	ReturnWindowDays      int     `json:"return_window_days"`
-	IsOutsidePolicyWindow bool    `json:"is_outside_policy_window"`
+	TransactionItemId     int64  `json:"transaction_item_id"`
+	ProductId             int    `json:"product_id"`
+	ProductSku            string `json:"product_sku"`
+	ProductName           string `json:"product_name"`
+	Brand                 string `json:"brand"`
+	PurchasedQty          int    `json:"purchased_qty"`
+	ReturnedQty           int    `json:"returned_qty"`
+	ReturnableQty         int    `json:"returnable_qty"`
+	UnitPrice             Money  `json:"unit_price"`
+	UnitCost              Money  `json:"unit_cost"`
+	IsReturnable          bool   `json:"is_returnable"`
+	ReturnWindowDays      int    `json:"return_window_days"`
+	IsOutsidePolicyWindow bool   `json:"is_outside_policy_window"`
 }
 
 type LookupTransactionResponse struct {
@@ -176,7 +176,7 @@ type LookupTransactionResponse struct {
 	RegisterId    string                             `json:"register_id"`
 	CreatedAt     time.Time                          `json:"created_at"`
 	PaymentMethod string                             `json:"payment_method"`
-	TotalAmount   float64                            `json:"total_amount"`
+	TotalAmount   Money                              `json:"total_amount"`
 	DaysSinceSale int                                `json:"days_since_sale"`
 	Items         []OriginalTransactionItemForReturn `json:"items"`
 }
@@ -185,8 +185,8 @@ type RecentTransactionSummary struct {
 	TransactionId int64     `json:"transaction_id"`
 	StoreId       int       `json:"store_id"`
 	RegisterId    string    `json:"register_id"`
-	TotalAmount   float64   `json:"total_amount"`
+	TotalAmount   Money     `json:"total_amount"`
 	CreatedAt     time.Time `json:"created_at"`
 	QuantitySold  int       `json:"quantity_sold"`
-	UnitPrice     float64   `json:"unit_price"`
+	UnitPrice     Money     `json:"unit_price"`
 }

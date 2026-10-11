@@ -25,10 +25,10 @@ func (r *TransferRepo) CreateTransfer(ctx context.Context, fromStoreID int, toSt
 	}
 	defer tx.Rollback()
 
-	var totalTransferCost float64
+	var totalTransferCost models.Money
 	for _, item := range items {
 		var availableQty int
-		var costPrice float64
+		var costPrice models.Money
 		err := tx.QueryRowContext(ctx,
 			`SELECT i.new_qty,
 			        COALESCE((SELECT ps.cost_price FROM product_suppliers ps
@@ -49,7 +49,7 @@ func (r *TransferRepo) CreateTransfer(ctx context.Context, fromStoreID int, toSt
 			return nil, fmt.Errorf("insufficient inventory for product %d: available %d, requested %d", item.ProductId, availableQty, item.QtyRequested)
 		}
 
-		totalTransferCost += costPrice * float64(item.QtyRequested)
+		totalTransferCost += costPrice.Times(item.QtyRequested)
 
 		res, err := tx.ExecContext(ctx,
 			`UPDATE inventory

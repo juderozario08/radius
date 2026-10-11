@@ -20,6 +20,7 @@ import { CycleCountSummary, CycleCountStatus } from "@/types/cyclecount.types";
 import { getCycleCountStatusStyle } from "./CycleCount";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { formatSignedMoney, sumMoney } from "@/utils/money";
 
 const STATUS_FILTERS: { label: string; value: string }[] = [
     { label: "All", value: "ALL" },
@@ -83,10 +84,7 @@ export default function CycleCountSearch() {
         };
     }, [query, statusFilter, performSearch]);
 
-    const totalNetVariance = results.reduce(
-        (sum, item) => sum + (item.total_variance_cost || 0),
-        0
-    );
+    const totalNetVariance = sumMoney(results.map((item) => item.total_variance_cost));
     const countsWithVariance = results.filter(
         (item) => item.total_variance_cost !== 0
     ).length;
@@ -159,11 +157,7 @@ export default function CycleCountSearch() {
                                     : styles.varNeutral,
                             ]}
                         >
-                            {item.total_variance_cost === 0
-                                ? "$0.00"
-                                : `${item.total_variance_cost < 0 ? "-" : "+"}$${Math.abs(
-                                      item.total_variance_cost
-                                  ).toFixed(2)}`}
+                            {formatSignedMoney(item.total_variance_cost)}
                         </Text>
                     </View>
                 </View>
@@ -251,11 +245,7 @@ export default function CycleCountSearch() {
                                         : styles.varNeutral,
                                 ]}
                             >
-                                {totalNetVariance === 0
-                                    ? "$0.00"
-                                    : `${totalNetVariance < 0 ? "-" : "+"}$${Math.abs(
-                                          totalNetVariance
-                                      ).toFixed(2)}`}
+                                {formatSignedMoney(totalNetVariance)}
                             </Text>
                             <Text style={styles.reportSummaryLabel}>Net Financial Impact</Text>
                         </View>

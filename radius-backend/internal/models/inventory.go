@@ -150,7 +150,7 @@ type CycleCount struct {
 	CountedByName     *string          `json:"counted_by_name"`
 	ApprovedBy        *int             `json:"approved_by"`
 	ApprovedByName    *string          `json:"approved_by_name"`
-	TotalVarianceCost float64          `json:"total_variance_cost"`
+	TotalVarianceCost Money            `json:"total_variance_cost"`
 	TotalItems        int              `json:"total_items"`
 	CountedItems      int              `json:"counted_items"`
 	StartedAt         *time.Time       `json:"started_at"`
@@ -169,7 +169,7 @@ type CycleCountSummary struct {
 	TotalItems        int              `json:"total_items"`
 	CountedItems      int              `json:"counted_items"`
 	CountDate         *time.Time       `json:"count_date"`
-	TotalVarianceCost float64          `json:"total_variance_cost"`
+	TotalVarianceCost Money            `json:"total_variance_cost"`
 }
 
 type CycleCountItem struct {
@@ -179,7 +179,7 @@ type CycleCountItem struct {
 	ExpectedQty  int        `json:"expected_qty"`
 	CountedQty   int        `json:"counted_qty"`
 	Variance     int        `json:"variance"`
-	VarianceCost float64    `json:"variance_cost"`
+	VarianceCost Money      `json:"variance_cost"`
 	ReasonCode   *string    `json:"reason_code"`
 	ScannedAt    *time.Time `json:"scanned_at"`
 	ScannedBy    *int       `json:"scanned_by"`
@@ -193,11 +193,11 @@ type CycleCountItemDetail struct {
 	Sku          string     `json:"sku"`
 	Upc          string     `json:"upc"`
 	Brand        string     `json:"brand"`
-	CostPrice    float64    `json:"cost_price"`
+	CostPrice    Money      `json:"cost_price"`
 	ExpectedQty  int        `json:"expected_qty"`
 	CountedQty   int        `json:"counted_qty"`
 	Variance     int        `json:"variance"`
-	VarianceCost float64    `json:"variance_cost"`
+	VarianceCost Money      `json:"variance_cost"`
 	ReasonCode   *string    `json:"reason_code"`
 	ScannedAt    *time.Time `json:"scanned_at"`
 	ScannedBy    *int       `json:"scanned_by"`
@@ -276,15 +276,15 @@ type PurchaseOrderSummary struct {
 }
 
 type PurchaseOrderItemDetail struct {
-	PoItemId    int     `json:"po_item_id"`
-	ProductId   int     `json:"product_id"`
-	Sku         string  `json:"sku"`
-	Upc         string  `json:"upc"`
-	Name        string  `json:"name"`
-	Brand       string  `json:"brand"`
-	QtyOrdered  int     `json:"qty_ordered"`
-	QtyReceived int     `json:"qty_received"`
-	UnitCost    float64 `json:"unit_cost"`
+	PoItemId    int    `json:"po_item_id"`
+	ProductId   int    `json:"product_id"`
+	Sku         string `json:"sku"`
+	Upc         string `json:"upc"`
+	Name        string `json:"name"`
+	Brand       string `json:"brand"`
+	QtyOrdered  int    `json:"qty_ordered"`
+	QtyReceived int    `json:"qty_received"`
+	UnitCost    Money  `json:"unit_cost"`
 }
 
 type PurchaseOrderLPR struct {
@@ -412,7 +412,7 @@ type OutboundTransferSummary struct {
 	Status              string     `json:"status"`
 	ManualCheckRequired bool       `json:"manual_check_required"`
 	ItemCount           int        `json:"item_count"`
-	TotalTransferCost   float64    `json:"total_transfer_cost"`
+	TotalTransferCost   Money      `json:"total_transfer_cost"`
 	TransferReason      *string    `json:"transfer_reason"`
 	Carrier             *string    `json:"carrier"`
 	TrackingNumber      *string    `json:"tracking_number"`
@@ -433,7 +433,7 @@ type OutboundTransferDetailResponse struct {
 	Carrier             *string                   `json:"carrier"`
 	TrackingNumber      *string                   `json:"tracking_number"`
 	ManualCheckRequired bool                      `json:"manual_check_required"`
-	TotalTransferCost   float64                   `json:"total_transfer_cost"`
+	TotalTransferCost   Money                     `json:"total_transfer_cost"`
 	CreatedAt           time.Time                 `json:"created_at"`
 	ShippedAt           *time.Time                `json:"shipped_at"`
 	ReceivedAt          *time.Time                `json:"received_at"`
@@ -516,8 +516,8 @@ type InventoryTransaction struct {
 	ToStoreId       *int      `json:"to_store_id"`
 	TransactionType string    `json:"transaction_type"`
 	Quantity        int       `json:"quantity"`
-	UnitCost        *float64  `json:"unit_cost"`
-	UnitPrice       *float64  `json:"unit_price"`
+	UnitCost        *Money    `json:"unit_cost"`
+	UnitPrice       *Money    `json:"unit_price"`
 	ReasonCode      *string   `json:"reason_code"`
 	EmployeeId      *int      `json:"employee_id"`
 	ReferenceId     *string   `json:"reference_id"`

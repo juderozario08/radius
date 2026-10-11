@@ -27,12 +27,12 @@ type PurchaseOrder struct {
 }
 
 type PurchaseOrdersItem struct {
-	POItemId    int     `json:"po_item_id"`
-	POId        int     `json:"po_id"`
-	ProductId   int     `json:"product_id"`
-	QtyOrdered  int     `json:"qty_ordered"`
-	QtyReceived int     `json:"qty_received"`
-	UnitCost    float32 `json:"unit_cost"`
+	POItemId    int   `json:"po_item_id"`
+	POId        int   `json:"po_id"`
+	ProductId   int   `json:"product_id"`
+	QtyOrdered  int   `json:"qty_ordered"`
+	QtyReceived int   `json:"qty_received"`
+	UnitCost    Money `json:"unit_cost"`
 }
 
 type OnlineOrderType string
@@ -89,10 +89,10 @@ type OnlineOrder struct {
 	Status             OnlineOrderStatus `json:"status"`
 	PlacedAt           time.Time         `json:"placed_at"`
 	FulfilledAt        *time.Time        `json:"fulfilled_at"`
-	Subtotal           float32           `json:"subtotal"`
-	TaxAmount          float32           `json:"tax_amount"`
-	ShippingFee        float32           `json:"shipping_fee"`
-	TotalAmount        float32           `json:"total_amount"`
+	Subtotal           Money             `json:"subtotal"`
+	TaxAmount          Money             `json:"tax_amount"`
+	ShippingFee        Money             `json:"shipping_fee"`
+	TotalAmount        Money             `json:"total_amount"`
 	ShippingAddress    string            `json:"shipping_address"`
 	AssignedTo         *int              `json:"assigned_to,omitempty"`
 	AssignedToName     *string           `json:"assigned_to_name,omitempty"`
@@ -106,7 +106,7 @@ type OnlineOrderItem struct {
 	ProductId   int     `json:"product_id"`
 	ProductSku  *string `json:"product_sku"`
 	Quantity    int     `json:"quantity"`
-	UnitPrice   float32 `json:"unit_price"`
+	UnitPrice   Money   `json:"unit_price"`
 	PickedQty   *int    `json:"picked_qty"`
 	Status      string  `json:"status"`
 	Reason      *string `json:"reason,omitempty"`
@@ -181,7 +181,7 @@ type PrintService struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Category    string    `json:"category"`
-	BasePrice   float32   `json:"base_price"`
+	BasePrice   Money     `json:"base_price"`
 	IsActive    bool      `json:"is_active"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -195,7 +195,7 @@ type PrintSupply struct {
 	CurrentQty       int       `json:"current_qty"`
 	ReorderThreshold int       `json:"reorder_threshold"`
 	ReorderQty       int       `json:"reorder_qty"`
-	UnitCost         float32   `json:"unit_cost"`
+	UnitCost         Money     `json:"unit_cost"`
 	SupplierName     string    `json:"supplier_name"`
 	IsActive         bool      `json:"is_active"`
 	IsLowStock       bool      `json:"is_low_stock"`
@@ -210,10 +210,10 @@ type PrintOrder struct {
 	CustomerPhone   string           `json:"customer_phone"`
 	OrderType       PrintOrderType   `json:"order_type"`
 	Status          PrintOrderStatus `json:"status"`
-	Subtotal        float32          `json:"subtotal"`
-	TaxAmount       float32          `json:"tax_amount"`
-	ShippingFee     float32          `json:"shipping_fee"`
-	TotalAmount     float32          `json:"total_amount"`
+	Subtotal        Money            `json:"subtotal"`
+	TaxAmount       Money            `json:"tax_amount"`
+	ShippingFee     Money            `json:"shipping_fee"`
+	TotalAmount     Money            `json:"total_amount"`
 	ShippingAddress string           `json:"shipping_address"`
 	Notes           string           `json:"notes"`
 	PlacedAt        time.Time        `json:"placed_at"`
@@ -221,12 +221,12 @@ type PrintOrder struct {
 }
 
 type PrintOrderItem struct {
-	PrintOrderItemId int     `json:"print_order_item_id"`
-	PrintOrderId     int     `json:"print_order_id"`
-	ServiceId        *int    `json:"service_id"`
-	Description      string  `json:"description"`
-	Quantity         int     `json:"quantity"`
-	UnitPrice        float32 `json:"unit_price"`
+	PrintOrderItemId int    `json:"print_order_item_id"`
+	PrintOrderId     int    `json:"print_order_id"`
+	ServiceId        *int   `json:"service_id"`
+	Description      string `json:"description"`
+	Quantity         int    `json:"quantity"`
+	UnitPrice        Money  `json:"unit_price"`
 }
 
 type GetAllPrintOrdersResponse struct {

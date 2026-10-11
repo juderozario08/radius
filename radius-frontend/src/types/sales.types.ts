@@ -1,3 +1,5 @@
+import type { Money } from "@/utils/money";
+
 export type TransactionType = "SALE" | "RETURN" | "VOID";
 export type TransactionPaymentMethod = "CASH" | "CARD" | "GIFT CARD";
 export type TransactionStatus = "VOIDED" | "COMPLETED" | "REFUNDED";
@@ -8,11 +10,11 @@ export interface Transaction {
     register_id: string;
     employee_id: number | null;
     transaction_type: TransactionType;
-    subtotal: number;
-    tax_amount: number;
-    discount_total: number;
-    cost_total: number;
-    total_amount: number;
+    subtotal: Money;
+    tax_amount: Money;
+    discount_total: Money;
+    cost_total: Money;
+    total_amount: Money;
     payment_method: TransactionPaymentMethod | null;
     card_type?: string;
     card_number?: string;
@@ -29,9 +31,9 @@ export interface TransactionItem {
     product_sku?: string | null;
     product_name?: string | null;
     quantity: number;
-    unit_price: number;
-    unit_cost: number;
-    discount_amount: number;
+    unit_price: Money;
+    unit_cost: Money;
+    discount_amount: Money;
     return_reason: string | null;
     scanned_barcode: string | null;
 }

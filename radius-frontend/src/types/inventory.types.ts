@@ -1,3 +1,5 @@
+import type { Money } from "@/utils/money";
+
 export type MeasureUnits = "EACH" | "CASE" | "PACK";
 
 export interface Product {
@@ -12,7 +14,7 @@ export interface Product {
     units_per_case: number;
     weight: number;
     is_active: boolean;
-    retail_price: number;
+    retail_price: Money;
     constrained_end_after: string | null;
     created_at: string;
 }

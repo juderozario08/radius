@@ -30,6 +30,7 @@ import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { getCycleCountStatusStyle } from "./CycleCount";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { formatSignedMoney } from "@/utils/money";
 
 type FilterTab = "FULL" | "PARTIAL" | "NO_COUNT";
 
@@ -455,8 +456,7 @@ export default function CycleCountDetail() {
                                         : styles.varPositive,
                                 ]}
                             >
-                                {count.total_variance_cost < 0 ? "-" : "+"}$
-                                {Math.abs(count.total_variance_cost).toFixed(2)}
+                                {formatSignedMoney(count.total_variance_cost)}
                             </Text>
                         </View>
                     )}

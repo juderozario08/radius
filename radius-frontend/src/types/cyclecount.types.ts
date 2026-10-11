@@ -1,3 +1,5 @@
+import type { Money } from "@/utils/money";
+
 export type CycleCountStatus =
     | "NOT STARTED"
     | "IN PROGRESS"
@@ -16,7 +18,7 @@ export interface CycleCount {
     counted_by_name: string | null;
     approved_by: number | null;
     approved_by_name: string | null;
-    total_variance_cost: number;
+    total_variance_cost: Money;
     total_items: number;
     counted_items: number;
     started_at: string | null;
@@ -35,7 +37,7 @@ export interface CycleCountSummary {
     total_items: number;
     counted_items: number;
     count_date: string | null;
-    total_variance_cost: number;
+    total_variance_cost: Money;
 }
 
 export interface CycleCountItemDetail {
@@ -46,11 +48,11 @@ export interface CycleCountItemDetail {
     sku: string;
     upc: string;
     brand: string;
-    cost_price: number;
+    cost_price: Money;
     expected_qty: number;
     counted_qty: number;
     variance: number;
-    variance_cost: number;
+    variance_cost: Money;
     reason_code: string | null;
     scanned_at: string | null;
     scanned_by: number | null;

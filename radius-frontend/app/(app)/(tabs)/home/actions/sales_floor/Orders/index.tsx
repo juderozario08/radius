@@ -21,6 +21,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { formatMoney } from "@/utils/money";
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -137,7 +138,7 @@ export default function OnlineOrdersList() {
                 <View style={styles.detailsContainer}>
                     <DetailRow layout="inline" label="Type: " value={item.order_type} />
                     <DetailRow layout="inline" label="Customer: " value={item.customer_name} />
-                    <DetailRow layout="inline" label="Total: " value={`$${(item.total_amount || 0).toFixed(2)}`} />
+                    <DetailRow layout="inline" label="Total: " value={formatMoney(item.total_amount)} />
                     <DetailRow layout="inline" label="Placed: " value={date} />
                     <DetailRow layout="inline" label="Assigned: " value={item.assigned_to_name || "Unassigned"} />
                     <DetailRow layout="inline" label="Status: " value={item.status} />

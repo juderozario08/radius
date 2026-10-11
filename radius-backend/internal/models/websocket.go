@@ -39,7 +39,7 @@ type OrderCreatedPayload struct {
 	CustomerEmail  string            `json:"customer_email"`
 	OrderType      OnlineOrderType   `json:"order_type"`
 	Status         OnlineOrderStatus `json:"status"`
-	TotalAmount    float64           `json:"total_amount"`
+	TotalAmount    Money             `json:"total_amount"`
 	ItemsCount     int               `json:"items_count"`
 	PlacedAt       time.Time         `json:"placed_at"`
 	AssignedTo     *int              `json:"assigned_to,omitempty"`
@@ -53,7 +53,7 @@ type OrderStatusUpdatedPayload struct {
 	OrderType      OnlineOrderType   `json:"order_type"`
 	PreviousStatus OnlineOrderStatus `json:"previous_status"`
 	NewStatus      OnlineOrderStatus `json:"new_status"`
-	TotalAmount    float64           `json:"total_amount"`
+	TotalAmount    Money             `json:"total_amount"`
 	UpdatedAt      time.Time         `json:"updated_at"`
 	AssignedTo     *int              `json:"assigned_to,omitempty"`
 	AssignedToName *string           `json:"assigned_to_name,omitempty"`
@@ -75,7 +75,7 @@ type CycleCountUpdatedPayload struct {
 	Action            string    `json:"action"`
 	TotalItems        int       `json:"total_items"`
 	CountedItems      int       `json:"counted_items"`
-	TotalVarianceCost float64   `json:"total_variance_cost"`
+	TotalVarianceCost Money     `json:"total_variance_cost"`
 	UpdatedAt         time.Time `json:"updated_at"`
 }
 

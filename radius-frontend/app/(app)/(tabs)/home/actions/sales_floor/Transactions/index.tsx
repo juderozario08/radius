@@ -20,6 +20,7 @@ import Pagination from "@/components/common/Pagination";
 import { GetAllTransactionsResponse, Transaction } from "@/types/sales.types";
 import { router } from "expo-router";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { formatMoney } from "@/utils/money";
 
 export default function TransactionsList() {
     const { logout } = useAuth();
@@ -71,7 +72,7 @@ export default function TransactionsList() {
                 </View>
                 <View style={styles.detailsContainer}>
                     <DetailRow layout="inline" label="Type: " value={item.transaction_type} />
-                    <DetailRow layout="inline" label="Total: " value={`$${item.total_amount.toFixed(2)}`} />
+                    <DetailRow layout="inline" label="Total: " value={formatMoney(item.total_amount)} />
                     <DetailRow layout="inline" label="Date: " value={date} />
                     <DetailRow layout="inline" label="Store ID: " value={item.store_id} />
                 </View>

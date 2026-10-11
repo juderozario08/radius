@@ -5,6 +5,7 @@ import { OutboundTransferSummary } from "@/types/receiving.types";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { formatMoney } from "@/utils/money";
 
 interface OutboundTransferCardProps {
     transfer: OutboundTransferSummary;
@@ -57,7 +58,7 @@ export const OutboundTransferCard: React.FC<OutboundTransferCardProps> = ({ tran
                     {transfer.total_transfer_cost > 0 && (
                         <View style={styles.detailItem}>
                             <Ionicons name="cash-outline" size={16} color={COLORS.textSecondary} />
-                            <Text style={styles.detailText}>${transfer.total_transfer_cost.toFixed(2)}</Text>
+                            <Text style={styles.detailText}>{formatMoney(transfer.total_transfer_cost)}</Text>
                         </View>
                     )}
                 </View>

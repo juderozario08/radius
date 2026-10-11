@@ -22,6 +22,7 @@ import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { formatMoney } from "@/utils/money";
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -150,7 +151,7 @@ export default function PrintOrdersList() {
                     {item.customer_phone ? (
                         <DetailRow layout="inline" label="Phone: " value={item.customer_phone} />
                     ) : null}
-                    <DetailRow layout="inline" label="Total: " value={`$${(item.total_amount || 0).toFixed(2)}`} />
+                    <DetailRow layout="inline" label="Total: " value={formatMoney(item.total_amount)} />
                     <DetailRow layout="inline" label="Placed: " value={date} />
                 </View>
             </TouchableOpacity>

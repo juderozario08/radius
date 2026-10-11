@@ -1,3 +1,5 @@
+import type { Money } from "@/utils/money";
+
 import { OrderType, OrderStatus } from "./order.types";
 import { PrintOrderStatus } from "./print_order.types";
 
@@ -32,7 +34,7 @@ export interface OrderCreatedPayload {
     customer_email: string;
     order_type: OrderType | string;
     status: OrderStatus | string;
-    total_amount: number;
+    total_amount: Money;
     items_count: number;
     placed_at: string;
     assigned_to?: number | null;
@@ -46,7 +48,7 @@ export interface OrderStatusUpdatedPayload {
     order_type: OrderType | string;
     previous_status: OrderStatus | string;
     new_status: OrderStatus | string;
-    total_amount: number;
+    total_amount: Money;
     updated_at: string;
     assigned_to?: number | null;
     assigned_to_name?: string | null;
@@ -76,7 +78,7 @@ export interface CycleCountUpdatedPayload {
     action: CycleCountAction;
     total_items: number;
     counted_items: number;
-    total_variance_cost: number;
+    total_variance_cost: Money;
     updated_at: string;
     counted_by?: number | null;
     counted_by_name?: string | null;

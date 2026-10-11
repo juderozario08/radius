@@ -132,7 +132,7 @@ func TestCycleCountService_RecordScan(t *testing.T) {
 			ExpectedQty:  10,
 			CountedQty:   8,
 			Variance:     -2,
-			VarianceCost: -20.00,
+			VarianceCost: -2000,
 			ReasonCode:   &reason,
 			ScannedAt:    &now,
 			ScannedBy:    &empID,
@@ -184,7 +184,7 @@ func TestCycleCountService_RecordScan_ZeroQuantityUnlistedProduct(t *testing.T) 
 			ExpectedQty:  0,
 			CountedQty:   1,
 			Variance:     1,
-			VarianceCost: 35.00,
+			VarianceCost: 3500,
 			ReasonCode:   &reason,
 			ScannedAt:    &now,
 			ScannedBy:    &empID,
@@ -401,7 +401,7 @@ func TestCycleCountService_StartCount_BroadcastsEvent(t *testing.T) {
 			Status:            models.CycleCountStatusInProgress,
 			TotalItems:        60,
 			CountedItems:      0,
-			TotalVarianceCost: 0.0,
+			TotalVarianceCost: 0,
 		}, nil)
 
 	mockBroadcaster.EXPECT().
@@ -461,7 +461,7 @@ func TestCycleCountService_RecordScan_BroadcastsEvent(t *testing.T) {
 			CountedBy:         &empID,
 			TotalItems:        60,
 			CountedItems:      5,
-			TotalVarianceCost: 0.0,
+			TotalVarianceCost: 0,
 		}, nil)
 
 	qty := 2
@@ -480,7 +480,7 @@ func TestCycleCountService_RecordScan_BroadcastsEvent(t *testing.T) {
 			ExpectedQty:  2,
 			CountedQty:   2,
 			Variance:     0,
-			VarianceCost: 0.0,
+			VarianceCost: 0,
 		}, nil)
 
 	mockBroadcaster.EXPECT().

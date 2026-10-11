@@ -39,7 +39,7 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 				{
 					ProductId:    101,
 					Quantity:     1,
-					UnitPrice:    20.00,
+					UnitPrice:    2000,
 					ReturnReason: "DEFECTIVE",
 					Disposition:  models.ReturnDispositionDefectiveRtv,
 				},
@@ -54,15 +54,15 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 				EmployeeId:   empId,
 				Status:       models.ReturnStatusCompleted,
 				RefundMethod: models.RefundMethodCash,
-				Subtotal:     20.00,
-				TotalRefund:  21.00,
+				Subtotal:     2000,
+				TotalRefund:  2100,
 			}, []models.CustomerReturnItem{
 				{
 					ReturnItemId: 1,
 					ReturnId:     1,
 					ProductId:    101,
 					Quantity:     1,
-					UnitPrice:    20.00,
+					UnitPrice:    2000,
 				},
 			}, nil)
 
@@ -93,7 +93,7 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 				{
 					ProductId:    102,
 					Quantity:     1,
-					UnitPrice:    80.00,
+					UnitPrice:    8000,
 					ReturnReason: "CHANGED_MIND",
 					Disposition:  models.ReturnDispositionRestock,
 				},
@@ -108,15 +108,15 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 				EmployeeId:   empId,
 				Status:       models.ReturnStatusPendingApproval,
 				RefundMethod: models.RefundMethodCard,
-				Subtotal:     80.00,
-				TotalRefund:  84.00,
+				Subtotal:     8000,
+				TotalRefund:  8400,
 			}, []models.CustomerReturnItem{
 				{
 					ReturnItemId: 2,
 					ReturnId:     2,
 					ProductId:    102,
 					Quantity:     1,
-					UnitPrice:    80.00,
+					UnitPrice:    8000,
 				},
 			}, nil)
 
@@ -147,7 +147,7 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 				{
 					ProductId:    103,
 					Quantity:     1,
-					UnitPrice:    15.00,
+					UnitPrice:    1500,
 					ReturnReason: "CHANGED_MIND",
 					Disposition:  models.ReturnDispositionRestock,
 				},
@@ -180,7 +180,7 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 						PurchasedQty:          1,
 						ReturnedQty:           0,
 						ReturnableQty:         1,
-						UnitPrice:             40.00,
+						UnitPrice:             4000,
 						IsReturnable:          true,
 						ReturnWindowDays:      30,
 						IsOutsidePolicyWindow: true,
@@ -204,7 +204,7 @@ func TestReturnsService_CreateReturn(t *testing.T) {
 					ProductId:                 104,
 					OriginalTransactionItemId: &txItemId,
 					Quantity:                  1,
-					UnitPrice:                 40.00,
+					UnitPrice:                 4000,
 					ReturnReason:              "CHANGED_MIND",
 					Disposition:               models.ReturnDispositionRestock,
 				},
@@ -240,7 +240,7 @@ func TestReturnsService_ApproveReturn(t *testing.T) {
 				ReturnId:    returnId,
 				StoreId:     storeId,
 				Status:      models.ReturnStatusPendingApproval,
-				TotalRefund: 120.00,
+				TotalRefund: 12000,
 			}, nil, nil)
 
 		mockReturnsRepo.EXPECT().

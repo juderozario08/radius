@@ -274,7 +274,7 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 		return nil, errors.New("must provide product_id or barcode")
 	}
 
-	var costPrice float64
+	var costPrice models.Money
 	_ = tx.QueryRowContext(ctx, `
 		SELECT COALESCE(cost_price, 0) FROM product_suppliers WHERE product_id = $1 AND is_primary = true LIMIT 1
 	`, productID).Scan(&costPrice)
@@ -302,7 +302,7 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 			}
 
 			variance := targetQty - expectedQty
-			varianceCost := float64(variance) * costPrice
+			varianceCost := costPrice.Times(variance)
 
 			reason := "0-quantity stock found during count"
 			if req.ReasonCode != nil && *req.ReasonCode != "" {
@@ -334,7 +334,7 @@ func (r *CycleCountRepo) RecordScan(ctx context.Context, storeID int, req models
 		}
 
 		variance := targetQty - expectedQty
-		varianceCost := float64(variance) * costPrice
+		varianceCost := costPrice.Times(variance)
 
 		updateItemQuery := `
 			UPDATE cycle_count_items
@@ -463,7 +463,7 @@ func (r *CycleCountRepo) ApproveCycleCount(ctx context.Context, storeID int, cou
 		expectedQty int
 		countedQty  int
 		variance    int
-		costPrice   float64
+		costPrice   models.Money
 		reasonCode  string
 	}
 	var items []countItemRow

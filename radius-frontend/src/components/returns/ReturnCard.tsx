@@ -5,6 +5,7 @@ import { CustomerReturnSummary } from "@/types/returns.types";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { formatMoney } from "@/utils/money";
 
 interface ReturnCardProps {
     returnItem: CustomerReturnSummary;
@@ -71,7 +72,7 @@ export const ReturnCard: React.FC<ReturnCardProps> = ({ returnItem, onPress }) =
                     </View>
                     <View style={styles.detailItem}>
                         <Ionicons name="cash-outline" size={16} color={COLORS.textSecondary} />
-                        <Text style={styles.refundAmount}>${returnItem.total_refund.toFixed(2)}</Text>
+                        <Text style={styles.refundAmount}>{formatMoney(returnItem.total_refund)}</Text>
                     </View>
                     <View style={styles.detailItem}>
                         <Ionicons name="card-outline" size={16} color={COLORS.textSecondary} />

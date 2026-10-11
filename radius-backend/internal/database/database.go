@@ -9,7 +9,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database"
 	_ "github.com/golang-migrate/migrate/v4/database/multistmt"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	pgxmigrate "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -50,12 +50,12 @@ func ConnectDB(connectionString string) (*DB, error) {
 func (d *DB) RunMigrations(migrationsPath string) error {
 	log.Println("Running database migrations...")
 
-	driver, err := postgres.WithInstance(d.DB, &postgres.Config{})
+	driver, err := pgxmigrate.WithInstance(d.DB, &pgxmigrate.Config{})
 	if err != nil {
 		return fmt.Errorf("Creating migration driver: %w\n", err)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file://"+migrationsPath, "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance("file://"+migrationsPath, "pgx5", driver)
 	if err != nil {
 		return fmt.Errorf("Loading migration files: %w\n", err)
 	}

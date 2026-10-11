@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strings"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -45,7 +45,7 @@ func main() {
 		log.Fatalf("Failed to run python generator: %v", err)
 	}
 
-	db, err := sql.Open("postgres", dbUrl)
+	db, err := sql.Open("pgx", dbUrl)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

@@ -75,6 +75,7 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, storeId int, employee
 
 	req.Items = append([]models.CreateReturnItemRequest(nil), req.Items...)
 	requestedQty := make(map[int64]int)
+	lineAmounts := make([]models.Money, len(req.Items))
 	var subtotal models.Money
 	for i := range req.Items {
 		item := &req.Items[i]
@@ -101,6 +102,7 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, storeId int, employee
 				return nil, fmt.Errorf("product '%s' has no valid selling price", product.Name)
 			}
 			item.UnitPrice = product.RetailPrice
+			lineAmounts[i] = item.UnitPrice.Times(item.Quantity)
 		} else {
 			if item.OriginalTransactionItemId == nil {
 				return nil, fmt.Errorf("product '%s' must reference an item on transaction %d", product.Name, lookupTx.TransactionId)
@@ -116,6 +118,7 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, storeId int, employee
 				return nil, fmt.Errorf("product '%s' was not sold on transaction %d", product.Name, lookupTx.TransactionId)
 			}
 
+			alreadyReturned := matchedItem.ReturnedQty + requestedQty[matchedItem.TransactionItemId]
 			requestedQty[matchedItem.TransactionItemId] += item.Quantity
 			if requestedQty[matchedItem.TransactionItemId] > matchedItem.ReturnableQty {
 				return nil, fmt.Errorf("requested return qty (%d) exceeds returnable qty (%d) for '%s'", requestedQty[matchedItem.TransactionItemId], matchedItem.ReturnableQty, matchedItem.ProductName)
@@ -124,9 +127,12 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, storeId int, employee
 				return nil, fmt.Errorf("item '%s' is outside return policy window (%d days) and must be refunded via STORE_CREDIT", matchedItem.ProductName, matchedItem.ReturnWindowDays)
 			}
 			item.UnitPrice = matchedItem.UnitPrice
+			purchased := models.Money(matchedItem.PurchasedQty)
+			lineAmounts[i] = matchedItem.NetLineTotal.Prorate(models.Money(alreadyReturned+item.Quantity), purchased) -
+				matchedItem.NetLineTotal.Prorate(models.Money(alreadyReturned), purchased)
 		}
 
-		subtotal += item.UnitPrice.Times(item.Quantity)
+		subtotal += lineAmounts[i]
 	}
 
 	taxAmount, err := s.refundTax(ctx, storeID, lookupTx, subtotal)
@@ -141,7 +147,7 @@ func (s *ReturnsService) CreateReturn(ctx context.Context, storeId int, employee
 
 	var allocatedSubtotal models.Money
 	for i := range req.Items {
-		lineSubtotal := req.Items[i].UnitPrice.Times(req.Items[i].Quantity)
+		lineSubtotal := lineAmounts[i]
 		req.Items[i].TaxAmount = taxAmount.Prorate(allocatedSubtotal+lineSubtotal, subtotal) - taxAmount.Prorate(allocatedSubtotal, subtotal)
 		allocatedSubtotal += lineSubtotal
 	}

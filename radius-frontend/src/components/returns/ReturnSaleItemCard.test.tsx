@@ -13,6 +13,7 @@ const item: OriginalTransactionItemForReturn = {
     returned_qty: 1,
     returnable_qty: 2,
     unit_price: 12.5,
+    net_line_total: 37.5,
     unit_cost: 8,
     is_returnable: true,
     return_window_days: 30,

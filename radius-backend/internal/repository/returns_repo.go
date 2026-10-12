@@ -645,12 +645,12 @@ func (r *ReturnsRepo) LookupTransaction(ctx context.Context, transactionID int64
 			return nil, err
 		}
 
+		item.NetLineTotal = item.UnitPrice.Times(item.PurchasedQty) - discountAmount
+		if item.NetLineTotal < 0 {
+			item.NetLineTotal = 0
+		}
 		if item.PurchasedQty > 0 && discountAmount > 0 {
-			netLine := item.UnitPrice.Times(item.PurchasedQty) - discountAmount
-			if netLine < 0 {
-				netLine = 0
-			}
-			item.UnitPrice = netLine / models.Money(item.PurchasedQty)
+			item.UnitPrice = item.NetLineTotal / models.Money(item.PurchasedQty)
 		}
 
 		item.IsReturnable = isReturnable

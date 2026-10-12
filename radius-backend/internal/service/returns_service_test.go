@@ -113,8 +113,8 @@ func receiptTx(txId int64, storeId int) *models.LookupTransactionResponse {
 		TaxAmount:     1340,
 		TotalAmount:   11649,
 		Items: []models.OriginalTransactionItemForReturn{
-			{TransactionItemId: 1001, ProductId: 104, ProductName: "Desk Lamp", PurchasedQty: 3, ReturnableQty: 3, UnitPrice: 103, IsReturnable: true, ReturnWindowDays: 30},
-			{TransactionItemId: 1002, ProductId: 105, ProductName: "Monitor", PurchasedQty: 1, ReturnableQty: 1, UnitPrice: 10000, IsReturnable: true, ReturnWindowDays: 30},
+			{TransactionItemId: 1001, ProductId: 104, ProductName: "Desk Lamp", PurchasedQty: 3, ReturnableQty: 3, UnitPrice: 103, NetLineTotal: 309, IsReturnable: true, ReturnWindowDays: 30},
+			{TransactionItemId: 1002, ProductId: 105, ProductName: "Monitor", PurchasedQty: 1, ReturnableQty: 1, UnitPrice: 10000, NetLineTotal: 10000, IsReturnable: true, ReturnWindowDays: 30},
 		},
 	}
 }
@@ -199,6 +199,62 @@ func TestReturnsService_CreateReturn_ReceiptRefundsChargedTax(t *testing.T) {
 				if captured.Items[i].UnitPrice != wantPrice {
 					t.Errorf("item %d unit price = %s, want receipt price %s", i, captured.Items[i].UnitPrice, wantPrice)
 				}
+			}
+		})
+	}
+}
+
+func TestReturnsService_CreateReturn_DiscountedLineRefundsExactNet(t *testing.T) {
+	txId := int64(777)
+	lineId := int64(2001)
+
+	tests := []struct {
+		name         string
+		returnedQty  int
+		quantity     int
+		wantSubtotal models.Money
+	}{
+		{name: "full return refunds the whole discounted line", quantity: 3, wantSubtotal: 2900},
+		{name: "first unit refunds its rounded share", quantity: 1, wantSubtotal: 967},
+		{name: "remaining units absorb the rounding remainder", returnedQty: 1, quantity: 2, wantSubtotal: 1933},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc, m := newReturnsService(t)
+			storeId, empId := 2, 10
+
+			lookup := &models.LookupTransactionResponse{
+				TransactionId: txId,
+				StoreId:       storeId,
+				DaysSinceSale: 1,
+				Subtotal:      2900,
+				TaxAmount:     377,
+				TotalAmount:   3277,
+				Items: []models.OriginalTransactionItemForReturn{{
+					TransactionItemId: lineId, ProductId: 301, ProductName: "Headset",
+					PurchasedQty: 3, ReturnedQty: tt.returnedQty, ReturnableQty: 3 - tt.returnedQty,
+					UnitPrice: 966, NetLineTotal: 2900, IsReturnable: true, ReturnWindowDays: 30,
+				}},
+			}
+			m.returnsRepo.EXPECT().LookupTransaction(gomock.Any(), txId, &storeId).Return(lookup, nil)
+			m.productRepo.EXPECT().
+				GetProductByID(gomock.Any(), 301).
+				Return(&models.Product{ProductId: 301, Name: "Headset", IsReturnable: true, RetailPrice: 1000}, nil)
+
+			var captured models.CreateReturnRequest
+			expectCreateReturn(m, storeId, empId, models.ReturnStatusCompleted, &captured)
+
+			req := models.CreateReturnRequest{
+				OriginalTransactionId: &txId,
+				RefundMethod:          models.RefundMethodCard,
+				Items:                 []models.CreateReturnItemRequest{{ProductId: 301, OriginalTransactionItemId: &lineId, Quantity: tt.quantity}},
+			}
+			if _, err := svc.CreateReturn(context.Background(), storeId, empId, models.RoleSales, req); err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if captured.Subtotal != tt.wantSubtotal {
+				t.Errorf("subtotal = %s, want %s", captured.Subtotal, tt.wantSubtotal)
 			}
 		})
 	}

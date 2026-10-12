@@ -66,6 +66,7 @@ export interface OriginalTransactionItemForReturn {
     returned_qty: number;
     returnable_qty: number;
     unit_price: Money;
+    net_line_total: Money;
     unit_cost: Money;
     is_returnable: boolean;
     return_window_days: number;

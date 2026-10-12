@@ -168,6 +168,7 @@ type OriginalTransactionItemForReturn struct {
 	ReturnedQty           int    `json:"returned_qty"`
 	ReturnableQty         int    `json:"returnable_qty"`
 	UnitPrice             Money  `json:"unit_price"`
+	NetLineTotal          Money  `json:"net_line_total"`
 	UnitCost              Money  `json:"unit_cost"`
 	IsReturnable          bool   `json:"is_returnable"`
 	ReturnWindowDays      int    `json:"return_window_days"`

@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -14,21 +14,21 @@ func RequireAuth(authService *service.AuthService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
-			log.Printf("[UNAUTHORIZED] RequireAuth: User missing authorization header")
+			slog.WarnContext(ctx.Request.Context(), "RequireAuth: missing authorization header")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "An error occured while authorizing the user."})
 			return
 		}
 
 		tokenString, ok := utils.ParseBearerToken(authHeader)
 		if !ok {
-			log.Printf("[UNAUTHORIZED] RequireAuth: Invalid auth header format")
+			slog.WarnContext(ctx.Request.Context(), "RequireAuth: invalid authorization header format")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "invalid token format, expected 'Bearer <TOKEN>'"})
 			return
 		}
 
 		auth, err := authService.Authenticate(ctx.Request.Context(), tokenString)
 		if err != nil {
-			log.Printf("[UNAUTHORIZED] RequireAuth: %v", err)
+			slog.WarnContext(ctx.Request.Context(), "RequireAuth: authentication failed", "error", err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: service.AuthErrorMessage(err)})
 			return
 		}

@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -24,19 +24,19 @@ func (h *ProductHandler) GetProductByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Printf("[ERROR] ProductHandler.GetProductByID (Atoi): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ProductHandler.GetProductByID: invalid id", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid product ID"})
 		return
 	}
 
 	product, err := h.productService.GetProductByID(ctx.Request.Context(), id)
 	if err != nil {
-		log.Printf("[ERROR] ProductHandler.GetProductByID (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ProductHandler.GetProductByID: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	if product == nil {
-		log.Printf("[ERROR] ProductHandler.GetProductByID: Product not found")
+		slog.ErrorContext(ctx.Request.Context(), "ProductHandler.GetProductByID: product not found")
 		ctx.JSON(http.StatusNotFound, models.APIError{Error: "Product not found"})
 		return
 	}
@@ -96,7 +96,7 @@ func (h *ProductHandler) SearchProducts(ctx *gin.Context) {
 		limit, offset,
 	)
 	if err != nil {
-		log.Printf("[ERROR] ProductHandler.SearchProducts (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ProductHandler.SearchProducts: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}

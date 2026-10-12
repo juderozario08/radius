@@ -2,7 +2,7 @@ package api
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -38,7 +38,7 @@ func HandleError(c *gin.Context, err error, fallback string) {
 	case errors.Is(err, ErrValidation):
 		status, message = http.StatusBadRequest, fallback
 	default:
-		log.Printf("[ERROR] %s: %v", fallback, err)
+		slog.ErrorContext(c.Request.Context(), fallback, "error", err)
 	}
 	c.JSON(status, gin.H{"error": message})
 }

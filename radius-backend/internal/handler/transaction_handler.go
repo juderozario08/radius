@@ -2,7 +2,7 @@ package handler
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -35,7 +35,7 @@ func (h *TransactionHandler) CreateTransaction(ctx *gin.Context) {
 
 	createdTx, err := h.transactionService.CreateTransaction(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
-		log.Printf("[ERROR] TransactionHandler.CreateTransaction: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "TransactionHandler.CreateTransaction failed", "error", err)
 		if errors.Is(err, service.ErrForbidden) {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else {
@@ -59,7 +59,7 @@ func (h *TransactionHandler) GetAllTransactions(ctx *gin.Context) {
 
 	transactions, totalLength, err := h.transactionService.GetAllTransactions(ctx.Request.Context(), storeId, role, pageNumber, pageSize)
 	if err != nil {
-		log.Printf("[ERROR] TransactionHandler.GetAllTransactions (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "TransactionHandler.GetAllTransactions: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -77,19 +77,19 @@ func (h *TransactionHandler) GetTransactionByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Printf("[ERROR] TransactionHandler.GetTransactionByID (Atoi): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "TransactionHandler.GetTransactionByID: invalid id", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid transaction ID"})
 		return
 	}
 
 	transaction, items, err := h.transactionService.GetTransactionByID(ctx.Request.Context(), storeId, role, id)
 	if err != nil {
-		log.Printf("[ERROR] TransactionHandler.GetTransactionByID (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "TransactionHandler.GetTransactionByID: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	if transaction == nil {
-		log.Printf("[ERROR] TransactionHandler.GetTransactionByID: Transaction not found")
+		slog.ErrorContext(ctx.Request.Context(), "TransactionHandler.GetTransactionByID: transaction not found")
 		ctx.JSON(http.StatusNotFound, models.APIError{Error: "Transaction not found"})
 		return
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"radius/internal/cache"
 	"radius/internal/database"
@@ -76,7 +76,7 @@ func (s *SessionService) CreateSession(ctx context.Context, employeeId int, role
 		err = s.redisClient.Set(ctx, authKey, session.SessionId, utils.SessionInactivityTimeout).Err()
 		if err != nil {
 			database.CacheMetrics.RecordSetError()
-			log.Printf("Failed to cache session in Redis: %v", err)
+			slog.ErrorContext(ctx, "failed to cache session in redis", "error", err)
 		}
 	}
 
@@ -282,7 +282,7 @@ func (s *SessionService) TerminateSessionById(ctx context.Context, sessionId int
 func (s *SessionService) TerminateAllSessionsByEmployeeId(ctx context.Context, employeeId int) {
 	sessions, err := s.sessionRepo.GetSessionsByEmployeeId(ctx, employeeId)
 	if err != nil {
-		log.Printf("Failed to fetch sessions for employee %d: %v", employeeId, err)
+		slog.ErrorContext(ctx, "failed to fetch sessions for employee", "employee_id", employeeId, "error", err)
 		return
 	}
 	for _, session := range sessions {

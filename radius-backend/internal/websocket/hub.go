@@ -2,7 +2,7 @@ package websocket
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -74,7 +74,7 @@ func (h *Hub) Run() {
 		case event := <-h.broadcast:
 			data, err := json.Marshal(event)
 			if err != nil {
-				log.Printf("[WS HUB] Failed to serialize event %s: %v", event.Type, err)
+				slog.Error("WS hub: failed to serialize event", "event_type", event.Type, "error", err)
 				continue
 			}
 
@@ -107,7 +107,7 @@ func (h *Hub) Run() {
 				select {
 				case c.Send <- data:
 				default:
-					log.Printf("[WS HUB] Slow client evicted: employee=%d, store=%d", c.EmployeeId, c.StoreId)
+					slog.Warn("WS hub: slow client evicted", "employee_id", c.EmployeeId, "store_id", c.StoreId)
 					slowClients = append(slowClients, c)
 				}
 			}
@@ -189,7 +189,7 @@ func (h *Hub) Broadcast(event models.WebSocketEvent) {
 	select {
 	case h.broadcast <- event:
 	default:
-		log.Printf("[WS HUB] Warning: broadcast queue full, dropping event %s", event.Type)
+		slog.Warn("WS hub: broadcast queue full, dropping event", "event_type", event.Type)
 	}
 }
 

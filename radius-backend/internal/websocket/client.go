@@ -3,7 +3,7 @@ package websocket
 import (
 	"bytes"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -137,7 +137,7 @@ func (c *Client) ReadPump() {
 				websocket.CloseGoingAway,
 				websocket.CloseAbnormalClosure,
 				websocket.CloseNormalClosure) {
-				log.Printf("[WS CLIENT] Read error for employee=%d: %v", c.EmployeeId, err)
+				slog.Warn("WS client: read error", "employee_id", c.EmployeeId, "error", err)
 			}
 			break
 		}
@@ -185,7 +185,7 @@ func (c *Client) WritePump() {
 			}
 
 			if err := c.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
-				log.Printf("[WS CLIENT] Write error for employee=%d: %v", c.EmployeeId, err)
+				slog.Warn("WS client: write error", "employee_id", c.EmployeeId, "error", err)
 				return
 			}
 
@@ -195,7 +195,7 @@ func (c *Client) WritePump() {
 			}
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				log.Printf("[WS CLIENT] Ping failed for employee=%d: %v", c.EmployeeId, err)
+				slog.Warn("WS client: ping failed", "employee_id", c.EmployeeId, "error", err)
 				return
 			}
 		}

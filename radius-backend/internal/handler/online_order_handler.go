@@ -3,7 +3,7 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -61,7 +61,7 @@ func (h *OnlineOrderHandler) GetAllOnlineOrders(ctx *gin.Context) {
 
 	orders, totalLength, err := h.onlineOrderService.GetAllOnlineOrders(ctx.Request.Context(), storeId, role, pageNumber, pageSize, criteria)
 	if err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.GetAllOnlineOrders (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.GetAllOnlineOrders: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -76,19 +76,19 @@ func (h *OnlineOrderHandler) GetOnlineOrderByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.GetOnlineOrderByID (Atoi): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.GetOnlineOrderByID: invalid id", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid order ID"})
 		return
 	}
 
 	order, items, err := h.onlineOrderService.GetOnlineOrderByIDForStore(ctx.Request.Context(), id, ctx.GetInt("store_id"), models.EmployeeRole(ctx.GetString("role")))
 	if err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.GetOnlineOrderByID (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.GetOnlineOrderByID: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	if order == nil {
-		log.Printf("[ERROR] OnlineOrderHandler.GetOnlineOrderByID: Order not found")
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.GetOnlineOrderByID: order not found")
 		ctx.JSON(http.StatusNotFound, models.APIError{Error: "Order not found"})
 		return
 	}
@@ -105,14 +105,14 @@ func (h *OnlineOrderHandler) CreateOnlineOrder(ctx *gin.Context) {
 
 	var order models.OnlineOrder
 	if err := ctx.ShouldBindJSON(&order); err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.CreateOnlineOrder (BindJSON): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.CreateOnlineOrder: invalid request body", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	createdOrder, err := h.onlineOrderService.CreateOnlineOrder(ctx.Request.Context(), storeId, role, &order)
 	if err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.CreateOnlineOrder (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.CreateOnlineOrder: service error", "error", err)
 		if errors.Is(err, service.ErrValidation) {
 			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
@@ -131,7 +131,7 @@ func (h *OnlineOrderHandler) AssignOnlineOrder(ctx *gin.Context) {
 
 	var req models.AssignOnlineOrderRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.AssignOnlineOrder (BindJSON): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.AssignOnlineOrder: invalid request body", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -145,7 +145,7 @@ func (h *OnlineOrderHandler) AssignOnlineOrder(ctx *gin.Context) {
 
 	order, wasAssigned, err := h.onlineOrderService.AssignOnlineOrder(ctx.Request.Context(), storeId, employeeId, role, req.OrderID, req.EmployeeID)
 	if err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.AssignOnlineOrder (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.AssignOnlineOrder: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -177,7 +177,7 @@ func (h *OnlineOrderHandler) UpdateOnlineOrderItem(ctx *gin.Context) {
 
 	var req models.UpdateOnlineOrderItemRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.UpdateOnlineOrderItem (BindJSON): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.UpdateOnlineOrderItem: invalid request body", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -197,7 +197,7 @@ func (h *OnlineOrderHandler) UpdateOnlineOrderItem(ctx *gin.Context) {
 
 	err := h.onlineOrderService.UpdateOrderItemForStore(ctx.Request.Context(), ctx.GetInt("store_id"), role, req.OrderID, req.OrderItemID, req.PickedQty, req.Status, req.Reason)
 	if err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.UpdateOnlineOrderItem (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.UpdateOnlineOrderItem: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -218,7 +218,7 @@ func (h *OnlineOrderHandler) CompleteOrderPicking(ctx *gin.Context) {
 
 	order, err := h.onlineOrderService.CompleteOrderPickingForStore(ctx.Request.Context(), ctx.GetInt("store_id"), role, id)
 	if err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.CompleteOrderPicking (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.CompleteOrderPicking: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -234,7 +234,7 @@ func (h *OnlineOrderHandler) CancelOnlineOrder(ctx *gin.Context) {
 
 	var req models.CancelOnlineOrderRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.CancelOnlineOrder (BindJSON): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.CancelOnlineOrder: invalid request body", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -248,7 +248,7 @@ func (h *OnlineOrderHandler) CancelOnlineOrder(ctx *gin.Context) {
 
 	order, err := h.onlineOrderService.CancelOnlineOrderForStore(ctx.Request.Context(), ctx.GetInt("store_id"), role, req.OrderID, req.Reason)
 	if err != nil {
-		log.Printf("[ERROR] OnlineOrderHandler.CancelOnlineOrder (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "OnlineOrderHandler.CancelOnlineOrder: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}

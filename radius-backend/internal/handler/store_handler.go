@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -29,7 +29,7 @@ func (h *StoreHandler) GetAllStores(ctx *gin.Context) {
 		ctx.DefaultQuery("page_number", "1"),
 	)
 	if err != nil {
-		log.Printf("[ERROR] StoreHandler.GetAllStores (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "StoreHandler.GetAllStores: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -41,7 +41,7 @@ func (h *StoreHandler) UpdateStore(ctx *gin.Context) {
 	var body models.UpdateStoreRequest
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
-		log.Printf("[ERROR] StoreHandler.UpdateStore (BindJSON): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "StoreHandler.UpdateStore: invalid request body", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -55,7 +55,7 @@ func (h *StoreHandler) UpdateStore(ctx *gin.Context) {
 
 	res, err := h.storeService.UpdateStore(ctx.Request.Context(), body)
 	if err != nil {
-		log.Printf("[ERROR] StoreHandler.UpdateStore (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "StoreHandler.UpdateStore: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -66,14 +66,14 @@ func (h *StoreHandler) CreateStore(ctx *gin.Context) {
 	var body models.CreateStoreRequest
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
-		log.Printf("[ERROR] StoreHandler.CreateStore (BindJSON): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "StoreHandler.CreateStore: invalid request body", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	res, err := h.storeService.CreateStore(ctx.Request.Context(), body)
 	if err != nil {
-		log.Printf("[ERROR] StoreHandler.CreateStore (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "StoreHandler.CreateStore: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -84,7 +84,7 @@ func (h *StoreHandler) GetStore(ctx *gin.Context) {
 	storeId := ctx.Param("id")
 	res, err := h.storeService.GetStore(ctx.Request.Context(), storeId)
 	if err != nil {
-		log.Printf("[ERROR] StoreHandler.GetStore (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "StoreHandler.GetStore: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -100,7 +100,7 @@ func (h *StoreHandler) ActivateStore(ctx *gin.Context) {
 
 	res, err := h.storeService.ActivateStore(ctx.Request.Context(), storeID)
 	if err != nil {
-		log.Printf("[ERROR] StoreHandler.ActivateStore (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "StoreHandler.ActivateStore: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -116,7 +116,7 @@ func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
 
 	res, err := h.storeService.DeactivateStore(ctx.Request.Context(), storeID)
 	if err != nil {
-		log.Printf("[ERROR] StoreHandler.DeactivateStore (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "StoreHandler.DeactivateStore: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -132,7 +132,7 @@ func (h *StoreHandler) GetStoreOperations(ctx *gin.Context) {
 	}
 	operations, err := h.storeService.GetStoreOperations(ctx.Request.Context(), storeIDOpt...)
 	if err != nil {
-		log.Printf("[ERROR] StoreHandler.GetStoreOperations (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "StoreHandler.GetStoreOperations: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve store operations"})
 		return
 	}

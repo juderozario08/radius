@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -20,14 +20,14 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 func (h *AuthHandler) Login(ctx *gin.Context) {
 	var body models.EmployeeLoginRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Printf("[ERROR] AuthHandler.Login (BindJSON): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "AuthHandler.Login: invalid request body", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	result, err := h.authService.Login(ctx.Request.Context(), body, ctx.ClientIP())
 	if err != nil {
-		log.Printf("[ERROR] AuthHandler.Login (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "AuthHandler.Login: service error", "error", err)
 		ctx.JSON(http.StatusUnauthorized, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -46,13 +46,13 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 func (h *AuthHandler) Logout(ctx *gin.Context) {
 	tokenString, exists := ctx.Get("token_string")
 	if !exists {
-		log.Printf("[ERROR] AuthHandler.Logout: token_string not found in context")
+		slog.ErrorContext(ctx.Request.Context(), "AuthHandler.Logout: token_string not found in context")
 		ctx.JSON(http.StatusUnauthorized, models.APIError{Error: "Unauthorized"})
 		return
 	}
 	err := h.authService.Logout(ctx.Request.Context(), tokenString.(string))
 	if err != nil {
-		log.Printf("[ERROR] AuthHandler.Logout (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "AuthHandler.Logout: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to logout"})
 		return
 	}
@@ -67,14 +67,14 @@ func (h *AuthHandler) VerifyToken(ctx *gin.Context) {
 func (h *AuthHandler) RefreshToken(ctx *gin.Context) {
 	var body models.RefreshTokenRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Printf("[ERROR] AuthHandler.RefreshToken (BindJSON): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "AuthHandler.RefreshToken: invalid request body", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "refresh_token is required"})
 		return
 	}
 
 	result, err := h.authService.RefreshToken(ctx.Request.Context(), body.RefreshToken)
 	if err != nil {
-		log.Printf("[ERROR] AuthHandler.RefreshToken (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "AuthHandler.RefreshToken: service error", "error", err)
 		ctx.JSON(http.StatusUnauthorized, models.APIError{Error: "Request could not be completed"})
 		return
 	}

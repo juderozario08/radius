@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -62,7 +62,7 @@ func resolveRequestedStore(ctx *gin.Context, defaultStore int, homeStore int, ro
 
 func (h *WSHandler) CreateTicket(ctx *gin.Context) {
 	if h.redisClient == nil {
-		log.Printf("[ERROR] WS CreateTicket: Redis client not configured")
+		slog.ErrorContext(ctx.Request.Context(), "WS CreateTicket: redis client not configured")
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Ticket service unavailable"})
 		return
 	}
@@ -74,7 +74,7 @@ func (h *WSHandler) CreateTicket(ctx *gin.Context) {
 
 	resolvedStore, allowed := resolveRequestedStore(ctx, storeID, storeID, role)
 	if !allowed {
-		log.Printf("[WS FORBIDDEN] Employee %d (role %s) requested unauthorized store %s", employeeID, role, ctx.Query("store_id"))
+		slog.WarnContext(ctx.Request.Context(), "WS forbidden: unauthorized store requested", "employee_id", employeeID, "role", role, "store_id", ctx.Query("store_id"))
 		ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "Not authorized for the requested store"})
 		return
 	}
@@ -87,7 +87,7 @@ func (h *WSHandler) CreateTicket(ctx *gin.Context) {
 
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
-		log.Printf("[ERROR] WS CreateTicket: Failed to generate random ticket: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "WS CreateTicket: failed to generate random ticket", "error", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Failed to generate ticket"})
 		return
 	}
@@ -102,13 +102,13 @@ func (h *WSHandler) CreateTicket(ctx *gin.Context) {
 
 	data, err := json.Marshal(ticketData)
 	if err != nil {
-		log.Printf("[ERROR] WS CreateTicket: Failed to serialize ticket data: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "WS CreateTicket: failed to serialize ticket data", "error", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Failed to serialize ticket"})
 		return
 	}
 
 	if err := h.redisClient.Set(ctx.Request.Context(), "ws_ticket:"+ticket, data, 30*time.Second).Err(); err != nil {
-		log.Printf("[ERROR] WS CreateTicket: Failed to store ticket in Redis: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "WS CreateTicket: failed to store ticket in redis", "error", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Failed to store ticket"})
 		return
 	}
@@ -125,7 +125,7 @@ func (h *WSHandler) HandleWS(ctx *gin.Context) {
 
 func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 	if h.authService == nil {
-		log.Printf("[ERROR] WS Upgrade: Auth service not configured")
+		slog.ErrorContext(ctx.Request.Context(), "WS upgrade: auth service not configured")
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Authentication unavailable"})
 		return
 	}
@@ -140,7 +140,7 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 		}
 		empCtx, err := h.authService.ActiveEmployeeContext(ctx.Request.Context(), ticketData.EmployeeID)
 		if err != nil {
-			log.Printf("[WS UNAUTHORIZED] Ticket employee %d rejected: %v", ticketData.EmployeeID, err)
+			slog.WarnContext(ctx.Request.Context(), "WS unauthorized: ticket employee rejected", "employee_id", ticketData.EmployeeID, "error", err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: service.AuthErrorMessage(err)})
 			return
 		}
@@ -154,13 +154,13 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 	} else {
 		tokenString, ok := utils.ParseBearerToken(ctx.GetHeader("Authorization"))
 		if !ok {
-			log.Printf("[WS UNAUTHORIZED] Missing authentication token")
+			slog.WarnContext(ctx.Request.Context(), "WS unauthorized: missing authentication token")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Authentication token required"})
 			return
 		}
 		authCtx, err := h.authService.Authenticate(ctx.Request.Context(), tokenString)
 		if err != nil {
-			log.Printf("[WS UNAUTHORIZED] %v", err)
+			slog.WarnContext(ctx.Request.Context(), "WS unauthorized: token rejected", "error", err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: service.AuthErrorMessage(err)})
 			return
 		}
@@ -171,13 +171,13 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 	employeeID, role, email := auth.EmployeeId, auth.Role, auth.Email
 	storeID, allowed := resolveRequestedStore(ctx, defaultStore, auth.StoreId, role)
 	if !allowed {
-		log.Printf("[WS FORBIDDEN] Employee %d (role %s) requested unauthorized store %d", employeeID, role, storeID)
+		slog.WarnContext(ctx.Request.Context(), "WS forbidden: unauthorized store requested", "employee_id", employeeID, "role", role, "store_id", storeID)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "Not authorized for the requested store"})
 		return
 	}
 
 	if storeID <= 0 {
-		log.Printf("[WS FORBIDDEN] Employee %d has no associated store", employeeID)
+		slog.WarnContext(ctx.Request.Context(), "WS forbidden: employee has no associated store", "employee_id", employeeID)
 		ctx.AbortWithStatusJSON(http.StatusForbidden, models.APIError{Error: "No store associated with this account"})
 		return
 	}
@@ -189,7 +189,7 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
-		log.Printf("[ERROR] WS Upgrade: Connection upgrade failed for employee %d: %v", employeeID, err)
+		slog.ErrorContext(ctx.Request.Context(), "WS upgrade: connection upgrade failed", "employee_id", employeeID, "error", err)
 		return
 	}
 
@@ -202,21 +202,21 @@ func (h *WSHandler) HandleWebSocket(ctx *gin.Context) {
 
 func (h *WSHandler) consumeTicket(ctx *gin.Context, ticket string) (*models.WSTicketData, bool) {
 	if h.redisClient == nil {
-		log.Printf("[WS UNAUTHORIZED] Redis not configured for ticket authentication")
+		slog.WarnContext(ctx.Request.Context(), "WS unauthorized: redis not configured for ticket authentication")
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "Ticket authentication unavailable"})
 		return nil, false
 	}
 
 	val, err := h.redisClient.GetDel(ctx.Request.Context(), "ws_ticket:"+ticket).Result()
 	if err != nil {
-		log.Printf("[WS UNAUTHORIZED] Invalid or expired connection ticket")
+		slog.WarnContext(ctx.Request.Context(), "WS unauthorized: invalid or expired connection ticket")
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid or expired connection ticket"})
 		return nil, false
 	}
 
 	var ticketData models.WSTicketData
 	if err := json.Unmarshal([]byte(val), &ticketData); err != nil {
-		log.Printf("[WS UNAUTHORIZED] Failed to deserialize ticket data: %v", err)
+		slog.WarnContext(ctx.Request.Context(), "WS unauthorized: failed to deserialize ticket data", "error", err)
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, models.APIError{Error: "Invalid connection ticket"})
 		return nil, false
 	}

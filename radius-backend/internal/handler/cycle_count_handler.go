@@ -2,7 +2,7 @@ package handler
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/api"
 	"radius/internal/models"
@@ -35,7 +35,7 @@ func (h *CycleCountHandler) GetWeeklyCycleCounts(ctx *gin.Context) {
 
 	counts, err := h.cycleCountService.GetWeeklyCycleCounts(ctx.Request.Context(), storeId, role, storeIDOverride)
 	if err != nil {
-		log.Printf("[ERROR] CycleCountHandler.GetWeeklyCycleCounts: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "CycleCountHandler.GetWeeklyCycleCounts failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -58,7 +58,7 @@ func (h *CycleCountHandler) GetCycleCountDetail(ctx *gin.Context) {
 
 	detail, err := h.cycleCountService.GetCycleCountDetail(ctx.Request.Context(), storeId, employeeId, role, countID)
 	if err != nil {
-		log.Printf("[ERROR] CycleCountHandler.GetCycleCountDetail: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "CycleCountHandler.GetCycleCountDetail failed", "error", err)
 		if errors.Is(err, service.ErrForbidden) {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else if errors.Is(err, service.ErrNotFound) {
@@ -87,7 +87,7 @@ func (h *CycleCountHandler) GetCycleCountItems(ctx *gin.Context) {
 
 	items, err := h.cycleCountService.GetCycleCountItems(ctx.Request.Context(), storeId, employeeId, role, countID)
 	if err != nil {
-		log.Printf("[ERROR] CycleCountHandler.GetCycleCountItems: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "CycleCountHandler.GetCycleCountItems failed", "error", err)
 		if errors.Is(err, service.ErrForbidden) {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else if errors.Is(err, service.ErrNotFound) {
@@ -114,7 +114,7 @@ func (h *CycleCountHandler) StartCycleCount(ctx *gin.Context) {
 
 	count, err := h.cycleCountService.StartCount(ctx.Request.Context(), storeId, employeeId, role, req.CategoryId, req.StoreId)
 	if err != nil {
-		log.Printf("[ERROR] CycleCountHandler.StartCycleCount: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "CycleCountHandler.StartCycleCount failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -142,7 +142,7 @@ func (h *CycleCountHandler) RecordScan(ctx *gin.Context) {
 
 	item, err := h.cycleCountService.RecordScan(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
-		log.Printf("[ERROR] CycleCountHandler.RecordScan: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "CycleCountHandler.RecordScan failed", "error", err)
 		if errors.Is(err, service.ErrForbidden) {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else {
@@ -173,7 +173,7 @@ func (h *CycleCountHandler) SubmitForApproval(ctx *gin.Context) {
 	req.CountId = id
 
 	if err := h.cycleCountService.SubmitForApproval(ctx.Request.Context(), storeId, employeeId, role, req); err != nil {
-		log.Printf("[ERROR] CycleCountHandler.SubmitForApproval: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "CycleCountHandler.SubmitForApproval failed", "error", err)
 		if errors.Is(err, service.ErrForbidden) {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else {
@@ -197,7 +197,7 @@ func (h *CycleCountHandler) ApproveCycleCount(ctx *gin.Context) {
 	}
 
 	if err := h.cycleCountService.ApproveCount(ctx.Request.Context(), storeId, employeeId, role, models.ApproveCycleCountRequest{CountId: id}); err != nil {
-		log.Printf("[ERROR] CycleCountHandler.ApproveCycleCount: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "CycleCountHandler.ApproveCycleCount failed", "error", err)
 		if errors.Is(err, service.ErrForbidden) {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else {
@@ -227,7 +227,7 @@ func (h *CycleCountHandler) TransferOwnership(ctx *gin.Context) {
 	req.CountId = id
 
 	if err := h.cycleCountService.TransferOwnership(ctx.Request.Context(), storeId, role, req); err != nil {
-		log.Printf("[ERROR] CycleCountHandler.TransferOwnership: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "CycleCountHandler.TransferOwnership failed", "error", err)
 		if errors.Is(err, service.ErrForbidden) {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else {
@@ -266,7 +266,7 @@ func (h *CycleCountHandler) SearchCycleCounts(ctx *gin.Context) {
 
 	results, err := h.cycleCountService.SearchCycleCounts(ctx.Request.Context(), storeId, role, criteria)
 	if err != nil {
-		log.Printf("[ERROR] CycleCountHandler.SearchCycleCounts: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "CycleCountHandler.SearchCycleCounts failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -289,7 +289,7 @@ func (h *CycleCountHandler) GetSchedule(ctx *gin.Context) {
 
 	schedule, err := h.cycleCountService.GetSchedule(ctx.Request.Context(), storeId, role, from, to, storeIDOverride)
 	if err != nil {
-		log.Printf("[ERROR] CycleCountHandler.GetSchedule: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "CycleCountHandler.GetSchedule failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -310,7 +310,7 @@ func (h *CycleCountHandler) CreateScheduleEntry(ctx *gin.Context) {
 
 	entry, err := h.cycleCountService.CreateScheduleEntry(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
-		log.Printf("[ERROR] CycleCountHandler.CreateScheduleEntry: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "CycleCountHandler.CreateScheduleEntry failed", "error", err)
 		if errors.Is(err, service.ErrForbidden) {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: "Request could not be completed"})
 		} else {

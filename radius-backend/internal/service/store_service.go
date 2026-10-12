@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"radius/internal/cache"
 	"radius/internal/database"
 	"radius/internal/models"
@@ -73,14 +73,14 @@ func (s *StoreService) GetAllStores(ctx context.Context, pageSize string, pageNu
 
 	num, err := strconv.Atoi(pageSize)
 	if err != nil {
-		log.Println("Page Size atoi conversion failed: ", err)
+		slog.WarnContext(ctx, "invalid page_size", "error", err)
 	} else {
 		pageSizeInt = num
 	}
 
 	num, err = strconv.Atoi(pageNumber)
 	if err != nil {
-		log.Println("Page Number atoi conversion failed: ", err)
+		slog.WarnContext(ctx, "invalid page_number", "error", err)
 	} else {
 		pageNumberInt = num - 1
 	}
@@ -153,7 +153,7 @@ func (s *StoreService) UpdateStore(ctx context.Context, body models.UpdateStoreR
 
 	err = s.storeRepo.UpdateStore(ctx, body)
 	if err != nil {
-		log.Println("Error: " + err.Error())
+		slog.ErrorContext(ctx, "StoreService.UpdateStore: repository error", "error", err)
 		return nil, errors.New("error updating this store")
 	}
 
@@ -249,7 +249,7 @@ func (s *StoreService) GetStoreOperations(ctx context.Context, storeID ...int) (
 			_ = s.redisClient.Del(ctx, cacheKey).Err()
 		} else if !errors.Is(err, redis.Nil) {
 			database.CacheMetrics.RecordFallback()
-			log.Printf("[WARN] Redis get failed for %s: %v", cacheKey, err)
+			slog.WarnContext(ctx, "redis get failed", "key", cacheKey, "error", err)
 		} else if targetStoreID == 0 {
 			legacyVal, legErr := s.redisClient.Get(ctx, cache.LegacyStoreOperationsKey()).Result()
 			if legErr == nil {
@@ -286,7 +286,7 @@ func (s *StoreService) GetStoreOperations(ctx context.Context, storeID ...int) (
 				ttl := cache.ApplyJitter(30*time.Second, 5*time.Second)
 				if setErr := s.redisClient.Set(ctx, cacheKey, data, ttl).Err(); setErr != nil {
 					database.CacheMetrics.RecordSetError()
-					log.Printf("[WARN] Redis set failed for %s: %v", cacheKey, setErr)
+					slog.WarnContext(ctx, "redis set failed", "key", cacheKey, "error", setErr)
 				}
 			} else {
 				database.CacheMetrics.RecordSerializationFailure()

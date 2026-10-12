@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"sync"
@@ -73,7 +73,7 @@ func RateLimitMiddleware(limiter *IPRateLimiter) gin.HandlerFunc {
 		clientIP := c.ClientIP()
 
 		if !limiter.GetLimiter(clientIP).Allow() {
-			log.Printf("[RATE LIMIT] Request blocked from IP: %s", clientIP)
+			slog.WarnContext(c.Request.Context(), "rate limit: request blocked", "client_ip", clientIP)
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, models.APIError{
 				Error: "Too many requests. Please try again later.",
 			})

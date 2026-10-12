@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -43,12 +43,12 @@ func ConnectDB(connectionString string) (*DB, error) {
 	db.SetConnMaxLifetime(connLifetime)
 	db.SetConnMaxIdleTime(connIdleTime)
 
-	log.Println("Successfully connected to Postgres Database")
+	slog.Info("connected to postgres")
 	return &DB{db}, nil
 }
 
 func (d *DB) RunMigrations(migrationsPath string) error {
-	log.Println("Running database migrations...")
+	slog.Info("running database migrations")
 
 	driver, err := pgxmigrate.WithInstance(d.DB, &pgxmigrate.Config{})
 	if err != nil {

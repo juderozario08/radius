@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"radius/internal/cache"
 	"radius/internal/database"
 	"radius/internal/models"
@@ -41,7 +41,7 @@ func (e *EmployeeService) InvalidateEmployeeCache(ctx context.Context, employeeI
 	cacheKey := cache.EmployeeKey(employeeId)
 	if err := e.redisClient.Del(ctx, cacheKey).Err(); err != nil && !errors.Is(err, redis.Nil) {
 		database.CacheMetrics.RecordDeleteError()
-		log.Printf("[WARN] Failed to invalidate employee cache %s: %v", cacheKey, err)
+		slog.WarnContext(ctx, "failed to invalidate employee cache", "key", cacheKey, "error", err)
 	}
 }
 
@@ -186,7 +186,7 @@ func (e *EmployeeService) UpdateEmployee(ctx context.Context, body models.Employ
 
 	err = e.employeeRepo.UpdateEmployee(ctx, body)
 	if err != nil {
-		log.Println("Error: " + err.Error())
+		slog.ErrorContext(ctx, "EmployeeService.UpdateEmployee: repository error", "error", err)
 		return nil, errors.New("error updating this employee")
 	}
 

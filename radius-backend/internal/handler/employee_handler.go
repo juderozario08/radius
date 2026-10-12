@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -24,14 +24,14 @@ func NewEmployeeHandler(employeeService *service.EmployeeService) *EmployeeHandl
 func (e *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 	var body models.CreateEmployeeRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Printf("[ERROR] EmployeeHandler.CreateEmployee (BindJSON): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "EmployeeHandler.CreateEmployee: invalid request body", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
 
 	createEmployeeResponse, err := e.employeeService.CreateEmployee(ctx.Request.Context(), body)
 	if err != nil {
-		log.Printf("[ERROR] EmployeeHandler.CreateEmployee (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "EmployeeHandler.CreateEmployee: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -51,7 +51,7 @@ func (e *EmployeeHandler) GetAllEmployees(ctx *gin.Context) {
 
 	employeeResponse, err := e.employeeService.GetAllEmployees(ctx.Request.Context(), pageNumber, pageSize, storeId)
 	if err != nil {
-		log.Printf("[ERROR] EmployeeHandler.GetAllEmployees (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "EmployeeHandler.GetAllEmployees: service error", "error", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -74,7 +74,7 @@ func (e *EmployeeHandler) GetManagerEmployees(ctx *gin.Context) {
 
 	employeeResponse, err := e.employeeService.GetManagerEmployees(ctx.Request.Context(), storeId, role, pageNumber, pageSize, storeIDOverride)
 	if err != nil {
-		log.Printf("[ERROR] EmployeeHandler.GetManagerEmployees (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "EmployeeHandler.GetManagerEmployees: service error", "error", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -85,7 +85,7 @@ func (e *EmployeeHandler) GetManagerEmployees(ctx *gin.Context) {
 func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 	var body models.Employee
 	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Printf("[ERROR] EmployeeHandler.UpdateEmployee (BindJSON): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "EmployeeHandler.UpdateEmployee: invalid request body", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -99,7 +99,7 @@ func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 
 	updateEmployeeResponse, err := e.employeeService.UpdateEmployee(ctx.Request.Context(), body)
 	if err != nil {
-		log.Printf("[ERROR] EmployeeHandler.UpdateEmployee (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "EmployeeHandler.UpdateEmployee: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -116,7 +116,7 @@ func (e *EmployeeHandler) TerminateEmployee(ctx *gin.Context) {
 
 	employeeResponse, err := e.employeeService.TerminateEmployee(ctx.Request.Context(), employeeID)
 	if err != nil {
-		log.Printf("[ERROR] EmployeeHandler.TerminateEmployee (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "EmployeeHandler.TerminateEmployee: service error", "error", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -132,7 +132,7 @@ func (e *EmployeeHandler) ActivateEmployee(ctx *gin.Context) {
 
 	response, err := e.employeeService.ActivateEmployee(ctx.Request.Context(), employeeID)
 	if err != nil {
-		log.Printf("[ERROR] EmployeeHandler.ActivateEmployee (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "EmployeeHandler.ActivateEmployee: service error", "error", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}

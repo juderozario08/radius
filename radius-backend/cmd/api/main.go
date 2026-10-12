@@ -2,14 +2,16 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"radius/internal/config"
 	"radius/internal/database"
 	"radius/internal/handler"
+	"radius/internal/logging"
 	"radius/internal/repository"
 	"radius/internal/router"
 	"radius/internal/service"
@@ -19,29 +21,38 @@ import (
 )
 
 func main() {
+	logging.Setup(os.Getenv("GIN_MODE"), os.Getenv("LOG_LEVEL"))
+	if err := run(); err != nil {
+		slog.Error("server exited with error", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		return fmt.Errorf("load config: %w", err)
 	}
+	logging.Setup(cfg.GinMode, cfg.LogLevel)
 
 	db, err := database.ConnectDB(cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("Error connecting to database: %v\n", err)
+		return fmt.Errorf("connect to database: %w", err)
 	}
 	defer db.Close()
 
 	redisClient, err := database.ConnectRedis(cfg.RedisURL)
 	if err != nil {
-		log.Fatalf("Error connecting to Redis: %v\n", err)
+		return fmt.Errorf("connect to redis: %w", err)
 	}
 	defer redisClient.Close()
 
 	if cfg.RunMigrations {
 		if err = db.RunMigrations("migrations"); err != nil {
-			log.Fatalf("Could not run migrations: %v", err)
+			return fmt.Errorf("run migrations: %w", err)
 		}
 	} else {
-		log.Println("Skipping automatic migrations (RUN_MIGRATIONS not enabled)")
+		slog.Info("skipping automatic migrations (RUN_MIGRATIONS not enabled)")
 	}
 
 	employeeRepo := repository.NewEmployeeRepo(db.DB)
@@ -129,10 +140,6 @@ func main() {
 		RedisClient: redisClient,
 	})
 
-	if !cfg.IsRelease {
-		fmt.Printf("Listening on PORT %s http://0.0.0.0:%s\n", cfg.Port, cfg.Port)
-	}
-
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           router,
@@ -142,24 +149,32 @@ func main() {
 		IdleTimeout:       60 * time.Second,
 	}
 
+	listenErr := make(chan error, 1)
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Listen: %s\n", err)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			listenErr <- err
 		}
 	}()
+	slog.Info("server listening", "port", cfg.Port)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("Shutting down server...")
+	var serveErr error
+	select {
+	case <-quit:
+		slog.Info("shutting down server")
+	case serveErr = <-listenErr:
+		slog.Error("server listen failed", "error", serveErr)
+	}
 
 	wsHub.Stop()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Printf("Server forced to shutdown: %v", err)
+		slog.Error("server forced to shutdown", "error", err)
 	}
 
-	log.Println("Server exiting")
+	slog.Info("server exiting")
+	return serveErr
 }

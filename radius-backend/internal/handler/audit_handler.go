@@ -3,7 +3,7 @@ package handler
 import (
 	"radius/internal/api"
 
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -72,7 +72,7 @@ func (h *AuditHandler) GetProductAuditTrail(c *gin.Context) {
 
 	res, err := h.auditService.GetProductAuditTrail(c.Request.Context(), storeId, role, barcode, filter, limit, offset)
 	if err != nil {
-		log.Printf("[ERROR] AuditHandler.GetProductAuditTrail: %v", err)
+		slog.ErrorContext(c.Request.Context(), "AuditHandler.GetProductAuditTrail failed", "error", err)
 		api.Error(c, http.StatusInternalServerError, "Request could not be completed")
 		return
 	}

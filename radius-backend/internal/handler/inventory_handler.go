@@ -2,7 +2,7 @@ package handler
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/api"
 	"radius/internal/models"
@@ -34,7 +34,7 @@ func (h *InventoryHandler) ScanProduct(ctx *gin.Context) {
 
 	result, err := h.inventoryService.ScanProduct(ctx.Request.Context(), storeId, employeeId, barcode)
 	if err != nil {
-		log.Printf("[ERROR] InventoryHandler.ScanProduct (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "InventoryHandler.ScanProduct: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -50,7 +50,7 @@ func (h *InventoryHandler) GetLocationProducts(ctx *gin.Context) {
 
 	result, err := h.inventoryService.GetLocationProducts(ctx.Request.Context(), storeId, employeeId, locationID)
 	if err != nil {
-		log.Printf("[ERROR] InventoryHandler.GetLocationProducts (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "InventoryHandler.GetLocationProducts: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -70,7 +70,7 @@ func (h *InventoryHandler) BinItem(ctx *gin.Context) {
 
 	result, err := h.inventoryService.BinItem(ctx.Request.Context(), storeId, employeeId, req)
 	if err != nil {
-		log.Printf("[ERROR] InventoryHandler.BinItem: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "InventoryHandler.BinItem failed", "error", err)
 		if errors.Is(err, service.ErrNotFound) {
 			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
@@ -93,7 +93,7 @@ func (h *InventoryHandler) UpdateQuantity(ctx *gin.Context) {
 
 	err := h.inventoryService.UpdateQuantity(ctx.Request.Context(), storeId, req)
 	if err != nil {
-		log.Printf("[ERROR] InventoryHandler.UpdateQuantity: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "InventoryHandler.UpdateQuantity failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -114,7 +114,7 @@ func (h *InventoryHandler) GetProductScreenDetails(ctx *gin.Context) {
 
 	result, err := h.inventoryService.GetProductScreenDetails(ctx.Request.Context(), storeId, productID)
 	if err != nil {
-		log.Printf("[ERROR] InventoryHandler.GetProductScreenDetails: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "InventoryHandler.GetProductScreenDetails failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -138,7 +138,7 @@ func (h *InventoryHandler) SyncLocations(ctx *gin.Context) {
 
 	err := h.inventoryService.SyncLocations(ctx.Request.Context(), storeId, req)
 	if err != nil {
-		log.Printf("[ERROR] InventoryHandler.SyncLocations: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "InventoryHandler.SyncLocations failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -157,7 +157,7 @@ func (h *InventoryHandler) CreateMimsLocation(ctx *gin.Context) {
 
 	err := h.inventoryService.CreateMimsLocation(ctx.Request.Context(), storeId, req)
 	if err != nil {
-		log.Printf("[ERROR] InventoryHandler.CreateMimsLocation: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "InventoryHandler.CreateMimsLocation failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -177,7 +177,7 @@ func (h *InventoryHandler) CreateAdjustment(ctx *gin.Context) {
 
 	err := h.inventoryService.CreateInventoryAdjustment(ctx.Request.Context(), storeId, employeeId, req)
 	if err != nil {
-		log.Printf("[ERROR] InventoryHandler.CreateAdjustment: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "InventoryHandler.CreateAdjustment failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -190,7 +190,7 @@ func (h *InventoryHandler) GetPendingAdjustments(ctx *gin.Context) {
 
 	adjustments, err := h.inventoryService.GetPendingAdjustments(ctx.Request.Context(), storeId)
 	if err != nil {
-		log.Printf("[ERROR] InventoryHandler.GetPendingAdjustments: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "InventoryHandler.GetPendingAdjustments failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -211,7 +211,7 @@ func (h *InventoryHandler) ReviewAdjustments(ctx *gin.Context) {
 
 	err := h.inventoryService.ReviewAdjustments(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
-		log.Printf("[ERROR] InventoryHandler.ReviewAdjustments: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "InventoryHandler.ReviewAdjustments failed", "error", err)
 		if errors.Is(err, service.ErrUnauthorized) {
 			ctx.JSON(http.StatusForbidden, models.APIError{Error: "unauthorized"})
 		} else {

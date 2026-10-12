@@ -2,7 +2,7 @@ package handler
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -37,7 +37,7 @@ func (h *TransferHandler) GetOutboundTransfers(ctx *gin.Context) {
 
 	results, total, err := h.transferService.GetOutboundTransfers(ctx.Request.Context(), storeId, role, pageSize, pageNumber, filterStoreID)
 	if err != nil {
-		log.Printf("[ERROR] TransferHandler.GetOutboundTransfers: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "TransferHandler.GetOutboundTransfers failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve stock transfers"})
 		return
 	}
@@ -61,7 +61,7 @@ func (h *TransferHandler) GetOutboundTransferDetail(ctx *gin.Context) {
 
 	detail, err := h.transferService.GetOutboundTransferDetail(ctx.Request.Context(), storeId, role, transferID)
 	if err != nil {
-		log.Printf("[ERROR] TransferHandler.GetOutboundTransferDetail: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "TransferHandler.GetOutboundTransferDetail failed", "error", err)
 		if errors.Is(err, service.ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, models.APIError{Error: "Request could not be completed"})
 			return
@@ -90,7 +90,7 @@ func (h *TransferHandler) CreateTransfer(ctx *gin.Context) {
 
 	transfer, err := h.transferService.CreateTransfer(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
-		log.Printf("[ERROR] TransferHandler.CreateTransfer: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "TransferHandler.CreateTransfer failed", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -120,7 +120,7 @@ func (h *TransferHandler) DispatchTransfer(ctx *gin.Context) {
 
 	err := h.transferService.DispatchTransfer(ctx.Request.Context(), storeId, role, req)
 	if err != nil {
-		log.Printf("[ERROR] TransferHandler.DispatchTransfer: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "TransferHandler.DispatchTransfer failed", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -143,7 +143,7 @@ func (h *TransferHandler) CancelTransfer(ctx *gin.Context) {
 
 	err := h.transferService.CancelTransfer(ctx.Request.Context(), storeId, employeeId, role, models.CancelTransferRequest{TransferId: id})
 	if err != nil {
-		log.Printf("[ERROR] TransferHandler.CancelTransfer: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "TransferHandler.CancelTransfer failed", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -166,7 +166,7 @@ func (h *TransferHandler) GetDestinationStores(ctx *gin.Context) {
 
 	stores, err := h.transferService.GetDestinationStores(ctx.Request.Context(), storeId, role, fromStoreID)
 	if err != nil {
-		log.Printf("[ERROR] TransferHandler.GetDestinationStores: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "TransferHandler.GetDestinationStores failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve stores"})
 		return
 	}

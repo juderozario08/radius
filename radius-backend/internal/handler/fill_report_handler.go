@@ -3,7 +3,7 @@ package handler
 import (
 	"radius/internal/api"
 
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -47,7 +47,7 @@ func (h *FillReportHandler) GetFillReport(c *gin.Context) {
 
 	resp, err := h.service.GetStoreFillReport(c.Request.Context(), storeID, filter)
 	if err != nil {
-		log.Printf("Error getting fill report for store %d: %v", storeID, err)
+		slog.ErrorContext(c.Request.Context(), "FillReportHandler.GetFillReport failed", "store_id", storeID, "error", err)
 		api.Error(c, http.StatusInternalServerError, "An internal error occurred")
 		return
 	}
@@ -74,7 +74,7 @@ func (h *FillReportHandler) ScanEmptyHole(c *gin.Context) {
 	}
 
 	if err := h.service.LogEmptyHole(c.Request.Context(), storeID, req.ProductID, empID); err != nil {
-		log.Printf("Error logging empty hole: %v", err)
+		slog.ErrorContext(c.Request.Context(), "FillReportHandler.ScanEmptyHole failed", "error", err)
 		api.Error(c, http.StatusInternalServerError, "An internal error occurred")
 		return
 	}
@@ -108,7 +108,7 @@ func (h *FillReportHandler) AddToIS4TCSession(c *gin.Context) {
 		Product models.MimsProductInventory `json:"product"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("Bind error in AddToIS4TCSession: %v", err)
+		slog.ErrorContext(c.Request.Context(), "FillReportHandler.AddToIS4TCSession: invalid request body", "error", err)
 		api.Error(c, http.StatusBadRequest, "Invalid payload")
 		return
 	}

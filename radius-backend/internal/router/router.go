@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 	"net/http"
 	"radius/internal/config"
 	"radius/internal/handler"
@@ -56,7 +57,7 @@ func NewRouter(cfg Config) *gin.Engine {
 	}
 
 	router := gin.New()
-	router.Use(gin.Logger(), gin.Recovery())
+	router.Use(middleware.RequestID(), middleware.AccessLog(slog.Default()), gin.Recovery())
 	_ = router.SetTrustedProxies(nil)
 	router.Use(middleware.SecurityHeaders(), middleware.RequestBodyLimit(1<<20))
 
@@ -68,8 +69,8 @@ func NewRouter(cfg Config) *gin.Engine {
 
 	corsConfig := cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "If-None-Match"},
-		ExposeHeaders:    []string{"Content-Length", "ETag"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "If-None-Match", middleware.RequestIDHeader},
+		ExposeHeaders:    []string{"Content-Length", "ETag", middleware.RequestIDHeader},
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}

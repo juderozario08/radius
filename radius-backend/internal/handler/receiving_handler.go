@@ -2,7 +2,7 @@ package handler
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/api"
 	"radius/internal/models"
@@ -35,7 +35,7 @@ func (h *ReceivingHandler) GetPurchaseOrders(ctx *gin.Context) {
 
 	results, err := h.receivingService.GetPurchaseOrders(ctx.Request.Context(), storeId, role, storeIDOverride)
 	if err != nil {
-		log.Printf("[ERROR] ReceivingHandler.GetPurchaseOrders: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReceivingHandler.GetPurchaseOrders failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -53,7 +53,7 @@ func (h *ReceivingHandler) GetPurchaseOrderDetail(ctx *gin.Context) {
 
 	detail, err := h.receivingService.GetPurchaseOrderDetail(ctx.Request.Context(), poID)
 	if err != nil {
-		log.Printf("[ERROR] ReceivingHandler.GetPurchaseOrderDetail: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReceivingHandler.GetPurchaseOrderDetail failed", "error", err)
 		if errors.Is(err, service.ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, models.APIError{Error: "Request could not be completed"})
 			return
@@ -80,7 +80,7 @@ func (h *ReceivingHandler) CheckProductInPO(ctx *gin.Context) {
 
 	result, err := h.receivingService.CheckProductInPO(ctx.Request.Context(), poID, barcode)
 	if err != nil {
-		log.Printf("[ERROR] ReceivingHandler.CheckProductInPO: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReceivingHandler.CheckProductInPO failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -108,7 +108,7 @@ func (h *ReceivingHandler) ReceivePO(ctx *gin.Context) {
 
 	err := h.receivingService.ReceivePO(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
-		log.Printf("[ERROR] ReceivingHandler.ReceivePO: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReceivingHandler.ReceivePO failed", "error", err)
 		if errors.Is(err, service.ErrNotFound) || errors.Is(err, service.ErrValidation) {
 			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
@@ -140,7 +140,7 @@ func (h *ReceivingHandler) ReceiveLPR(ctx *gin.Context) {
 
 	err := h.receivingService.ReceiveLPR(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
-		log.Printf("[ERROR] ReceivingHandler.ReceiveLPR: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReceivingHandler.ReceiveLPR failed", "error", err)
 		if errors.Is(err, service.ErrNotFound) || errors.Is(err, service.ErrValidation) {
 			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
@@ -158,7 +158,7 @@ func (h *ReceivingHandler) GetStockTransfers(ctx *gin.Context) {
 
 	results, err := h.receivingService.GetStockTransfers(ctx.Request.Context(), storeId, role)
 	if err != nil {
-		log.Printf("[ERROR] ReceivingHandler.GetStockTransfers: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReceivingHandler.GetStockTransfers failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -176,7 +176,7 @@ func (h *ReceivingHandler) GetStockTransferDetail(ctx *gin.Context) {
 
 	detail, err := h.receivingService.GetStockTransferDetail(ctx.Request.Context(), transferID)
 	if err != nil {
-		log.Printf("[ERROR] ReceivingHandler.GetStockTransferDetail: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReceivingHandler.GetStockTransferDetail failed", "error", err)
 		if errors.Is(err, service.ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, models.APIError{Error: "Request could not be completed"})
 			return
@@ -207,7 +207,7 @@ func (h *ReceivingHandler) ReceiveTransfer(ctx *gin.Context) {
 
 	err := h.receivingService.ReceiveTransfer(ctx.Request.Context(), storeId, employeeId, req)
 	if err != nil {
-		log.Printf("[ERROR] ReceivingHandler.ReceiveTransfer: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReceivingHandler.ReceiveTransfer failed", "error", err)
 		if errors.Is(err, service.ErrNotFound) || errors.Is(err, service.ErrValidation) {
 			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
@@ -231,7 +231,7 @@ func (h *ReceivingHandler) QuickReceiveTransfer(ctx *gin.Context) {
 
 	err := h.receivingService.QuickReceiveTransfer(ctx.Request.Context(), storeId, employeeId, models.QuickReceiveTransferRequest{TransferId: id})
 	if err != nil {
-		log.Printf("[ERROR] ReceivingHandler.QuickReceiveTransfer: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReceivingHandler.QuickReceiveTransfer failed", "error", err)
 		if errors.Is(err, service.ErrNotFound) || errors.Is(err, service.ErrValidation) {
 			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return
@@ -258,7 +258,7 @@ func (h *ReceivingHandler) CheckProductInTransfer(ctx *gin.Context) {
 
 	result, err := h.receivingService.CheckProductInTransfer(ctx.Request.Context(), transferID, barcode)
 	if err != nil {
-		log.Printf("[ERROR] ReceivingHandler.CheckProductInTransfer: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReceivingHandler.CheckProductInTransfer failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}

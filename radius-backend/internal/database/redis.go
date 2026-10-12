@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"strconv"
 	"time"
@@ -53,7 +53,7 @@ func ConnectRedis(redisURL string) (*redis.Client, error) {
 	}
 
 	if redisURL == "local" {
-		log.Println("Starting embedded Redis (miniredis) for local development...")
+		slog.Info("starting embedded redis (miniredis) for local development")
 		s, err := miniredis.Run()
 		if err != nil {
 			return nil, fmt.Errorf("failed to start embedded redis: %w", err)
@@ -66,7 +66,7 @@ func ConnectRedis(redisURL string) (*redis.Client, error) {
 		client := redis.NewClient(opts)
 		client.AddHook(redisMetricsHook{})
 
-		log.Println("Successfully connected to embedded Redis")
+		slog.Info("connected to embedded redis")
 		return client, nil
 	}
 
@@ -84,7 +84,7 @@ func ConnectRedis(redisURL string) (*redis.Client, error) {
 		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
 	}
 
-	log.Println("Successfully connected to Redis")
+	slog.Info("connected to redis")
 	return client, nil
 }
 

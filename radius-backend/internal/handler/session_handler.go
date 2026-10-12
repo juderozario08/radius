@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -26,7 +26,7 @@ func (h *SessionHandler) GetAllSessions(ctx *gin.Context) {
 
 	sessionResponse, err := h.sessionService.GetAllSessions(ctx.Request.Context(), pageNumber, pageSize, tokenString)
 	if err != nil {
-		log.Printf("[ERROR] SessionHandler.GetAllSessions (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "SessionHandler.GetAllSessions: service error", "error", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -43,7 +43,7 @@ func (h *SessionHandler) TerminateSession(ctx *gin.Context) {
 
 	sessionResponse, err := h.sessionService.TerminateSessionById(ctx.Request.Context(), sessionID)
 	if err != nil {
-		log.Printf("[ERROR] SessionHandler.TerminateSession (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "SessionHandler.TerminateSession: service error", "error", err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}

@@ -2,7 +2,7 @@ package handler
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -39,7 +39,7 @@ func (h *PrintOrderHandler) UpdateStatus(ctx *gin.Context) {
 		case errors.Is(err, service.ErrConflict):
 			ctx.JSON(http.StatusConflict, models.APIError{Error: "Invalid or stale status transition"})
 		default:
-			log.Printf("[ERROR] PrintOrderHandler.UpdateStatus: %v", err)
+			slog.ErrorContext(ctx.Request.Context(), "PrintOrderHandler.UpdateStatus failed", "error", err)
 			ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		}
 		return
@@ -75,7 +75,7 @@ func (h *PrintOrderHandler) GetAllPrintOrders(ctx *gin.Context) {
 
 	orders, totalLength, err := h.printOrderService.GetAllPrintOrders(ctx.Request.Context(), storeId, role, pageNumber, pageSize, criteria)
 	if err != nil {
-		log.Printf("[ERROR] PrintOrderHandler.GetAllPrintOrders (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "PrintOrderHandler.GetAllPrintOrders: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
@@ -90,19 +90,19 @@ func (h *PrintOrderHandler) GetPrintOrderByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Printf("[ERROR] PrintOrderHandler.GetPrintOrderByID (Atoi): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "PrintOrderHandler.GetPrintOrderByID: invalid id", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Invalid order ID"})
 		return
 	}
 
 	order, items, err := h.printOrderService.GetPrintOrderByIDForStore(ctx.Request.Context(), id, ctx.GetInt("store_id"), models.EmployeeRole(ctx.GetString("role")))
 	if err != nil {
-		log.Printf("[ERROR] PrintOrderHandler.GetPrintOrderByID (Service): %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "PrintOrderHandler.GetPrintOrderByID: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return
 	}
 	if order == nil {
-		log.Printf("[ERROR] PrintOrderHandler.GetPrintOrderByID: Order not found")
+		slog.ErrorContext(ctx.Request.Context(), "PrintOrderHandler.GetPrintOrderByID: order not found")
 		ctx.JSON(http.StatusNotFound, models.APIError{Error: "Order not found"})
 		return
 	}

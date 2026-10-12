@@ -2,7 +2,7 @@ package handler
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"radius/internal/models"
 	"radius/internal/service"
@@ -34,7 +34,7 @@ func (h *ReturnsHandler) CreateReturn(ctx *gin.Context) {
 
 	createdReturn, err := h.returnsService.CreateReturn(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
-		log.Printf("[ERROR] ReturnsHandler.CreateReturn: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReturnsHandler.CreateReturn failed", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -71,7 +71,7 @@ func (h *ReturnsHandler) GetReturns(ctx *gin.Context) {
 
 	results, total, err := h.returnsService.GetReturns(ctx.Request.Context(), storeId, role, criteria, page, limit)
 	if err != nil {
-		log.Printf("[ERROR] ReturnsHandler.GetReturns: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReturnsHandler.GetReturns failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve returns"})
 		return
 	}
@@ -96,7 +96,7 @@ func (h *ReturnsHandler) GetReturnDetail(ctx *gin.Context) {
 
 	detail, err := h.returnsService.GetReturnDetail(ctx.Request.Context(), storeId, role, returnID)
 	if err != nil {
-		log.Printf("[ERROR] ReturnsHandler.GetReturnDetail: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReturnsHandler.GetReturnDetail failed", "error", err)
 		if errors.Is(err, service.ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, models.APIError{Error: "Request could not be completed"})
 			return
@@ -126,7 +126,7 @@ func (h *ReturnsHandler) ApproveReturn(ctx *gin.Context) {
 	}
 
 	if err := h.returnsService.ApproveReturn(ctx.Request.Context(), storeId, employeeId, role, returnID); err != nil {
-		log.Printf("[ERROR] ReturnsHandler.ApproveReturn: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReturnsHandler.ApproveReturn failed", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -153,7 +153,7 @@ func (h *ReturnsHandler) RejectReturn(ctx *gin.Context) {
 	_ = ctx.ShouldBindJSON(&req)
 
 	if err := h.returnsService.RejectReturn(ctx.Request.Context(), storeId, employeeId, role, returnID, req.Reason); err != nil {
-		log.Printf("[ERROR] ReturnsHandler.RejectReturn: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReturnsHandler.RejectReturn failed", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
@@ -175,7 +175,7 @@ func (h *ReturnsHandler) LookupTransaction(ctx *gin.Context) {
 
 	resp, err := h.returnsService.LookupTransaction(ctx.Request.Context(), storeId, role, txID)
 	if err != nil {
-		log.Printf("[ERROR] ReturnsHandler.LookupTransaction: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReturnsHandler.LookupTransaction failed", "error", err)
 		if errors.Is(err, service.ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, models.APIError{Error: "Request could not be completed"})
 			return
@@ -204,7 +204,7 @@ func (h *ReturnsHandler) LookupByProduct(ctx *gin.Context) {
 
 	results, err := h.returnsService.LookupTransactionsByProduct(ctx.Request.Context(), storeId, barcode)
 	if err != nil {
-		log.Printf("[ERROR] ReturnsHandler.LookupByProduct: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReturnsHandler.LookupByProduct failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to search transactions by product"})
 		return
 	}
@@ -229,7 +229,7 @@ func (h *ReturnsHandler) GetRtvQueue(ctx *gin.Context) {
 
 	results, total, err := h.returnsService.GetRtvQueue(ctx.Request.Context(), storeId, role, status, page, limit)
 	if err != nil {
-		log.Printf("[ERROR] ReturnsHandler.GetRtvQueue: %v", err)
+		slog.ErrorContext(ctx.Request.Context(), "ReturnsHandler.GetRtvQueue failed", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "Failed to retrieve RTV queue"})
 		return
 	}

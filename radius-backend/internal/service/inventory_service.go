@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"radius/internal/cache"
 	"radius/internal/database"
 	"radius/internal/models"
@@ -75,7 +75,7 @@ func (s *InventoryService) InvalidateInventoryCache(ctx context.Context, storeId
 	tier2Key := cache.InventoryProductKey(storeId, productId)
 	if err := s.redisClient.Del(ctx, tier2Key).Err(); err != nil && !errors.Is(err, redis.Nil) {
 		database.CacheMetrics.RecordDeleteError()
-		log.Printf("[WARN] Failed to invalidate %s: %v", tier2Key, err)
+		slog.WarnContext(ctx, "failed to invalidate cache", "key", tier2Key, "error", err)
 	}
 	for _, b := range optionalBarcode {
 		if b != "" {
@@ -173,7 +173,7 @@ func (s *InventoryService) ScanProduct(ctx context.Context, storeId int, employe
 					_ = s.redisClient.Del(ctx, tier2Key).Err()
 				} else if !errors.Is(t2Err, redis.Nil) {
 					database.CacheMetrics.RecordFallback()
-					log.Printf("[WARN] Redis get failed for %s: %v", tier2Key, t2Err)
+					slog.WarnContext(ctx, "redis get failed", "key", tier2Key, "error", t2Err)
 				}
 			} else {
 				database.CacheMetrics.RecordSerializationFailure()
@@ -181,7 +181,7 @@ func (s *InventoryService) ScanProduct(ctx context.Context, storeId int, employe
 			}
 		} else if !errors.Is(t1Err, redis.Nil) {
 			database.CacheMetrics.RecordFallback()
-			log.Printf("[WARN] Redis get failed for %s: %v", tier1Key, t1Err)
+			slog.WarnContext(ctx, "redis get failed", "key", tier1Key, "error", t1Err)
 		}
 
 		val, err := s.redisClient.Get(ctx, legacyKey).Result()
@@ -239,7 +239,7 @@ func (s *InventoryService) ScanProduct(ctx context.Context, storeId int, employe
 			_ = s.redisClient.Del(ctx, legacyKey).Err()
 		} else if !errors.Is(err, redis.Nil) {
 			database.CacheMetrics.RecordFallback()
-			log.Printf("[WARN] Redis get failed for %s: %v", legacyKey, err)
+			slog.WarnContext(ctx, "redis get failed", "key", legacyKey, "error", err)
 		}
 	}
 
@@ -271,7 +271,7 @@ func (s *InventoryService) ScanProduct(ctx context.Context, storeId int, employe
 				negTTL := cache.ApplyJitter(60*time.Second, 15*time.Second)
 				if setErr := s.redisClient.Set(ctx, tier1Key, negPayload, negTTL).Err(); setErr != nil {
 					database.CacheMetrics.RecordSetError()
-					log.Printf("[WARN] Redis negative cache set failed for %s: %v", tier1Key, setErr)
+					slog.WarnContext(ctx, "redis negative cache set failed", "key", tier1Key, "error", setErr)
 				}
 			}
 			return &models.ScanProductResponse{
@@ -297,7 +297,7 @@ func (s *InventoryService) ScanProduct(ctx context.Context, storeId int, employe
 				t1TTL := cache.ApplyJitter(24*time.Hour, 2*time.Hour)
 				if setErr := s.redisClient.Set(ctx, tier1Key, t1Data, t1TTL).Err(); setErr != nil {
 					database.CacheMetrics.RecordSetError()
-					log.Printf("[WARN] Redis Tier 1 cache set failed for %s: %v", tier1Key, setErr)
+					slog.WarnContext(ctx, "redis tier 1 cache set failed", "key", tier1Key, "error", setErr)
 				}
 			} else {
 				database.CacheMetrics.RecordSerializationFailure()
@@ -317,7 +317,7 @@ func (s *InventoryService) ScanProduct(ctx context.Context, storeId int, employe
 				t2TTL := cache.ApplyJitter(5*time.Minute, 30*time.Second)
 				if setErr := s.redisClient.Set(ctx, tier2Key, t2Data, t2TTL).Err(); setErr != nil {
 					database.CacheMetrics.RecordSetError()
-					log.Printf("[WARN] Redis Tier 2 cache set failed for %s: %v", tier2Key, setErr)
+					slog.WarnContext(ctx, "redis tier 2 cache set failed", "key", tier2Key, "error", setErr)
 				}
 			} else {
 				database.CacheMetrics.RecordSerializationFailure()

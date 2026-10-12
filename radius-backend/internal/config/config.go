@@ -1,8 +1,10 @@
 package config
 
 import (
+	"errors"
 	"fmt"
-	"log"
+	"io/fs"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -20,6 +22,7 @@ type Config struct {
 	RedisURL       string
 	AllowedOrigins string
 	RunMigrations  bool
+	LogLevel       string
 }
 
 func LoadConfig() (*Config, error) {
@@ -27,11 +30,13 @@ func LoadConfig() (*Config, error) {
 	isRelease := ginMode == "release"
 
 	if !isRelease {
-		err := godotenv.Load()
-		if err != nil {
-			log.Printf("Error loading .env file: %v", err)
-		} else {
-			log.Println("Loaded local .env file successfully")
+		switch err := godotenv.Load(); {
+		case err == nil:
+			slog.Info("loaded local .env file")
+		case errors.Is(err, fs.ErrNotExist):
+			slog.Debug("no .env file found, using process environment")
+		default:
+			slog.Warn("failed to load .env file", "error", err)
 		}
 	}
 
@@ -44,6 +49,7 @@ func LoadConfig() (*Config, error) {
 		RedisURL:       os.Getenv("REDIS_URL"),
 		AllowedOrigins: os.Getenv("ALLOWED_ORIGINS"),
 		RunMigrations:  !isRelease || os.Getenv("RUN_MIGRATIONS") == "true",
+		LogLevel:       os.Getenv("LOG_LEVEL"),
 	}
 
 	if cfg.Port == "" {
@@ -68,7 +74,7 @@ func (c *Config) validate() error {
 		return fmt.Errorf("REDIS_URL is required")
 	}
 	if c.IsRelease && strings.TrimSpace(c.AllowedOrigins) == "" {
-		log.Println("WARNING: ALLOWED_ORIGINS is empty in release mode; browser origin checks are disabled (acceptable for native-only clients)")
+		slog.Warn("ALLOWED_ORIGINS is empty in release mode; browser origin checks are disabled (acceptable for native-only clients)")
 	}
 	return nil
 }

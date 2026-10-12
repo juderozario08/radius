@@ -17,6 +17,9 @@ export default function PillGroup<T,>({ options, value, onChange }: { options: P
                         key={String(option.value)}
                         style={[styles.rolePill, isSelected && styles.rolePillActive]}
                         onPress={() => onChange(option.value)}
+                        accessibilityRole="button"
+                        accessibilityLabel={option.label}
+                        accessibilityState={{ selected: isSelected }}
                     >
                         <Text style={[styles.rolePillText, isSelected && styles.rolePillTextActive]}>{option.label}</Text>
                     </TouchableOpacity>

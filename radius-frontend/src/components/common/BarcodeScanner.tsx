@@ -186,6 +186,9 @@ export const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>
                                     style={styles.controlIcon}
                                     onPress={() => setTorch(!torch)}
                                     activeOpacity={0.7}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={torch ? "Turn off flashlight" : "Turn on flashlight"}
+                                    accessibilityState={{ selected: torch }}
                                 >
                                     <Ionicons name={torch ? "flash" : "flash-off"} size={22} color="white" />
                                 </TouchableOpacity>
@@ -196,6 +199,8 @@ export const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>
                                     <TouchableOpacity
                                         style={styles.snapButtonOuter}
                                         onPress={() => setManualSnapTrigger(true)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Scan barcode now"
                                     >
                                         <View style={styles.snapButtonInner} />
                                     </TouchableOpacity>
@@ -213,6 +218,9 @@ export const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>
                             setSnapMode(!snapMode);
                             setManualSnapTrigger(false);
                         }}
+                        accessibilityRole="switch"
+                        accessibilityLabel="Snap Mode"
+                        accessibilityState={{ checked: snapMode }}
                     >
                         <View style={[styles.snapModeKnob, snapMode && styles.snapModeKnobActive]} />
                     </TouchableOpacity>

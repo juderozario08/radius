@@ -12,13 +12,18 @@ const LogoutComponent = () => {
     }
 
     return (
-        <TouchableOpacity onPress={submitLogout}>
+        <TouchableOpacity
+            onPress={submitLogout}
+            accessibilityRole="button"
+            accessibilityLabel="Log out"
+        >
             <Image
                 source={require("@/assets/images/logout.png")}
                 style={globalStyles.headerImageSize}
+                accessibilityIgnoresInvertColors
             />
         </TouchableOpacity>
-    )
+    );
 }
 
 export default LogoutComponent;

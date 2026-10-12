@@ -45,6 +45,9 @@ export default function Dropdown<T>({
                 style={[styles.dropdownTrigger, style, disabled && styles.dropdownDisabled]}
                 disabled={disabled}
                 onPress={() => setIsOpen(true)}
+                accessibilityRole="combobox"
+                accessibilityLabel={title || placeholder || "Dropdown"}
+                accessibilityState={{ expanded: isOpen, disabled }}
             >
                 <Text style={styles.dropdownTriggerText}>{displayLabel}</Text>
                 <Text style={styles.dropdownIcon}>▼</Text>
@@ -70,6 +73,9 @@ export default function Dropdown<T>({
                                                 onSelect(option.value);
                                                 setIsOpen(false);
                                             }}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={option.label}
+                                            accessibilityState={{ selected: isActive }}
                                         >
                                             <Text style={[
                                                 styles.dropdownItemText,

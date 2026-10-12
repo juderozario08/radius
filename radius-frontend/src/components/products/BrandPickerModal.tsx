@@ -59,6 +59,9 @@ export function BrandPickerModal({ visible, brands, selectedBrand, onSelect, onC
                             <TouchableOpacity
                                 style={[filterStyles.pickerItem, !selectedBrand && filterStyles.pickerItemSelected]}
                                 onPress={() => select(undefined)}
+                                accessibilityRole="button"
+                                accessibilityLabel="All Brands"
+                                accessibilityState={{ selected: !selectedBrand }}
                             >
                                 <Text style={[filterStyles.pickerItemText, !selectedBrand && filterStyles.pickerItemTextSelected]}>All Brands</Text>
                             </TouchableOpacity>
@@ -67,6 +70,9 @@ export function BrandPickerModal({ visible, brands, selectedBrand, onSelect, onC
                             <TouchableOpacity
                                 style={[filterStyles.pickerItem, selectedBrand === brand && filterStyles.pickerItemSelected]}
                                 onPress={() => select(brand)}
+                                accessibilityRole="button"
+                                accessibilityLabel={brand}
+                                accessibilityState={{ selected: selectedBrand === brand }}
                             >
                                 <Text style={[filterStyles.pickerItemText, selectedBrand === brand && filterStyles.pickerItemTextSelected]}>{brand}</Text>
                             </TouchableOpacity>

@@ -6,15 +6,20 @@ const NotificationIconComponent = () => {
     const { getNotifications } = useNotifications();
 
     return (
-        <TouchableOpacity onPress={() => {
-            getNotifications();
-        }}>
+        <TouchableOpacity
+            onPress={() => {
+                getNotifications();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+        >
             <Image
                 source={require("@/assets/images/notification-bell.png")}
                 style={globalStyles.headerImageSize}
+                accessibilityIgnoresInvertColors
             />
         </TouchableOpacity>
-    )
+    );
 }
 
 export default NotificationIconComponent;

@@ -48,7 +48,12 @@ export const ConnectionStatusBadge: React.FC<ConnectionStatusBadgeProps> = ({
 
     if (onPress && normalized !== "connected") {
         return (
-            <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
+            <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={onPress}
+                accessibilityRole="button"
+                accessibilityLabel={`${label} connection status, tap to reconnect`}
+            >
                 {Content}
             </TouchableOpacity>
         );

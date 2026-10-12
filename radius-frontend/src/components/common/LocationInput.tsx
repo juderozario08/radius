@@ -28,6 +28,7 @@ export const LocationInput: React.FC<LocationInputProps> = ({ value, onChangeTex
                 maxLength={9}
                 placeholder="123456789"
                 placeholderTextColor={COLORS.placeholder}
+                accessibilityLabel="Location ID input"
             />
         </View>
     );

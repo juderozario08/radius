@@ -17,6 +17,7 @@ export interface BackButtonProps {
     fallbackUrl?: string;
     style?: StyleProp<ViewStyle>;
     imageStyle?: StyleProp<ImageStyle>;
+    accessibilityLabel?: string;
 }
 
 const BackButton: React.FC<BackButtonProps> = ({
@@ -24,6 +25,7 @@ const BackButton: React.FC<BackButtonProps> = ({
     fallbackUrl,
     style,
     imageStyle,
+    accessibilityLabel,
 }) => {
     const params = useLocalSearchParams<{ from?: string }>();
     const pathname = usePathname();
@@ -114,10 +116,17 @@ const BackButton: React.FC<BackButtonProps> = ({
     }, [handlePress]);
 
     return (
-        <TouchableOpacity onPress={handlePress} style={style} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+        <TouchableOpacity
+            onPress={handlePress}
+            style={style}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel || "Go back"}
+        >
             <Image
                 style={[globalStyles.headerImageSize, imageStyle]}
                 source={require("@/assets/images/back.png")}
+                accessibilityIgnoresInvertColors
             />
         </TouchableOpacity>
     );

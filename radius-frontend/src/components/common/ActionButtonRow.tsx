@@ -19,6 +19,7 @@ export interface ActionButtonConfig {
     onPress: () => void;
     loading?: boolean;
     disabled?: boolean;
+    accessibilityLabel?: string;
 }
 
 export const ActionButtonRow: React.FC<{ buttons: ActionButtonConfig[] }> = ({ buttons }) => (
@@ -31,6 +32,12 @@ export const ActionButtonRow: React.FC<{ buttons: ActionButtonConfig[] }> = ({ b
                     style={[styles.actionButton, kindStyle.container]}
                     onPress={button.onPress}
                     disabled={button.disabled || button.loading}
+                    accessibilityRole="button"
+                    accessibilityLabel={button.accessibilityLabel || button.label}
+                    accessibilityState={{
+                        disabled: !!(button.disabled || button.loading),
+                        busy: !!button.loading,
+                    }}
                 >
                     {button.loading ? (
                         <ActivityIndicator color={kindStyle.text.color as string} />

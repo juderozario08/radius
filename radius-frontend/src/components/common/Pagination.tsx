@@ -84,6 +84,9 @@ export default function Pagination({
                             style={[styles.pageButton, isPrevDisabled && styles.pageButtonDisabled]}
                             disabled={isPrevDisabled}
                             onPress={() => onPageChange(Math.max(1, currentPage - 1))}
+                            accessibilityRole="button"
+                            accessibilityLabel="Previous page"
+                            accessibilityState={{ disabled: isPrevDisabled }}
                         >
                             <Text style={[styles.pageButtonText, isPrevDisabled && styles.pageButtonTextDisabled]}>Prev</Text>
                         </TouchableOpacity>
@@ -96,6 +99,9 @@ export default function Pagination({
                                     setJumpInput(String(currentPage));
                                     setIsJumpModalVisible(true);
                                 }}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Page ${currentPage} of ${totalPages}, tap to jump to page`}
+                                accessibilityState={{ disabled: isLoading }}
                             >
                                 <Text style={styles.jumpTriggerText}>
                                     Page <Text style={styles.jumpTriggerHighlight}>{currentPage}</Text> of {totalPages}
@@ -126,6 +132,9 @@ export default function Pagination({
                                             ]}
                                             disabled={isDisabled}
                                             onPress={() => onPageChange(page)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`Page ${page}`}
+                                            accessibilityState={{ selected: isActive, disabled: isDisabled }}
                                         >
                                             <Text
                                                 style={[
@@ -148,6 +157,9 @@ export default function Pagination({
                             style={[styles.pageButton, isNextDisabled && styles.pageButtonDisabled]}
                             disabled={isNextDisabled}
                             onPress={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+                            accessibilityRole="button"
+                            accessibilityLabel="Next page"
+                            accessibilityState={{ disabled: isNextDisabled }}
                         >
                             <Text style={[styles.pageButtonText, isNextDisabled && styles.pageButtonTextDisabled]}>Next</Text>
                         </TouchableOpacity>
@@ -187,17 +199,22 @@ export default function Pagination({
                                     autoFocus
                                     selectTextOnFocus
                                     onSubmitEditing={handleJumpSubmit}
+                                    accessibilityLabel="Page number"
                                 />
                                 <View style={styles.jumpModalActions}>
                                     <TouchableOpacity
                                         style={styles.jumpModalCancelButton}
                                         onPress={() => setIsJumpModalVisible(false)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Cancel jump to page"
                                     >
                                         <Text style={styles.jumpModalCancelText}>Cancel</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={styles.jumpModalConfirmButton}
                                         onPress={handleJumpSubmit}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Go to page"
                                     >
                                         <Text style={styles.jumpModalConfirmText}>Go</Text>
                                     </TouchableOpacity>

@@ -46,7 +46,11 @@ export function ProductFilterPanel({
                 <View style={filterStyles.container}>
                     <View style={filterStyles.header}>
                         <Text style={filterStyles.title}>Filters</Text>
-                        <TouchableOpacity onPress={onClose}>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            accessibilityRole="button"
+                            accessibilityLabel="Close filters"
+                        >
                             <Ionicons name="close" size={24} color={COLORS.textPrimary} />
                         </TouchableOpacity>
                     </View>
@@ -56,6 +60,9 @@ export function ProductFilterPanel({
                         <TouchableOpacity
                             style={filterStyles.pickerButton}
                             onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Category filter, currently ${selectedCategory ? selectedCategory.name : "All Categories"}`}
+                            accessibilityState={{ expanded: showCategoryPicker }}
                         >
                             <Text style={[
                                 filterStyles.pickerText,
@@ -77,6 +84,9 @@ export function ProductFilterPanel({
                                         setLocalFilters(f => ({ ...f, category_id: undefined }));
                                         setShowCategoryPicker(false);
                                     }}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="All Categories"
+                                    accessibilityState={{ selected: !localFilters.category_id }}
                                 >
                                     <Text style={[filterStyles.pickerItemText, !localFilters.category_id && filterStyles.pickerItemTextSelected]}>All Categories</Text>
                                 </TouchableOpacity>
@@ -88,6 +98,9 @@ export function ProductFilterPanel({
                                             setLocalFilters(f => ({ ...f, category_id: cat.category_id }));
                                             setShowCategoryPicker(false);
                                         }}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={cat.name}
+                                        accessibilityState={{ selected: localFilters.category_id === cat.category_id }}
                                     >
                                         <Text style={[filterStyles.pickerItemText, localFilters.category_id === cat.category_id && filterStyles.pickerItemTextSelected]}>
                                             {cat.name}
@@ -101,6 +114,8 @@ export function ProductFilterPanel({
                         <TouchableOpacity
                             style={filterStyles.pickerButton}
                             onPress={() => setShowBrandPicker(true)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Brand filter, currently ${localFilters.brand || "All Brands"}`}
                         >
                             <Text style={[
                                 filterStyles.pickerText,
@@ -120,18 +135,27 @@ export function ProductFilterPanel({
                             <TouchableOpacity
                                 style={[filterStyles.chip, localFilters.is_active === undefined && filterStyles.chipActive]}
                                 onPress={() => setLocalFilters(f => ({ ...f, is_active: undefined }))}
+                                accessibilityRole="button"
+                                accessibilityLabel="Status: All"
+                                accessibilityState={{ selected: localFilters.is_active === undefined }}
                             >
                                 <Text style={[filterStyles.chipText, localFilters.is_active === undefined && filterStyles.chipTextActive]}>All</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[filterStyles.chip, localFilters.is_active === true && filterStyles.chipActive]}
                                 onPress={() => setLocalFilters(f => ({ ...f, is_active: true }))}
+                                accessibilityRole="button"
+                                accessibilityLabel="Status: Active"
+                                accessibilityState={{ selected: localFilters.is_active === true }}
                             >
                                 <Text style={[filterStyles.chipText, localFilters.is_active === true && filterStyles.chipTextActive]}>Active</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[filterStyles.chip, localFilters.is_active === false && filterStyles.chipActive]}
                                 onPress={() => setLocalFilters(f => ({ ...f, is_active: false }))}
+                                accessibilityRole="button"
+                                accessibilityLabel="Status: Inactive"
+                                accessibilityState={{ selected: localFilters.is_active === false }}
                             >
                                 <Text style={[filterStyles.chipText, localFilters.is_active === false && filterStyles.chipTextActive]}>Inactive</Text>
                             </TouchableOpacity>
@@ -144,6 +168,9 @@ export function ProductFilterPanel({
                                     key={uom ?? "all"}
                                     style={[filterStyles.chip, localFilters.unit_of_measure === uom && filterStyles.chipActive]}
                                     onPress={() => setLocalFilters(f => ({ ...f, unit_of_measure: uom }))}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Unit of measure: ${uom ?? "All"}`}
+                                    accessibilityState={{ selected: localFilters.unit_of_measure === uom }}
                                 >
                                     <Text style={[filterStyles.chipText, localFilters.unit_of_measure === uom && filterStyles.chipTextActive]}>
                                         {uom ?? "All"}
@@ -157,6 +184,8 @@ export function ProductFilterPanel({
                         <TouchableOpacity
                             style={filterStyles.clearButton}
                             onPress={() => setLocalFilters({})}
+                            accessibilityRole="button"
+                            accessibilityLabel="Clear all filters"
                         >
                             <Text style={filterStyles.clearButtonText}>Clear All</Text>
                         </TouchableOpacity>
@@ -166,6 +195,8 @@ export function ProductFilterPanel({
                                 onApply(localFilters);
                                 onClose();
                             }}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Apply filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
                         >
                             <Text style={filterStyles.applyButtonText}>
                                 Apply{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}

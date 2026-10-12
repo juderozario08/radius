@@ -29,6 +29,7 @@ import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { getCycleCountStatusStyle } from "./CycleCount";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { ErrorMessage } from "@/components/common/ErrorMessage";
 import { formatSignedMoney } from "@/utils/money";
 
 type FilterTab = "FULL" | "PARTIAL" | "NO_COUNT";
@@ -68,13 +69,14 @@ export default function CycleCountDetail() {
         );
         if (data) {
             setDetail(data);
-        } else if (params.from === "dashboard") {
-            router.replace("/(app)/(tabs)/home/dashboard" as any);
-        } else {
-            router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
         }
         setIsLoading(false);
-    }, [countId, logout, params.from]);
+    }, [countId, logout]);
+
+    const retryInitialLoad = () => {
+        setIsLoading(true);
+        fetchDetail();
+    };
 
     useFocusEffect(
         useCallback(() => {
@@ -321,7 +323,7 @@ export default function CycleCountDetail() {
                     headerCenter={<Text style={globalStyles.headerTitle}>Cycle Count</Text>}
                 />
                 <View style={globalStyles.centerElement}>
-                    <Text style={globalStyles.errorText}>Not found</Text>
+                    <ErrorMessage message="Couldn't load this cycle count." onRetry={retryInitialLoad} />
                 </View>
             </TopSafeAreaView>
         );

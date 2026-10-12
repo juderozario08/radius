@@ -84,7 +84,9 @@ export default function IS4TCScanScreen() {
       }
     } else {
       scannerRef.current?.triggerError();
-      Toast.show({ type: "error", text1: "Not Found", text2: "Product not found in inventory." });
+      if (response) {
+        Toast.show({ type: "error", text1: "Not Found", text2: "Product not found in inventory." });
+      }
     }
     setIsProcessing(false);
   };

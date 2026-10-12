@@ -26,6 +26,7 @@ import {
 } from "@/types/cyclecount.types";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { ErrorMessage } from "@/components/common/ErrorMessage";
 
 type ScannerTab = "SCANNER" | "LIST";
 
@@ -52,13 +53,14 @@ export default function CycleCountScanner() {
         );
         if (data) {
             setDetail(data);
-        } else if (params.from === "dashboard") {
-            router.replace("/(app)/(tabs)/home/dashboard" as any);
-        } else {
-            router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
         }
         setIsLoading(false);
-    }, [countId, logout, params.from]);
+    }, [countId, logout]);
+
+    const retryInitialLoad = () => {
+        setIsLoading(true);
+        fetchDetail();
+    };
 
     useEffect(() => {
         fetchDetail();
@@ -242,7 +244,11 @@ export default function CycleCountScanner() {
                     headerCenter={<Text style={globalStyles.headerTitle}>Cycle Count</Text>}
                 />
                 <View style={globalStyles.centerElement}>
-                    <LoadingSpinner />
+                    {isLoading ? (
+                        <LoadingSpinner />
+                    ) : (
+                        <ErrorMessage message="Couldn't load this cycle count." onRetry={retryInitialLoad} />
+                    )}
                 </View>
             </TopSafeAreaView>
         );

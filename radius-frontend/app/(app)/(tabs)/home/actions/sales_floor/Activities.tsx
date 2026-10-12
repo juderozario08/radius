@@ -160,11 +160,12 @@ export default function Activities() {
             { method: "GET" }, logout
         );
 
-        const allFetchedOrders = [
-            ...(activeRes?.online_orders || []),
-            ...(releasedRes?.online_orders || []),
-            ...(cancelledRes?.online_orders || []),
-        ];
+        const ordersLoaded = activeRes !== null && releasedRes !== null && cancelledRes !== null;
+        const allFetchedOrders = ordersLoaded ? [
+            ...(activeRes.online_orders || []),
+            ...(releasedRes.online_orders || []),
+            ...(cancelledRes.online_orders || []),
+        ] : [];
 
         const mappedOrders = allFetchedOrders.map(o => ({
             order_id: o.order_id,
@@ -179,7 +180,9 @@ export default function Activities() {
             assigned_to: o.assigned_to,
             assigned_to_name: o.assigned_to_name,
         }));
-        setLiveOrders(mappedOrders);
+        if (ordersLoaded) {
+            setLiveOrders(mappedOrders);
+        }
 
         mappedOrders.forEach(o => {
             activities.push({
@@ -197,7 +200,8 @@ export default function Activities() {
             `${ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly}${storeQueryOnly}`,
             { method: "GET" }, logout
         );
-        if (countsRes && Array.isArray(countsRes)) {
+        const countsLoaded = Array.isArray(countsRes);
+        if (countsLoaded) {
             setLiveCycleCounts(countsRes.map(c => ({
                 count_id: c.count_id,
                 store_id: c.store_id,
@@ -230,7 +234,8 @@ export default function Activities() {
             `${ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrders}${storeQueryOnly}`,
             { method: "GET" }, logout
         );
-        if (posRes && Array.isArray(posRes)) {
+        const posLoaded = Array.isArray(posRes);
+        if (posLoaded) {
             posRes.forEach(po => {
                 activities.push({
                     activity_id: `act-po-${po.po_id}`,
@@ -244,8 +249,15 @@ export default function Activities() {
             });
         }
 
-        activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        setLiveActivities(activities);
+        const keptTypes = [
+            ...(ordersLoaded ? [] : ["ORDER_PLACED", "ORDER_STATUS_CHANGED"]),
+            ...(countsLoaded ? [] : ["CYCLE_COUNT_UPDATED"]),
+            ...(posLoaded ? [] : ["RECEIVING_DOCK"]),
+        ];
+        setLiveActivities((prev) => [
+            ...prev.filter((a) => keptTypes.includes(a.activity_type)),
+            ...activities,
+        ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
     }, [activeStoreId, logout]);
 
     useEffect(() => {

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"radius/internal/cache"
 	"radius/internal/models"
 	"radius/internal/utils"
 	"testing"
@@ -285,7 +286,7 @@ func TestGetAllSessions_CurrentSession(t *testing.T) {
 	token, _ := utils.GenerateAccessToken(1, "admin@test.com", models.RoleAdmin, 1, secret)
 	hashedToken := utils.HashTokenForDB(token)
 
-	_ = db.Set(context.Background(), "session:"+hashedToken, 42, 1*time.Hour).Err()
+	_ = db.Set(context.Background(), cache.AuthTokenKey(hashedToken), 42, 1*time.Hour).Err()
 
 	mockRepo.GetAllSessionsFunc = func(ctx context.Context, limit, offset int) ([]models.GetAllSessions, int, error) {
 		return []models.GetAllSessions{
@@ -318,7 +319,7 @@ func TestTerminateSessionById_DeletesRedisKey(t *testing.T) {
 	sessionService := NewSessionService(mockRepo, secret, db)
 
 	accessTokenHash := "hashed_access_token_123"
-	_ = db.Set(context.Background(), "session:"+accessTokenHash, 42, 1*time.Hour).Err()
+	_ = db.Set(context.Background(), cache.AuthTokenKey(accessTokenHash), 42, 1*time.Hour).Err()
 
 	mockRepo.GetSessionByIdFunc = func(ctx context.Context, sessionId int) (*models.Session, error) {
 		return &models.Session{
@@ -345,7 +346,7 @@ func TestTerminateSessionById_DeletesRedisKey(t *testing.T) {
 		t.Errorf("expected session 42 to be terminated, got %d", terminatedId)
 	}
 
-	_, err = db.Get(context.Background(), "session:"+accessTokenHash).Result()
+	_, err = db.Get(context.Background(), cache.AuthTokenKey(accessTokenHash)).Result()
 	if err == nil {
 		t.Errorf("expected Redis key to be deleted, but it still exists")
 	}
@@ -359,8 +360,8 @@ func TestTerminateAllSessionsByEmployeeId_ClearsAllRedis(t *testing.T) {
 
 	hash1 := "token_hash_1"
 	hash2 := "token_hash_2"
-	_ = db.Set(context.Background(), "session:"+hash1, 101, 1*time.Hour).Err()
-	_ = db.Set(context.Background(), "session:"+hash2, 102, 1*time.Hour).Err()
+	_ = db.Set(context.Background(), cache.AuthTokenKey(hash1), 101, 1*time.Hour).Err()
+	_ = db.Set(context.Background(), cache.AuthTokenKey(hash2), 102, 1*time.Hour).Err()
 
 	mockRepo.GetSessionsByEmployeeIdFunc = func(ctx context.Context, employeeId int) ([]models.Session, error) {
 		return []models.Session{
@@ -381,12 +382,12 @@ func TestTerminateAllSessionsByEmployeeId_ClearsAllRedis(t *testing.T) {
 		t.Fatalf("expected 2 sessions terminated, got %d", len(terminatedIds))
 	}
 
-	_, err1 := db.Get(context.Background(), "session:"+hash1).Result()
+	_, err1 := db.Get(context.Background(), cache.AuthTokenKey(hash1)).Result()
 	if err1 == nil {
 		t.Errorf("expected Redis key hash1 to be deleted")
 	}
 
-	_, err2 := db.Get(context.Background(), "session:"+hash2).Result()
+	_, err2 := db.Get(context.Background(), cache.AuthTokenKey(hash2)).Result()
 	if err2 == nil {
 		t.Errorf("expected Redis key hash2 to be deleted")
 	}

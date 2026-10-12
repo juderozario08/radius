@@ -32,8 +32,7 @@ func (s *CategoryService) InvalidateCategoriesCache(ctx context.Context) {
 		return
 	}
 	newKey := cache.CatalogCategoriesKey()
-	legacyKey := cache.LegacyCatalogCategoriesKey()
-	if err := s.redisClient.Del(ctx, newKey, legacyKey).Err(); err != nil && !errors.Is(err, redis.Nil) {
+	if err := s.redisClient.Del(ctx, newKey).Err(); err != nil && !errors.Is(err, redis.Nil) {
 		database.CacheMetrics.RecordDeleteError()
 		slog.WarnContext(ctx, "failed to invalidate categories cache", "error", err)
 	}
@@ -44,8 +43,7 @@ func (s *CategoryService) InvalidateBrandsCache(ctx context.Context) {
 		return
 	}
 	newKey := cache.CatalogBrandsKey()
-	legacyKey := cache.LegacyCatalogBrandsKey()
-	if err := s.redisClient.Del(ctx, newKey, legacyKey).Err(); err != nil && !errors.Is(err, redis.Nil) {
+	if err := s.redisClient.Del(ctx, newKey).Err(); err != nil && !errors.Is(err, redis.Nil) {
 		database.CacheMetrics.RecordDeleteError()
 		slog.WarnContext(ctx, "failed to invalidate brands cache", "error", err)
 	}
@@ -53,7 +51,6 @@ func (s *CategoryService) InvalidateBrandsCache(ctx context.Context) {
 
 func (s *CategoryService) GetAllCategories(ctx context.Context) ([]models.Category, error) {
 	newKey := cache.CatalogCategoriesKey()
-	legacyKey := cache.LegacyCatalogCategoriesKey()
 
 	if s.redisClient != nil {
 		val, err := s.redisClient.Get(ctx, newKey).Result()
@@ -68,20 +65,6 @@ func (s *CategoryService) GetAllCategories(ctx context.Context) ([]models.Catego
 		} else if !errors.Is(err, redis.Nil) {
 			database.CacheMetrics.RecordFallback()
 			slog.WarnContext(ctx, "redis get failed", "key", newKey, "error", err)
-		} else {
-			legacyVal, legErr := s.redisClient.Get(ctx, legacyKey).Result()
-			if legErr == nil {
-				var categories []models.Category
-				if jsonErr := json.Unmarshal([]byte(legacyVal), &categories); jsonErr == nil {
-					database.CacheMetrics.RecordHit()
-					ttl := cache.ApplyJitter(1*time.Hour, 5*time.Minute)
-					_ = s.redisClient.Set(ctx, newKey, legacyVal, ttl).Err()
-					_ = s.redisClient.Del(ctx, legacyKey).Err()
-					return categories, nil
-				}
-				database.CacheMetrics.RecordSerializationFailure()
-				_ = s.redisClient.Del(ctx, legacyKey).Err()
-			}
 		}
 	}
 
@@ -118,7 +101,6 @@ func (s *CategoryService) GetAllCategories(ctx context.Context) ([]models.Catego
 
 func (s *CategoryService) GetDistinctBrands(ctx context.Context) ([]string, error) {
 	newKey := cache.CatalogBrandsKey()
-	legacyKey := cache.LegacyCatalogBrandsKey()
 
 	if s.redisClient != nil {
 		val, err := s.redisClient.Get(ctx, newKey).Result()
@@ -133,20 +115,6 @@ func (s *CategoryService) GetDistinctBrands(ctx context.Context) ([]string, erro
 		} else if !errors.Is(err, redis.Nil) {
 			database.CacheMetrics.RecordFallback()
 			slog.WarnContext(ctx, "redis get failed", "key", newKey, "error", err)
-		} else {
-			legacyVal, legErr := s.redisClient.Get(ctx, legacyKey).Result()
-			if legErr == nil {
-				var brands []string
-				if jsonErr := json.Unmarshal([]byte(legacyVal), &brands); jsonErr == nil {
-					database.CacheMetrics.RecordHit()
-					ttl := cache.ApplyJitter(1*time.Hour, 5*time.Minute)
-					_ = s.redisClient.Set(ctx, newKey, legacyVal, ttl).Err()
-					_ = s.redisClient.Del(ctx, legacyKey).Err()
-					return brands, nil
-				}
-				database.CacheMetrics.RecordSerializationFailure()
-				_ = s.redisClient.Del(ctx, legacyKey).Err()
-			}
 		}
 	}
 

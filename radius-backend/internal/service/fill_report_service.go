@@ -49,7 +49,6 @@ func (s *FillReportService) GetActiveIS4TCSession(ctx context.Context, storeID i
 	}
 
 	newKey := cache.IS4TCStoreKey(storeID)
-	legacyKey := cache.LegacyIS4TCKey(storeID)
 
 	result, err := s.redisClient.HGetAll(ctx, newKey).Result()
 	if err != nil && strings.Contains(err.Error(), "WRONGTYPE") {
@@ -71,34 +70,7 @@ func (s *FillReportService) GetActiveIS4TCSession(ctx context.Context, storeID i
 		err = nil
 	}
 
-	if (err == nil && len(result) == 0) || err != nil {
-		legacyResult, legErr := s.redisClient.HGetAll(ctx, legacyKey).Result()
-		if legErr == nil && len(legacyResult) > 0 {
-			result = legacyResult
-			for f, v := range legacyResult {
-				_ = s.redisClient.HSet(ctx, newKey, f, v).Err()
-			}
-			_ = s.redisClient.Expire(ctx, newKey, 24*time.Hour).Err()
-			_ = s.redisClient.Del(ctx, legacyKey).Err()
-		} else if legErr != nil && strings.Contains(legErr.Error(), "WRONGTYPE") {
-			val, getErr := s.redisClient.Get(ctx, legacyKey).Result()
-			if getErr == nil {
-				var oldItems []models.MimsProductInventory
-				if json.Unmarshal([]byte(val), &oldItems) == nil {
-					_ = s.redisClient.Del(ctx, legacyKey).Err()
-					for _, item := range oldItems {
-						if d, mErr := json.Marshal(item); mErr == nil {
-							_ = s.redisClient.HSet(ctx, newKey, fmt.Sprintf("%d", item.ProductId), d).Err()
-						}
-					}
-					_ = s.redisClient.Expire(ctx, newKey, 24*time.Hour).Err()
-					return oldItems, nil
-				}
-			}
-		}
-	}
-
-	if len(result) == 0 {
+	if err != nil || len(result) == 0 {
 		database.CacheMetrics.RecordMiss()
 		return []models.MimsProductInventory{}, nil
 	}
@@ -133,7 +105,6 @@ func (s *FillReportService) AddToIS4TCSession(ctx context.Context, storeID int, 
 	}
 
 	newKey := cache.IS4TCStoreKey(storeID)
-	legacyKey := cache.LegacyIS4TCKey(storeID)
 	field := fmt.Sprintf("%d", product.ProductId)
 
 	err = s.redisClient.HSet(ctx, newKey, field, data).Err()
@@ -147,7 +118,6 @@ func (s *FillReportService) AddToIS4TCSession(ctx context.Context, storeID int, 
 	}
 
 	_ = s.redisClient.Expire(ctx, newKey, 24*time.Hour).Err()
-	_ = s.redisClient.Del(ctx, legacyKey).Err()
 
 	return s.GetActiveIS4TCSession(ctx, storeID)
 }
@@ -157,8 +127,7 @@ func (s *FillReportService) ClearIS4TCSession(ctx context.Context, storeID int) 
 		return nil
 	}
 	newKey := cache.IS4TCStoreKey(storeID)
-	legacyKey := cache.LegacyIS4TCKey(storeID)
-	return s.redisClient.Del(ctx, newKey, legacyKey).Err()
+	return s.redisClient.Del(ctx, newKey).Err()
 }
 
 func (s *FillReportService) GetStoreFillReport(ctx context.Context, storeID int, filter models.FillReportFilter) (*models.FillReportResponse, error) {

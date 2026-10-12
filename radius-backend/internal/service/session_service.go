@@ -42,7 +42,7 @@ func (s *SessionService) CreateSession(ctx context.Context, employeeId int, role
 		for _, existing := range existingSessions {
 			_ = s.sessionRepo.TerminateSessionById(ctx, existing.SessionId)
 			if existing.AccessTokenHash != "" && s.redisClient != nil {
-				_ = s.redisClient.Del(ctx, cache.AuthTokenKey(existing.AccessTokenHash), cache.LegacyAuthTokenKey(existing.AccessTokenHash)).Err()
+				_ = s.redisClient.Del(ctx, cache.AuthTokenKey(existing.AccessTokenHash)).Err()
 			}
 		}
 	}
@@ -87,7 +87,6 @@ func (s *SessionService) CreateSession(ctx context.Context, employeeId int, role
 func (s *SessionService) ValidateSession(ctx context.Context, tokenString string) error {
 	hashedToken := utils.HashTokenForDB(tokenString)
 	newKey := cache.AuthTokenKey(hashedToken)
-	legacyKey := cache.LegacyAuthTokenKey(hashedToken)
 
 	if s.redisClient != nil {
 		cachedSessionID, err := s.redisClient.Get(ctx, newKey).Result()
@@ -101,18 +100,6 @@ func (s *SessionService) ValidateSession(ctx context.Context, tokenString string
 		}
 		if !errors.Is(err, redis.Nil) {
 			database.CacheMetrics.RecordFallback()
-		} else {
-			legacyVal, legErr := s.redisClient.Get(ctx, legacyKey).Result()
-			if legErr == nil {
-				revoked, revokedErr := s.redisClient.Exists(ctx, "radius:auth:revoked:"+legacyVal).Result()
-				if revokedErr != nil || revoked > 0 {
-					return errors.New("session revoked")
-				}
-				database.CacheMetrics.RecordHit()
-				_ = s.redisClient.Set(ctx, newKey, legacyVal, utils.SessionInactivityTimeout).Err()
-				_ = s.redisClient.Del(ctx, legacyKey).Err()
-				return nil
-			}
 		}
 	}
 
@@ -192,7 +179,7 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 
 	if time.Now().After(session.ExpiresAt) {
 		if session.AccessTokenHash != "" && s.redisClient != nil {
-			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash), cache.LegacyAuthTokenKey(session.AccessTokenHash)).Err()
+			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash)).Err()
 		}
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
 		return "", "", fmt.Errorf("%w: session expired", ErrUnauthorized)
@@ -200,14 +187,14 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 
 	if session.IsActive != nil && !(*session.IsActive) {
 		if session.AccessTokenHash != "" && s.redisClient != nil {
-			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash), cache.LegacyAuthTokenKey(session.AccessTokenHash)).Err()
+			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash)).Err()
 		}
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
 		return "", "", fmt.Errorf("%w: inactive account", ErrUnauthorized)
 	}
 	if session.IsTerminated != nil && *session.IsTerminated {
 		if session.AccessTokenHash != "" && s.redisClient != nil {
-			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash), cache.LegacyAuthTokenKey(session.AccessTokenHash)).Err()
+			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash)).Err()
 		}
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
 		return "", "", fmt.Errorf("%w: terminated account", ErrUnauthorized)
@@ -254,7 +241,7 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 	}
 	if s.redisClient != nil {
 		if session.AccessTokenHash != "" {
-			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash), cache.LegacyAuthTokenKey(session.AccessTokenHash)).Err()
+			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash)).Err()
 		}
 		_ = s.redisClient.Set(ctx, cache.AuthTokenKey(newAccessHash), session.SessionId, utils.SessionInactivityTimeout).Err()
 	}
@@ -264,7 +251,7 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 func (s *SessionService) Logout(ctx context.Context, tokenString string) error {
 	hashedToken := utils.HashTokenForDB(tokenString)
 	if s.redisClient != nil {
-		_ = s.redisClient.Del(ctx, cache.AuthTokenKey(hashedToken), cache.LegacyAuthTokenKey(hashedToken)).Err()
+		_ = s.redisClient.Del(ctx, cache.AuthTokenKey(hashedToken)).Err()
 	}
 	return s.sessionRepo.TerminateSessionByAccessTokenHash(ctx, hashedToken)
 }
@@ -275,7 +262,7 @@ func (s *SessionService) TerminateSessionById(ctx context.Context, sessionId int
 	}
 	session, err := s.sessionRepo.GetSessionById(ctx, sessionId)
 	if err == nil && session != nil && session.AccessTokenHash != "" && s.redisClient != nil {
-		_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash), cache.LegacyAuthTokenKey(session.AccessTokenHash)).Err()
+		_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash)).Err()
 	}
 
 	if err = s.sessionRepo.TerminateSessionById(ctx, sessionId); err != nil {
@@ -292,7 +279,7 @@ func (s *SessionService) TerminateAllSessionsByEmployeeId(ctx context.Context, e
 	}
 	for _, session := range sessions {
 		if session.AccessTokenHash != "" && s.redisClient != nil {
-			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash), cache.LegacyAuthTokenKey(session.AccessTokenHash)).Err()
+			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash)).Err()
 		}
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
 	}
@@ -307,20 +294,12 @@ func (s *SessionService) GetSessionIdByToken(ctx context.Context, tokenString st
 	}
 	hashedToken := utils.HashTokenForDB(tokenString)
 	newKey := cache.AuthTokenKey(hashedToken)
-	legacyKey := cache.LegacyAuthTokenKey(hashedToken)
 
 	if s.redisClient != nil {
 		val, err := s.redisClient.Get(ctx, newKey).Int()
 		if err == nil && val > 0 {
 			database.CacheMetrics.RecordHit()
 			return &val, nil
-		}
-		legVal, legErr := s.redisClient.Get(ctx, legacyKey).Int()
-		if legErr == nil && legVal > 0 {
-			database.CacheMetrics.RecordHit()
-			_ = s.redisClient.Set(ctx, newKey, legVal, utils.SessionInactivityTimeout).Err()
-			_ = s.redisClient.Del(ctx, legacyKey).Err()
-			return &legVal, nil
 		}
 	}
 

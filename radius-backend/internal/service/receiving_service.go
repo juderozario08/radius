@@ -84,12 +84,6 @@ func (s *ReceivingService) ReceivePO(ctx context.Context, storeId int, employeeI
 		for _, itm := range detail.Items {
 			tier2Key := cache.InventoryProductKey(detail.StoreId, itm.ProductId)
 			_ = s.redisClient.Del(ctx, tier2Key).Err()
-			if itm.Upc != "" {
-				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(detail.StoreId, itm.Upc)).Err()
-			}
-			if itm.Sku != "" {
-				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(detail.StoreId, itm.Sku)).Err()
-			}
 		}
 	}
 	return nil
@@ -118,7 +112,6 @@ func (s *ReceivingService) ReceiveLPR(ctx context.Context, storeId int, employee
 	if s.redisClient != nil {
 		patterns := []string{
 			cache.InventoryStorePattern(detail.StoreId),
-			cache.LegacyInventoryStorePattern(detail.StoreId),
 		}
 		for _, pat := range patterns {
 			iter := s.redisClient.Scan(ctx, 0, pat, 100).Iterator()
@@ -181,12 +174,6 @@ func (s *ReceivingService) ReceiveTransfer(ctx context.Context, storeId int, emp
 	if s.redisClient != nil {
 		for _, itm := range detail.Items {
 			_ = s.redisClient.Del(ctx, cache.InventoryProductKey(storeId, itm.ProductId)).Err()
-			if itm.Upc != "" {
-				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(storeId, itm.Upc)).Err()
-			}
-			if itm.Sku != "" {
-				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(storeId, itm.Sku)).Err()
-			}
 		}
 	}
 	return nil
@@ -215,12 +202,6 @@ func (s *ReceivingService) QuickReceiveTransfer(ctx context.Context, storeId int
 	if s.redisClient != nil {
 		for _, itm := range detail.Items {
 			_ = s.redisClient.Del(ctx, cache.InventoryProductKey(storeId, itm.ProductId)).Err()
-			if itm.Upc != "" {
-				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(storeId, itm.Upc)).Err()
-			}
-			if itm.Sku != "" {
-				_ = s.redisClient.Del(ctx, cache.LegacyInventoryBarcodeKey(storeId, itm.Sku)).Err()
-			}
 		}
 	}
 	return nil

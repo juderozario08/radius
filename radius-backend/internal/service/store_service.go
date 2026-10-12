@@ -60,7 +60,6 @@ func (s *StoreService) InvalidateStoreOperationsCache(ctx context.Context, store
 	keys := []string{
 		cache.StoreOperationsKey(storeId),
 		cache.StoreOperationsGlobalKey(),
-		cache.LegacyStoreOperationsKey(),
 	}
 	if err := s.redisClient.Del(ctx, keys...).Err(); err != nil && !errors.Is(err, redis.Nil) {
 		database.CacheMetrics.RecordDeleteError()
@@ -250,20 +249,6 @@ func (s *StoreService) GetStoreOperations(ctx context.Context, storeID ...int) (
 		} else if !errors.Is(err, redis.Nil) {
 			database.CacheMetrics.RecordFallback()
 			slog.WarnContext(ctx, "redis get failed", "key", cacheKey, "error", err)
-		} else if targetStoreID == 0 {
-			legacyVal, legErr := s.redisClient.Get(ctx, cache.LegacyStoreOperationsKey()).Result()
-			if legErr == nil {
-				var ops []models.StoreOperationSummary
-				if jsonErr := json.Unmarshal([]byte(legacyVal), &ops); jsonErr == nil {
-					database.CacheMetrics.RecordHit()
-					ttl := cache.ApplyJitter(30*time.Second, 5*time.Second)
-					_ = s.redisClient.Set(ctx, cacheKey, legacyVal, ttl).Err()
-					_ = s.redisClient.Del(ctx, cache.LegacyStoreOperationsKey()).Err()
-					return ops, nil
-				}
-				database.CacheMetrics.RecordSerializationFailure()
-				_ = s.redisClient.Del(ctx, cache.LegacyStoreOperationsKey()).Err()
-			}
 		}
 	}
 

@@ -79,8 +79,6 @@ func (s *InventoryService) InvalidateInventoryCache(ctx context.Context, storeId
 	}
 	for _, b := range optionalBarcode {
 		if b != "" {
-			legacyKey := cache.LegacyInventoryBarcodeKey(storeId, b)
-			_ = s.redisClient.Del(ctx, legacyKey).Err()
 			catalogBarcodeKey := cache.CatalogBarcodeKey(b)
 			_ = s.redisClient.Del(ctx, catalogBarcodeKey).Err()
 		}
@@ -93,7 +91,6 @@ func (s *InventoryService) InvalidateStoreInventoryCache(ctx context.Context, st
 	}
 	patterns := []string{
 		cache.InventoryStorePattern(storeId),
-		cache.LegacyInventoryStorePattern(storeId),
 	}
 	for _, pat := range patterns {
 		iter := s.redisClient.Scan(ctx, 0, pat, 100).Iterator()
@@ -106,7 +103,6 @@ func (s *InventoryService) InvalidateStoreInventoryCache(ctx context.Context, st
 func (s *InventoryService) ScanProduct(ctx context.Context, storeId int, employeeId int, barcode string) (*models.ScanProductResponse, error) {
 	barcode = strings.ToUpper(strings.TrimSpace(barcode))
 	tier1Key := cache.CatalogBarcodeKey(barcode)
-	legacyKey := cache.LegacyInventoryBarcodeKey(storeId, barcode)
 
 	if s.redisClient != nil {
 		t1Val, t1Err := s.redisClient.Get(ctx, tier1Key).Result()
@@ -182,64 +178,6 @@ func (s *InventoryService) ScanProduct(ctx context.Context, storeId int, employe
 		} else if !errors.Is(t1Err, redis.Nil) {
 			database.CacheMetrics.RecordFallback()
 			slog.WarnContext(ctx, "redis get failed", "key", tier1Key, "error", t1Err)
-		}
-
-		val, err := s.redisClient.Get(ctx, legacyKey).Result()
-		if err == nil {
-			var product models.MimsProductInventory
-			if json.Unmarshal([]byte(val), &product) == nil {
-				database.CacheMetrics.RecordHit()
-				tier2Key := cache.InventoryProductKey(storeId, product.ProductId)
-				t1Data, mErr1 := json.Marshal(catalogBarcodeCache{
-					ProductId:     product.ProductId,
-					Sku:           product.Sku,
-					Upc:           product.Upc,
-					Name:          product.Name,
-					Brand:         product.Brand,
-					Description:   product.Description,
-					UnitOfMeasure: product.UnitOfMeasure,
-					UnitsPerCase:  product.UnitsPerCase,
-					Weight:        product.Weight,
-					IsActive:      product.IsActive,
-				})
-				if mErr1 == nil {
-					t1TTL := cache.ApplyJitter(24*time.Hour, 2*time.Hour)
-					_ = s.redisClient.Set(ctx, tier1Key, t1Data, t1TTL).Err()
-				}
-				t2Data, mErr2 := json.Marshal(storeInventoryCache{
-					OnHandQty:     product.OnHandQty,
-					ReservedQty:   product.ReservedQty,
-					AvailableQty:  product.AvailableQty,
-					ReorderQty:    product.ReorderQty,
-					Aisle:         product.Aisle,
-					MimsLocation:  product.MimsLocation,
-					LastCountedAt: product.LastCountedAt,
-				})
-				if mErr2 == nil {
-					t2TTL := cache.ApplyJitter(5*time.Minute, 30*time.Second)
-					_ = s.redisClient.Set(ctx, tier2Key, t2Data, t2TTL).Err()
-				}
-				_ = s.redisClient.Del(ctx, legacyKey).Err()
-
-				go func() {
-					_ = s.inventoryRepo.LogScan(context.Background(), models.MimsScanLog{
-						StoreId:        storeId,
-						EmployeeId:     employeeId,
-						ProductId:      &product.ProductId,
-						ScannedBarcode: barcode,
-						ScanType:       "MIMS",
-					})
-				}()
-				return &models.ScanProductResponse{
-					Product: &product,
-					Message: "Product found",
-				}, nil
-			}
-			database.CacheMetrics.RecordSerializationFailure()
-			_ = s.redisClient.Del(ctx, legacyKey).Err()
-		} else if !errors.Is(err, redis.Nil) {
-			database.CacheMetrics.RecordFallback()
-			slog.WarnContext(ctx, "redis get failed", "key", legacyKey, "error", err)
 		}
 	}
 

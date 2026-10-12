@@ -228,38 +228,6 @@ func EmployeeKey(employeeId int) string {
 	return fmt.Sprintf("radius:v1:employee:%d", employeeId)
 }
 
-func LegacyAuthTokenKey(tokenHash string) string {
-	return "session:" + strings.TrimSpace(tokenHash)
-}
-
-func LegacyCatalogProductKey(productId int) string {
-	return fmt.Sprintf("product:%d", productId)
-}
-
-func LegacyCatalogCategoriesKey() string {
-	return "categories:all"
-}
-
-func LegacyCatalogBrandsKey() string {
-	return "brands:distinct"
-}
-
-func LegacyInventoryBarcodeKey(storeId int, barcode string) string {
-	return fmt.Sprintf("inventory:%d:barcode:%s", storeId, strings.ToUpper(strings.TrimSpace(barcode)))
-}
-
-func LegacyInventoryStorePattern(storeId int) string {
-	return fmt.Sprintf("inventory:%d:*", storeId)
-}
-
-func LegacyIS4TCKey(storeId int) string {
-	return fmt.Sprintf("is4tc_session:%d", storeId)
-}
-
-func LegacyStoreOperationsKey() string {
-	return "radius:v1:store:ops"
-}
-
 func ApplyJitter(baseTTL time.Duration, jitterRange time.Duration) time.Duration {
 	if jitterRange <= 0 {
 		return baseTTL
@@ -277,7 +245,6 @@ func InvalidateStoreOperations(ctx context.Context, rdb *redis.Client, storeId .
 	}
 	keys := []string{
 		StoreOperationsGlobalKey(),
-		LegacyStoreOperationsKey(),
 	}
 	if len(storeId) > 0 && storeId[0] > 0 {
 		keys = append(keys, StoreOperationsKey(storeId[0]))
@@ -291,7 +258,6 @@ func InvalidateProduct(ctx context.Context, rdb *redis.Client, productID int, ba
 	}
 	keys := []string{
 		CatalogProductKey(productID),
-		LegacyCatalogProductKey(productID),
 	}
 	for _, b := range barcode {
 		if strings.TrimSpace(b) != "" {
@@ -305,12 +271,12 @@ func InvalidateCategories(ctx context.Context, rdb *redis.Client) {
 	if rdb == nil {
 		return
 	}
-	_ = rdb.Del(ctx, CatalogCategoriesKey(), LegacyCatalogCategoriesKey()).Err()
+	_ = rdb.Del(ctx, CatalogCategoriesKey()).Err()
 }
 
 func InvalidateBrands(ctx context.Context, rdb *redis.Client) {
 	if rdb == nil {
 		return
 	}
-	_ = rdb.Del(ctx, CatalogBrandsKey(), LegacyCatalogBrandsKey()).Err()
+	_ = rdb.Del(ctx, CatalogBrandsKey()).Err()
 }

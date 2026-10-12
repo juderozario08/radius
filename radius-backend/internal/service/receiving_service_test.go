@@ -37,12 +37,8 @@ func TestReceivingService_ReceivePO_InvalidatesCache(t *testing.T) {
 	employeeId := 9
 
 	tier2Key := fmt.Sprintf("radius:v1:inventory:store:%d:product:%d", storeId, 10)
-	legacyUpcKey := fmt.Sprintf("inventory:%d:barcode:%s", storeId, "123456789012")
-	legacySkuKey := fmt.Sprintf("inventory:%d:barcode:%s", storeId, "SKU10")
 
 	rdb.Set(context.Background(), tier2Key, "cached", time.Hour)
-	rdb.Set(context.Background(), legacyUpcKey, "cached", time.Hour)
-	rdb.Set(context.Background(), legacySkuKey, "cached", time.Hour)
 
 	mockReceivingRepo.EXPECT().
 		GetPurchaseOrderDetail(gomock.Any(), poId).
@@ -78,14 +74,6 @@ func TestReceivingService_ReceivePO_InvalidatesCache(t *testing.T) {
 	exists, _ := rdb.Exists(context.Background(), tier2Key).Result()
 	if exists != 0 {
 		t.Fatalf("expected tier2Key to be deleted, but still exists")
-	}
-	existsUpc, _ := rdb.Exists(context.Background(), legacyUpcKey).Result()
-	if existsUpc != 0 {
-		t.Fatalf("expected legacyUpcKey to be deleted, but still exists")
-	}
-	existsSku, _ := rdb.Exists(context.Background(), legacySkuKey).Result()
-	if existsSku != 0 {
-		t.Fatalf("expected legacySkuKey to be deleted, but still exists")
 	}
 }
 

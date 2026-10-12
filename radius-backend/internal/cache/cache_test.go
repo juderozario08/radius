@@ -10,15 +10,9 @@ func TestCacheKeys_FormatAndNormalization(t *testing.T) {
 	if got := cache.AuthTokenKey("abc123hash"); got != "radius:v1:auth:token:abc123hash" {
 		t.Fatalf("unexpected AuthTokenKey: %s", got)
 	}
-	if got := cache.LegacyAuthTokenKey("abc123hash"); got != "session:abc123hash" {
-		t.Fatalf("unexpected LegacyAuthTokenKey: %s", got)
-	}
 
 	if got := cache.CatalogProductKey(42); got != "radius:v1:catalog:product:42" {
 		t.Fatalf("unexpected CatalogProductKey: %s", got)
-	}
-	if got := cache.LegacyCatalogProductKey(42); got != "product:42" {
-		t.Fatalf("unexpected LegacyCatalogProductKey: %s", got)
 	}
 
 	if got := cache.CatalogBarcodeKey("  0123-abc  "); got != "radius:v1:catalog:barcode:0123-ABC" {
@@ -28,29 +22,17 @@ func TestCacheKeys_FormatAndNormalization(t *testing.T) {
 	if got := cache.CatalogCategoriesKey(); got != "radius:v1:catalog:categories" {
 		t.Fatalf("unexpected CatalogCategoriesKey: %s", got)
 	}
-	if got := cache.LegacyCatalogCategoriesKey(); got != "categories:all" {
-		t.Fatalf("unexpected LegacyCatalogCategoriesKey: %s", got)
-	}
 
 	if got := cache.CatalogBrandsKey(); got != "radius:v1:catalog:brands" {
 		t.Fatalf("unexpected CatalogBrandsKey: %s", got)
-	}
-	if got := cache.LegacyCatalogBrandsKey(); got != "brands:distinct" {
-		t.Fatalf("unexpected LegacyCatalogBrandsKey: %s", got)
 	}
 
 	if got := cache.InventoryProductKey(3, 105); got != "radius:v1:inventory:store:3:product:105" {
 		t.Fatalf("unexpected InventoryProductKey: %s", got)
 	}
-	if got := cache.LegacyInventoryBarcodeKey(3, "upc123"); got != "inventory:3:barcode:UPC123" {
-		t.Fatalf("unexpected LegacyInventoryBarcodeKey: %s", got)
-	}
 
 	if got := cache.IS4TCStoreKey(7); got != "radius:v1:is4tc:store:7" {
 		t.Fatalf("unexpected IS4TCStoreKey: %s", got)
-	}
-	if got := cache.LegacyIS4TCKey(7); got != "is4tc_session:7" {
-		t.Fatalf("unexpected LegacyIS4TCKey: %s", got)
 	}
 
 	if got := cache.StoreDirectoryKey(2, 25); got != "radius:v1:store:directory:2:25" {

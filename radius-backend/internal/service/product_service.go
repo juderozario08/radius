@@ -44,8 +44,7 @@ func (s *ProductService) InvalidateProductCache(ctx context.Context, id int) {
 		return
 	}
 	newKey := cache.CatalogProductKey(id)
-	legacyKey := cache.LegacyCatalogProductKey(id)
-	if err := s.redisClient.Del(ctx, newKey, legacyKey).Err(); err != nil && !errors.Is(err, redis.Nil) {
+	if err := s.redisClient.Del(ctx, newKey).Err(); err != nil && !errors.Is(err, redis.Nil) {
 		database.CacheMetrics.RecordDeleteError()
 		slog.WarnContext(ctx, "failed to invalidate product cache", "key", newKey, "error", err)
 	}
@@ -53,7 +52,6 @@ func (s *ProductService) InvalidateProductCache(ctx context.Context, id int) {
 
 func (s *ProductService) GetProductByID(ctx context.Context, id int) (*models.Product, error) {
 	newKey := cache.CatalogProductKey(id)
-	legacyKey := cache.LegacyCatalogProductKey(id)
 
 	if s.redisClient != nil {
 		val, err := s.redisClient.Get(ctx, newKey).Result()
@@ -68,20 +66,6 @@ func (s *ProductService) GetProductByID(ctx context.Context, id int) (*models.Pr
 		} else if !errors.Is(err, redis.Nil) {
 			database.CacheMetrics.RecordFallback()
 			slog.WarnContext(ctx, "redis get failed", "key", newKey, "error", err)
-		} else {
-			legacyVal, legErr := s.redisClient.Get(ctx, legacyKey).Result()
-			if legErr == nil {
-				var product models.Product
-				if jsonErr := json.Unmarshal([]byte(legacyVal), &product); jsonErr == nil {
-					database.CacheMetrics.RecordHit()
-					ttl := cache.ApplyJitter(5*time.Minute, 30*time.Second)
-					_ = s.redisClient.Set(ctx, newKey, legacyVal, ttl).Err()
-					_ = s.redisClient.Del(ctx, legacyKey).Err()
-					return &product, nil
-				}
-				database.CacheMetrics.RecordSerializationFailure()
-				_ = s.redisClient.Del(ctx, legacyKey).Err()
-			}
 		}
 	}
 
@@ -140,7 +124,7 @@ func (s *ProductService) UpdateProduct(ctx context.Context, product *models.Prod
 			_ = s.redisClient.Del(ctx, cache.CatalogBarcodeKey(product.Upc)).Err()
 		}
 		if product.Brand != "" {
-			_ = s.redisClient.Del(ctx, cache.CatalogBrandsKey(), cache.LegacyCatalogBrandsKey()).Err()
+			_ = s.redisClient.Del(ctx, cache.CatalogBrandsKey()).Err()
 		}
 	}
 	return nil

@@ -76,10 +76,6 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, storeId int,
 		for _, itm := range items {
 			tier2Key := cache.InventoryProductKey(targetStoreID, itm.ProductId)
 			_ = s.redisClient.Del(ctx, tier2Key).Err()
-			if itm.ScannedBarcode != nil && *itm.ScannedBarcode != "" {
-				legacyKey := cache.LegacyInventoryBarcodeKey(targetStoreID, *itm.ScannedBarcode)
-				_ = s.redisClient.Del(ctx, legacyKey).Err()
-			}
 		}
 	}
 

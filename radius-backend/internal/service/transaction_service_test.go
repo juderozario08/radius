@@ -197,9 +197,7 @@ func TestTransactionService_CreateTransaction_InvalidatesInventoryCache(t *testi
 	barcode := "123456789012"
 
 	tier2Key := fmt.Sprintf("radius:v1:inventory:store:%d:product:%d", storeId, 101)
-	legacyKey := fmt.Sprintf("inventory:%d:barcode:%s", storeId, barcode)
 	rdb.Set(context.Background(), tier2Key, "cached_data", time.Hour)
-	rdb.Set(context.Background(), legacyKey, "cached_data", time.Hour)
 
 	req := models.CreateTransactionRequest{
 		RegisterId:  "REG-01",
@@ -247,9 +245,5 @@ func TestTransactionService_CreateTransaction_InvalidatesInventoryCache(t *testi
 	t2Exists, _ := rdb.Exists(context.Background(), tier2Key).Result()
 	if t2Exists != 0 {
 		t.Fatalf("expected tier2Key to be deleted, but still exists")
-	}
-	legacyExists, _ := rdb.Exists(context.Background(), legacyKey).Result()
-	if legacyExists != 0 {
-		t.Fatalf("expected legacyKey to be deleted, but still exists")
 	}
 }

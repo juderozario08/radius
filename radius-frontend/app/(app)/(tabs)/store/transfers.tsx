@@ -461,66 +461,72 @@ export default function TransfersScreen() {
 
                                     <View style={globalStyles.divider} />
 
-                                    <ScrollView style={styles.detailScroll} showsVerticalScrollIndicator={false}>
-                                        <View style={globalStyles.section}>
-                                            <Text style={globalStyles.sectionTitle}>Transfer Info</Text>
-                                            {isAdmin && <DetailRow label="Origin Store:" value={transferDetail.from_store_name} />}
-                                            <DetailRow label="Destination Store:" value={transferDetail.to_store_name} />
-                                            <DetailRow label="Created By:" value={transferDetail.requested_by_name} />
-                                            <DetailRow
-                                                label="Created At:"
-                                                value={new Date(transferDetail.created_at).toLocaleString()}
-                                            />
-                                            {transferDetail.transfer_reason ? (
-                                                <DetailRow label="Reason:" value={transferDetail.transfer_reason} />
-                                            ) : null}
-                                            <DetailRow
-                                                label="Manual Check:"
-                                                value={transferDetail.manual_check_required ? "Yes (Itemized Scan)" : "No (Auto-Receive Allowed)"}
-                                            />
-                                        </View>
-
-                                        {(transferDetail.shipped_at || transferDetail.carrier || transferDetail.tracking_number) && (
-                                            <View style={globalStyles.section}>
-                                                <Text style={globalStyles.sectionTitle}>Dispatch & Tracking</Text>
-                                                {transferDetail.shipped_at && (
+                                    <FlatList
+                                        style={styles.detailScroll}
+                                        showsVerticalScrollIndicator={false}
+                                        data={transferDetail.items}
+                                        keyExtractor={(it) => String(it.transfer_item_id)}
+                                        contentContainerStyle={globalStyles.section}
+                                        ListHeaderComponent={
+                                            <>
+                                                <View style={globalStyles.section}>
+                                                    <Text style={globalStyles.sectionTitle}>Transfer Info</Text>
+                                                    {isAdmin && <DetailRow label="Origin Store:" value={transferDetail.from_store_name} />}
+                                                    <DetailRow label="Destination Store:" value={transferDetail.to_store_name} />
+                                                    <DetailRow label="Created By:" value={transferDetail.requested_by_name} />
                                                     <DetailRow
-                                                        label="Dispatched At:"
-                                                        value={new Date(transferDetail.shipped_at).toLocaleString()}
+                                                        label="Created At:"
+                                                        value={new Date(transferDetail.created_at).toLocaleString()}
                                                     />
+                                                    {transferDetail.transfer_reason ? (
+                                                        <DetailRow label="Reason:" value={transferDetail.transfer_reason} />
+                                                    ) : null}
+                                                    <DetailRow
+                                                        label="Manual Check:"
+                                                        value={transferDetail.manual_check_required ? "Yes (Itemized Scan)" : "No (Auto-Receive Allowed)"}
+                                                    />
+                                                </View>
+
+                                                {(transferDetail.shipped_at || transferDetail.carrier || transferDetail.tracking_number) && (
+                                                    <View style={globalStyles.section}>
+                                                        <Text style={globalStyles.sectionTitle}>Dispatch & Tracking</Text>
+                                                        {transferDetail.shipped_at && (
+                                                            <DetailRow
+                                                                label="Dispatched At:"
+                                                                value={new Date(transferDetail.shipped_at).toLocaleString()}
+                                                            />
+                                                        )}
+                                                        {transferDetail.carrier && (
+                                                            <DetailRow label="Carrier:" value={transferDetail.carrier} />
+                                                        )}
+                                                        {transferDetail.tracking_number && (
+                                                            <DetailRow label="Tracking #:" value={transferDetail.tracking_number} />
+                                                        )}
+                                                    </View>
                                                 )}
-                                                {transferDetail.carrier && (
-                                                    <DetailRow label="Carrier:" value={transferDetail.carrier} />
-                                                )}
-                                                {transferDetail.tracking_number && (
-                                                    <DetailRow label="Tracking #:" value={transferDetail.tracking_number} />
-                                                )}
+                                                <Text style={globalStyles.sectionTitle}>
+                                                    Items ({transferDetail.items.length})
+                                                </Text>
+                                            </>
+                                        }
+                                        renderItem={({ item: it }) => (
+                                            <View style={styles.itemRowCard}>
+                                                <View style={styles.itemRowLeft}>
+                                                    <Text style={styles.itemRowName} numberOfLines={1}>{it.name}</Text>
+                                                    <Text style={styles.itemRowSku}>SKU: {it.sku} â€¢ UPC: {it.upc}</Text>
+                                                </View>
+                                                <View style={styles.itemRowRight}>
+                                                    <Text style={styles.itemRowQtyLabel}>Requested: <Text style={styles.itemRowQtyValue}>{it.qty_requested}</Text></Text>
+                                                    {it.qty_sent !== null && (
+                                                        <Text style={styles.itemRowQtyLabel}>Sent: <Text style={styles.itemRowQtyValue}>{it.qty_sent}</Text></Text>
+                                                    )}
+                                                    {it.qty_received !== null && (
+                                                        <Text style={styles.itemRowQtyLabel}>Received: <Text style={styles.itemRowQtyValue}>{it.qty_received}</Text></Text>
+                                                    )}
+                                                </View>
                                             </View>
                                         )}
-
-                                        <View style={globalStyles.section}>
-                                            <Text style={globalStyles.sectionTitle}>
-                                                Items ({transferDetail.items.length})
-                                            </Text>
-                                            {transferDetail.items.map((it) => (
-                                                <View key={it.transfer_item_id} style={styles.itemRowCard}>
-                                                    <View style={styles.itemRowLeft}>
-                                                        <Text style={styles.itemRowName} numberOfLines={1}>{it.name}</Text>
-                                                        <Text style={styles.itemRowSku}>SKU: {it.sku} â€¢ UPC: {it.upc}</Text>
-                                                    </View>
-                                                    <View style={styles.itemRowRight}>
-                                                        <Text style={styles.itemRowQtyLabel}>Requested: <Text style={styles.itemRowQtyValue}>{it.qty_requested}</Text></Text>
-                                                        {it.qty_sent !== null && (
-                                                            <Text style={styles.itemRowQtyLabel}>Sent: <Text style={styles.itemRowQtyValue}>{it.qty_sent}</Text></Text>
-                                                        )}
-                                                        {it.qty_received !== null && (
-                                                            <Text style={styles.itemRowQtyLabel}>Received: <Text style={styles.itemRowQtyValue}>{it.qty_received}</Text></Text>
-                                                        )}
-                                                    </View>
-                                                </View>
-                                            ))}
-                                        </View>
-                                    </ScrollView>
+                                    />
 
                                     <View style={globalStyles.divider} />
 
@@ -646,131 +652,138 @@ export default function TransfersScreen() {
 
                             <View style={globalStyles.divider} />
 
-                            <ScrollView style={styles.createScroll} showsVerticalScrollIndicator={false}>
-                                <View style={styles.formField}>
-                                    <Text style={globalStyles.modalInputLabel}>Destination Store *</Text>
-                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storeListScroll}>
-                                        {destinationStores.map((st) => {
-                                            const isSelected = selectedStoreId === st.store_id;
-                                            return (
-                                                <TouchableOpacity
-                                                    key={st.store_id}
-                                                    style={[styles.storePill, isSelected && styles.storePillSelected]}
-                                                    onPress={() => setSelectedStoreId(st.store_id)}
-                                                >
-                                                    <Text style={[styles.storePillText, isSelected && styles.storePillTextSelected]}>
-                                                        {st.name} ({st.city})
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            );
-                                        })}
-                                    </ScrollView>
-                                </View>
-
-                                <View style={styles.formField}>
-                                    <Text style={globalStyles.modalInputLabel}>Transfer Reason *</Text>
-                                    <TextInput
-                                        style={globalStyles.textInput}
-                                        placeholder="e.g. Restock, Customer Request, Stock Rebalance"
-                                        placeholderTextColor={COLORS.textSecondary}
-                                        value={transferReason}
-                                        onChangeText={setTransferReason}
-                                    />
-                                </View>
-
-                                <TouchableOpacity
-                                    style={styles.toggleRow}
-                                    onPress={() => setManualCheck(!manualCheck)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Ionicons
-                                        name={manualCheck ? "checkbox" : "square-outline"}
-                                        size={22}
-                                        color={COLORS.primary}
-                                    />
-                                    <View style={styles.toggleTextContainer}>
-                                        <Text style={styles.toggleTitle}>Require Itemized Scan on Delivery</Text>
-                                        <Text style={styles.toggleSubtext}>
-                                            If checked, destination store must scan each item rather than auto-receiving.
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
-
-                                <View style={globalStyles.divider} />
-
-                                <View style={styles.formField}>
-                                    <Text style={globalStyles.modalInputLabel}>Add Products *</Text>
-                                    <View style={styles.productSearchRow}>
-                                        <TextInput
-                                            style={[globalStyles.textInput, styles.productSearchInput]}
-                                            placeholder="Search product by name, SKU, UPC..."
-                                            placeholderTextColor={COLORS.textSecondary}
-                                            value={productSearchQuery}
-                                            onChangeText={handleSearchProducts}
-                                        />
-                                        {isSearchingProducts ? (
-                                            <ActivityIndicator size="small" color={COLORS.primary} style={styles.searchSpinner} />
-                                        ) : null}
-                                    </View>
-
-                                    {searchResults.length > 0 && (
-                                        <View style={styles.searchResultsBox}>
-                                            {searchResults.map((prod) => (
-                                                <TouchableOpacity
-                                                    key={prod.product_id}
-                                                    style={styles.searchResultItem}
-                                                    onPress={() => handleSelectProduct(prod)}
-                                                >
-                                                    <Text style={styles.searchResultName} numberOfLines={1}>{prod.name}</Text>
-                                                    <Text style={styles.searchResultSku}>SKU: {prod.sku} â€¢ Brand: {prod.brand}</Text>
-                                                </TouchableOpacity>
-                                            ))}
+                            <FlatList
+                                style={styles.createScroll}
+                                showsVerticalScrollIndicator={false}
+                                data={pendingItems}
+                                keyExtractor={(it) => String(it.product_id)}
+                                ListHeaderComponent={
+                                    <>
+                                        <View style={styles.formField}>
+                                            <Text style={globalStyles.modalInputLabel}>Destination Store *</Text>
+                                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storeListScroll}>
+                                                {destinationStores.map((st) => {
+                                                    const isSelected = selectedStoreId === st.store_id;
+                                                    return (
+                                                        <TouchableOpacity
+                                                            key={st.store_id}
+                                                            style={[styles.storePill, isSelected && styles.storePillSelected]}
+                                                            onPress={() => setSelectedStoreId(st.store_id)}
+                                                        >
+                                                            <Text style={[styles.storePillText, isSelected && styles.storePillTextSelected]}>
+                                                                {st.name} ({st.city})
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    );
+                                                })}
+                                            </ScrollView>
                                         </View>
-                                    )}
 
-                                    {selectedProduct && (
-                                        <View style={styles.selectedProductBox}>
-                                            <View style={styles.selectedProductInfo}>
-                                                <Text style={styles.selectedProductName} numberOfLines={1}>{selectedProduct.name}</Text>
-                                                <Text style={styles.selectedProductSku}>SKU: {selectedProduct.sku}</Text>
+                                        <View style={styles.formField}>
+                                            <Text style={globalStyles.modalInputLabel}>Transfer Reason *</Text>
+                                            <TextInput
+                                                style={globalStyles.textInput}
+                                                placeholder="e.g. Restock, Customer Request, Stock Rebalance"
+                                                placeholderTextColor={COLORS.textSecondary}
+                                                value={transferReason}
+                                                onChangeText={setTransferReason}
+                                            />
+                                        </View>
+
+                                        <TouchableOpacity
+                                            style={styles.toggleRow}
+                                            onPress={() => setManualCheck(!manualCheck)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Ionicons
+                                                name={manualCheck ? "checkbox" : "square-outline"}
+                                                size={22}
+                                                color={COLORS.primary}
+                                            />
+                                            <View style={styles.toggleTextContainer}>
+                                                <Text style={styles.toggleTitle}>Require Itemized Scan on Delivery</Text>
+                                                <Text style={styles.toggleSubtext}>
+                                                    If checked, destination store must scan each item rather than auto-receiving.
+                                                </Text>
                                             </View>
-                                            <View style={styles.qtyAddRow}>
-                                                <Text style={styles.qtyLabel}>Qty:</Text>
+                                        </TouchableOpacity>
+
+                                        <View style={globalStyles.divider} />
+
+                                        <View style={styles.formField}>
+                                            <Text style={globalStyles.modalInputLabel}>Add Products *</Text>
+                                            <View style={styles.productSearchRow}>
                                                 <TextInput
-                                                    style={styles.qtyInput}
-                                                    keyboardType="number-pad"
-                                                    value={itemQtyText}
-                                                    onChangeText={setItemQtyText}
+                                                    style={[globalStyles.textInput, styles.productSearchInput]}
+                                                    placeholder="Search product by name, SKU, UPC..."
+                                                    placeholderTextColor={COLORS.textSecondary}
+                                                    value={productSearchQuery}
+                                                    onChangeText={handleSearchProducts}
                                                 />
-                                                <TouchableOpacity style={styles.addBtn} onPress={handleAddPendingItem}>
-                                                    <Text style={styles.addBtnText}>Add</Text>
-                                                </TouchableOpacity>
+                                                {isSearchingProducts ? (
+                                                    <ActivityIndicator size="small" color={COLORS.primary} style={styles.searchSpinner} />
+                                                ) : null}
                                             </View>
-                                        </View>
-                                    )}
-                                </View>
 
-                                <View style={styles.pendingItemsSection}>
-                                    <Text style={styles.pendingItemsTitle}>
-                                        Transfer Manifest ({pendingItems.length} {pendingItems.length === 1 ? "item" : "items"})
-                                    </Text>
-                                    {pendingItems.length === 0 ? (
-                                        <Text style={styles.emptyPendingText}>No products added to manifest yet.</Text>
-                                    ) : (
-                                        pendingItems.map((it) => (
-                                            <View key={it.product_id} style={styles.manifestItemRow}>
-                                                <View style={styles.manifestItemLeft}>
-                                                    <Text style={styles.manifestItemName} numberOfLines={1}>{it.name}</Text>
-                                                    <Text style={styles.manifestItemSku}>SKU: {it.sku} â€¢ Qty: {it.qty_requested}</Text>
+                                            {searchResults.length > 0 && (
+                                                <View style={styles.searchResultsBox}>
+                                                    {searchResults.map((prod) => (
+                                                        <TouchableOpacity
+                                                            key={prod.product_id}
+                                                            style={styles.searchResultItem}
+                                                            onPress={() => handleSelectProduct(prod)}
+                                                        >
+                                                            <Text style={styles.searchResultName} numberOfLines={1}>{prod.name}</Text>
+                                                            <Text style={styles.searchResultSku}>SKU: {prod.sku} â€¢ Brand: {prod.brand}</Text>
+                                                        </TouchableOpacity>
+                                                    ))}
                                                 </View>
-                                                <TouchableOpacity onPress={() => handleRemovePendingItem(it.product_id)}>
-                                                    <Ionicons name="trash-outline" size={20} color="#C62828" />
-                                                </TouchableOpacity>
-                                            </View>
-                                        ))
-                                    )}
-                                </View>
-                            </ScrollView>
+                                            )}
+
+                                            {selectedProduct && (
+                                                <View style={styles.selectedProductBox}>
+                                                    <View style={styles.selectedProductInfo}>
+                                                        <Text style={styles.selectedProductName} numberOfLines={1}>{selectedProduct.name}</Text>
+                                                        <Text style={styles.selectedProductSku}>SKU: {selectedProduct.sku}</Text>
+                                                    </View>
+                                                    <View style={styles.qtyAddRow}>
+                                                        <Text style={styles.qtyLabel}>Qty:</Text>
+                                                        <TextInput
+                                                            style={styles.qtyInput}
+                                                            keyboardType="number-pad"
+                                                            value={itemQtyText}
+                                                            onChangeText={setItemQtyText}
+                                                        />
+                                                        <TouchableOpacity style={styles.addBtn} onPress={handleAddPendingItem}>
+                                                            <Text style={styles.addBtnText}>Add</Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                </View>
+                                            )}
+                                        </View>
+
+                                        <View style={styles.pendingItemsSection}>
+                                            <Text style={styles.pendingItemsTitle}>
+                                                Transfer Manifest ({pendingItems.length} {pendingItems.length === 1 ? "item" : "items"})
+                                            </Text>
+                                        </View>
+                                    </>
+                                }
+                                renderItem={({ item: it }) => (
+                                    <View style={styles.manifestItemRow}>
+                                        <View style={styles.manifestItemLeft}>
+                                            <Text style={styles.manifestItemName} numberOfLines={1}>{it.name}</Text>
+                                            <Text style={styles.manifestItemSku}>SKU: {it.sku} â€¢ Qty: {it.qty_requested}</Text>
+                                        </View>
+                                        <TouchableOpacity onPress={() => handleRemovePendingItem(it.product_id)}>
+                                            <Ionicons name="trash-outline" size={20} color="#C62828" />
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                                ListEmptyComponent={
+                                    <Text style={styles.emptyPendingText}>No products added to manifest yet.</Text>
+                                }
+                            />
 
                             <View style={globalStyles.divider} />
 

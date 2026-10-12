@@ -1309,46 +1309,48 @@ export default function OnlineOrderDetail() {
                                     <ActivityIndicator size="small" color={COLORS.primary} />
                                 </View>
                             ) : (
-                                <ScrollView style={{ maxHeight: 280, marginVertical: 10 }}>
-                                    {employees.length === 0 ? (
+                                <FlatList
+                                    style={{ maxHeight: 280, marginVertical: 10 }}
+                                    data={employees}
+                                    keyExtractor={(emp) => String(emp.employee_id)}
+                                    extraData={selectedEmployeeId}
+                                    renderItem={({ item: emp }) => {
+                                        const isSelected = selectedEmployeeId === emp.employee_id;
+                                        return (
+                                            <TouchableOpacity
+                                                style={[
+                                                    styles.empSelectItem,
+                                                    isSelected && styles.empSelectItemActive,
+                                                ]}
+                                                onPress={() => setSelectedEmployeeId(emp.employee_id)}
+                                            >
+                                                <Ionicons
+                                                    name={isSelected ? "radio-button-on" : "radio-button-off"}
+                                                    size={20}
+                                                    color={isSelected ? COLORS.primary : COLORS.textSecondary}
+                                                />
+                                                <View style={{ marginLeft: 12, flex: 1 }}>
+                                                    <Text
+                                                        style={[
+                                                            styles.empSelectName,
+                                                            isSelected && styles.empSelectNameActive,
+                                                        ]}
+                                                    >
+                                                        {emp.first_name} {emp.last_name}
+                                                    </Text>
+                                                    <Text style={styles.empSelectRole}>
+                                                        {emp.role} • Store #{emp.store_id}
+                                                    </Text>
+                                                </View>
+                                            </TouchableOpacity>
+                                        );
+                                    }}
+                                    ListEmptyComponent={
                                         <View style={{ paddingVertical: 20, alignItems: "center" }}>
                                             <Text style={globalStyles.emptyText}>No available employees in this store</Text>
                                         </View>
-                                    ) : (
-                                        employees.map((emp) => {
-                                            const isSelected = selectedEmployeeId === emp.employee_id;
-                                            return (
-                                                <TouchableOpacity
-                                                    key={emp.employee_id}
-                                                    style={[
-                                                        styles.empSelectItem,
-                                                        isSelected && styles.empSelectItemActive,
-                                                    ]}
-                                                    onPress={() => setSelectedEmployeeId(emp.employee_id)}
-                                                >
-                                                    <Ionicons
-                                                        name={isSelected ? "radio-button-on" : "radio-button-off"}
-                                                        size={20}
-                                                        color={isSelected ? COLORS.primary : COLORS.textSecondary}
-                                                    />
-                                                    <View style={{ marginLeft: 12, flex: 1 }}>
-                                                        <Text
-                                                            style={[
-                                                                styles.empSelectName,
-                                                                isSelected && styles.empSelectNameActive,
-                                                            ]}
-                                                        >
-                                                            {emp.first_name} {emp.last_name}
-                                                        </Text>
-                                                        <Text style={styles.empSelectRole}>
-                                                            {emp.role} • Store #{emp.store_id}
-                                                        </Text>
-                                                    </View>
-                                                </TouchableOpacity>
-                                            );
-                                        })
-                                    )}
-                                </ScrollView>
+                                    }
+                                />
                             )}
 
                             <View style={styles.modalBtnRow}>

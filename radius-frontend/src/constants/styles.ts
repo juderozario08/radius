@@ -127,6 +127,33 @@ export const globalStyles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
+    listCardTop: {
+        backgroundColor: COLORS.surface,
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+        borderWidth: 1,
+        borderBottomWidth: 0,
+        borderColor: COLORS.border,
+        paddingTop: 16,
+        paddingHorizontal: 16,
+    },
+    listCardBody: {
+        backgroundColor: COLORS.surface,
+        borderLeftWidth: 1,
+        borderRightWidth: 1,
+        borderColor: COLORS.border,
+        paddingHorizontal: 16,
+    },
+    listCardBottom: {
+        backgroundColor: COLORS.surface,
+        borderBottomLeftRadius: 12,
+        borderBottomRightRadius: 12,
+        borderWidth: 1,
+        borderTopWidth: 0,
+        borderColor: COLORS.border,
+        paddingBottom: 16,
+        marginBottom: 16,
+    },
 
     shadowLight: {
         shadowColor: "#000",

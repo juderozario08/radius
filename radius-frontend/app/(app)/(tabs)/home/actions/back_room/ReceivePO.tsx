@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, StyleSheet, FlatList, ScrollView, ActivityIndicator, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, FlatList, SectionList, ActivityIndicator, TouchableOpacity } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
 import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
 import { globalStyles } from "@/constants/styles";
-import { PurchaseOrderDetailResponse, CheckProductInPOResponse } from "@/types/receiving.types";
+import { PurchaseOrderDetailResponse, CheckProductInPOResponse, PurchaseOrderItemDetail, PurchaseOrderLPR } from "@/types/receiving.types";
 import { useAuth } from "@/hooks/useAuth";
 import { callApi, showToast } from "@/utils/helpers";
 import { ENDPOINTS } from "@/constants/routes";
@@ -16,6 +16,12 @@ import { POItemRow } from "@/components/receiving/POItemRow";
 import { LPRCard } from "@/components/receiving/LPRCard";
 import { COLORS } from "@/constants/colors";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+
+type POListEntry =
+    | { kind: "lpr"; lpr: PurchaseOrderLPR }
+    | { kind: "item"; item: PurchaseOrderItemDetail };
+
+type POListSection = { title: string; data: POListEntry[] };
 
 export default function ReceivePO() {
     const { po_id } = useLocalSearchParams<{ po_id: string }>();
@@ -172,33 +178,35 @@ export default function ReceivePO() {
             name: "List",
             children: () => {
                 if (!po) return <View />;
+                const sections: POListSection[] = [
+                    ...(po.has_lprs && po.lprs.length > 0
+                        ? [{ title: "LPRs", data: po.lprs.map((lpr): POListEntry => ({ kind: "lpr", lpr })) }]
+                        : []),
+                    { title: "Items", data: po.items.map((item): POListEntry => ({ kind: "item", item })) },
+                ];
                 return (
-                    <ScrollView style={globalStyles.container}>
-                        {po.has_lprs && po.lprs.length > 0 && (
+                    <SectionList
+                        style={globalStyles.container}
+                        sections={sections}
+                        stickySectionHeadersEnabled={false}
+                        keyExtractor={(entry) => entry.kind === "lpr" ? `lpr-${entry.lpr.lpr_id}` : `item-${entry.item.po_item_id}`}
+                        renderSectionHeader={({ section }) => (
                             <View style={styles.section}>
-                                <Text style={styles.sectionTitle}>LPRs</Text>
-                                <View style={globalStyles.paddingHorizontal}>
-                                    {po.lprs.map(lpr => (
-                                        <LPRCard key={lpr.lpr_id} lpr={lpr} />
-                                    ))}
-                                </View>
+                                <Text style={styles.sectionTitle}>{section.title}</Text>
                             </View>
                         )}
-
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Items</Text>
-                            <View>
-                                {po.items.map(item => (
-                                    <POItemRow
-                                        key={item.po_item_id}
-                                        item={item}
-                                        pendingScanQty={scannedItems[item.po_item_id] || 0}
-                                    />
-                                ))}
+                        renderItem={({ item: entry }) => entry.kind === "lpr" ? (
+                            <View style={globalStyles.paddingHorizontal}>
+                                <LPRCard lpr={entry.lpr} />
                             </View>
-                        </View>
-                        <View style={{ height: 40 }} />
-                    </ScrollView>
+                        ) : (
+                            <POItemRow
+                                item={entry.item}
+                                pendingScanQty={scannedItems[entry.item.po_item_id] || 0}
+                            />
+                        )}
+                        contentContainerStyle={styles.listContent}
+                    />
                 );
             }
         }
@@ -281,6 +289,9 @@ const styles = StyleSheet.create({
     },
     section: {
         marginTop: 16,
+    },
+    listContent: {
+        paddingBottom: 40,
     },
     sectionTitle: {
         fontSize: 18,

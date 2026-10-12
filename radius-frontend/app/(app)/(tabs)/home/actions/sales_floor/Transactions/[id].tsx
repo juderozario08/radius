@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { DetailRow } from "@/components/common/DetailRow";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ScrollView,
+    FlatList,
     StyleSheet,
     Text,
     View,
@@ -82,46 +82,55 @@ export default function TransactionDetail() {
                 headerCenter={<Text style={globalStyles.headerTitle}>Transaction #{transaction.transaction_id}</Text>}
             />
 
-            <ScrollView style={globalStyles.container} showsVerticalScrollIndicator={false}>
-                <View style={styles.card}>
-                    <View style={globalStyles.cardHeader}>
-                        <Text style={styles.sectionTitle}>Details</Text>
-                        <StatusBadge isActive={transaction.status === 'COMPLETED'} />
-                    </View>
-                    <DetailRow label="Type:" value={transaction.transaction_type} />
-                    <DetailRow label="Register ID:" value={transaction.register_id} />
-                    <DetailRow label="Employee ID:" value={transaction.employee_id || 'N/A'} />
-                    <DetailRow label="Store ID:" value={transaction.store_id} />
-                    <DetailRow label="Date:" value={new Date(transaction.created_at).toLocaleString()} />
-                    <DetailRow label="Payment Method:" value={transaction.payment_method || 'N/A'} />
-                    {transaction.payment_method === 'CARD' && transaction.card_type && (
-                        <DetailRow label="Card Type:" value={transaction.card_type} />
-                    )}
-                    {transaction.payment_method === 'CARD' && transaction.card_number && (
-                        <DetailRow label="Card Number:" value={`**** **** **** ${transaction.card_number}`} />
-                    )}
-                    {transaction.payment_reference && (
-                        <DetailRow label="Payment Ref:" value={transaction.payment_reference} />
-                    )}
-                </View>
+            <FlatList
+                style={globalStyles.container}
+                showsVerticalScrollIndicator={false}
+                data={items}
+                keyExtractor={(item) => String(item.transaction_item_id)}
+                ListHeaderComponent={
+                    <>
+                        <View style={styles.card}>
+                            <View style={globalStyles.cardHeader}>
+                                <Text style={styles.sectionTitle}>Details</Text>
+                                <StatusBadge isActive={transaction.status === 'COMPLETED'} />
+                            </View>
+                            <DetailRow label="Type:" value={transaction.transaction_type} />
+                            <DetailRow label="Register ID:" value={transaction.register_id} />
+                            <DetailRow label="Employee ID:" value={transaction.employee_id || 'N/A'} />
+                            <DetailRow label="Store ID:" value={transaction.store_id} />
+                            <DetailRow label="Date:" value={new Date(transaction.created_at).toLocaleString()} />
+                            <DetailRow label="Payment Method:" value={transaction.payment_method || 'N/A'} />
+                            {transaction.payment_method === 'CARD' && transaction.card_type && (
+                                <DetailRow label="Card Type:" value={transaction.card_type} />
+                            )}
+                            {transaction.payment_method === 'CARD' && transaction.card_number && (
+                                <DetailRow label="Card Number:" value={`**** **** **** ${transaction.card_number}`} />
+                            )}
+                            {transaction.payment_reference && (
+                                <DetailRow label="Payment Ref:" value={transaction.payment_reference} />
+                            )}
+                        </View>
 
-                <View style={styles.card}>
-                    <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Financials</Text>
-                    <DetailRow label="Subtotal:" value={formatMoney(transaction.subtotal)} />
-                    <DetailRow label="Tax:" value={formatMoney(transaction.tax_amount)} />
-                    <DetailRow label="Discount:" value={formatMoney(transaction.discount_total)} />
-                    <View style={globalStyles.divider} />
-                    <DetailRow label="Total:" value={formatMoney(transaction.total_amount)} />
-                    <View style={globalStyles.divider} />
-                    <DetailRow label="Cost Total:" value={formatMoney(transaction.cost_total)} />
-                    <DetailRow label="Est. Margin:" value={formatMoney(sumMoney([transaction.subtotal, -transaction.cost_total]))} />
-                </View>
+                        <View style={styles.card}>
+                            <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Financials</Text>
+                            <DetailRow label="Subtotal:" value={formatMoney(transaction.subtotal)} />
+                            <DetailRow label="Tax:" value={formatMoney(transaction.tax_amount)} />
+                            <DetailRow label="Discount:" value={formatMoney(transaction.discount_total)} />
+                            <View style={globalStyles.divider} />
+                            <DetailRow label="Total:" value={formatMoney(transaction.total_amount)} />
+                            <View style={globalStyles.divider} />
+                            <DetailRow label="Cost Total:" value={formatMoney(transaction.cost_total)} />
+                            <DetailRow label="Est. Margin:" value={formatMoney(sumMoney([transaction.subtotal, -transaction.cost_total]))} />
+                        </View>
 
-                <View style={styles.card}>
-                    <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Items ({items.length})</Text>
-                    {items.map((item) => (
+                        <View style={globalStyles.listCardTop}>
+                            <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Items ({items.length})</Text>
+                        </View>
+                    </>
+                }
+                renderItem={({ item }) => (
+                    <View style={globalStyles.listCardBody}>
                         <TouchableOpacity
-                            key={item.transaction_item_id}
                             style={styles.itemRow}
                             onPress={() => router.push(`/(app)/product/${item.product_id}` as any)}
                         >
@@ -135,12 +144,17 @@ export default function TransactionDetail() {
                                 {formatMoney(sumMoney([multiplyMoney(item.unit_price, item.quantity), -item.discount_amount]))}
                             </Text>
                         </TouchableOpacity>
-                    ))}
-                    {items.length === 0 && <Text style={globalStyles.emptyText}>No items found.</Text>}
-                </View>
-
-                <View style={{ height: 40 }} />
-            </ScrollView>
+                    </View>
+                )}
+                ListEmptyComponent={
+                    <View style={globalStyles.listCardBody}>
+                        <Text style={globalStyles.emptyText}>No items found.</Text>
+                    </View>
+                }
+                ListFooterComponent={
+                    <View style={[globalStyles.listCardBottom, styles.listFooter]} />
+                }
+            />
         </TopSafeAreaView>
     );
 }
@@ -174,6 +188,9 @@ const styles = StyleSheet.create({
     },
     itemInfo: {
         flex: 1,
+    },
+    listFooter: {
+        marginBottom: 56,
     },
     itemText: {
         fontSize: 16,

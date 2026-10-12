@@ -454,378 +454,385 @@ export default function Returns() {
             </View>
 
             {activeTab === "NEW_RETURN" && (
-                <ScrollView style={styles.contentContainer} contentContainerStyle={styles.scrollContent}>
-                    <View style={styles.lookupCard}>
-                        <View style={styles.lookupModeRow}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.modeToggle,
-                                    lookupMode === "TRANSACTION_ID" && styles.modeToggleActive,
-                                ]}
-                                onPress={() => setLookupMode("TRANSACTION_ID")}
-                            >
-                                <Ionicons
-                                    name="receipt-outline"
-                                    size={14}
-                                    color={lookupMode === "TRANSACTION_ID" ? COLORS.primary : COLORS.textSecondary}
-                                />
-                                <Text
-                                    style={[
-                                        styles.modeToggleText,
-                                        lookupMode === "TRANSACTION_ID" && styles.modeToggleTextActive,
-                                    ]}
-                                >
-                                    Receipt Lookup
-                                </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[
-                                    styles.modeToggle,
-                                    lookupMode === "PRODUCT_BARCODE" && styles.modeToggleActive,
-                                ]}
-                                onPress={() => setLookupMode("PRODUCT_BARCODE")}
-                            >
-                                <Ionicons
-                                    name="barcode-outline"
-                                    size={14}
-                                    color={lookupMode === "PRODUCT_BARCODE" ? COLORS.primary : COLORS.textSecondary}
-                                />
-                                <Text
-                                    style={[
-                                        styles.modeToggleText,
-                                        lookupMode === "PRODUCT_BARCODE" && styles.modeToggleTextActive,
-                                    ]}
-                                >
-                                    Product Scan
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={styles.searchInputRow}>
-                            <TextInput
-                                style={styles.searchInput}
-                                placeholder={
-                                    lookupMode === "TRANSACTION_ID"
-                                        ? "Enter Transaction ID (e.g. 1042)..."
-                                        : "Enter UPC or SKU..."
-                                }
-                                placeholderTextColor={COLORS.placeholder}
-                                value={lookupInput}
-                                onChangeText={setLookupInput}
-                                keyboardType={lookupMode === "TRANSACTION_ID" ? "number-pad" : "default"}
-                                returnKeyType="search"
-                                onSubmitEditing={handleSearch}
-                            />
-                            <TouchableOpacity
-                                style={styles.searchButton}
-                                onPress={handleSearch}
-                                disabled={isSearchingTx}
-                            >
-                                {isSearchingTx ? (
-                                    <ActivityIndicator size="small" color={COLORS.primaryText} />
-                                ) : (
-                                    <Ionicons name="search" size={18} color={COLORS.primaryText} />
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {recentTxResults.length > 0 && (
-                        <View style={styles.recentResultsContainer}>
-                            <Text style={styles.sectionHeader}>Recent Purchases for this Product</Text>
-                            {recentTxResults.map((tx) => (
-                                <TouchableOpacity
-                                    key={tx.transaction_id}
-                                    style={styles.recentTxItem}
-                                    onPress={() => handleSelectTransactionFromList(tx.transaction_id)}
-                                >
-                                    <View>
-                                        <Text style={styles.recentTxId}>Sale #{tx.transaction_id}</Text>
-                                        <Text style={styles.recentTxDate}>
-                                            {new Date(tx.created_at).toLocaleDateString()} • Register {tx.register_id}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.recentTxRight}>
-                                        <Text style={styles.recentTxAmount}>{formatMoney(tx.total_amount)}</Text>
-                                        <Text style={styles.recentTxQty}>Qty: {tx.quantity_sold}</Text>
-                                    </View>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    )}
-
-                    {foundTx && (
-                        <View style={styles.txSummaryBanner}>
-                            <View style={styles.txSummaryLeft}>
-                                <Text style={styles.txSummaryId}>Sale #{foundTx.transaction_id}</Text>
-                                <Text style={styles.txSummaryDate}>
-                                    Purchased {foundTx.days_since_sale} days ago ({new Date(foundTx.created_at).toLocaleDateString()})
-                                </Text>
-                            </View>
-                            <View style={styles.txSummaryRight}>
-                                <Text style={styles.txSummaryAmount}>{formatMoney(foundTx.total_amount)}</Text>
-                                <Text style={styles.txSummaryMethod}>{foundTx.payment_method}</Text>
-                            </View>
-                        </View>
-                    )}
-
-                    {foundTx && (
-                        <View style={styles.itemsSection}>
-                            <Text style={styles.sectionHeader}>Select Items to Return</Text>
-                            {foundTx.items.map((item) => {
-                                const isSelected = !!selectedItems[item.transaction_item_id];
-                                const selectedData = selectedItems[item.transaction_item_id];
-                                const canReturn = item.is_returnable && item.returnable_qty > 0;
-
-                                return (
-                                    <View
-                                        key={item.transaction_item_id}
+                <FlatList
+                    style={styles.contentContainer}
+                    contentContainerStyle={styles.newReturnListContent}
+                    data={foundTx?.items ?? []}
+                    keyExtractor={(item) => String(item.transaction_item_id)}
+                    extraData={selectedItems}
+                    ListHeaderComponent={
+                        <View style={styles.newReturnHeader}>
+                            <View style={styles.lookupCard}>
+                                <View style={styles.lookupModeRow}>
+                                    <TouchableOpacity
                                         style={[
-                                            styles.saleItemCard,
-                                            isSelected && styles.saleItemCardSelected,
-                                            !canReturn && styles.saleItemCardDisabled,
+                                            styles.modeToggle,
+                                            lookupMode === "TRANSACTION_ID" && styles.modeToggleActive,
                                         ]}
+                                        onPress={() => setLookupMode("TRANSACTION_ID")}
                                     >
-                                        <TouchableOpacity
-                                            style={styles.itemHeaderRow}
-                                            onPress={() => toggleItemSelection(item)}
-                                            disabled={!canReturn}
+                                        <Ionicons
+                                            name="receipt-outline"
+                                            size={14}
+                                            color={lookupMode === "TRANSACTION_ID" ? COLORS.primary : COLORS.textSecondary}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.modeToggleText,
+                                                lookupMode === "TRANSACTION_ID" && styles.modeToggleTextActive,
+                                            ]}
                                         >
-                                            <Ionicons
-                                                name={
-                                                    isSelected
-                                                        ? "checkbox"
-                                                        : canReturn
-                                                            ? "square-outline"
-                                                            : "close-circle-outline"
-                                                }
-                                                size={22}
-                                                color={
-                                                    isSelected
-                                                        ? COLORS.primary
-                                                        : canReturn
-                                                            ? COLORS.textSecondary
-                                                            : COLORS.inactiveTint
-                                                }
-                                            />
-                                            <View style={styles.itemInfo}>
-                                                <Text style={styles.itemName}>{item.product_name}</Text>
-                                                <Text style={styles.itemMeta}>
-                                                    SKU: {item.product_sku} • {formatMoney(item.unit_price)} ea
+                                            Receipt Lookup
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.modeToggle,
+                                            lookupMode === "PRODUCT_BARCODE" && styles.modeToggleActive,
+                                        ]}
+                                        onPress={() => setLookupMode("PRODUCT_BARCODE")}
+                                    >
+                                        <Ionicons
+                                            name="barcode-outline"
+                                            size={14}
+                                            color={lookupMode === "PRODUCT_BARCODE" ? COLORS.primary : COLORS.textSecondary}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.modeToggleText,
+                                                lookupMode === "PRODUCT_BARCODE" && styles.modeToggleTextActive,
+                                            ]}
+                                        >
+                                            Product Scan
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                <View style={styles.searchInputRow}>
+                                    <TextInput
+                                        style={styles.searchInput}
+                                        placeholder={
+                                            lookupMode === "TRANSACTION_ID"
+                                                ? "Enter Transaction ID (e.g. 1042)..."
+                                                : "Enter UPC or SKU..."
+                                        }
+                                        placeholderTextColor={COLORS.placeholder}
+                                        value={lookupInput}
+                                        onChangeText={setLookupInput}
+                                        keyboardType={lookupMode === "TRANSACTION_ID" ? "number-pad" : "default"}
+                                        returnKeyType="search"
+                                        onSubmitEditing={handleSearch}
+                                    />
+                                    <TouchableOpacity
+                                        style={styles.searchButton}
+                                        onPress={handleSearch}
+                                        disabled={isSearchingTx}
+                                    >
+                                        {isSearchingTx ? (
+                                            <ActivityIndicator size="small" color={COLORS.primaryText} />
+                                        ) : (
+                                            <Ionicons name="search" size={18} color={COLORS.primaryText} />
+                                        )}
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {recentTxResults.length > 0 && (
+                                <View style={styles.recentResultsContainer}>
+                                    <Text style={styles.sectionHeader}>Recent Purchases for this Product</Text>
+                                    {recentTxResults.map((tx) => (
+                                        <TouchableOpacity
+                                            key={tx.transaction_id}
+                                            style={styles.recentTxItem}
+                                            onPress={() => handleSelectTransactionFromList(tx.transaction_id)}
+                                        >
+                                            <View>
+                                                <Text style={styles.recentTxId}>Sale #{tx.transaction_id}</Text>
+                                                <Text style={styles.recentTxDate}>
+                                                    {new Date(tx.created_at).toLocaleDateString()} • Register {tx.register_id}
                                                 </Text>
                                             </View>
-                                            <View style={styles.itemQtyBadge}>
-                                                <Text style={styles.itemQtyBadgeText}>
-                                                    {item.returnable_qty} of {item.purchased_qty} left
-                                                </Text>
+                                            <View style={styles.recentTxRight}>
+                                                <Text style={styles.recentTxAmount}>{formatMoney(tx.total_amount)}</Text>
+                                                <Text style={styles.recentTxQty}>Qty: {tx.quantity_sold}</Text>
                                             </View>
                                         </TouchableOpacity>
-
-                                        <View style={styles.policyRow}>
-                                            <Ionicons
-                                                name={item.is_outside_policy_window ? "alert-circle" : "shield-checkmark"}
-                                                size={13}
-                                                color={item.is_outside_policy_window ? "#E65100" : COLORS.success}
-                                            />
-                                            <Text
-                                                style={[
-                                                    styles.policyText,
-                                                    item.is_outside_policy_window && styles.policyTextWarning,
-                                                ]}
-                                            >
-                                                {item.is_outside_policy_window
-                                                    ? `Past ${item.return_window_days}-day return window (Store Credit Required)`
-                                                    : `Within ${item.return_window_days}-day window`}
-                                            </Text>
-                                        </View>
-
-                                        {isSelected && selectedData && (
-                                            <View style={styles.itemConfigContainer}>
-                                                <View style={styles.configRow}>
-                                                    <Text style={styles.configLabel}>Return Qty:</Text>
-                                                    <View style={styles.stepper}>
-                                                        <TouchableOpacity
-                                                            style={styles.stepperButton}
-                                                            onPress={() =>
-                                                                updateItemQuantity(item.transaction_item_id, -1)
-                                                            }
-                                                        >
-                                                            <Text style={styles.stepperButtonText}>-</Text>
-                                                        </TouchableOpacity>
-                                                        <Text style={styles.stepperValue}>
-                                                            {selectedData.quantity}
-                                                        </Text>
-                                                        <TouchableOpacity
-                                                            style={styles.stepperButton}
-                                                            onPress={() =>
-                                                                updateItemQuantity(item.transaction_item_id, 1)
-                                                            }
-                                                        >
-                                                            <Text style={styles.stepperButtonText}>+</Text>
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                </View>
-
-                                                <View style={styles.configRowVertical}>
-                                                    <Text style={styles.configLabel}>Reason:</Text>
-                                                    <ScrollView
-                                                        horizontal
-                                                        showsHorizontalScrollIndicator={false}
-                                                        style={styles.pillScroll}
-                                                    >
-                                                        {RETURN_REASONS.map((r) => (
-                                                            <TouchableOpacity
-                                                                key={r}
-                                                                style={[
-                                                                    styles.pill,
-                                                                    selectedData.return_reason === r &&
-                                                                    styles.pillActive,
-                                                                ]}
-                                                                onPress={() =>
-                                                                    updateItemReason(item.transaction_item_id, r)
-                                                                }
-                                                            >
-                                                                <Text
-                                                                    style={[
-                                                                        styles.pillText,
-                                                                        selectedData.return_reason === r &&
-                                                                        styles.pillTextActive,
-                                                                    ]}
-                                                                >
-                                                                    {r.replace("_", " ")}
-                                                                </Text>
-                                                            </TouchableOpacity>
-                                                        ))}
-                                                    </ScrollView>
-                                                </View>
-
-                                                <View style={styles.configRowVertical}>
-                                                    <Text style={styles.configLabel}>Disposition:</Text>
-                                                    <ScrollView
-                                                        horizontal
-                                                        showsHorizontalScrollIndicator={false}
-                                                        style={styles.pillScroll}
-                                                    >
-                                                        {DISPOSITIONS.map((d) => (
-                                                            <TouchableOpacity
-                                                                key={d.key}
-                                                                style={[
-                                                                    styles.pill,
-                                                                    selectedData.disposition === d.key &&
-                                                                    styles.pillActive,
-                                                                ]}
-                                                                onPress={() =>
-                                                                    updateItemDisposition(
-                                                                        item.transaction_item_id,
-                                                                        d.key
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Text
-                                                                    style={[
-                                                                        styles.pillText,
-                                                                        selectedData.disposition === d.key &&
-                                                                        styles.pillTextActive,
-                                                                    ]}
-                                                                >
-                                                                    {d.label}
-                                                                </Text>
-                                                            </TouchableOpacity>
-                                                        ))}
-                                                    </ScrollView>
-                                                </View>
-                                            </View>
-                                        )}
-                                    </View>
-                                );
-                            })}
-                        </View>
-                    )}
-
-                    {selectedItemsArray.length > 0 && (
-                        <View style={styles.refundCalculationCard}>
-                            <Text style={styles.sectionHeader}>Refund Summary</Text>
-
-                            <View style={styles.calcRow}>
-                                <Text style={styles.calcLabel}>Subtotal ({selectedItemsArray.length} items):</Text>
-                                <Text style={styles.calcValue}>{formatMoney(subtotal)}</Text>
-                            </View>
-                            <View style={styles.calcRow}>
-                                <Text style={styles.calcLabel}>Tax (as charged on receipt):</Text>
-                                <Text style={styles.calcValue}>{formatMoney(estimatedTax)}</Text>
-                            </View>
-                            <View style={[styles.calcRow, styles.calcRowTotal]}>
-                                <Text style={styles.totalRefundLabel}>Total Refund:</Text>
-                                <Text style={styles.totalRefundValue}>{formatMoney(totalRefund)}</Text>
-                            </View>
-
-                            {totalRefund > 50 && !isManagerOrAdmin && (
-                                <View style={styles.approvalNotice}>
-                                    <Ionicons name="information-circle" size={16} color="#E65100" />
-                                    <Text style={styles.approvalNoticeText}>
-                                        Total exceeds $50.00. This return will be queued for Manager Approval.
-                                    </Text>
+                                    ))}
                                 </View>
                             )}
 
-                            <View style={styles.methodContainer}>
-                                <Text style={styles.methodTitle}>Refund Method:</Text>
-                                <View style={styles.methodButtonsRow}>
-                                    {REFUND_METHODS.map((m) => {
-                                        const isDisabled = hasExpiredItem && m !== "STORE_CREDIT";
-                                        const isSelected = refundMethod === m;
-                                        return (
-                                            <TouchableOpacity
-                                                key={m}
-                                                style={[
-                                                    styles.methodButton,
-                                                    isSelected && styles.methodButtonSelected,
-                                                    isDisabled && styles.methodButtonDisabled,
-                                                ]}
-                                                onPress={() => !isDisabled && setRefundMethod(m)}
-                                                disabled={isDisabled}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.methodButtonText,
-                                                        isSelected && styles.methodButtonTextSelected,
-                                                        isDisabled && styles.methodButtonTextDisabled,
-                                                    ]}
-                                                >
-                                                    {m.replace("_", " ")}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        );
-                                    })}
+                            {foundTx && (
+                                <View style={styles.txSummaryBanner}>
+                                    <View style={styles.txSummaryLeft}>
+                                        <Text style={styles.txSummaryId}>Sale #{foundTx.transaction_id}</Text>
+                                        <Text style={styles.txSummaryDate}>
+                                            Purchased {foundTx.days_since_sale} days ago ({new Date(foundTx.created_at).toLocaleDateString()})
+                                        </Text>
+                                    </View>
+                                    <View style={styles.txSummaryRight}>
+                                        <Text style={styles.txSummaryAmount}>{formatMoney(foundTx.total_amount)}</Text>
+                                        <Text style={styles.txSummaryMethod}>{foundTx.payment_method}</Text>
+                                    </View>
                                 </View>
-                            </View>
+                            )}
 
-                            <TextInput
-                                style={styles.notesInput}
-                                placeholder="Optional return notes or reason details..."
-                                placeholderTextColor={COLORS.placeholder}
-                                value={returnNotes}
-                                onChangeText={setReturnNotes}
-                                multiline
-                            />
-
-                            <TouchableOpacity
-                                style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-                                onPress={handleSubmitReturn}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? (
-                                    <ActivityIndicator size="small" color={COLORS.primaryText} />
-                                ) : (
-                                    <Text style={styles.submitButtonText}>
-                                        Process Return ({formatMoney(totalRefund)})
-                                    </Text>
-                                )}
-                            </TouchableOpacity>
+                            {foundTx && (
+                                <Text style={styles.sectionHeader}>Select Items to Return</Text>
+                            )}
                         </View>
-                    )}
-                </ScrollView>
+                    }
+                    renderItem={({ item }) => {
+                        const isSelected = !!selectedItems[item.transaction_item_id];
+                        const selectedData = selectedItems[item.transaction_item_id];
+                        const canReturn = item.is_returnable && item.returnable_qty > 0;
+
+                        return (
+                            <View
+                                style={[
+                                    styles.saleItemCard,
+                                    isSelected && styles.saleItemCardSelected,
+                                    !canReturn && styles.saleItemCardDisabled,
+                                ]}
+                            >
+                                <TouchableOpacity
+                                    style={styles.itemHeaderRow}
+                                    onPress={() => toggleItemSelection(item)}
+                                    disabled={!canReturn}
+                                >
+                                    <Ionicons
+                                        name={
+                                            isSelected
+                                                ? "checkbox"
+                                                : canReturn
+                                                    ? "square-outline"
+                                                    : "close-circle-outline"
+                                        }
+                                        size={22}
+                                        color={
+                                            isSelected
+                                                ? COLORS.primary
+                                                : canReturn
+                                                    ? COLORS.textSecondary
+                                                    : COLORS.inactiveTint
+                                        }
+                                    />
+                                    <View style={styles.itemInfo}>
+                                        <Text style={styles.itemName}>{item.product_name}</Text>
+                                        <Text style={styles.itemMeta}>
+                                            SKU: {item.product_sku} • {formatMoney(item.unit_price)} ea
+                                        </Text>
+                                    </View>
+                                    <View style={styles.itemQtyBadge}>
+                                        <Text style={styles.itemQtyBadgeText}>
+                                            {item.returnable_qty} of {item.purchased_qty} left
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <View style={styles.policyRow}>
+                                    <Ionicons
+                                        name={item.is_outside_policy_window ? "alert-circle" : "shield-checkmark"}
+                                        size={13}
+                                        color={item.is_outside_policy_window ? "#E65100" : COLORS.success}
+                                    />
+                                    <Text
+                                        style={[
+                                            styles.policyText,
+                                            item.is_outside_policy_window && styles.policyTextWarning,
+                                        ]}
+                                    >
+                                        {item.is_outside_policy_window
+                                            ? `Past ${item.return_window_days}-day return window (Store Credit Required)`
+                                            : `Within ${item.return_window_days}-day window`}
+                                    </Text>
+                                </View>
+
+                                {isSelected && selectedData && (
+                                    <View style={styles.itemConfigContainer}>
+                                        <View style={styles.configRow}>
+                                            <Text style={styles.configLabel}>Return Qty:</Text>
+                                            <View style={styles.stepper}>
+                                                <TouchableOpacity
+                                                    style={styles.stepperButton}
+                                                    onPress={() =>
+                                                        updateItemQuantity(item.transaction_item_id, -1)
+                                                    }
+                                                >
+                                                    <Text style={styles.stepperButtonText}>-</Text>
+                                                </TouchableOpacity>
+                                                <Text style={styles.stepperValue}>
+                                                    {selectedData.quantity}
+                                                </Text>
+                                                <TouchableOpacity
+                                                    style={styles.stepperButton}
+                                                    onPress={() =>
+                                                        updateItemQuantity(item.transaction_item_id, 1)
+                                                    }
+                                                >
+                                                    <Text style={styles.stepperButtonText}>+</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+
+                                        <View style={styles.configRowVertical}>
+                                            <Text style={styles.configLabel}>Reason:</Text>
+                                            <ScrollView
+                                                horizontal
+                                                showsHorizontalScrollIndicator={false}
+                                                style={styles.pillScroll}
+                                            >
+                                                {RETURN_REASONS.map((r) => (
+                                                    <TouchableOpacity
+                                                        key={r}
+                                                        style={[
+                                                            styles.pill,
+                                                            selectedData.return_reason === r &&
+                                                            styles.pillActive,
+                                                        ]}
+                                                        onPress={() =>
+                                                            updateItemReason(item.transaction_item_id, r)
+                                                        }
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                styles.pillText,
+                                                                selectedData.return_reason === r &&
+                                                                styles.pillTextActive,
+                                                            ]}
+                                                        >
+                                                            {r.replace("_", " ")}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </ScrollView>
+                                        </View>
+
+                                        <View style={styles.configRowVertical}>
+                                            <Text style={styles.configLabel}>Disposition:</Text>
+                                            <ScrollView
+                                                horizontal
+                                                showsHorizontalScrollIndicator={false}
+                                                style={styles.pillScroll}
+                                            >
+                                                {DISPOSITIONS.map((d) => (
+                                                    <TouchableOpacity
+                                                        key={d.key}
+                                                        style={[
+                                                            styles.pill,
+                                                            selectedData.disposition === d.key &&
+                                                            styles.pillActive,
+                                                        ]}
+                                                        onPress={() =>
+                                                            updateItemDisposition(
+                                                                item.transaction_item_id,
+                                                                d.key
+                                                            )
+                                                        }
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                styles.pillText,
+                                                                selectedData.disposition === d.key &&
+                                                                styles.pillTextActive,
+                                                            ]}
+                                                        >
+                                                            {d.label}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </ScrollView>
+                                        </View>
+                                    </View>
+                                )}
+                            </View>
+                        );
+                    }}
+                    ListFooterComponent={
+                        selectedItemsArray.length > 0 ? (
+                            <View style={[styles.refundCalculationCard, styles.refundFooter]}>
+                                <Text style={styles.sectionHeader}>Refund Summary</Text>
+
+                                <View style={styles.calcRow}>
+                                    <Text style={styles.calcLabel}>Subtotal ({selectedItemsArray.length} items):</Text>
+                                    <Text style={styles.calcValue}>{formatMoney(subtotal)}</Text>
+                                </View>
+                                <View style={styles.calcRow}>
+                                    <Text style={styles.calcLabel}>Tax (as charged on receipt):</Text>
+                                    <Text style={styles.calcValue}>{formatMoney(estimatedTax)}</Text>
+                                </View>
+                                <View style={[styles.calcRow, styles.calcRowTotal]}>
+                                    <Text style={styles.totalRefundLabel}>Total Refund:</Text>
+                                    <Text style={styles.totalRefundValue}>{formatMoney(totalRefund)}</Text>
+                                </View>
+
+                                {totalRefund > 50 && !isManagerOrAdmin && (
+                                    <View style={styles.approvalNotice}>
+                                        <Ionicons name="information-circle" size={16} color="#E65100" />
+                                        <Text style={styles.approvalNoticeText}>
+                                            Total exceeds $50.00. This return will be queued for Manager Approval.
+                                        </Text>
+                                    </View>
+                                )}
+
+                                <View style={styles.methodContainer}>
+                                    <Text style={styles.methodTitle}>Refund Method:</Text>
+                                    <View style={styles.methodButtonsRow}>
+                                        {REFUND_METHODS.map((m) => {
+                                            const isDisabled = hasExpiredItem && m !== "STORE_CREDIT";
+                                            const isSelected = refundMethod === m;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={m}
+                                                    style={[
+                                                        styles.methodButton,
+                                                        isSelected && styles.methodButtonSelected,
+                                                        isDisabled && styles.methodButtonDisabled,
+                                                    ]}
+                                                    onPress={() => !isDisabled && setRefundMethod(m)}
+                                                    disabled={isDisabled}
+                                                >
+                                                    <Text
+                                                        style={[
+                                                            styles.methodButtonText,
+                                                            isSelected && styles.methodButtonTextSelected,
+                                                            isDisabled && styles.methodButtonTextDisabled,
+                                                        ]}
+                                                    >
+                                                        {m.replace("_", " ")}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </View>
+                                </View>
+
+                                <TextInput
+                                    style={styles.notesInput}
+                                    placeholder="Optional return notes or reason details..."
+                                    placeholderTextColor={COLORS.placeholder}
+                                    value={returnNotes}
+                                    onChangeText={setReturnNotes}
+                                    multiline
+                                />
+
+                                <TouchableOpacity
+                                    style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                                    onPress={handleSubmitReturn}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? (
+                                        <ActivityIndicator size="small" color={COLORS.primaryText} />
+                                    ) : (
+                                        <Text style={styles.submitButtonText}>
+                                            Process Return ({formatMoney(totalRefund)})
+                                        </Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        ) : null
+                    }
+                />
             )}
 
             {activeTab === "HISTORY" && (
@@ -988,45 +995,51 @@ export default function Returns() {
                                 <LoadingSpinner />
                             </View>
                         ) : returnDetail ? (
-                            <ScrollView style={styles.detailModalBody}>
-                                <View style={styles.detailSummaryBox}>
-                                    <View style={styles.detailSummaryRow}>
-                                        <Text style={styles.detailSummaryLabel}>Status:</Text>
-                                        <Text style={styles.detailSummaryValue}>
-                                            {returnDetail.return.status.replace("_", " ")}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.detailSummaryRow}>
-                                        <Text style={styles.detailSummaryLabel}>Refund Method:</Text>
-                                        <Text style={styles.detailSummaryValue}>
-                                            {returnDetail.return.refund_method.replace("_", " ")}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.detailSummaryRow}>
-                                        <Text style={styles.detailSummaryLabel}>Total Refund:</Text>
-                                        <Text style={styles.detailSummaryTotal}>
-                                            {formatMoney(returnDetail.return.total_refund)}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.detailSummaryRow}>
-                                        <Text style={styles.detailSummaryLabel}>Processed By:</Text>
-                                        <Text style={styles.detailSummaryValue}>
-                                            {returnDetail.return.employee_name}
-                                        </Text>
-                                    </View>
-                                    {returnDetail.return.approved_by_name && (
-                                        <View style={styles.detailSummaryRow}>
-                                            <Text style={styles.detailSummaryLabel}>Approved By:</Text>
-                                            <Text style={styles.detailSummaryValue}>
-                                                {returnDetail.return.approved_by_name}
-                                            </Text>
+                            <FlatList
+                                style={styles.detailModalBody}
+                                data={returnDetail.items}
+                                keyExtractor={(item) => String(item.return_item_id)}
+                                ListHeaderComponent={
+                                    <>
+                                        <View style={styles.detailSummaryBox}>
+                                            <View style={styles.detailSummaryRow}>
+                                                <Text style={styles.detailSummaryLabel}>Status:</Text>
+                                                <Text style={styles.detailSummaryValue}>
+                                                    {returnDetail.return.status.replace("_", " ")}
+                                                </Text>
+                                            </View>
+                                            <View style={styles.detailSummaryRow}>
+                                                <Text style={styles.detailSummaryLabel}>Refund Method:</Text>
+                                                <Text style={styles.detailSummaryValue}>
+                                                    {returnDetail.return.refund_method.replace("_", " ")}
+                                                </Text>
+                                            </View>
+                                            <View style={styles.detailSummaryRow}>
+                                                <Text style={styles.detailSummaryLabel}>Total Refund:</Text>
+                                                <Text style={styles.detailSummaryTotal}>
+                                                    {formatMoney(returnDetail.return.total_refund)}
+                                                </Text>
+                                            </View>
+                                            <View style={styles.detailSummaryRow}>
+                                                <Text style={styles.detailSummaryLabel}>Processed By:</Text>
+                                                <Text style={styles.detailSummaryValue}>
+                                                    {returnDetail.return.employee_name}
+                                                </Text>
+                                            </View>
+                                            {returnDetail.return.approved_by_name && (
+                                                <View style={styles.detailSummaryRow}>
+                                                    <Text style={styles.detailSummaryLabel}>Approved By:</Text>
+                                                    <Text style={styles.detailSummaryValue}>
+                                                        {returnDetail.return.approved_by_name}
+                                                    </Text>
+                                                </View>
+                                            )}
                                         </View>
-                                    )}
-                                </View>
-
-                                <Text style={styles.itemsListTitle}>Returned Items</Text>
-                                {returnDetail.items.map((item) => (
-                                    <View key={item.return_item_id} style={styles.detailItemRow}>
+                                        <Text style={styles.itemsListTitle}>Returned Items</Text>
+                                    </>
+                                }
+                                renderItem={({ item }) => (
+                                    <View style={styles.detailItemRow}>
                                         <View style={styles.detailItemLeft}>
                                             <Text style={styles.detailItemName}>{item.product_name}</Text>
                                             <Text style={styles.detailItemSku}>SKU: {item.sku}</Text>
@@ -1044,35 +1057,36 @@ export default function Returns() {
                                             </Text>
                                         </View>
                                     </View>
-                                ))}
-
-                                {returnDetail.return.status === "PENDING_APPROVAL" && isManagerOrAdmin && (
-                                    <View style={styles.managerActionRow}>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.actionBtn,
-                                                styles.rejectBtn,
-                                                isProcessingAction && styles.submitButtonDisabled,
-                                            ]}
-                                            onPress={() => handleRejectReturn(returnDetail.return.return_id)}
-                                            disabled={isProcessingAction}
-                                        >
-                                            <Text style={styles.actionBtnText}>Reject</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.actionBtn,
-                                                styles.approveBtn,
-                                                isProcessingAction && styles.submitButtonDisabled,
-                                            ]}
-                                            onPress={() => handleApproveReturn(returnDetail.return.return_id)}
-                                            disabled={isProcessingAction}
-                                        >
-                                            <Text style={styles.actionBtnText}>Approve</Text>
-                                        </TouchableOpacity>
-                                    </View>
                                 )}
-                            </ScrollView>
+                                ListFooterComponent={
+                                    returnDetail.return.status === "PENDING_APPROVAL" && isManagerOrAdmin ? (
+                                        <View style={styles.managerActionRow}>
+                                            <TouchableOpacity
+                                                style={[
+                                                    styles.actionBtn,
+                                                    styles.rejectBtn,
+                                                    isProcessingAction && styles.submitButtonDisabled,
+                                                ]}
+                                                onPress={() => handleRejectReturn(returnDetail.return.return_id)}
+                                                disabled={isProcessingAction}
+                                            >
+                                                <Text style={styles.actionBtnText}>Reject</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={[
+                                                    styles.actionBtn,
+                                                    styles.approveBtn,
+                                                    isProcessingAction && styles.submitButtonDisabled,
+                                                ]}
+                                                onPress={() => handleApproveReturn(returnDetail.return.return_id)}
+                                                disabled={isProcessingAction}
+                                            >
+                                                <Text style={styles.actionBtnText}>Approve</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    ) : null
+                                }
+                            />
                         ) : null}
                     </View>
                 </View>
@@ -1122,11 +1136,6 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
         backgroundColor: COLORS.background,
-    },
-    scrollContent: {
-        padding: 12,
-        gap: 12,
-        paddingBottom: 40,
     },
     lookupCard: {
         backgroundColor: COLORS.surface,
@@ -1265,8 +1274,16 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: "#1565C0",
     },
-    itemsSection: {
+    newReturnListContent: {
+        padding: 12,
+        paddingBottom: 40,
         gap: 8,
+    },
+    newReturnHeader: {
+        gap: 12,
+    },
+    refundFooter: {
+        marginTop: 4,
     },
     saleItemCard: {
         backgroundColor: COLORS.surface,

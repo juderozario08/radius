@@ -4,6 +4,7 @@ import {
     View,
     Text,
     ScrollView,
+    FlatList,
     TouchableOpacity,
     RefreshControl,
     Animated,
@@ -690,112 +691,118 @@ export default function RealTimeDashboard() {
             )}
 
             {isAdmin && !selectedStore ? (
-                <ScrollView
+                <FlatList
                     style={globalStyles.container}
                     contentContainerStyle={styles.scrollContent}
                     refreshControl={
                         <RefreshControl refreshing={isRefreshing || loadingStores} onRefresh={handleRefresh} colors={[COLORS.primary]} />
                     }
-                >
-                    <View style={styles.dashboardHeader}>
-                        <View style={styles.titleColumn}>
-                            <Text style={styles.welcomeText}>Admin Operations Control</Text>
-                            <Text style={styles.headerTitle}>Store Operations Hub</Text>
-                        </View>
-                        <View style={styles.statusColumn}>
-                            <ConnectionStatusBadge
-                                status={connectionStatus}
-                                onPress={() => {
-                                    if (!isConnected) {
-                                        reconnect();
-                                        showToast("Reconnecting to WebSocket server...");
-                                    } else {
-                                        sendPing();
-                                        showToast("Ping heartbeat sent to backend!");
-                                    }
+                    data={storeOperations}
+                    keyExtractor={(store) => String(store.store_id)}
+                    ListHeaderComponent={
+                        <>
+                            <View style={styles.dashboardHeader}>
+                                <View style={styles.titleColumn}>
+                                    <Text style={styles.welcomeText}>Admin Operations Control</Text>
+                                    <Text style={styles.headerTitle}>Store Operations Hub</Text>
+                                </View>
+                                <View style={styles.statusColumn}>
+                                    <ConnectionStatusBadge
+                                        status={connectionStatus}
+                                        onPress={() => {
+                                            if (!isConnected) {
+                                                reconnect();
+                                                showToast("Reconnecting to WebSocket server...");
+                                            } else {
+                                                sendPing();
+                                                showToast("Ping heartbeat sent to backend!");
+                                            }
+                                        }}
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={styles.networkStatsRow}>
+                                <View style={styles.networkStatCard}>
+                                    <View style={[styles.networkStatIconCircle, { backgroundColor: "#FFEBEE" }]}>
+                                        <Ionicons name="business" size={15} color={COLORS.primary} />
+                                    </View>
+                                    <Text style={styles.networkStatValue}>
+                                        {storeOperations.filter((s) => s.has_active_operations).length}/{storeOperations.length}
+                                    </Text>
+                                    <Text style={styles.networkStatLabel}>Active</Text>
+                                </View>
+
+                                <View style={styles.networkStatCard}>
+                                    <View style={[styles.networkStatIconCircle, { backgroundColor: "#FFF3E0" }]}>
+                                        <Ionicons name="cart" size={15} color="#E65100" />
+                                    </View>
+                                    <Text style={styles.networkStatValue}>
+                                        {storeOperations.reduce((sum, s) => sum + s.active_orders_count, 0)}
+                                    </Text>
+                                    <Text style={styles.networkStatLabel}>Orders</Text>
+                                </View>
+
+                                <View style={styles.networkStatCard}>
+                                    <View style={[styles.networkStatIconCircle, { backgroundColor: "#E3F2FD" }]}>
+                                        <Ionicons name="clipboard" size={15} color="#1565C0" />
+                                    </View>
+                                    <Text style={styles.networkStatValue}>
+                                        {storeOperations.reduce((sum, s) => sum + s.active_counts_count, 0)}
+                                    </Text>
+                                    <Text style={styles.networkStatLabel}>Counts</Text>
+                                </View>
+
+                                <View style={styles.networkStatCard}>
+                                    <View style={[styles.networkStatIconCircle, { backgroundColor: "#E8F5E9" }]}>
+                                        <Ionicons name="cube" size={15} color="#2E7D32" />
+                                    </View>
+                                    <Text style={styles.networkStatValue}>
+                                        {storeOperations.reduce((sum, s) => sum + s.pending_pos_count, 0)}
+                                    </Text>
+                                    <Text style={styles.networkStatLabel}>POs</Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.hubInstructionBanner}>
+                                <Ionicons name="information-circle-outline" size={18} color="#283593" />
+                                <Text style={styles.hubInstructionText}>
+                                    Tap any store branch below to monitor and manage its real-time orders, cycle counts, and dock receiving.
+                                </Text>
+                            </View>
+
+                            <View style={styles.sectionHeaderRow}>
+                                <Text style={globalStyles.sectionTitle}>All Store Branches ({storeOperations.length})</Text>
+                                <Text style={styles.sectionSubtext}>Pull to refresh</Text>
+                            </View>
+                        </>
+                    }
+                    renderItem={({ item: store }) => (
+                        <View style={styles.storeListContainer}>
+                            <StoreOperationsCard
+                                store={store}
+                                onSelect={(st) => {
+                                    setSelectedStore(st);
                                 }}
                             />
                         </View>
-                    </View>
-
-                    <View style={styles.networkStatsRow}>
-                        <View style={styles.networkStatCard}>
-                            <View style={[styles.networkStatIconCircle, { backgroundColor: "#FFEBEE" }]}>
-                                <Ionicons name="business" size={15} color={COLORS.primary} />
-                            </View>
-                            <Text style={styles.networkStatValue}>
-                                {storeOperations.filter((s) => s.has_active_operations).length}/{storeOperations.length}
-                            </Text>
-                            <Text style={styles.networkStatLabel}>Active</Text>
+                    )}
+                    ListEmptyComponent={
+                        <View style={styles.storeListContainer}>
+                            {loadingStores ? (
+                                <View style={styles.loadingContainer}>
+                                    <LoadingSpinner />
+                                    <Text style={styles.loadingText}>Loading store operational summaries...</Text>
+                                </View>
+                            ) : (
+                                <View style={styles.emptyCard}>
+                                    <Ionicons name="business-outline" size={36} color={COLORS.textSecondary} />
+                                    <Text style={styles.emptyCardText}>No store locations found.</Text>
+                                </View>
+                            )}
                         </View>
-
-                        <View style={styles.networkStatCard}>
-                            <View style={[styles.networkStatIconCircle, { backgroundColor: "#FFF3E0" }]}>
-                                <Ionicons name="cart" size={15} color="#E65100" />
-                            </View>
-                            <Text style={styles.networkStatValue}>
-                                {storeOperations.reduce((sum, s) => sum + s.active_orders_count, 0)}
-                            </Text>
-                            <Text style={styles.networkStatLabel}>Orders</Text>
-                        </View>
-
-                        <View style={styles.networkStatCard}>
-                            <View style={[styles.networkStatIconCircle, { backgroundColor: "#E3F2FD" }]}>
-                                <Ionicons name="clipboard" size={15} color="#1565C0" />
-                            </View>
-                            <Text style={styles.networkStatValue}>
-                                {storeOperations.reduce((sum, s) => sum + s.active_counts_count, 0)}
-                            </Text>
-                            <Text style={styles.networkStatLabel}>Counts</Text>
-                        </View>
-
-                        <View style={styles.networkStatCard}>
-                            <View style={[styles.networkStatIconCircle, { backgroundColor: "#E8F5E9" }]}>
-                                <Ionicons name="cube" size={15} color="#2E7D32" />
-                            </View>
-                            <Text style={styles.networkStatValue}>
-                                {storeOperations.reduce((sum, s) => sum + s.pending_pos_count, 0)}
-                            </Text>
-                            <Text style={styles.networkStatLabel}>POs</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.hubInstructionBanner}>
-                        <Ionicons name="information-circle-outline" size={18} color="#283593" />
-                        <Text style={styles.hubInstructionText}>
-                            Tap any store branch below to monitor and manage its real-time orders, cycle counts, and dock receiving.
-                        </Text>
-                    </View>
-
-                    <View style={styles.sectionHeaderRow}>
-                        <Text style={globalStyles.sectionTitle}>All Store Branches ({storeOperations.length})</Text>
-                        <Text style={styles.sectionSubtext}>Pull to refresh</Text>
-                    </View>
-
-                    <View style={styles.storeListContainer}>
-                        {loadingStores && storeOperations.length === 0 ? (
-                            <View style={styles.loadingContainer}>
-                                <LoadingSpinner />
-                                <Text style={styles.loadingText}>Loading store operational summaries...</Text>
-                            </View>
-                        ) : storeOperations.length === 0 ? (
-                            <View style={styles.emptyCard}>
-                                <Ionicons name="business-outline" size={36} color={COLORS.textSecondary} />
-                                <Text style={styles.emptyCardText}>No store locations found.</Text>
-                            </View>
-                        ) : (
-                            storeOperations.map((store) => (
-                                <StoreOperationsCard
-                                    key={store.store_id}
-                                    store={store}
-                                    onSelect={(st) => {
-                                        setSelectedStore(st);
-                                    }}
-                                />
-                            ))
-                        )}
-                    </View>
-                </ScrollView>
+                    }
+                />
             ) : (
                 <ScrollView
                     style={globalStyles.container}

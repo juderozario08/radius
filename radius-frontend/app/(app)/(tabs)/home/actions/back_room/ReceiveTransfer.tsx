@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, StyleSheet, FlatList, ScrollView, ActivityIndicator, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
@@ -155,21 +155,23 @@ export default function ReceiveTransfer() {
             children: () => {
                 if (!transfer) return <View />;
                 return (
-                    <ScrollView style={globalStyles.container}>
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Items</Text>
-                            <View>
-                                {transfer.items.map(item => (
-                                    <POItemRow
-                                        key={item.transfer_item_id}
-                                        item={item}
-                                        pendingScanQty={scannedItems[item.transfer_item_id] || 0}
-                                    />
-                                ))}
+                    <FlatList
+                        style={globalStyles.container}
+                        data={transfer.items}
+                        keyExtractor={(item) => item.transfer_item_id.toString()}
+                        ListHeaderComponent={
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Items</Text>
                             </View>
-                        </View>
-                        <View style={{ height: 40 }} />
-                    </ScrollView>
+                        }
+                        renderItem={({ item }) => (
+                            <POItemRow
+                                item={item}
+                                pendingScanQty={scannedItems[item.transfer_item_id] || 0}
+                            />
+                        )}
+                        contentContainerStyle={styles.listContent}
+                    />
                 );
             }
         }
@@ -238,6 +240,9 @@ const styles = StyleSheet.create({
     },
     section: {
         marginTop: 16,
+    },
+    listContent: {
+        paddingBottom: 40,
     },
     sectionTitle: {
         fontSize: 18,

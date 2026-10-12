@@ -9,7 +9,6 @@ import {
     Alert,
     Modal,
     TextInput,
-    ScrollView,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
@@ -738,12 +737,15 @@ export default function CycleCountDetail() {
                                     <ActivityIndicator size="small" color={COLORS.primary} />
                                 </View>
                             ) : (
-                                <ScrollView style={{ maxHeight: 280, marginVertical: 10 }}>
-                                    {employees.map((emp) => {
+                                <FlatList
+                                    style={{ maxHeight: 280, marginVertical: 10 }}
+                                    data={employees}
+                                    keyExtractor={(emp) => String(emp.employee_id)}
+                                    extraData={selectedEmployeeId}
+                                    renderItem={({ item: emp }) => {
                                         const isSelected = selectedEmployeeId === emp.employee_id;
                                         return (
                                             <TouchableOpacity
-                                                key={emp.employee_id}
                                                 style={[
                                                     styles.empSelectItem,
                                                     isSelected && styles.empSelectItemActive,
@@ -770,8 +772,8 @@ export default function CycleCountDetail() {
                                                 </View>
                                             </TouchableOpacity>
                                         );
-                                    })}
-                                </ScrollView>
+                                    }}
+                                />
                             )}
 
                             <TouchableOpacity

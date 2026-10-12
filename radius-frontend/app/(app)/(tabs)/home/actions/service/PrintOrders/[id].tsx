@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { DetailRow } from "@/components/common/DetailRow";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ScrollView,
+    FlatList,
     StyleSheet,
     Text,
     View,
@@ -137,68 +137,78 @@ export default function PrintOrderDetail() {
                 headerCenter={<Text style={globalStyles.headerTitle}>Order #{order.print_order_id}</Text>}
             />
 
-            <ScrollView style={globalStyles.container} showsVerticalScrollIndicator={false}>
-                {(user?.role === "SERVICE" || user?.role === "MANAGER" || user?.role === "ADMIN") && (statusActions[order.status]?.length ?? 0) > 0 && (
-                    <View style={styles.card}>
-                        <Text style={styles.sectionTitle}>Update status</Text>
-                        <View style={styles.actions}>
-                            {statusActions[order.status]?.map((status) => (
-                                <Pressable key={status} disabled={isUpdating} onPress={() => void updateStatus(status)} style={status === "CANCELLED" ? globalStyles.buttonSecondary : globalStyles.buttonPrimary}>
-                                    <Text style={status === "CANCELLED" ? globalStyles.buttonTextSecondary : globalStyles.buttonTextPrimary}>{status}</Text>
-                                </Pressable>
-                            ))}
+            <FlatList
+                style={globalStyles.container}
+                showsVerticalScrollIndicator={false}
+                data={items}
+                keyExtractor={(item) => String(item.print_order_item_id)}
+                ListHeaderComponent={
+                    <>
+                        {(user?.role === "SERVICE" || user?.role === "MANAGER" || user?.role === "ADMIN") && (statusActions[order.status]?.length ?? 0) > 0 && (
+                            <View style={styles.card}>
+                                <Text style={styles.sectionTitle}>Update status</Text>
+                                <View style={styles.actions}>
+                                    {statusActions[order.status]?.map((status) => (
+                                        <Pressable key={status} disabled={isUpdating} onPress={() => void updateStatus(status)} style={status === "CANCELLED" ? globalStyles.buttonSecondary : globalStyles.buttonPrimary}>
+                                            <Text style={status === "CANCELLED" ? globalStyles.buttonTextSecondary : globalStyles.buttonTextPrimary}>{status}</Text>
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+                        <View style={styles.card}>
+                            <View style={globalStyles.cardHeader}>
+                                <Text style={styles.sectionTitle}>Details</Text>
+                                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status).bg }]}>
+                                    <Text style={[styles.statusText, { color: getStatusColor(order.status).text }]}>
+                                        {order.status}
+                                    </Text>
+                                </View>
+                            </View>
+                            <DetailRow label="Type:" value={displayType} />
+                            <DetailRow label="Customer:" value={order.customer_name} />
+                            {order.customer_email ? <DetailRow label="Email:" value={order.customer_email} /> : null}
+                            {order.customer_phone ? <DetailRow label="Phone:" value={order.customer_phone} /> : null}
+                            <DetailRow label="Store ID:" value={order.store_id} />
+                            <DetailRow label="Placed:" value={new Date(order.placed_at).toLocaleString()} />
+                            {order.fulfilled_at && (
+                                <DetailRow label="Fulfilled:" value={new Date(order.fulfilled_at).toLocaleString()} />
+                            )}
                         </View>
-                    </View>
-                )}
-                <View style={styles.card}>
-                    <View style={globalStyles.cardHeader}>
-                        <Text style={styles.sectionTitle}>Details</Text>
-                        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status).bg }]}>
-                            <Text style={[styles.statusText, { color: getStatusColor(order.status).text }]}>
-                                {order.status}
-                            </Text>
+
+                        {order.order_type === "WEB" && order.shipping_address && (
+                            <View style={styles.card}>
+                                <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Shipping / Delivery</Text>
+                                <DetailRow label="Address:" value={order.shipping_address} />
+                            </View>
+                        )}
+
+                        {order.notes ? (
+                            <View style={styles.card}>
+                                <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Order Notes</Text>
+                                <Text style={styles.notesText}>{order.notes}</Text>
+                            </View>
+                        ) : null}
+
+                        <View style={styles.card}>
+                            <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Financials</Text>
+                            <DetailRow label="Subtotal:" value={formatMoney(order.subtotal)} />
+                            <DetailRow label="Tax:" value={formatMoney(order.tax_amount)} />
+                            {order.shipping_fee > 0 && (
+                                <DetailRow label="Shipping Fee:" value={formatMoney(order.shipping_fee)} />
+                            )}
+                            <View style={globalStyles.divider} />
+                            <DetailRow label="Total:" value={formatMoney(order.total_amount)} />
                         </View>
-                    </View>
-                    <DetailRow label="Type:" value={displayType} />
-                    <DetailRow label="Customer:" value={order.customer_name} />
-                    {order.customer_email ? <DetailRow label="Email:" value={order.customer_email} /> : null}
-                    {order.customer_phone ? <DetailRow label="Phone:" value={order.customer_phone} /> : null}
-                    <DetailRow label="Store ID:" value={order.store_id} />
-                    <DetailRow label="Placed:" value={new Date(order.placed_at).toLocaleString()} />
-                    {order.fulfilled_at && (
-                        <DetailRow label="Fulfilled:" value={new Date(order.fulfilled_at).toLocaleString()} />
-                    )}
-                </View>
 
-                {order.order_type === "WEB" && order.shipping_address && (
-                    <View style={styles.card}>
-                        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Shipping / Delivery</Text>
-                        <DetailRow label="Address:" value={order.shipping_address} />
-                    </View>
-                )}
-
-                {order.notes ? (
-                    <View style={styles.card}>
-                        <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Order Notes</Text>
-                        <Text style={styles.notesText}>{order.notes}</Text>
-                    </View>
-                ) : null}
-
-                <View style={styles.card}>
-                    <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Financials</Text>
-                    <DetailRow label="Subtotal:" value={formatMoney(order.subtotal)} />
-                    <DetailRow label="Tax:" value={formatMoney(order.tax_amount)} />
-                    {order.shipping_fee > 0 && (
-                        <DetailRow label="Shipping Fee:" value={formatMoney(order.shipping_fee)} />
-                    )}
-                    <View style={globalStyles.divider} />
-                    <DetailRow label="Total:" value={formatMoney(order.total_amount)} />
-                </View>
-
-                <View style={styles.card}>
-                    <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Print Items ({items.length})</Text>
-                    {items.map((item) => (
-                        <View key={item.print_order_item_id} style={styles.itemRow}>
+                        <View style={globalStyles.listCardTop}>
+                            <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Print Items ({items.length})</Text>
+                        </View>
+                    </>
+                }
+                renderItem={({ item }) => (
+                    <View style={globalStyles.listCardBody}>
+                        <View style={styles.itemRow}>
                             <View style={styles.itemInfo}>
                                 <Text style={styles.itemText}>{item.description}</Text>
                                 <Text style={styles.itemSubText}>
@@ -209,12 +219,17 @@ export default function PrintOrderDetail() {
                                 {formatMoney(multiplyMoney(item.unit_price, item.quantity))}
                             </Text>
                         </View>
-                    ))}
-                    {items.length === 0 && <Text style={globalStyles.emptyText}>No items found for this order.</Text>}
-                </View>
-
-                <View style={{ height: 40 }} />
-            </ScrollView>
+                    </View>
+                )}
+                ListEmptyComponent={
+                    <View style={globalStyles.listCardBody}>
+                        <Text style={globalStyles.emptyText}>No items found for this order.</Text>
+                    </View>
+                }
+                ListFooterComponent={
+                    <View style={[globalStyles.listCardBottom, styles.listFooter]} />
+                }
+            />
         </TopSafeAreaView>
     );
 }
@@ -255,6 +270,9 @@ const styles = StyleSheet.create({
     itemInfo: {
         flex: 1,
         marginRight: 12,
+    },
+    listFooter: {
+        marginBottom: 56,
     },
     itemText: {
         fontSize: 15,

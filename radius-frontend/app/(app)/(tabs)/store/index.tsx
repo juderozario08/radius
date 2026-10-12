@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { clearSWRCache } from "@/api/client";
 import { GetAllStoresResponse, Store } from "@/types/admin.types";
 import { callApi, showToast } from "@/utils/helpers";
+import { hasPermission } from "@/utils/roles";
 import { Redirect, router } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -329,7 +330,19 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
 };
 
 export default function Stores() {
-    const { logout, user } = useAuth();
+    const { user } = useAuth();
+
+    if (hasPermission(user?.role, "view_admin_actions")) {
+        return <AdminStores />;
+    }
+    if (hasPermission(user?.role, "view_manager_actions")) {
+        return <Redirect href="/(app)/(tabs)/store/employees" />;
+    }
+    return <Redirect href="/(app)/(tabs)/home/dashboard" />;
+}
+
+function AdminStores() {
+    const { logout } = useAuth();
 
     const [stores, setStores] = useState<Store[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -409,10 +422,6 @@ export default function Stores() {
             </View>
         </TouchableOpacity>
     );
-
-    if (user?.role === "MANAGER") {
-        return <Redirect href="/(app)/(tabs)/store/employees" />;
-    }
 
     const totalPages = Math.max(1, Math.ceil(totalLength / pageSize));
 

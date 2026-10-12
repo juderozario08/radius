@@ -369,4 +369,3 @@ The Radius backend exposes 92 endpoints structured across public access, adminis
 | `GET` | `/api/sales_floor/transactions` | `SALES` | View completed retail sales transactions |
 | `POST` | `/api/sales_floor/transactions` | `ADMIN` | Record POS transaction with Canadian tax rules |
 | `GET` | `/api/sales_floor/transactions/:id` | `SALES` | Retrieve transaction receipt and item lines |
-

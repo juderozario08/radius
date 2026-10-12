@@ -75,15 +75,14 @@ func NewRouter(cfg Config) *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}
 
-	if len(allowOrigins) > 0 {
+	switch {
+	case len(allowOrigins) > 0:
 		corsConfig.AllowOrigins = allowOrigins
-	} else if !cfg.AppConfig.IsRelease {
+		router.Use(cors.New(corsConfig))
+	case !cfg.AppConfig.IsRelease:
 		corsConfig.AllowAllOrigins = true
-	} else {
-		corsConfig.AllowOrigins = []string{}
+		router.Use(cors.New(corsConfig))
 	}
-
-	router.Use(cors.New(corsConfig))
 	router.Use(middleware.ETagMiddleware())
 
 	public := router.Group("/")

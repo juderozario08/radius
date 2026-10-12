@@ -74,7 +74,7 @@ func (c *Config) validate() error {
 		return fmt.Errorf("REDIS_URL is required")
 	}
 	if c.IsRelease && strings.TrimSpace(c.AllowedOrigins) == "" {
-		slog.Warn("ALLOWED_ORIGINS is empty in release mode; browser origin checks are disabled (acceptable for native-only clients)")
+		slog.Warn("ALLOWED_ORIGINS is empty in release mode; CORS is disabled and cross-origin WebSocket handshakes are rejected (acceptable for native-only clients)")
 	}
 	return nil
 }

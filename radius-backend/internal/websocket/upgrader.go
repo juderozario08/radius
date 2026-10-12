@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -31,11 +32,11 @@ func CheckOriginFunc(allowedOrigins []string, failClosed bool) func(r *http.Requ
 		origin := r.Header.Get("Origin")
 
 		if origin == "" {
-			return !failClosed
+			return !failClosed || len(allowedOrigins) == 0
 		}
 
 		if len(allowedOrigins) == 0 {
-			return !failClosed
+			return !failClosed || isSameOrigin(origin, r.Host)
 		}
 
 		for _, allowed := range allowedOrigins {
@@ -46,6 +47,14 @@ func CheckOriginFunc(allowedOrigins []string, failClosed bool) func(r *http.Requ
 
 		return false
 	}
+}
+
+func isSameOrigin(origin, host string) bool {
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	return strings.EqualFold(u.Host, host)
 }
 
 func NewUpgrader(cfg ...UpgraderConfig) *websocket.Upgrader {

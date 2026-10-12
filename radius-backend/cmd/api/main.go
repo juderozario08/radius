@@ -102,7 +102,7 @@ func run() error {
 		WriteBufferSize:  4096,
 		HandshakeTimeout: 10 * time.Second,
 		AllowedOrigins:   cfg.AllowedOriginsList(),
-		FailClosed:       cfg.IsRelease && len(cfg.AllowedOriginsList()) > 0,
+		FailClosed:       cfg.IsRelease,
 	})
 	wsHandler := handler.NewWSHandler(
 		wsHub,

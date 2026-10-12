@@ -612,7 +612,7 @@ func (r *ReturnsRepo) LookupTransaction(ctx context.Context, transactionID int64
 	itemsQuery := `
 		SELECT ti.transaction_item_id, ti.product_id, p.sku, p.name, p.brand,
 		       COALESCE(p.category_id, 0), COALESCE(p.is_returnable, TRUE), COALESCE(p.warranty_days, 0),
-		       ti.quantity, ti.unit_price, ti.unit_cost,
+		       ti.quantity, ti.unit_price, COALESCE(ti.discount_amount, 0), ti.unit_cost,
 		       COALESCE((
 		           SELECT SUM(cri.quantity)
 		           FROM customer_return_items cri
@@ -636,12 +636,21 @@ func (r *ReturnsRepo) LookupTransaction(ctx context.Context, transactionID int64
 		var categoryID int
 		var warrantyDays int
 		var isReturnable bool
+		var discountAmount models.Money
 		if err := rows.Scan(
 			&item.TransactionItemId, &item.ProductId, &item.ProductSku, &item.ProductName,
 			&item.Brand, &categoryID, &isReturnable, &warrantyDays,
-			&item.PurchasedQty, &item.UnitPrice, &item.UnitCost, &item.ReturnedQty,
+			&item.PurchasedQty, &item.UnitPrice, &discountAmount, &item.UnitCost, &item.ReturnedQty,
 		); err != nil {
 			return nil, err
+		}
+
+		if item.PurchasedQty > 0 && discountAmount > 0 {
+			netLine := item.UnitPrice.Times(item.PurchasedQty) - discountAmount
+			if netLine < 0 {
+				netLine = 0
+			}
+			item.UnitPrice = netLine / models.Money(item.PurchasedQty)
 		}
 
 		item.IsReturnable = isReturnable

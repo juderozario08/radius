@@ -39,4 +39,3 @@ export function ProductSearchCard({ product, onPress }: { product: Product; onPr
         </TouchableOpacity>
     );
 }
-

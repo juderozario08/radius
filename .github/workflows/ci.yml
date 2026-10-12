@@ -14,10 +14,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Check for trailing whitespace
-        run: git diff --check HEAD~1
+        env:
+          PUSH_BASE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$PR_BASE" ]; then
+            git diff --check "$PR_BASE"...HEAD
+          elif [ -n "$PUSH_BASE" ] && [ "$PUSH_BASE" != "0000000000000000000000000000000000000000" ]; then
+            git diff --check "$PUSH_BASE" HEAD
+          else
+            git diff --check HEAD^ HEAD
+          fi
 
   backend:
     name: Go Backend Test & Verify
@@ -33,6 +43,15 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U radius_ci -d radius_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -120,3 +139,7 @@ jobs:
       - name: Unit Tests
         working-directory: radius-frontend
         run: npm test
+
+      - name: Export web bundle
+        working-directory: radius-frontend
+        run: npx expo export --platform web --output-dir "$RUNNER_TEMP/radius-web-export"

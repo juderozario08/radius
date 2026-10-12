@@ -270,4 +270,3 @@ export function AssignCycleCountModal({ reassignModalVisible, setReassignModalVi
             </Modal>
     );
 }
-

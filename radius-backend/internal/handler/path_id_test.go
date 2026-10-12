@@ -22,6 +22,7 @@ func TestHandlers_RejectInvalidPathIDEvenWithBodyID(t *testing.T) {
 	}{
 		{"terminate session", http.MethodDelete, "/sessions/:id", "/sessions/abc", `{"session_id":5}`, (&handler.SessionHandler{}).TerminateSession},
 		{"terminate employee", http.MethodPost, "/employees/:id/terminate", "/employees/0/terminate", `{"employee_id":5}`, (&handler.EmployeeHandler{}).TerminateEmployee},
+		{"update employee", http.MethodPut, "/employees/:id", "/employees/abc", `{"email":"test@example.com","store_id":1,"first_name":"Jane","last_name":"Doe","role":"SALES","phone":"555-5555","address":"123 Main","city":"Toronto","province":"Ontario","postal_code":"M5V 2H1","is_active":true,"is_terminated":false}`, (&handler.EmployeeHandler{}).UpdateEmployee},
 		{"activate store", http.MethodPost, "/stores/:id/activate", "/stores/-1/activate", `{"store_id":5}`, (&handler.StoreHandler{}).ActivateStore},
 		{"approve cycle count", http.MethodPost, "/cycle_counts/:id/approve", "/cycle_counts/abc/approve", `{"count_id":5}`, (&handler.CycleCountHandler{}).ApproveCycleCount},
 		{"complete pick", http.MethodPost, "/online/:id/complete_pick", "/online/abc/complete_pick", `{"order_id":5}`, (&handler.OnlineOrderHandler{}).CompleteOrderPicking},

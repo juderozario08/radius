@@ -83,7 +83,7 @@ func (e *EmployeeHandler) GetManagerEmployees(ctx *gin.Context) {
 }
 
 func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
-	var body models.Employee
+	var body models.UpdateEmployeeRequest
 	if err := ctx.ShouldBindJSON(&body); err != nil {
 		slog.ErrorContext(ctx.Request.Context(), "EmployeeHandler.UpdateEmployee: invalid request body", "error", err)
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
@@ -95,9 +95,11 @@ func (e *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 		return
 	}
-	body.EmployeeId = id
 
-	updateEmployeeResponse, err := e.employeeService.UpdateEmployee(ctx.Request.Context(), body)
+	updateEmployeeResponse, err := e.employeeService.UpdateEmployee(ctx.Request.Context(), models.Employee{
+		EmployeeId:   id,
+		EmployeeBase: body.EmployeeBase,
+	})
 	if err != nil {
 		slog.ErrorContext(ctx.Request.Context(), "EmployeeHandler.UpdateEmployee: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})

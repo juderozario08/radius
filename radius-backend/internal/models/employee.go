@@ -30,6 +30,10 @@ type Employee struct {
 	EmployeeBase
 }
 
+type UpdateEmployeeRequest struct {
+	EmployeeBase
+}
+
 type CreateEmployeeRequest struct {
 	Password string `json:"password"         binding:"required,min=8"`
 	EmployeeBase

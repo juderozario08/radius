@@ -14,6 +14,7 @@ sys.path.insert(0, str(SEEDS_DIR))
 
 GENERATOR_MODULES = [
     ("00_wipe_database", "00_wipe_database.sql", "Database Wipe / Truncate (Preserving Stores & Employees)"),
+    ("01_core_entities", "01_core_entities_seed.sql", "Stores & Default Employees (Only When Missing)"),
     ("02_mims_locations", "02_mims_locations_seed.sql", "MIMS Locations (Runtime Managed)"),
     ("03_categories", "03_categories_seed.sql", "Product Categories Catalog"),
     ("04_suppliers", "04_suppliers_seed.sql", "Wholesale Supplier Vendors"),

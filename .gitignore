@@ -11,3 +11,5 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+radius-backend/seeds/*_seed.sql

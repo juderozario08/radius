@@ -21,11 +21,19 @@ from common import (
 )
 
 PO_STATUSES = ["RECEIVED", "RECEIVED", "SHIPPED", "DELIVERING", "DELIVERED", "PARTIAL", "DRAFT"]
+LPR_ELIGIBLE_STATUSES = ("SHIPPED", "DELIVERING", "DELIVERED")
+
+
+def lpr_barcode(po_id: int) -> str:
+    return f"00{100000000000000000 + po_id:018d}"
 
 
 def generate_sql(num_pos: int = NUM_PURCHASE_ORDERS) -> str:
     po_rows = []
     item_rows = []
+    lpr_rows = []
+    lpr_item_rows = []
+    po_item_id = 0
 
     for po_id in range(1, num_pos + 1):
         store_id = random.choice(RETAIL_STORE_IDS)
@@ -49,10 +57,19 @@ def generate_sql(num_pos: int = NUM_PURCHASE_ORDERS) -> str:
         # 2 to 4 items per PO
         num_items = random.randint(2, 4)
         chosen_products = random.sample(range(1, NUM_PRODUCTS + 1), num_items)
+        po_lines = []
         for prod_id in chosen_products:
             qty_ordered = random.choice([10, 15, 20, 25, 30, 50])
             unit_cost = round(random.uniform(10.0, 65.0), 2)
             item_rows.append(f"({po_id}, {prod_id}, {qty_ordered}, {unit_cost:.2f})")
+            po_item_id += 1
+            po_lines.append((po_item_id, qty_ordered))
+
+        if status in LPR_ELIGIBLE_STATUSES and random.random() < 0.5:
+            lpr_rows.append(f"({po_id}, {escape_sql(lpr_barcode(po_id))})")
+            lpr_id = len(lpr_rows)
+            for line_id, qty in po_lines:
+                lpr_item_rows.append(f"({lpr_id}, {line_id}, {qty})")
 
     po_inserts = build_batched_inserts(
         "purchase_orders",
@@ -66,6 +83,9 @@ def generate_sql(num_pos: int = NUM_PURCHASE_ORDERS) -> str:
         item_rows,
     )
 
+    lpr_inserts = build_batched_inserts("purchase_order_lprs", "po_id, lpr_barcode", lpr_rows)
+    lpr_items_inserts = build_batched_inserts("purchase_order_lpr_items", "lpr_id, po_item_id, qty", lpr_item_rows)
+
     return f"""-- ==============================================================================
 -- 09_purchase_orders_seed.sql
 -- Inbound vendor purchase orders and item manifests
@@ -78,6 +98,10 @@ TRUNCATE TABLE purchase_orders_items, purchase_orders, purchase_order_lpr_items,
 {po_inserts}
 
 {items_inserts}
+
+{lpr_inserts}
+
+{lpr_items_inserts}
 
 ALTER TABLE purchase_orders ADD CONSTRAINT purchase_orders_created_by_fkey FOREIGN KEY (created_by) REFERENCES employees(employee_id) NOT VALID;
 """

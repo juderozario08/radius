@@ -159,9 +159,9 @@ The API builds its `DATABASE_URL` and `REDIS_URL` from the values in `.env`, so 
 
 5. **(Optional) Seed High-Volume Test Data**:
    ```bash
-   go run cmd/seeds/main.go
+   SEED_EMPLOYEE_PASSWORD='choose-a-password' go run cmd/seeds/main.go --i-understand-this-wipes-data
    ```
-   *This automatically generates realistic datasets via Python, runs batched SQL inserts, and cleans up temporary SQL files.*
+   *This wipes and regenerates all operational data (stores and employees are kept), generates realistic datasets via Python, runs batched SQL inserts, and cleans up temporary SQL files. On an empty database it also creates stores 1-7 and four demo employees (`admin@radius.dev`, `manager@radius.dev`, `sales@radius.dev`, `service@radius.dev`) using `SEED_EMPLOYEE_PASSWORD`; if that is unset, a random password is generated and printed.*
 
 6. **Start the API Server**:
    ```bash

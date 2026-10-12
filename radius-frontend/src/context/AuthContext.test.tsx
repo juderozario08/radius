@@ -46,7 +46,8 @@ it("stores login credentials and clears them on logout", async () => {
     expect(saveToken).toHaveBeenCalledWith("access");
     expect(saveRefreshToken).toHaveBeenCalledWith("refresh");
     expect(setClientContext).toHaveBeenCalledWith({ storeId: 3, employeeId: 2 });
-    expect(SecureStore.setItemAsync).toHaveBeenCalledWith("user_info", JSON.stringify(user));
+    const { token: _token, refresh_token: _refreshToken, ...expectedStoredUser } = user;
+    expect(SecureStore.setItemAsync).toHaveBeenCalledWith("user_info", JSON.stringify(expectedStoredUser));
     (apiFetch as jest.Mock).mockRejectedValue(new Error("offline"));
     await act(async () => auth.logout());
     expect(screen.getByText("signed-out")).toBeTruthy();

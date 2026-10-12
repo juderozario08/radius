@@ -87,17 +87,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     async function login(userData: LoginResponse) {
-        await saveToken(userData.token);
-        await saveRefreshToken(userData.refresh_token);
-        await SecureStore.setItemAsync("user_info", JSON.stringify(userData));
-        setClientContext({
-            storeId: userData.store_id,
-            employeeId: userData.employee_id,
-        });
-        setToken(userData.token);
-        resetSessionExpiry();
-
         const { token, refresh_token, ...userInfo } = userData;
+        await saveToken(token);
+        await saveRefreshToken(refresh_token);
+        await SecureStore.setItemAsync("user_info", JSON.stringify(userInfo));
+        setClientContext({
+            storeId: userInfo.store_id,
+            employeeId: userInfo.employee_id,
+        });
+        setToken(token);
+        resetSessionExpiry();
         setUser(userInfo);
     }
 

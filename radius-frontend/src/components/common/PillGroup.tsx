@@ -1,5 +1,6 @@
 import { COLORS } from "@/constants/colors";
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
+import { SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 
 export interface PillOption<T> {
     label: string;
@@ -29,13 +30,13 @@ const styles = StyleSheet.create({
     rolesContainer: {
         flexDirection: "row",
         flexWrap: "wrap",
-        gap: 8,
-        marginBottom: 12
+        gap: SPACING.sm,
+        marginBottom: SPACING.md
     },
     rolePill: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 20,
+        paddingVertical: SPACING.sm,
+        paddingHorizontal: SPACING.lg,
+        borderRadius: RADIUS.xxl,
         backgroundColor: COLORS.background,
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
@@ -45,11 +46,11 @@ const styles = StyleSheet.create({
         borderColor: COLORS.primary
     },
     rolePillText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textSecondary
     },
     rolePillTextActive: {
-        color: "#FFFFFF"
+        color: COLORS.primaryText
     },
 })

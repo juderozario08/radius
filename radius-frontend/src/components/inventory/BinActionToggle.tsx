@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { COLORS } from "@/constants/colors";
+import { SPACING, RADIUS } from "@/constants/styles";
 
 type BinAction = "IN" | "OUT";
 
@@ -31,16 +32,16 @@ export function BinActionToggle({ action, onActionChange }: BinActionToggleProps
 const styles = StyleSheet.create({
     container: {
         flexDirection: "row",
-        margin: 16,
+        margin: SPACING.lg,
         backgroundColor: COLORS.inputBg,
-        borderRadius: 8,
-        padding: 4,
+        borderRadius: RADIUS.md,
+        padding: SPACING.xs,
     },
     button: {
         flex: 1,
-        paddingVertical: 10,
+        paddingVertical: SPACING.smd,
         alignItems: "center",
-        borderRadius: 6,
+        borderRadius: RADIUS.sm,
     },
     buttonActiveIn: {
         backgroundColor: COLORS.activeText,

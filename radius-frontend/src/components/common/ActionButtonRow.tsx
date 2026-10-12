@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
 import { COLORS } from "@/constants/colors";
+import { SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 
 type ButtonKind = "neutral" | "primary" | "accent" | "danger";
 
@@ -46,20 +47,20 @@ const styles = StyleSheet.create({
     actionRow: {
         flexDirection: "row",
         justifyContent: "center",
-        gap: 16,
-        paddingVertical: 16,
-        paddingHorizontal: 20,
+        gap: SPACING.lg,
+        paddingVertical: SPACING.lg,
+        paddingHorizontal: SPACING.xl,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
     },
     actionButton: {
         flex: 0,
         minWidth: 92,
-        paddingVertical: 10,
+        paddingVertical: SPACING.smd,
         paddingHorizontal: 18,
-        borderRadius: 20,
+        borderRadius: RADIUS.xxl,
         alignItems: "center",
         justifyContent: "center",
     },
-    actionButtonText: { fontWeight: "600", fontSize: 14 },
+    actionButtonText: { fontWeight: "600", fontSize: FONT_SIZE.md },
 });

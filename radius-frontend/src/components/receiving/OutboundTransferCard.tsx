@@ -1,5 +1,5 @@
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { OutboundTransferSummary } from "@/types/receiving.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,13 +15,13 @@ interface OutboundTransferCardProps {
 const getStatusBadgeStyle = (status: string) => {
     switch (status) {
         case "PENDING":
-            return { bg: "#FFF3E0", text: "#E65100", border: "#F57C00" };
+            return { bg: COLORS.warningBg, text: COLORS.warning, border: COLORS.warningAccent };
         case "IN_TRANSIT":
-            return { bg: "#E3F2FD", text: "#1565C0", border: "#1976D2" };
+            return { bg: COLORS.infoBg, text: COLORS.info, border: COLORS.infoAccent };
         case "RECEIVED":
-            return { bg: "#E8F5E9", text: "#2E7D32", border: "#388E3C" };
+            return { bg: COLORS.activeBg, text: COLORS.success, border: COLORS.successAccent };
         case "CANCELLED":
-            return { bg: "#FFEBEE", text: "#C62828", border: "#D32F2F" };
+            return { bg: COLORS.inactiveBg, text: COLORS.dangerDark, border: COLORS.dangerAccent };
         default:
             return { bg: COLORS.surface, text: COLORS.textSecondary, border: COLORS.border };
     }
@@ -82,32 +82,32 @@ export const OutboundTransferCard: React.FC<OutboundTransferCardProps> = ({ tran
 const styles = StyleSheet.create({
     titleContainer: {
         flex: 1,
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     transferId: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "bold",
         color: COLORS.textPrimary,
     },
     storeName: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "600",
         color: COLORS.textPrimary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     fromStoreName: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
         marginTop: 1,
     },
     badge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.xs,
+        borderRadius: RADIUS.lg,
         alignSelf: "flex-start",
     },
     badgeText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "700",
         textTransform: "uppercase",
     },
@@ -115,39 +115,39 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginTop: 10,
+        marginTop: SPACING.smd,
     },
     detailRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 12,
+        gap: SPACING.md,
     },
     detailItem: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
+        gap: SPACING.xs,
     },
     detailText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
     },
     dateContainer: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 2,
+        gap: SPACING.xxs,
     },
     dateText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     reasonContainer: {
-        marginTop: 8,
-        paddingTop: 8,
+        marginTop: SPACING.sm,
+        paddingTop: SPACING.sm,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
     },
     reasonText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
         fontStyle: "italic",
     },

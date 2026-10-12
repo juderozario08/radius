@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { globalStyles } from '../../constants/styles';
+import { globalStyles, SPACING } from '../../constants/styles';
 
 interface EmptyStateProps {
     message?: string;
@@ -16,7 +16,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ message = 'No data avail
 
 const styles = StyleSheet.create({
     container: {
-        padding: 32,
+        padding: SPACING.xxxl,
         alignItems: 'center',
         justifyContent: 'center',
     }

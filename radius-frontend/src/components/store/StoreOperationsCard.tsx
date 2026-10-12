@@ -10,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/colors";
 import { StoreOperationSummary } from "@/types/admin.types";
+import { SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 
 export interface StoreOperationsCardProps {
     store: StoreOperationSummary;
@@ -87,7 +88,7 @@ export const StoreOperationsCard: React.FC<StoreOperationsCardProps> = ({
                     <Ionicons
                         name="cart-outline"
                         size={14}
-                        color={store.active_orders_count > 0 ? "#E65100" : COLORS.textSecondary}
+                        color={store.active_orders_count > 0 ? COLORS.warning : COLORS.textSecondary}
                     />
                     <Text style={[styles.metricLabel, store.active_orders_count > 0 && styles.metricLabelActive]}>
                         {store.active_orders_count} {store.active_orders_count === 1 ? "Order" : "Orders"}
@@ -98,7 +99,7 @@ export const StoreOperationsCard: React.FC<StoreOperationsCardProps> = ({
                     <Ionicons
                         name="clipboard-outline"
                         size={14}
-                        color={store.active_counts_count > 0 ? "#1565C0" : COLORS.textSecondary}
+                        color={store.active_counts_count > 0 ? COLORS.info : COLORS.textSecondary}
                     />
                     <Text style={[styles.metricLabel, store.active_counts_count > 0 && styles.metricLabelActive]}>
                         {store.active_counts_count} {store.active_counts_count === 1 ? "Count" : "Counts"}
@@ -109,7 +110,7 @@ export const StoreOperationsCard: React.FC<StoreOperationsCardProps> = ({
                     <Ionicons
                         name="cube-outline"
                         size={14}
-                        color={store.pending_pos_count > 0 ? "#2E7D32" : COLORS.textSecondary}
+                        color={store.pending_pos_count > 0 ? COLORS.success : COLORS.textSecondary}
                     />
                     <Text style={[styles.metricLabel, store.pending_pos_count > 0 && styles.metricLabelActive]}>
                         {store.pending_pos_count} {store.pending_pos_count === 1 ? "PO" : "POs"}
@@ -128,12 +129,12 @@ export const StoreOperationsCard: React.FC<StoreOperationsCardProps> = ({
 const styles = StyleSheet.create({
     card: {
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 14,
-        marginBottom: 12,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.mdl,
+        marginBottom: SPACING.md,
         borderWidth: 1,
         borderColor: COLORS.border,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 3,
@@ -142,22 +143,22 @@ const styles = StyleSheet.create({
     selectedCard: {
         borderColor: COLORS.primary,
         borderWidth: 2,
-        backgroundColor: "#FFF8F8",
+        backgroundColor: COLORS.primarySurface,
     },
     activeCardBorder: {
-        borderColor: "#C8E6C9",
+        borderColor: COLORS.successBorderLight,
     },
     topRow: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: 8,
+        marginBottom: SPACING.sm,
     },
     storeTitleGroup: {
         flexDirection: "row",
         alignItems: "center",
         flex: 1,
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     storeIconContainer: {
         width: 36,
@@ -165,13 +166,13 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         justifyContent: "center",
         alignItems: "center",
-        marginRight: 10,
+        marginRight: SPACING.smd,
     },
     activeIconBg: {
-        backgroundColor: "#FFEBEE",
+        backgroundColor: COLORS.inactiveBg,
     },
     idleIconBg: {
-        backgroundColor: "#F5F5F5",
+        backgroundColor: COLORS.background,
     },
     storeNameContainer: {
         flex: 1,
@@ -179,29 +180,29 @@ const styles = StyleSheet.create({
     storeNameRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
+        gap: SPACING.xsm,
     },
     storeName: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "700",
         color: COLORS.textPrimary,
         flexShrink: 1,
     },
     headOfficeBadge: {
-        backgroundColor: "#EDE7F6",
-        paddingHorizontal: 6,
+        backgroundColor: COLORS.violetBg,
+        paddingHorizontal: SPACING.xsm,
         paddingVertical: 1,
-        borderRadius: 4,
+        borderRadius: RADIUS.xs,
     },
     headOfficeText: {
-        fontSize: 10,
+        fontSize: FONT_SIZE.xxs,
         fontWeight: "700",
-        color: "#5E35B1",
+        color: COLORS.violet,
     },
     storeSubtext: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     statusPillContainer: {
         alignItems: "flex-end",
@@ -209,81 +210,81 @@ const styles = StyleSheet.create({
     activePill: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#E8F5E9",
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-        gap: 4,
+        backgroundColor: COLORS.activeBg,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: SPACING.xs,
+        borderRadius: RADIUS.lg,
+        gap: SPACING.xs,
     },
     activeDot: {
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: "#2E7D32",
+        backgroundColor: COLORS.success,
     },
     activePillText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "600",
-        color: "#2E7D32",
+        color: COLORS.success,
     },
     idlePill: {
-        backgroundColor: "#F5F5F5",
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
+        backgroundColor: COLORS.background,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: SPACING.xs,
+        borderRadius: RADIUS.lg,
     },
     idlePillText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         color: COLORS.textSecondary,
     },
     addressRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
-        marginBottom: 10,
+        gap: SPACING.xs,
+        marginBottom: SPACING.smd,
     },
     addressText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
         flex: 1,
     },
     metricsRow: {
         flexDirection: "row",
-        gap: 8,
-        marginBottom: 10,
+        gap: SPACING.sm,
+        marginBottom: SPACING.smd,
     },
     metricBadge: {
         flex: 1,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 6,
-        paddingHorizontal: 6,
-        borderRadius: 8,
-        gap: 4,
+        paddingVertical: SPACING.xsm,
+        paddingHorizontal: SPACING.xsm,
+        borderRadius: RADIUS.md,
+        gap: SPACING.xs,
     },
     metricMuted: {
-        backgroundColor: "#FAFAFA",
+        backgroundColor: COLORS.surfaceMuted,
         borderWidth: 1,
-        borderColor: "#EEEEEE",
+        borderColor: COLORS.border,
     },
     metricOrderActive: {
-        backgroundColor: "#FFF3E0",
+        backgroundColor: COLORS.warningBg,
         borderWidth: 1,
-        borderColor: "#FFE0B2",
+        borderColor: COLORS.warningBorderLight,
     },
     metricCountActive: {
-        backgroundColor: "#E3F2FD",
+        backgroundColor: COLORS.infoBg,
         borderWidth: 1,
-        borderColor: "#BBDEFB",
+        borderColor: COLORS.infoBorderLight,
     },
     metricPoActive: {
-        backgroundColor: "#E8F5E9",
+        backgroundColor: COLORS.activeBg,
         borderWidth: 1,
-        borderColor: "#C8E6C9",
+        borderColor: COLORS.successBorderLight,
     },
     metricLabel: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         color: COLORS.textSecondary,
         fontWeight: "500",
     },
@@ -297,11 +298,11 @@ const styles = StyleSheet.create({
         justifyContent: "flex-end",
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
-        paddingTop: 8,
-        gap: 4,
+        paddingTop: SPACING.sm,
+        gap: SPACING.xs,
     },
     viewOpsText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "600",
         color: COLORS.primary,
     },

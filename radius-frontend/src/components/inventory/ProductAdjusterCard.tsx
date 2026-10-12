@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/colors";
 import { MimsProductInventory } from "@/types/inventory.types";
+import { SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 
 interface ProductAdjusterCardProps {
     product: MimsProductInventory;
@@ -37,49 +38,49 @@ export function ProductAdjusterCard({ product, onUpdateQuantity }: ProductAdjust
 const styles = StyleSheet.create({
     card: {
         backgroundColor: COLORS.background,
-        padding: 16,
-        borderRadius: 8,
-        marginBottom: 12,
+        padding: SPACING.lg,
+        borderRadius: RADIUS.md,
+        marginBottom: SPACING.md,
         borderWidth: 1,
         borderColor: COLORS.border,
     },
     productName: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     productMeta: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
-        marginBottom: 8,
+        marginBottom: SPACING.sm,
     },
     quantityRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginTop: 8,
+        marginTop: SPACING.sm,
     },
     quantityLabel: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
     quantityControls: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 16,
+        gap: SPACING.lg,
     },
     quantityButton: {
         backgroundColor: COLORS.primary,
         width: 32,
         height: 32,
-        borderRadius: 16,
+        borderRadius: RADIUS.xl,
         justifyContent: "center",
         alignItems: "center",
     },
     quantityDisplay: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "bold",
         width: 30,
         textAlign: "center",

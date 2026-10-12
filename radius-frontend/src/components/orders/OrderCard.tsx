@@ -13,6 +13,7 @@ import { COLORS } from "@/constants/colors";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { OnlineOrder } from "@/types/order.types";
 import { type Money, formatMoney } from "@/utils/money";
+import { SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 
 export interface OrderCardData {
     order_id: number;
@@ -61,12 +62,12 @@ export const getOrderTypeStyle = (type?: string) => {
     const normalized = (type || "").toUpperCase();
     switch (normalized) {
         case "BOPIS":
-            return { bg: "#E3F2FD", text: "#1565C0", label: "BOPIS" };
+            return { bg: COLORS.infoBg, text: COLORS.info, label: "BOPIS" };
         case "STS":
-            return { bg: "#EDE7F6", text: "#512DA8", label: "STS" };
+            return { bg: COLORS.violetBg, text: COLORS.violetDark, label: "STS" };
         case "SHIPPING":
         case "DELIVERY":
-            return { bg: "#E0F2F1", text: "#00796B", label: "SHIPPING" };
+            return { bg: COLORS.tealBg, text: COLORS.teal, label: "SHIPPING" };
         default:
             return { bg: COLORS.neutralBg, text: COLORS.textSecondary, label: type || "ORDER" };
     }
@@ -146,14 +147,14 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 <View style={styles.assignmentRow}>
                     {order.assigned_to_name ? (
                         <View style={styles.assigneeBadge}>
-                            <Ionicons name="person" size={11} color="#1565C0" />
+                            <Ionicons name="person" size={11} color={COLORS.info} />
                             <Text style={styles.assigneeText} numberOfLines={1}>
                                 In Progress: {order.assigned_to_name}
                             </Text>
                         </View>
                     ) : (
                         <View style={styles.unassignedBadge}>
-                            <Ionicons name={isAdmin ? "eye-outline" : "hand-right-outline"} size={11} color="#E65100" />
+                            <Ionicons name={isAdmin ? "eye-outline" : "hand-right-outline"} size={11} color={COLORS.warning} />
                             <Text style={styles.unassignedText}>
                                 {isAdmin ? "Unassigned • Tap to view" : "Unassigned • Tap to open & claim"}
                             </Text>
@@ -197,14 +198,14 @@ export default OrderCard;
 const styles = StyleSheet.create({
     card: {
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 14,
-        marginBottom: 10,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.mdl,
+        marginBottom: SPACING.smd,
         borderWidth: 1.5,
         borderColor: COLORS.border,
         borderLeftWidth: 4,
         borderLeftColor: COLORS.primary,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 4,
@@ -214,33 +215,33 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 8,
+        marginBottom: SPACING.sm,
     },
     orderIdGroup: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
+        gap: SPACING.sm,
         flexShrink: 1,
     },
     orderIdText: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     typeBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 6,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: SPACING.xxs,
+        borderRadius: RADIUS.sm,
     },
     typeBadgeText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "700",
     },
     liveBadge: {
         backgroundColor: COLORS.primary,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
+        paddingHorizontal: SPACING.xsm,
+        paddingVertical: SPACING.xxs,
+        borderRadius: RADIUS.xs,
     },
     liveBadgeText: {
         color: COLORS.primaryText,
@@ -251,11 +252,11 @@ const styles = StyleSheet.create({
     customerRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
-        marginBottom: 10,
+        gap: SPACING.xsm,
+        marginBottom: SPACING.smd,
     },
     customerName: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "500",
         color: COLORS.textPrimary,
         flex: 1,
@@ -264,7 +265,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingTop: 8,
+        paddingTop: SPACING.sm,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
     },
@@ -275,59 +276,59 @@ const styles = StyleSheet.create({
     metaItem: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
+        gap: SPACING.xs,
     },
     metaDivider: {
         width: 1,
         height: 12,
         backgroundColor: COLORS.border,
-        marginHorizontal: 8,
+        marginHorizontal: SPACING.sm,
     },
     metaText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     totalAmount: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     headerRightGroup: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
+        gap: SPACING.xsm,
     },
     assignmentRow: {
-        marginBottom: 8,
+        marginBottom: SPACING.sm,
     },
     assigneeBadge: {
         flexDirection: "row",
         alignItems: "center",
         alignSelf: "flex-start",
-        gap: 4,
-        backgroundColor: "#E3F2FD",
-        paddingHorizontal: 8,
+        gap: SPACING.xs,
+        backgroundColor: COLORS.infoBg,
+        paddingHorizontal: SPACING.sm,
         paddingVertical: 3,
-        borderRadius: 6,
+        borderRadius: RADIUS.sm,
     },
     assigneeText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "600",
-        color: "#1565C0",
+        color: COLORS.info,
     },
     unassignedBadge: {
         flexDirection: "row",
         alignItems: "center",
         alignSelf: "flex-start",
-        gap: 4,
-        backgroundColor: "#FFF3E0",
-        paddingHorizontal: 8,
+        gap: SPACING.xs,
+        backgroundColor: COLORS.warningBg,
+        paddingHorizontal: SPACING.sm,
         paddingVertical: 3,
-        borderRadius: 6,
+        borderRadius: RADIUS.sm,
     },
     unassignedText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "600",
-        color: "#E65100",
+        color: COLORS.warning,
     },
 });

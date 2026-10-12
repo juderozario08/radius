@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert } from "react-native";
 import { MimsLocationItem } from "@/types/inventory.types";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { ENDPOINTS } from "@/constants/routes";
 import { Ionicons } from "@expo/vector-icons";
 import { LocationInput } from "@/components/common/LocationInput";
@@ -178,7 +178,7 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
                     <Text style={styles.sectionTitle}>From: </Text>
                     <Ionicons name="enter-outline" size={20} color={COLORS.textSecondary} style={{ transform: [{ rotateY: '180deg' }] }} />
                 </View>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flexDirection: 'row', gap: SPACING.smd }}>
                     <Text style={styles.sectionValue}>On hand: {onHandQty}</Text>
                     <Text style={styles.sectionValue}>Sellable: {sellableQty}</Text>
                 </View>
@@ -214,7 +214,7 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
                 );
             })}
 
-            <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+            <View style={[styles.sectionHeader, { marginTop: SPACING.xxl }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={styles.sectionTitle}>To: </Text>
                     <Ionicons name="enter-outline" size={20} color={COLORS.textSecondary} />
@@ -307,7 +307,7 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
                     </View>
                 ) : (
                     <TouchableOpacity style={styles.adjustButton} onPress={() => setIsAdjusting(true)}>
-                        <Ionicons name="cube-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
+                        <Ionicons name="cube-outline" size={20} color={COLORS.primary} style={{ marginRight: SPACING.sm }} />
                         <Text style={styles.adjustButtonText}>Adjust Inventory</Text>
                     </TouchableOpacity>
                 )}
@@ -345,7 +345,7 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
                             />
                         </View>
 
-                        <TouchableOpacity style={[globalStyles.buttonPrimary, { marginTop: 24, borderRadius: 24 }]} onPress={handleAddLocation}>
+                        <TouchableOpacity style={[globalStyles.buttonPrimary, { marginTop: SPACING.xxl, borderRadius: 24 }]} onPress={handleAddLocation}>
                             <Text style={globalStyles.buttonTextPrimary}>Add</Text>
                         </TouchableOpacity>
                         </View>
@@ -360,32 +360,32 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
-        padding: 16,
+        padding: SPACING.lg,
     },
     sectionHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 16,
+        marginBottom: SPACING.lg,
     },
     sectionTitle: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         color: COLORS.textSecondary,
     },
     sectionValue: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
     listHeader: {
         flexDirection: "row",
         justifyContent: "flex-end",
-        marginBottom: 8,
-        paddingRight: 16,
-        gap: 12,
+        marginBottom: SPACING.sm,
+        paddingRight: SPACING.lg,
+        gap: SPACING.md,
     },
     listHeaderText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     locationCard: {
@@ -395,10 +395,10 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.surface,
         borderWidth: 1,
         borderColor: COLORS.border,
-        borderRadius: 12,
-        padding: 16,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.lg,
         minHeight: CARD_MIN_HEIGHT,
-        marginBottom: 12,
+        marginBottom: SPACING.md,
     },
     locationCardActive: {
         borderColor: COLORS.primary,
@@ -411,13 +411,13 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     locTitle: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "600",
         color: COLORS.textPrimary,
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     locSubtitle: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
     },
     locationCardTo: {
@@ -425,68 +425,68 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
         backgroundColor: COLORS.accent,
-        borderRadius: 12,
-        padding: 16,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.lg,
         minHeight: CARD_MIN_HEIGHT,
-        marginBottom: 12,
+        marginBottom: SPACING.md,
     },
     locTitleTo: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "600",
-        color: "#FFF",
-        marginBottom: 4,
+        color: COLORS.primaryText,
+        marginBottom: SPACING.xs,
     },
     locSubtitleTo: {
-        fontSize: 13,
-        color: "rgba(255,255,255,0.8)",
+        fontSize: FONT_SIZE.smd,
+        color: COLORS.whiteAlpha80,
     },
     stepper: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "rgba(255,255,255,0.2)",
+        backgroundColor: COLORS.whiteAlpha20,
         borderRadius: 24,
-        padding: 4,
+        padding: SPACING.xs,
     },
     stepButton: {
-        backgroundColor: "#FFF",
-        borderRadius: 16,
+        backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.xl,
         width: 32,
         height: 32,
         alignItems: "center",
         justifyContent: "center",
     },
     stepValue: {
-        color: "#FFF",
-        fontSize: 16,
+        color: COLORS.primaryText,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "600",
-        marginHorizontal: 16,
+        marginHorizontal: SPACING.lg,
     },
     addLocationButton: {
         alignItems: "center",
-        padding: 16,
-        marginTop: 8,
+        padding: SPACING.lg,
+        marginTop: SPACING.sm,
     },
     addLocationText: {
         color: COLORS.primary,
         fontWeight: "600",
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
     },
     bottomBar: {
-        marginTop: 24,
-        marginBottom: 40,
+        marginTop: SPACING.xxl,
+        marginBottom: SPACING.huge,
         alignItems: "center",
     },
     adjustButton: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(255,255,255,0.8)",
+        backgroundColor: COLORS.whiteAlpha80,
         borderWidth: 1,
         borderColor: COLORS.border,
         borderRadius: 24,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        shadowColor: "#000",
+        paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.xxl,
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -495,14 +495,14 @@ const styles = StyleSheet.create({
     adjustButtonText: {
         color: COLORS.primary,
         fontWeight: "600",
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
     },
     actionRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         width: "100%",
-        paddingHorizontal: 16,
-        gap: 16,
+        paddingHorizontal: SPACING.lg,
+        gap: SPACING.lg,
     },
     cancelButton: {
         flex: 1,
@@ -512,12 +512,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: COLORS.border,
         borderRadius: 24,
-        paddingVertical: 12,
+        paddingVertical: SPACING.md,
     },
     cancelButtonText: {
         color: COLORS.textPrimary,
         fontWeight: "600",
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
     },
     doneButton: {
         flex: 1,
@@ -525,20 +525,20 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         backgroundColor: COLORS.primary,
         borderRadius: 24,
-        paddingVertical: 12,
+        paddingVertical: SPACING.md,
     },
     doneButtonText: {
-        color: "#FFF",
+        color: COLORS.primaryText,
         fontWeight: "600",
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
     },
     adjustContainer: {
         width: "100%",
         alignItems: "center",
-        gap: 16,
+        gap: SPACING.lg,
     },
     adjustLabel: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
@@ -549,11 +549,11 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         borderWidth: 1,
         borderColor: COLORS.border,
-        padding: 4,
+        padding: SPACING.xs,
     },
     adjustStepButton: {
         backgroundColor: COLORS.background,
-        borderRadius: 20,
+        borderRadius: RADIUS.xxl,
         width: 40,
         height: 40,
         alignItems: "center",
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginHorizontal: 24,
+        marginHorizontal: SPACING.xxl,
         minWidth: 48,
         textAlign: "center",
     },

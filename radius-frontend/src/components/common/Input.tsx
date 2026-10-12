@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { TextInput, TextInputProps, StyleSheet, View, Text, ViewStyle } from 'react-native';
-import { globalStyles } from '../../constants/styles';
+import { globalStyles, SPACING, FONT_SIZE } from '../../constants/styles';
 import { COLORS } from '../../constants/colors';
 
 export interface InputProps extends TextInputProps {
@@ -38,20 +38,20 @@ Input.displayName = 'Input';
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 12,
+        marginBottom: SPACING.md,
     },
     label: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: '600',
         color: COLORS.textSecondary,
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     inputError: {
         borderColor: COLORS.danger,
     },
     errorText: {
         color: COLORS.danger,
-        fontSize: 12,
-        marginTop: 4,
+        fontSize: FONT_SIZE.sm,
+        marginTop: SPACING.xs,
     },
 });

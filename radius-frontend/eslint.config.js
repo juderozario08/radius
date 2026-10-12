@@ -27,4 +27,16 @@ module.exports = defineConfig([
       }],
     },
   },
+  {
+    files: ['src/components/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', {
+        selector: 'Literal[value=/^#[0-9a-fA-F]{3,8}$/]',
+        message: 'Use a color from src/constants/colors.ts.',
+      }, {
+        selector: 'Literal[value=/^rgba\\(/]',
+        message: 'Use a color from src/constants/colors.ts.',
+      }],
+    },
+  },
 ]);

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { PurchaseOrderLPR } from "@/types/receiving.types";
 import { COLORS } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
+import { SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 
 export function LPRCard({ lpr }: { lpr: PurchaseOrderLPR }) {
     return (
@@ -15,9 +16,9 @@ export function LPRCard({ lpr }: { lpr: PurchaseOrderLPR }) {
                 <Ionicons 
                     name={lpr.is_received ? "checkmark-circle" : "ellipse-outline"} 
                     size={20} 
-                    color={lpr.is_received ? "#388E3C" : COLORS.textSecondary} 
+                    color={lpr.is_received ? COLORS.successAccent : COLORS.textSecondary} 
                 />
-                <Text style={[styles.statusText, { color: lpr.is_received ? "#388E3C" : COLORS.textSecondary }]}>
+                <Text style={[styles.statusText, { color: lpr.is_received ? COLORS.successAccent : COLORS.textSecondary }]}>
                     {lpr.is_received ? "Received" : "Pending"}
                 </Text>
             </View>
@@ -28,9 +29,9 @@ export function LPRCard({ lpr }: { lpr: PurchaseOrderLPR }) {
 const styles = StyleSheet.create({
     card: {
         backgroundColor: COLORS.surface,
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 8,
+        padding: SPACING.md,
+        borderRadius: RADIUS.md,
+        marginBottom: SPACING.sm,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
@@ -40,20 +41,20 @@ const styles = StyleSheet.create({
     row: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
+        gap: SPACING.sm,
     },
     barcode: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
     statusContainer: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
+        gap: SPACING.xs,
     },
     statusText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "500",
     }
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { globalStyles } from '../../constants/styles';
+import { globalStyles, SPACING } from '../../constants/styles';
 import { Button } from './Button';
 
 interface ErrorMessageProps {
@@ -22,12 +22,12 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, onRetry, re
 
 const styles = StyleSheet.create({
     container: {
-        padding: 16,
+        padding: SPACING.lg,
         alignItems: 'center',
         justifyContent: 'center',
     },
     retryButton: {
-        marginTop: 16,
+        marginTop: SPACING.lg,
         alignSelf: 'stretch',
     },
 });

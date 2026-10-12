@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { View } from "react-native";
 import { createMaterialTopTabNavigator, MaterialTopTabBar, MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
 import { COLORS } from "@/constants/colors";
+import { SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -72,9 +73,9 @@ export function SwipeableTopTabs({ tabs, renderAboveContent, onTabChange }: Swip
                 tabBarIndicatorStyle: {
                     height: 40,
                     bottom: 3,
-                    borderRadius: 8,
+                    borderRadius: RADIUS.md,
                     backgroundColor: "white",
-                    shadowColor: "#000",
+                    shadowColor: COLORS.black,
                     shadowOffset: { width: 0, height: 1 },
                     shadowOpacity: 0.1,
                     shadowRadius: 1,
@@ -82,17 +83,17 @@ export function SwipeableTopTabs({ tabs, renderAboveContent, onTabChange }: Swip
                 },
                 tabBarLabelStyle: {
                     fontWeight: "600",
-                    fontSize: 13,
+                    fontSize: FONT_SIZE.smd,
                     textTransform: "none",
                 },
                 tabBarStyle: {
-                    backgroundColor: "#EFEFEF",
+                    backgroundColor: COLORS.tabBarBg,
                     elevation: 0,
                     shadowOpacity: 0,
-                    marginHorizontal: 16,
-                    marginTop: 4,
-                    marginBottom: 8,
-                    borderRadius: 12,
+                    marginHorizontal: SPACING.lg,
+                    marginTop: SPACING.xs,
+                    marginBottom: SPACING.sm,
+                    borderRadius: RADIUS.lg,
                     height: 46,
                 },
             }}

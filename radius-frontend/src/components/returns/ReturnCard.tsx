@@ -1,5 +1,5 @@
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { CustomerReturnSummary } from "@/types/returns.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,13 +15,13 @@ interface ReturnCardProps {
 const getStatusBadgeStyle = (status: string) => {
     switch (status) {
         case "COMPLETED":
-            return { bg: "#E8F5E9", text: "#2E7D32", border: "#388E3C" };
+            return { bg: COLORS.activeBg, text: COLORS.success, border: COLORS.successAccent };
         case "PENDING_APPROVAL":
-            return { bg: "#FFF3E0", text: "#E65100", border: "#F57C00" };
+            return { bg: COLORS.warningBg, text: COLORS.warning, border: COLORS.warningAccent };
         case "APPROVED":
-            return { bg: "#E3F2FD", text: "#1565C0", border: "#1976D2" };
+            return { bg: COLORS.infoBg, text: COLORS.info, border: COLORS.infoAccent };
         case "REJECTED":
-            return { bg: "#FFEBEE", text: "#C62828", border: "#D32F2F" };
+            return { bg: COLORS.inactiveBg, text: COLORS.dangerDark, border: COLORS.dangerAccent };
         default:
             return { bg: COLORS.surface, text: COLORS.textSecondary, border: COLORS.border };
     }
@@ -100,33 +100,33 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     returnId: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     origTx: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     storeName: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.accent,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     badge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.xs,
+        borderRadius: RADIUS.lg,
         alignSelf: "flex-start",
     },
     badgeText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "700",
     },
     content: {
-        marginTop: 10,
-        gap: 8,
+        marginTop: SPACING.smd,
+        gap: SPACING.sm,
     },
     detailRow: {
         flexDirection: "row",
@@ -136,14 +136,14 @@ const styles = StyleSheet.create({
     detailItem: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
+        gap: SPACING.xs,
     },
     detailText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
     },
     refundAmount: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "700",
         color: COLORS.primary,
     },
@@ -153,11 +153,11 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
-        paddingTop: 8,
-        marginTop: 4,
+        paddingTop: SPACING.sm,
+        marginTop: SPACING.xs,
     },
     dateText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
 });

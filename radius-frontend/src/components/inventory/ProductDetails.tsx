@@ -4,6 +4,7 @@ import { ProductScreenDetails } from "@/types/inventory.types";
 import { COLORS } from "@/constants/colors";
 import { DetailRow } from "@/components/common/DetailRow";
 import { Ionicons } from "@expo/vector-icons";
+import { SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 
 interface ProductDetailsProps {
     details: ProductScreenDetails;
@@ -99,7 +100,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ details }) => {
             </View>
 
             <TouchableOpacity style={styles.linkButton}>
-                <Ionicons name="open-outline" size={16} color={COLORS.primary} style={{ marginRight: 8 }} />
+                <Ionicons name="open-outline" size={16} color={COLORS.primary} style={{ marginRight: SPACING.sm }} />
                 <Text style={styles.linkButtonText}>Details on Staples.ca</Text>
             </TouchableOpacity>
 
@@ -117,42 +118,42 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.surface,
         borderWidth: 1,
         borderColor: COLORS.border,
-        borderRadius: 8,
-        margin: 16,
+        borderRadius: RADIUS.md,
+        margin: SPACING.lg,
         overflow: "hidden",
     },
     row: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: 14,
-        paddingHorizontal: 16,
+        paddingVertical: SPACING.mdl,
+        paddingHorizontal: SPACING.lg,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
     highlightRow: {
-        backgroundColor: "rgba(0,0,0,0.02)",
+        backgroundColor: COLORS.blackAlpha02,
     },
     collapsibleRow: {
-        backgroundColor: "rgba(0,0,0,0.02)",
+        backgroundColor: COLORS.blackAlpha02,
     },
     rowLabelContainer: {
         flexDirection: "row",
         alignItems: "center",
     },
     rowLabel: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         color: COLORS.textPrimary,
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     rowValue: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
     expandedContent: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
+        paddingVertical: SPACING.sm,
+        paddingHorizontal: SPACING.lg,
         backgroundColor: COLORS.surface,
     },
     lastReceivedValueContainer: {
@@ -161,30 +162,30 @@ const styles = StyleSheet.create({
     },
     badge: {
         backgroundColor: COLORS.error,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-        marginRight: 8,
+        paddingHorizontal: SPACING.xsm,
+        paddingVertical: SPACING.xxs,
+        borderRadius: RADIUS.xs,
+        marginRight: SPACING.sm,
     },
     badgeText: {
-        color: "#FFF",
-        fontSize: 12,
+        color: COLORS.primaryText,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "600",
     },
     linkButton: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        padding: 12,
+        padding: SPACING.md,
         borderWidth: 1,
         borderColor: COLORS.primary,
-        borderRadius: 8,
-        marginHorizontal: 16,
-        marginTop: 8,
+        borderRadius: RADIUS.md,
+        marginHorizontal: SPACING.lg,
+        marginTop: SPACING.sm,
     },
     linkButtonText: {
         color: COLORS.primary,
         fontWeight: "600",
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
     },
 });

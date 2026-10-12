@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text, View, TouchableOpacity, StyleProp, ViewStyle } from "react-native";
 import { COLORS } from "@/constants/colors";
 import { ConnectionStatus } from "@/types/websocket.types";
+import { SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 
 export interface ConnectionStatusBadgeProps {
     status: ConnectionStatus | string;
@@ -27,14 +28,14 @@ export const ConnectionStatusBadge: React.FC<ConnectionStatusBadgeProps> = ({
         textColor = COLORS.activeText;
         label = "Live";
     } else if (normalized === "reconnecting" || normalized === "connecting") {
-        bg = "#FFF8E1";
-        dotColor = "#F57F17";
-        textColor = "#E65100";
+        bg = COLORS.pendingBg;
+        dotColor = COLORS.pending;
+        textColor = COLORS.warning;
         label = normalized === "reconnecting" ? "Reconnecting" : "Connecting";
     } else {
-        bg = "#F5F5F5";
-        dotColor = "#9E9E9E";
-        textColor = "#757575";
+        bg = COLORS.background;
+        dotColor = COLORS.textMuted;
+        textColor = COLORS.textSecondary;
         label = "Offline";
     }
 
@@ -63,8 +64,8 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 9,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingVertical: SPACING.xs,
+        borderRadius: RADIUS.lg,
         gap: 5,
         alignSelf: "center",
     },
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
         borderRadius: 3.5,
     },
     label: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "700",
         textTransform: "uppercase",
         letterSpacing: 0.5,

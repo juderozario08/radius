@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, StyleProp, ViewStyle, TextStyle } from "react-native";
 import { COLORS } from "@/constants/colors";
 import { Badge } from "@/components/common/Badge";
+import { FONT_SIZE } from "@/constants/styles";
 
 export interface OrderStatusBadgeProps {
     status: string;
@@ -17,22 +18,22 @@ export const getOrderStatusColor = (status: string): { bg: string; text: string 
         case "READY":
         case "AWAITING PICKUP":
         case "AWAITING_PICKUP":
-            return { bg: "#FFF3E0", text: "#E65100" };
+            return { bg: COLORS.warningBg, text: COLORS.warning };
 
         case "WORK IN PROGRESS":
         case "WORK_IN_PROGRESS":
         case "PROCESSING":
         case "PICKING":
         case "PACKED":
-            return { bg: "#E3F2FD", text: "#1565C0" };
+            return { bg: COLORS.infoBg, text: COLORS.info };
 
         case "SHIPPED":
         case "OUT FOR DELIVERY":
         case "OUT_FOR_DELIVERY":
-            return { bg: "#F3E5F5", text: "#6A1B9A" };
+            return { bg: COLORS.purpleBg, text: COLORS.purple };
 
         case "DELIVERING":
-            return { bg: "#E0F7FA", text: "#006064" };
+            return { bg: COLORS.cyanBg, text: COLORS.cyan };
 
         case "RELEASED":
         case "DELIVERED":
@@ -41,7 +42,7 @@ export const getOrderStatusColor = (status: string): { bg: string; text: string 
 
         case "PENDING":
         case "PLACED":
-            return { bg: "#FFF8E1", text: "#F57F17" };
+            return { bg: COLORS.pendingBg, text: COLORS.pending };
 
         case "CANCELLED":
             return { bg: COLORS.inactiveBg, text: COLORS.inactiveText };
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     text: {
-        fontSize: 10,
+        fontSize: FONT_SIZE.xxs,
         fontWeight: "700",
         textTransform: "uppercase",
         letterSpacing: 0.5,

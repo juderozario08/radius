@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { PurchaseOrderItemDetail, StockTransferItemDetail } from "@/types/receiving.types";
 
 interface ReceivingItemCardProps {
@@ -24,7 +24,7 @@ export function ReceivingItemCard({ item, scannedQty, onUpdateQuantity }: Receiv
     const incrementQuantity = () => onUpdateQuantity(Math.min(qtyOrderedOrRequested - qtyAlreadyReceived, scannedQty + 1));
 
     return (
-        <View style={[globalStyles.card, { marginBottom: 12, padding: 16, borderWidth: 1, borderColor: COLORS.border, shadowOpacity: 0.05, elevation: 1 }]}>
+        <View style={[globalStyles.card, { marginBottom: SPACING.md, padding: SPACING.lg, borderWidth: 1, borderColor: COLORS.border, shadowOpacity: 0.05, elevation: 1 }]}>
             <Text style={styles.productName}>{item.name}</Text>
             <Text style={styles.productMeta}>SKU: {item.sku} | UPC: {item.upc}</Text>
 
@@ -57,32 +57,32 @@ export function ReceivingItemCard({ item, scannedQty, onUpdateQuantity }: Receiv
 
 const styles = StyleSheet.create({
     productName: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     productMeta: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
-        marginBottom: 12,
+        marginBottom: SPACING.md,
     },
     progressContainer: {
-        marginBottom: 16,
+        marginBottom: SPACING.lg,
     },
     progressBarBg: {
         height: 6,
         backgroundColor: COLORS.inactiveBg,
         borderRadius: 3,
         overflow: 'hidden',
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     progressBarFill: {
         height: '100%',
-        backgroundColor: '#388E3C',
+        backgroundColor: COLORS.successAccent,
     },
     progressText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
         textAlign: 'right',
         fontWeight: '600',
@@ -91,35 +91,35 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingTop: 8,
+        paddingTop: SPACING.sm,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
     },
     quantityLabel: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
-        marginBottom: 2,
+        marginBottom: SPACING.xxs,
     },
     scanLabel: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "600",
         color: COLORS.primary,
     },
     quantityControls: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 16,
+        gap: SPACING.lg,
     },
     quantityButton: {
         backgroundColor: COLORS.primary,
         width: 32,
         height: 32,
-        borderRadius: 16,
+        borderRadius: RADIUS.xl,
         justifyContent: "center",
         alignItems: "center",
     },
     quantityDisplay: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "bold",
         width: 30,
         textAlign: "center",

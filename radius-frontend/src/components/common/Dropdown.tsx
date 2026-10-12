@@ -8,6 +8,7 @@ import {
     TouchableWithoutFeedback
 } from "react-native";
 import { COLORS } from "@/constants/colors";
+import { SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 
 export interface DropdownOption<T> {
     label: string;
@@ -96,66 +97,66 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.surface,
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
+        borderRadius: RADIUS.md,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.smd,
         minWidth: 70,
     },
     dropdownDisabled: {
         opacity: 0.5,
     },
     dropdownTriggerText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "500",
         color: COLORS.textPrimary,
     },
     dropdownIcon: {
-        fontSize: 10,
+        fontSize: FONT_SIZE.xxs,
         color: COLORS.textSecondary,
-        marginLeft: 8,
+        marginLeft: SPACING.sm,
     },
     dropdownOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.4)",
+        backgroundColor: COLORS.overlayLight,
         justifyContent: "center",
         alignItems: "center",
     },
     dropdownMenu: {
         width: 200,
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 8,
-        shadowColor: "#000",
+        borderRadius: RADIUS.lg,
+        padding: SPACING.sm,
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
         elevation: 8,
     },
     dropdownMenuTitle: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textSecondary,
         textAlign: "center",
-        marginBottom: 8,
-        marginTop: 4,
+        marginBottom: SPACING.sm,
+        marginTop: SPACING.xs,
     },
     dropdownItem: {
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        marginBottom: 4,
+        paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.lg,
+        borderRadius: RADIUS.md,
+        marginBottom: SPACING.xs,
     },
     dropdownItemActive: {
         backgroundColor: COLORS.primary,
     },
     dropdownItemText: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "500",
         color: COLORS.textPrimary,
         textAlign: "center",
     },
     dropdownItemTextActive: {
-        color: "#FFFFFF",
+        color: COLORS.primaryText,
         fontWeight: "600",
     },
 });

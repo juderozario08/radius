@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { COLORS } from "@/constants/colors";
+import { SPACING, FONT_SIZE } from "@/constants/styles";
 
 export const DetailRow: React.FC<{ label: string; value: string | number; layout?: "inline" | "row" | "stacked" }> = ({
     label,
@@ -32,29 +33,29 @@ export const DetailRow: React.FC<{ label: string; value: string | number; layout
 };
 
 const styles = StyleSheet.create({
-    detailRow: { fontSize: 14 },
+    detailRow: { fontSize: FONT_SIZE.md },
     label: { color: COLORS.textSecondary, fontWeight: "500" },
     value: { color: COLORS.textPrimary, fontWeight: "400" },
     rowContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "flex-start",
-        paddingVertical: 2,
+        paddingVertical: SPACING.xxs,
     },
     rowValue: {
         color: COLORS.textPrimary,
         fontWeight: "400",
         flex: 1,
         textAlign: "right",
-        marginLeft: 12,
+        marginLeft: SPACING.md,
     },
     stackedContainer: {
-        paddingVertical: 4,
+        paddingVertical: SPACING.xs,
     },
     stackedValue: {
         color: COLORS.textPrimary,
         fontWeight: "400",
-        marginTop: 4,
+        marginTop: SPACING.xs,
         lineHeight: 20,
     },
 });

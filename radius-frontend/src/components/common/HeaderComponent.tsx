@@ -1,5 +1,6 @@
 import { COLORS } from "@/constants/colors";
 import { View } from "react-native";
+import { SPACING } from "@/constants/styles";
 
 interface HeaderComponentType {
     headerRight?: React.ReactNode | React.ReactNode[];
@@ -12,14 +13,14 @@ const HeaderComponent = ({ headerRight, headerLeft, headerCenter }: HeaderCompon
         <View style={{
             flexDirection: 'row',
             alignItems: 'center',
-            paddingHorizontal: 10,
+            paddingHorizontal: SPACING.smd,
             backgroundColor: COLORS.headerBackground,
             borderBottomWidth: 1,
-            borderBottomColor: '#eee',
+            borderBottomColor: COLORS.border,
             minHeight: 50,
             zIndex: 1,
         }}>
-            <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'center', flexDirection: 'row', zIndex: 1, gap: 10 }}>
+            <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'center', flexDirection: 'row', zIndex: 1, gap: SPACING.smd }}>
                 {headerLeft && Array.isArray(headerLeft) ? headerLeft.map((e, idx) => <View key={idx}>{e}</View>) : headerLeft}
             </View>
             <View style={{
@@ -34,7 +35,7 @@ const HeaderComponent = ({ headerRight, headerLeft, headerCenter }: HeaderCompon
             }}>
                 {headerCenter}
             </View>
-            <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', flexDirection: 'row', zIndex: 1, gap: 10 }}>
+            <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', flexDirection: 'row', zIndex: 1, gap: SPACING.smd }}>
                 {headerRight && Array.isArray(headerRight) ? headerRight.map((e, idx) => <View key={idx}>{e}</View>) : headerRight}
             </View>
         </View>

@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useCameraPermission } from "@/hooks/useBarcode";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
@@ -173,10 +173,10 @@ export const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>
                                     ]}
                                 >
                                     {scanStatus === "success" && (
-                                        <Ionicons name="checkmark-circle" size={48} color="#4CAF50" />
+                                        <Ionicons name="checkmark-circle" size={48} color={COLORS.successBright} />
                                     )}
                                     {scanStatus === "error" && (
-                                        <Ionicons name="close-circle" size={48} color="#EF4444" />
+                                        <Ionicons name="close-circle" size={48} color={COLORS.dangerBright} />
                                     )}
                                 </View>
                             </View>
@@ -228,13 +228,13 @@ const styles = StyleSheet.create({
     },
     cameraContainer: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: COLORS.black,
         overflow: "hidden",
     },
     cameraInner: {
         flex: 1,
         overflow: "hidden",
-        borderRadius: 12,
+        borderRadius: RADIUS.lg,
     },
     scannerOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -245,34 +245,34 @@ const styles = StyleSheet.create({
         width: 250,
         height: 150,
         borderWidth: 2,
-        borderColor: "rgba(255, 255, 255, 0.5)",
-        borderRadius: 16,
+        borderColor: COLORS.whiteAlpha50,
+        borderRadius: RADIUS.xl,
         justifyContent: "center",
         alignItems: "center",
     },
     reticleSuccess: {
-        borderColor: "#4CAF50",
+        borderColor: COLORS.successBright,
         borderWidth: 3,
-        backgroundColor: "rgba(76, 175, 80, 0.2)",
+        backgroundColor: COLORS.successOverlay,
     },
     reticleError: {
-        borderColor: "#EF4444",
+        borderColor: COLORS.dangerBright,
         borderWidth: 3,
-        backgroundColor: "rgba(239, 68, 68, 0.2)",
+        backgroundColor: COLORS.dangerOverlay,
     },
     cameraTopControls: {
         position: "absolute",
         top: 16,
         right: 16,
         flexDirection: "row",
-        gap: 12,
+        gap: SPACING.md,
         zIndex: 10,
     },
     controlIcon: {
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        backgroundColor: COLORS.overlay,
         width: 40,
         height: 40,
-        borderRadius: 20,
+        borderRadius: RADIUS.xxl,
         justifyContent: "center",
         alignItems: "center",
     },
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
         borderColor: "white",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "rgba(0,0,0,0.2)",
+        backgroundColor: COLORS.blackAlpha20,
     },
     snapButtonInner: {
         width: 54,
@@ -302,12 +302,12 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "flex-end",
         alignItems: "center",
-        marginTop: 12,
-        marginRight: 16,
-        gap: 12,
+        marginTop: SPACING.md,
+        marginRight: SPACING.lg,
+        gap: SPACING.md,
     },
     snapModeText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "600",
         color: COLORS.textSecondary,
     },
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
         height: 28,
         borderRadius: 14,
         backgroundColor: COLORS.border,
-        padding: 2,
+        padding: SPACING.xxs,
         justifyContent: "center",
     },
     snapModePillActive: {
@@ -325,9 +325,9 @@ const styles = StyleSheet.create({
     snapModeKnob: {
         width: 24,
         height: 24,
-        borderRadius: 12,
+        borderRadius: RADIUS.lg,
         backgroundColor: "white",
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 1,

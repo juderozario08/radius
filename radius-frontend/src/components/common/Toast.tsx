@@ -1,61 +1,63 @@
 import { View } from "react-native";
 import Toast, { BaseToast, ErrorToast, ToastProps } from "react-native-toast-message";
+import { RADIUS, FONT_SIZE } from "@/constants/styles";
+import { COLORS } from "@/constants/colors";
 
 const config = {
     success: (props: ToastProps) => (
         <BaseToast
             {...props}
             style={{
-                backgroundColor: "#16A34A",
+                backgroundColor: COLORS.toastSuccessBg,
                 borderWidth: 2,
                 borderLeftWidth: 2,
-                borderColor: "#4ADE80",
-                borderLeftColor: "#4ADE80",
-                borderRadius: 10,
+                borderColor: COLORS.toastSuccessBorder,
+                borderLeftColor: COLORS.toastSuccessBorder,
+                borderRadius: RADIUS.mdl,
             }}
-            text1Style={{ color: "#F0FDF4", fontSize: 16, fontWeight: "600" }}
+            text1Style={{ color: COLORS.toastSuccessText, fontSize: FONT_SIZE.lg, fontWeight: "600" }}
         />
     ),
     error: (props: ToastProps) => (
         <ErrorToast
             {...props}
             style={{
-                backgroundColor: "#DC2626",
+                backgroundColor: COLORS.toastErrorBg,
                 borderWidth: 2,
                 borderLeftWidth: 2,
-                borderColor: "#F87171",
-                borderLeftColor: "#F87171",
-                borderRadius: 10,
+                borderColor: COLORS.toastErrorBorder,
+                borderLeftColor: COLORS.toastErrorBorder,
+                borderRadius: RADIUS.mdl,
             }}
-            text1Style={{ color: "#FEF2F2", fontSize: 16, fontWeight: "600" }}
+            text1Style={{ color: COLORS.toastErrorText, fontSize: FONT_SIZE.lg, fontWeight: "600" }}
         />
     ),
     info: (props: ToastProps) => (
         <BaseToast
             {...props}
             style={{
-                backgroundColor: "#2563EB",
+                backgroundColor: COLORS.toastInfoBg,
                 borderLeftWidth: 2,
                 borderWidth: 2,
-                borderColor: "#60A5FA",
-                borderLeftColor: "#60A5FA",
-                borderRadius: 10,
+                borderColor: COLORS.toastInfoBorder,
+                borderLeftColor: COLORS.toastInfoBorder,
+                borderRadius: RADIUS.mdl,
             }}
-            text1Style={{ color: "#EFF6FF", fontSize: 16, fontWeight: "600" }}
+            text1Style={{ color: COLORS.toastInfoText, fontSize: FONT_SIZE.lg, fontWeight: "600" }}
         />
     ),
     warning: (props: ToastProps) => (
         <BaseToast
             {...props}
             style={{
-                backgroundColor: "#D97706",
+                backgroundColor: COLORS.toastWarningBg,
                 borderLeftWidth: 2,
                 borderWidth: 2,
-                borderColor: "#FBBF24",
-                borderLeftColor: "#FBBF24",
-                borderRadius: 10,
+                borderColor: COLORS.toastWarningBorder,
+                borderLeftColor: COLORS.toastWarningBorder,
+                borderRadius: RADIUS.mdl,
             }}
-            text1Style={{ color: "#FFFBEB", fontSize: 16, fontWeight: "600" }}
+            text1Style={{ color: COLORS.toastWarningText, fontSize: FONT_SIZE.lg, fontWeight: "600" }}
         />
     ),
 };

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, TextInput, StyleSheet } from "react-native";
 import { COLORS } from "@/constants/colors";
+import { SPACING, RADIUS } from "@/constants/styles";
 
 interface LocationInputProps {
     value: string;
@@ -35,14 +36,14 @@ export const LocationInput: React.FC<LocationInputProps> = ({ value, onChangeTex
 const styles = StyleSheet.create({
     container: {
         width: "100%",
-        paddingHorizontal: 8,
+        paddingHorizontal: SPACING.sm,
     },
     input: {
         width: "100%",
         height: 56,
         borderWidth: 2,
         borderColor: COLORS.inputBorder,
-        borderRadius: 12,
+        borderRadius: RADIUS.lg,
         backgroundColor: COLORS.inputBg,
         textAlign: "center",
         fontSize: 24,

@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { COLORS } from "@/constants/colors";
 import { PurchaseOrderItemDetail, StockTransferItemDetail } from "@/types/receiving.types";
+import { SPACING, FONT_SIZE } from "@/constants/styles";
 
 interface POItemRowProps {
     item: PurchaseOrderItemDetail | StockTransferItemDetail;
@@ -34,7 +35,7 @@ export function POItemRow({ item, pendingScanQty = 0 }: POItemRowProps) {
                 )}
             </View>
             <View style={styles.progressBg}>
-                <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: isFullyReceived ? '#388E3C' : COLORS.primary }]} />
+                <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: isFullyReceived ? COLORS.successAccent : COLORS.primary }]} />
             </View>
         </View>
     );
@@ -42,8 +43,8 @@ export function POItemRow({ item, pendingScanQty = 0 }: POItemRowProps) {
 
 const styles = StyleSheet.create({
     container: {
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.lg,
         backgroundColor: COLORS.surface,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
@@ -52,36 +53,36 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     name: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "600",
         color: COLORS.textPrimary,
         flex: 1,
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     qtyText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "700",
         color: COLORS.textSecondary,
     },
     fullyReceivedText: {
-        color: '#388E3C',
+        color: COLORS.successAccent,
     },
     metaRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 8,
+        marginBottom: SPACING.sm,
     },
     sku: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     pendingText: {
-        fontSize: 12,
-        color: '#F57C00',
+        fontSize: FONT_SIZE.sm,
+        color: COLORS.warningAccent,
         fontWeight: '600',
     },
     progressBg: {

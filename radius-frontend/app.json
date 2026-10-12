@@ -23,8 +23,7 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.radiusfrontend",
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -36,7 +35,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Radius to scan product and location barcodes."
+          "cameraPermission": "Allow Radius to scan product and location barcodes.",
+          "recordAudioAndroid": false
         }
       ],
       [

@@ -1,10 +1,12 @@
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
-import { ENDPOINTS } from "@/constants/routes";
-import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
+import { globalStyles, SPACING } from "@/constants/styles";
+import { orderDetailStyles as styles } from "@/components/orders/orderDetailStyles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
-import { DetailRow } from "@/components/common/DetailRow";
+import { OrderFinancialsModal } from "@/components/orders/OrderFinancialsModal";
+import { OrderAssignModal } from "@/components/orders/OrderAssignModal";
+import { OrderItemActionModal } from "@/components/orders/OrderItemActionModal";
 import { BarcodeScanner, BarcodeScannerRef } from "@/components/common/BarcodeScanner";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -13,40 +15,20 @@ import {
     FlatList,
     Modal,
     ScrollView,
-    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
-import { callApi } from "@/utils/helpers";
-import { GetOnlineOrderByIDResponse, OnlineOrder, OnlineOrderItem, OrderItemStatus } from "@/types/order.types";
-import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
+import { OnlineOrder, OnlineOrderItem, OrderItemStatus } from "@/types/order.types";
+import { assignOnlineOrder, cancelOnlineOrder, completeOnlineOrderPick, getOnlineOrder, updateOnlineOrderItem } from "@/api/onlineOrders.api";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { formatMoney } from "@/utils/money";
 
 type TabType = "SCANNER" | "PRODUCTS";
-
-const CANCEL_ITEM_REASONS = [
-    "Out of Stock",
-    "Damaged / Defective",
-    "Item Cannot Be Located",
-    "Store Unable to Fulfill",
-];
-
-const REMOVE_ITEM_REASONS = [
-    "Customer Requested Removal",
-    "Customer Changed Mind",
-    "Ordered by Mistake",
-];
-
-const INVALID_QTY_REASONS = [
-    "Insufficient Stock Available",
-    "Remaining Units Damaged / Unavailable",
-];
 
 const CANCEL_ORDER_REASONS = [
     "Customer Requested Cancellation",
@@ -108,92 +90,24 @@ export default function OnlineOrderDetail() {
     const [isFinancialsModalVisible, setIsFinancialsModalVisible] = useState(false);
 
     const [isAssignModalVisible, setIsAssignModalVisible] = useState(false);
-    const [employees, setEmployees] = useState<Employee[]>([]);
-    const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
-    const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
-    const [isAssigning, setIsAssigning] = useState(false);
-
     const [selectedItemForAction, setSelectedItemForAction] = useState<OnlineOrderItem | null>(null);
     const [itemActionType, setItemActionType] = useState<"MENU" | "CANCEL" | "REMOVE" | "INVALID_QTY" | null>(null);
     const [selectedItemReason, setSelectedItemReason] = useState<string>("");
     const [tempInvalidQty, setTempInvalidQty] = useState<number>(0);
-
-    const openAssignModal = async () => {
-        setIsAssignModalVisible(true);
-        setSelectedEmployeeId(order?.assigned_to || null);
-        setIsLoadingEmployees(true);
-        const storeParam = order?.store_id ? `&store_id=${order.store_id}` : "";
-        const endpoint = user?.role === "ADMIN"
-            ? `${ENDPOINTS.ADMIN.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`
-            : `${ENDPOINTS.MANAGER.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`;
-        const data = await callApi<GetAllEmployeeResponse>(
-            endpoint,
-            { method: "GET" },
-            logout
-        );
-        if (data && data.employees) {
-            setEmployees(data.employees.filter((e) => !e.is_terminated && e.role !== "ADMIN"));
-        }
-        setIsLoadingEmployees(false);
-    };
-
-    const handleAssignOrder = async () => {
-        if (!selectedEmployeeId || !order) {
-            Alert.alert("Validation", "Please select an employee to assign this order to.");
-            return;
-        }
-        setIsAssigning(true);
-        const res = await callApi<{ message?: string; online_order?: OnlineOrder; assigned_to?: number; assigned_to_name?: string }>(
-            ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign(order.order_id),
-            {
-                method: "PUT",
-                body: JSON.stringify({
-                    employee_id: selectedEmployeeId,
-                }),
-            },
-            logout
-        );
-        if (res) {
-            const selectedEmp = employees.find((e) => e.employee_id === selectedEmployeeId);
-            const assigneeName = res.assigned_to_name || (selectedEmp ? `${selectedEmp.first_name} ${selectedEmp.last_name}` : "Associate");
-            setOrder((prev) =>
-                prev
-                    ? {
-                          ...prev,
-                          assigned_to: selectedEmployeeId,
-                          assigned_to_name: assigneeName,
-                      }
-                    : prev
-            );
-            setIsAssignModalVisible(false);
-            Alert.alert("Success", `Order #${order.order_id} assigned to ${assigneeName}.`);
-        }
-        setIsAssigning(false);
-    };
 
     const fetchOrderDetails = useCallback(async () => {
         if (!id || typeof id !== "string") return;
         setIsLoading(true);
         setError(null);
 
-        const endpoint = ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.get(id);
-        const data = await callApi<GetOnlineOrderByIDResponse>(endpoint, { method: "GET" }, logout);
+        const data = await getOnlineOrder(id, logout);
 
         if (data && data.online_order) {
             setOrder(data.online_order);
             setItems(data.items || []);
 
             if (!data.online_order.assigned_to && user?.employee_id && user?.role !== "ADMIN") {
-                callApi<{ online_order: OnlineOrder }>(
-                    ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign(data.online_order.order_id),
-                    {
-                        method: "PUT",
-                        body: JSON.stringify({
-                            employee_id: user.employee_id,
-                        }),
-                    },
-                    logout
-                ).then((res) => {
+                assignOnlineOrder(data.online_order.order_id, user.employee_id, logout).then((res) => {
                     if (res && res.online_order) {
                         setOrder(res.online_order);
                     }
@@ -247,17 +161,7 @@ export default function OnlineOrderDetail() {
     const handleSaveScannedQuantity = async () => {
         if (!scannedItem || !order) return;
         setIsSaving(true);
-        const updated = await callApi(
-            ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.updateItem(order.order_id, scannedItem.item.order_item_id),
-            {
-                method: "PUT",
-                body: JSON.stringify({
-                    picked_qty: scannedItem.tempPickedQty,
-                    status: "ACTIVE",
-                }),
-            },
-            logout
-        );
+        const updated = await updateOnlineOrderItem(order.order_id, scannedItem.item.order_item_id, scannedItem.tempPickedQty, "ACTIVE", logout);
         if (updated === null) {
             setIsSaving(false);
             return;
@@ -280,18 +184,7 @@ export default function OnlineOrderDetail() {
         if (!selectedItemForAction || !order) return;
         setIsSaving(true);
         const finalPickedQty = pickedQty !== undefined ? pickedQty : selectedItemForAction.picked_qty;
-        const updated = await callApi(
-            ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.updateItem(order.order_id, selectedItemForAction.order_item_id),
-            {
-                method: "PUT",
-                body: JSON.stringify({
-                    picked_qty: finalPickedQty,
-                    status: status,
-                    reason: reason || null,
-                }),
-            },
-            logout
-        );
+        const updated = await updateOnlineOrderItem(order.order_id, selectedItemForAction.order_item_id, finalPickedQty, status, logout, reason || null);
         if (updated === null) {
             setIsSaving(false);
             return;
@@ -313,11 +206,7 @@ export default function OnlineOrderDetail() {
     const handleConfirmOrderPickedUp = async () => {
         if (!order) return;
         setIsSaving(true);
-        const res = await callApi<{ online_order: OnlineOrder }>(
-            ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.completePick(order.order_id),
-            { method: "POST" },
-            logout
-        );
+        const res = await completeOnlineOrderPick(order.order_id, logout);
         if (res === null) {
             setIsSaving(false);
             return;
@@ -336,16 +225,7 @@ export default function OnlineOrderDetail() {
     const handleCancelOrderSubmit = async () => {
         if (!order) return;
         setIsSaving(true);
-        const res = await callApi<{ online_order: OnlineOrder }>(
-            ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.cancel(order.order_id),
-            {
-                method: "POST",
-                body: JSON.stringify({
-                    reason: selectedCancelOrderReason,
-                }),
-            },
-            logout
-        );
+        const res = await cancelOnlineOrder(order.order_id, selectedCancelOrderReason, logout);
         if (res === null) {
             setIsSaving(false);
             return;
@@ -470,7 +350,7 @@ export default function OnlineOrderDetail() {
                             <TouchableOpacity
                                 style={styles.reassignBtn}
                                 activeOpacity={0.7}
-                                onPress={openAssignModal}
+                                onPress={() => setIsAssignModalVisible(true)}
                             >
                                 <Ionicons name="swap-horizontal" size={14} color={COLORS.primary} />
                                 <Text style={styles.reassignBtnText}>
@@ -855,7 +735,7 @@ export default function OnlineOrderDetail() {
                                     style={styles.menuItem}
                                     onPress={() => {
                                         setIsOrderMenuVisible(false);
-                                        openAssignModal();
+                                        setIsAssignModalVisible(true);
                                     }}
                                 >
                                     <Ionicons name="swap-horizontal" size={20} color={COLORS.textPrimary} />
@@ -955,921 +835,29 @@ export default function OnlineOrderDetail() {
                 </View>
             </Modal>
 
-            <Modal
-                visible={isFinancialsModalVisible}
-                transparent={true}
-                animationType="slide"
-                onRequestClose={() => setIsFinancialsModalVisible(false)}
-            >
-                <View style={globalStyles.modalOverlay}>
-                    <View style={[globalStyles.modalContentWrapper, { maxHeight: "80%" }]}>
-                        <View style={styles.modalBody}>
-                            <View style={styles.modalHeaderRow}>
-                                <Text style={styles.modalTitle}>Order Breakdown</Text>
-                                <TouchableOpacity onPress={() => setIsFinancialsModalVisible(false)}>
-                                    <Ionicons name="close" size={24} color={COLORS.textPrimary} />
-                                </TouchableOpacity>
-                            </View>
+            <OrderFinancialsModal order={order} visible={isFinancialsModalVisible} onClose={() => setIsFinancialsModalVisible(false)} />
 
-                            <ScrollView showsVerticalScrollIndicator={false}>
-                                {order.shipping_address ? (
-                                    <View style={{ marginBottom: SPACING.lg }}>
-                                        <Text style={styles.detailSectionTitle}>Shipping</Text>
-                                        <DetailRow label="Address:" value={order.shipping_address} />
-                                        <DetailRow label="Carrier:" value={order.carrier || "Standard"} />
-                                        <DetailRow label="Tracking:" value={order.tracking_number || "N/A"} />
-                                    </View>
-                                ) : null}
+            <OrderItemActionModal
+                selectedItemForAction={selectedItemForAction}
+                setSelectedItemForAction={setSelectedItemForAction}
+                itemActionType={itemActionType}
+                setItemActionType={setItemActionType}
+                selectedItemReason={selectedItemReason}
+                setSelectedItemReason={setSelectedItemReason}
+                tempInvalidQty={tempInvalidQty}
+                setTempInvalidQty={setTempInvalidQty}
+                isSaving={isSaving}
+                handleItemExceptionSubmit={handleItemExceptionSubmit}
+            />
 
-                                <Text style={styles.detailSectionTitle}>Financials</Text>
-                                <DetailRow label="Subtotal:" value={formatMoney(order.subtotal)} />
-                                <DetailRow label="Tax:" value={formatMoney(order.tax_amount)} />
-                                <DetailRow label="Shipping Fee:" value={formatMoney(order.shipping_fee)} />
-                                <DetailRow label="Discount:" value={formatMoney(order.discount_total)} />
-                                <View style={globalStyles.divider} />
-                                <DetailRow label="Total Amount:" value={formatMoney(order.total_amount)} />
-                            </ScrollView>
-
-                            <TouchableOpacity
-                                style={[globalStyles.buttonSecondary, { marginTop: SPACING.lg }]}
-                                onPress={() => setIsFinancialsModalVisible(false)}
-                            >
-                                <Text style={globalStyles.buttonTextSecondary}>Close</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
-
-            <Modal
-                visible={itemActionType !== null}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => {
-                    setItemActionType(null);
-                    setSelectedItemForAction(null);
-                }}
-            >
-                <View style={globalStyles.modalOverlay}>
-                    <View style={[globalStyles.modalContentWrapper, { maxWidth: 380 }]}>
-                        {selectedItemForAction && (
-                            <View style={styles.modalBody}>
-                                {itemActionType === "MENU" && (
-                                    <>
-                                        <Text style={styles.modalTitle}>Item Actions</Text>
-                                        <Text style={styles.modalSubtitle}>
-                                            SKU: {selectedItemForAction.product_sku || "Item #" + selectedItemForAction.product_id}
-                                        </Text>
-                                        <TouchableOpacity
-                                            style={styles.menuItem}
-                                            onPress={() => {
-                                                const prodId = selectedItemForAction.product_id;
-                                                setItemActionType(null);
-                                                setSelectedItemForAction(null);
-                                                if (prodId) {
-                                                    router.push(`/(app)/product/${prodId}`);
-                                                }
-                                            }}
-                                        >
-                                            <Ionicons name="information-circle-outline" size={20} color={COLORS.primary} />
-                                            <View style={{ marginLeft: SPACING.sm }}>
-                                                <Text style={[styles.menuItemText, { color: COLORS.primary }]}>View Product Details</Text>
-                                                <Text style={styles.menuItemSubText}>Check inventory, locations, or pricing</Text>
-                                            </View>
-                                        </TouchableOpacity>
-
-                                        <TouchableOpacity
-                                            style={styles.menuItem}
-                                            onPress={() => {
-                                                setSelectedItemReason(CANCEL_ITEM_REASONS[0]);
-                                                setItemActionType("CANCEL");
-                                            }}
-                                        >
-                                            <Ionicons name="close-circle-outline" size={20} color={COLORS.primary} />
-                                            <View style={{ marginLeft: SPACING.sm }}>
-                                                <Text style={[styles.menuItemText, { color: COLORS.primary }]}>Cancel Item</Text>
-                                                <Text style={styles.menuItemSubText}>Store out of stock or damaged</Text>
-                                            </View>
-                                        </TouchableOpacity>
-
-                                        <TouchableOpacity
-                                            style={styles.menuItem}
-                                            onPress={() => {
-                                                setSelectedItemReason(REMOVE_ITEM_REASONS[0]);
-                                                setItemActionType("REMOVE");
-                                            }}
-                                        >
-                                            <Ionicons name="trash-outline" size={20} color={COLORS.warning} />
-                                            <View style={{ marginLeft: SPACING.sm }}>
-                                                <Text style={[styles.menuItemText, { color: COLORS.warning }]}>Remove Item from Order</Text>
-                                                <Text style={styles.menuItemSubText}>Customer requested removal</Text>
-                                            </View>
-                                        </TouchableOpacity>
-
-                                        <TouchableOpacity
-                                            style={styles.menuItem}
-                                            onPress={() => {
-                                                setSelectedItemReason(INVALID_QTY_REASONS[0]);
-                                                setTempInvalidQty(Math.max(0, selectedItemForAction.picked_qty));
-                                                setItemActionType("INVALID_QTY");
-                                            }}
-                                        >
-                                            <Ionicons name="alert-circle-outline" size={20} color={COLORS.accent} />
-                                            <View style={{ marginLeft: SPACING.sm }}>
-                                                <Text style={[styles.menuItemText, { color: COLORS.accent }]}>Invalid Quantity</Text>
-                                                <Text style={styles.menuItemSubText}>Ordered more than available stock</Text>
-                                            </View>
-                                        </TouchableOpacity>
-
-                                        {(selectedItemForAction.status === "CANCELLED" || selectedItemForAction.status === "REMOVED") && (
-                                            <TouchableOpacity
-                                                style={styles.menuItem}
-                                                onPress={() => handleItemExceptionSubmit("ACTIVE", "", 0)}
-                                            >
-                                                <Ionicons name="refresh-outline" size={20} color={COLORS.success} />
-                                                <View style={{ marginLeft: SPACING.sm }}>
-                                                    <Text style={[styles.menuItemText, { color: COLORS.success }]}>Restore Item to Active</Text>
-                                                    <Text style={styles.menuItemSubText}>Undo item cancellation</Text>
-                                                </View>
-                                            </TouchableOpacity>
-                                        )}
-
-                                        <TouchableOpacity
-                                            style={[styles.menuItem, { borderBottomWidth: 0, marginTop: SPACING.sm }]}
-                                            onPress={() => {
-                                                setItemActionType(null);
-                                                setSelectedItemForAction(null);
-                                            }}
-                                        >
-                                            <Text style={[styles.menuItemText, { color: COLORS.textSecondary, textAlign: "center", width: "100%" }]}>
-                                                Cancel
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </>
-                                )}
-
-                                {itemActionType === "CANCEL" && (
-                                    <>
-                                        <Text style={styles.modalTitle}>Cancel Item</Text>
-                                        <Text style={styles.modalSubtitle}>Select reason for cancelling item:</Text>
-
-                                        {CANCEL_ITEM_REASONS.map((r) => (
-                                            <TouchableOpacity
-                                                key={r}
-                                                style={[styles.radioRow, selectedItemReason === r && styles.radioRowSelected]}
-                                                onPress={() => setSelectedItemReason(r)}
-                                            >
-                                                <Ionicons
-                                                    name={selectedItemReason === r ? "radio-button-on" : "radio-button-off"}
-                                                    size={20}
-                                                    color={selectedItemReason === r ? COLORS.primary : COLORS.textSecondary}
-                                                />
-                                                <Text style={[styles.radioLabel, selectedItemReason === r && styles.radioLabelSelected]}>
-                                                    {r}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-
-                                        <View style={styles.modalBtnRow}>
-                                            <TouchableOpacity
-                                                style={[globalStyles.buttonSecondary, { flex: 1 }]}
-                                                onPress={() => setItemActionType("MENU")}
-                                            >
-                                                <Text style={globalStyles.buttonTextSecondary}>Back</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[globalStyles.buttonPrimary, { flex: 1, backgroundColor: COLORS.primary }]}
-                                                onPress={() => handleItemExceptionSubmit("CANCELLED", selectedItemReason, 0)}
-                                                disabled={isSaving}
-                                            >
-                                                <Text style={globalStyles.buttonTextPrimary}>Confirm</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </>
-                                )}
-
-                                {itemActionType === "REMOVE" && (
-                                    <>
-                                        <Text style={styles.modalTitle}>Remove Item</Text>
-                                        <Text style={styles.modalSubtitle}>Select reason for removing item:</Text>
-
-                                        {REMOVE_ITEM_REASONS.map((r) => (
-                                            <TouchableOpacity
-                                                key={r}
-                                                style={[styles.radioRow, selectedItemReason === r && styles.radioRowSelected]}
-                                                onPress={() => setSelectedItemReason(r)}
-                                            >
-                                                <Ionicons
-                                                    name={selectedItemReason === r ? "radio-button-on" : "radio-button-off"}
-                                                    size={20}
-                                                    color={selectedItemReason === r ? COLORS.primary : COLORS.textSecondary}
-                                                />
-                                                <Text style={[styles.radioLabel, selectedItemReason === r && styles.radioLabelSelected]}>
-                                                    {r}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-
-                                        <View style={styles.modalBtnRow}>
-                                            <TouchableOpacity
-                                                style={[globalStyles.buttonSecondary, { flex: 1 }]}
-                                                onPress={() => setItemActionType("MENU")}
-                                            >
-                                                <Text style={globalStyles.buttonTextSecondary}>Back</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[globalStyles.buttonPrimary, { flex: 1, backgroundColor: COLORS.warning }]}
-                                                onPress={() => handleItemExceptionSubmit("REMOVED", selectedItemReason, 0)}
-                                                disabled={isSaving}
-                                            >
-                                                <Text style={globalStyles.buttonTextPrimary}>Remove</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </>
-                                )}
-
-                                {itemActionType === "INVALID_QTY" && (
-                                    <>
-                                        <Text style={styles.modalTitle}>Invalid Quantity</Text>
-                                        <Text style={styles.modalSubtitle}>
-                                            Ordered: {selectedItemForAction.quantity} | Set available stock:
-                                        </Text>
-
-                                        <View style={styles.stepperSection}>
-                                            <Text style={styles.stepperLabel}>Available Units:</Text>
-                                            <View style={styles.stepperControls}>
-                                                <TouchableOpacity
-                                                    style={styles.stepperBtn}
-                                                    onPress={() => setTempInvalidQty((q) => Math.max(0, q - 1))}
-                                                >
-                                                    <Ionicons name="remove" size={20} color={COLORS.textPrimary} />
-                                                </TouchableOpacity>
-                                                <Text style={styles.stepperValue}>{tempInvalidQty}</Text>
-                                                <TouchableOpacity
-                                                    style={styles.stepperBtn}
-                                                    onPress={() =>
-                                                        setTempInvalidQty((q) =>
-                                                            Math.min(selectedItemForAction.quantity, q + 1)
-                                                        )
-                                                    }
-                                                >
-                                                    <Ionicons name="add" size={20} color={COLORS.textPrimary} />
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-
-                                        <Text style={[styles.modalSubtitle, { marginTop: SPACING.md }]}>Reason:</Text>
-                                        {INVALID_QTY_REASONS.map((r) => (
-                                            <TouchableOpacity
-                                                key={r}
-                                                style={[styles.radioRow, selectedItemReason === r && styles.radioRowSelected]}
-                                                onPress={() => setSelectedItemReason(r)}
-                                            >
-                                                <Ionicons
-                                                    name={selectedItemReason === r ? "radio-button-on" : "radio-button-off"}
-                                                    size={20}
-                                                    color={selectedItemReason === r ? COLORS.primary : COLORS.textSecondary}
-                                                />
-                                                <Text style={[styles.radioLabel, selectedItemReason === r && styles.radioLabelSelected]}>
-                                                    {r}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-
-                                        <View style={styles.modalBtnRow}>
-                                            <TouchableOpacity
-                                                style={[globalStyles.buttonSecondary, { flex: 1 }]}
-                                                onPress={() => setItemActionType("MENU")}
-                                            >
-                                                <Text style={globalStyles.buttonTextSecondary}>Back</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[globalStyles.buttonPrimary, { flex: 1 }]}
-                                                onPress={() => handleItemExceptionSubmit("ACTIVE", selectedItemReason, tempInvalidQty)}
-                                                disabled={isSaving}
-                                            >
-                                                <Text style={globalStyles.buttonTextPrimary}>Save</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </>
-                                )}
-                            </View>
-                        )}
-                    </View>
-                </View>
-            </Modal>
-
-            <Modal
+            <OrderAssignModal
                 visible={isAssignModalVisible}
-                animationType="fade"
-                transparent={true}
-                onRequestClose={() => setIsAssignModalVisible(false)}
-            >
-                <View style={globalStyles.modalOverlay}>
-                    <View style={[globalStyles.modalContentWrapper, { maxHeight: "80%" }]}>
-                        <View style={globalStyles.modalCardContainer}>
-                            <View style={globalStyles.modalHeader}>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={globalStyles.modalTitle}>
-                                        {order.assigned_to ? "Reassign Order" : "Assign Order"}
-                                    </Text>
-                                    <Text style={globalStyles.modalSubtitle}>
-                                        Assign this order to a store associate
-                                    </Text>
-                                </View>
-                                <TouchableOpacity onPress={() => setIsAssignModalVisible(false)}>
-                                    <Ionicons name="close" size={24} color={COLORS.textSecondary} />
-                                </TouchableOpacity>
-                            </View>
-
-                            {isLoadingEmployees ? (
-                                <View style={{ paddingVertical: SPACING.xxlPlus, alignItems: "center" }}>
-                                    <ActivityIndicator size="small" color={COLORS.primary} />
-                                </View>
-                            ) : (
-                                <FlatList
-                                    style={{ maxHeight: 280, marginVertical: SPACING.smd }}
-                                    data={employees}
-                                    keyExtractor={(emp) => String(emp.employee_id)}
-                                    extraData={selectedEmployeeId}
-                                    renderItem={({ item: emp }) => {
-                                        const isSelected = selectedEmployeeId === emp.employee_id;
-                                        return (
-                                            <TouchableOpacity
-                                                style={[
-                                                    styles.empSelectItem,
-                                                    isSelected && styles.empSelectItemActive,
-                                                ]}
-                                                onPress={() => setSelectedEmployeeId(emp.employee_id)}
-                                            >
-                                                <Ionicons
-                                                    name={isSelected ? "radio-button-on" : "radio-button-off"}
-                                                    size={20}
-                                                    color={isSelected ? COLORS.primary : COLORS.textSecondary}
-                                                />
-                                                <View style={{ marginLeft: SPACING.md, flex: 1 }}>
-                                                    <Text
-                                                        style={[
-                                                            styles.empSelectName,
-                                                            isSelected && styles.empSelectNameActive,
-                                                        ]}
-                                                    >
-                                                        {emp.first_name} {emp.last_name}
-                                                    </Text>
-                                                    <Text style={styles.empSelectRole}>
-                                                        {emp.role} • Store #{emp.store_id}
-                                                    </Text>
-                                                </View>
-                                            </TouchableOpacity>
-                                        );
-                                    }}
-                                    ListEmptyComponent={
-                                        <View style={{ paddingVertical: SPACING.xl, alignItems: "center" }}>
-                                            <Text style={globalStyles.emptyText}>No available employees in this store</Text>
-                                        </View>
-                                    }
-                                />
-                            )}
-
-                            <View style={styles.modalBtnRow}>
-                                <TouchableOpacity
-                                    style={[globalStyles.buttonSecondary, { flex: 1 }]}
-                                    onPress={() => setIsAssignModalVisible(false)}
-                                >
-                                    <Text style={globalStyles.buttonTextSecondary}>Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[
-                                        globalStyles.buttonPrimary,
-                                        { flex: 1 },
-                                        (!selectedEmployeeId || isAssigning) && { opacity: 0.6 },
-                                    ]}
-                                    disabled={!selectedEmployeeId || isAssigning}
-                                    onPress={handleAssignOrder}
-                                >
-                                    {isAssigning ? (
-                                        <ActivityIndicator size="small" color={COLORS.surface} />
-                                    ) : (
-                                        <Text style={globalStyles.buttonTextPrimary}>
-                                            {order.assigned_to ? "Reassign" : "Assign"}
-                                        </Text>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+                order={order}
+                role={user?.role}
+                logout={logout}
+                onClose={() => setIsAssignModalVisible(false)}
+                onAssigned={(employeeId, name) => setOrder((previous) => previous ? { ...previous, assigned_to: employeeId, assigned_to_name: name } : previous)}
+            />
         </TopSafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    headerMenuBtn: {
-        padding: SPACING.xsm,
-    },
-    customerInfoCard: {
-        backgroundColor: COLORS.surface,
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.md,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    customerHeaderRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-    },
-    customerName: {
-        fontSize: FONT_SIZE.xl,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-        marginBottom: SPACING.xxs,
-    },
-    customerContact: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-    },
-    metaRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.smd,
-        marginTop: SPACING.sm,
-    },
-    metaBadge: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "700",
-        color: COLORS.accent,
-        backgroundColor: COLORS.accentSurface,
-        paddingHorizontal: SPACING.sm,
-        paddingVertical: SPACING.xxs,
-        borderRadius: RADIUS.sm,
-    },
-    metaText: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-    },
-    statusBadge: {
-        paddingHorizontal: SPACING.smd,
-        paddingVertical: SPACING.xs,
-        borderRadius: RADIUS.lg,
-    },
-    statusText: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "700",
-    },
-    warningBanner: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.sm,
-        backgroundColor: COLORS.inactiveBg,
-        borderWidth: 1,
-        borderColor: COLORS.dangerBorderLight,
-        borderRadius: RADIUS.md,
-        marginHorizontal: SPACING.lg,
-        marginTop: SPACING.md,
-        padding: SPACING.smd,
-    },
-    warningBannerText: {
-        flex: 1,
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.dangerDark,
-        fontWeight: "600",
-    },
-    cancellationBanner: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.xsm,
-        marginTop: SPACING.sm,
-        backgroundColor: COLORS.inactiveBg,
-        padding: SPACING.xsm,
-        borderRadius: RADIUS.sm,
-    },
-    cancellationText: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.primary,
-        fontWeight: "600",
-    },
-
-    tabContainer: {
-        flexDirection: "row",
-        backgroundColor: COLORS.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    tab: {
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: SPACING.md,
-        borderBottomWidth: 2,
-        borderBottomColor: "transparent",
-    },
-    tabActive: {
-        borderBottomColor: COLORS.primary,
-    },
-    tabText: {
-        fontSize: FONT_SIZE.mdl,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-    },
-    tabTextActive: {
-        color: COLORS.primary,
-    },
-
-    bannerContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.sm,
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.smd,
-    },
-    bannerError: {
-        backgroundColor: COLORS.inactiveBg,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.dangerBorderLight,
-    },
-    bannerSuccess: {
-        backgroundColor: COLORS.activeBg,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.successBorderLight,
-    },
-    bannerText: {
-        fontSize: FONT_SIZE.md,
-        fontWeight: "600",
-    },
-    bannerTextError: {
-        color: COLORS.primary,
-    },
-    bannerTextSuccess: {
-        color: COLORS.success,
-    },
-
-    scannerTabContent: {
-        flex: 1,
-    },
-    manualEntrySection: {
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.smd,
-        backgroundColor: COLORS.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    manualEntryLabel: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-        marginBottom: SPACING.xsm,
-    },
-    manualInputRow: {
-        flexDirection: "row",
-        gap: SPACING.sm,
-    },
-    manualInput: {
-        flex: 1,
-        height: 44,
-        paddingVertical: 0,
-    },
-    manualAddBtn: {
-        backgroundColor: COLORS.primary,
-        paddingHorizontal: SPACING.lg,
-        borderRadius: RADIUS.md,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    manualAddBtnText: {
-        color: COLORS.surface,
-        fontWeight: "700",
-        fontSize: FONT_SIZE.md,
-    },
-
-    scannedCardPopup: {
-        margin: SPACING.lg,
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.lg,
-        padding: SPACING.lg,
-        borderWidth: 1,
-        borderColor: COLORS.primary,
-        elevation: 4,
-        shadowColor: COLORS.black,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-    },
-    scannedCardHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: SPACING.md,
-    },
-    scannedCardTitle: {
-        fontSize: FONT_SIZE.lg,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    scannedCardSub: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-    stepperSection: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: SPACING.xs,
-        paddingVertical: SPACING.xsm,
-    },
-    stepperLabel: {
-        fontSize: FONT_SIZE.mdl,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    stepperControls: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: COLORS.neutralBg,
-        borderRadius: RADIUS.md,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    stepperBtn: {
-        paddingHorizontal: SPACING.md,
-        paddingVertical: SPACING.sm,
-    },
-    stepperValue: {
-        fontSize: FONT_SIZE.lg,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-        minWidth: 32,
-        textAlign: "center",
-    },
-
-    emptyScannerArea: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: SPACING.xxl,
-    },
-    emptyScannerText: {
-        fontSize: FONT_SIZE.md,
-        color: COLORS.textSecondary,
-        textAlign: "center",
-        marginTop: SPACING.md,
-        lineHeight: 20,
-    },
-
-    productsList: {
-        padding: SPACING.lg,
-        gap: SPACING.md,
-        paddingBottom: 90,
-    },
-    productCard: {
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.lg,
-        padding: SPACING.mdl,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        elevation: 1,
-        shadowColor: COLORS.black,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-    },
-    productCardDimmed: {
-        opacity: 0.6,
-        backgroundColor: COLORS.surfaceMuted,
-    },
-    productCardComplete: {
-        borderColor: COLORS.successBorderLight,
-    },
-    productCardHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-    },
-    productSku: {
-        fontSize: FONT_SIZE.mdl,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    productPrice: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-    itemStatusBadge: {
-        paddingHorizontal: SPACING.xsm,
-        paddingVertical: SPACING.xxs,
-        borderRadius: RADIUS.xs,
-    },
-    itemStatusText: {
-        fontSize: FONT_SIZE.xxs,
-        fontWeight: "700",
-    },
-    itemActionBtn: {
-        padding: SPACING.xs,
-    },
-    progressRow: {
-        marginTop: SPACING.md,
-    },
-    progressLabel: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-        marginBottom: SPACING.xsm,
-    },
-    progressBarBg: {
-        height: 6,
-        backgroundColor: COLORS.inputBorder,
-        borderRadius: 3,
-        overflow: "hidden",
-    },
-    progressBarFill: {
-        height: 6,
-        borderRadius: 3,
-    },
-    itemReasonRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.xs,
-        marginTop: SPACING.sm,
-    },
-    itemReasonText: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-        fontStyle: "italic",
-    },
-
-    bottomBarContainer: {
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: COLORS.surface,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.md,
-        elevation: 8,
-        shadowColor: COLORS.black,
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
-    confirmButton: {
-        height: 50,
-        borderRadius: RADIUS.md,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    confirmButtonActive: {
-        backgroundColor: COLORS.primary,
-    },
-    confirmButtonDisabled: {
-        backgroundColor: COLORS.inputBorder,
-    },
-    confirmButtonText: {
-        fontSize: FONT_SIZE.lg,
-        fontWeight: "700",
-    },
-    confirmButtonTextActive: {
-        color: COLORS.surface,
-    },
-    confirmButtonTextDisabled: {
-        color: COLORS.inactiveTint,
-    },
-
-    modalBody: {
-        padding: SPACING.xl,
-    },
-    modalHeaderRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: SPACING.md,
-    },
-    modalTitle: {
-        fontSize: FONT_SIZE.xl,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    modalSubtitle: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-        marginBottom: SPACING.md,
-    },
-    menuItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: SPACING.md,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    menuItemText: {
-        fontSize: FONT_SIZE.mdl,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-        marginLeft: SPACING.sm,
-    },
-    menuItemSubText: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-    radioRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: SPACING.smd,
-        paddingHorizontal: SPACING.sm,
-        borderRadius: RADIUS.sm,
-        marginVertical: SPACING.xxs,
-    },
-    radioRowSelected: {
-        backgroundColor: COLORS.inactiveBg,
-    },
-    radioLabel: {
-        fontSize: FONT_SIZE.md,
-        color: COLORS.textPrimary,
-        marginLeft: SPACING.smd,
-    },
-    radioLabelSelected: {
-        fontWeight: "600",
-        color: COLORS.primary,
-    },
-    modalBtnRow: {
-        flexDirection: "row",
-        gap: SPACING.md,
-        marginTop: SPACING.lg,
-    },
-    detailSectionTitle: {
-        fontSize: FONT_SIZE.md,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-        marginTop: SPACING.smd,
-        marginBottom: SPACING.xsm,
-    },
-    assigneeRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginTop: SPACING.smd,
-        paddingTop: SPACING.smd,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-    },
-    assigneeInfo: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.xsm,
-        flex: 1,
-    },
-    assigneeText: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-    },
-    reassignBtn: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.xs,
-        paddingVertical: SPACING.xsPlus,
-        paddingHorizontal: SPACING.smd,
-        borderRadius: RADIUS.sm,
-        backgroundColor: COLORS.violetBg,
-    },
-    reassignBtnText: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "700",
-        color: COLORS.primary,
-    },
-    empSelectItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: SPACING.smd,
-        paddingHorizontal: SPACING.md,
-        borderRadius: RADIUS.md,
-        marginBottom: SPACING.xsm,
-        backgroundColor: COLORS.surfaceCool,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    empSelectItemActive: {
-        backgroundColor: COLORS.violetBg,
-        borderColor: COLORS.primary,
-    },
-    empSelectName: {
-        fontSize: FONT_SIZE.md,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    empSelectNameActive: {
-        color: COLORS.primary,
-        fontWeight: "700",
-    },
-    empSelectRole: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-});

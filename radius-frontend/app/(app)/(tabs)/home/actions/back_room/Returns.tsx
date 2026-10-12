@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-    View,
-    Text,
-    FlatList,
-    TextInput,
-    TouchableOpacity,
-    ActivityIndicator,
-} from "react-native";
+import { View, Text, FlatList } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
@@ -16,8 +9,8 @@ import { ReturnSaleItemCard, SelectedReturnItem } from "@/components/returns/Ret
 import { ReturnSuccessModal } from "@/components/returns/ReturnSuccessModal";
 import { ReturnDetailModal } from "@/components/returns/ReturnDetailModal";
 import { ReturnRejectModal } from "@/components/returns/ReturnRejectModal";
+import { HistoryStatusFilters, LookupMode, RefundSummaryCard, ReturnLookupPanel, ReturnsTab, ReturnsTabBar, RtvQueueCard } from "@/components/returns/ReturnScreenPanels";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
 import { returnScreenStyles as styles } from "@/components/returns/returnScreenStyles";
 import { useAuth } from "@/hooks/useAuth";
 import { showToast } from "@/utils/helpers";
@@ -35,25 +28,14 @@ import {
 } from "@/types/returns.types";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { type Money, formatMoney, multiplyMoney, prorateMoney, sumMoney } from "@/utils/money";
-
-type ActiveTab = "NEW_RETURN" | "HISTORY" | "RTV_QUEUE";
-type LookupMode = "TRANSACTION_ID" | "PRODUCT_BARCODE";
-
-const REFUND_METHODS: RefundMethod[] = ["CASH", "CARD", "GIFT CARD", "STORE_CREDIT"];
-
-function receiptRefundTax(tx: LookupTransactionResponse, refundSubtotal: Money): Money {
-    const taxRefundedSoFar = prorateMoney(tx.tax_amount, tx.refunded_subtotal, tx.subtotal);
-    const taxThroughThisReturn = prorateMoney(tx.tax_amount, sumMoney([tx.refunded_subtotal, refundSubtotal]), tx.subtotal);
-    const taxRemaining = sumMoney([tx.tax_amount, -tx.refunded_tax]);
-    return Math.min(Math.max(sumMoney([taxThroughThisReturn, -taxRefundedSoFar]), 0), taxRemaining);
-}
+import { type Money, sumMoney } from "@/utils/money";
+import { RETURN_APPROVAL_THRESHOLD, receiptRefundTax, refundSubtotal, selectionFromItem } from "@/utils/returnRefund";
 
 export default function Returns() {
     const { logout, user } = useAuth();
     const isManagerOrAdmin = user?.role === "MANAGER" || user?.role === "ADMIN";
 
-    const [activeTab, setActiveTab] = useState<ActiveTab>("NEW_RETURN");
+    const [activeTab, setActiveTab] = useState<ReturnsTab>("NEW_RETURN");
 
     const [lookupMode, setLookupMode] = useState<LookupMode>("TRANSACTION_ID");
     const [lookupInput, setLookupInput] = useState("");
@@ -133,18 +115,7 @@ export default function Returns() {
             if (next[item.transaction_item_id]) {
                 delete next[item.transaction_item_id];
             } else {
-                next[item.transaction_item_id] = {
-                    original_transaction_item_id: item.transaction_item_id,
-                    product_id: item.product_id,
-                    product_name: item.product_name,
-                    product_sku: item.product_sku,
-                    unit_price: item.unit_price,
-                    quantity: 1,
-                    max_returnable: item.returnable_qty,
-                    return_reason: "DEFECTIVE",
-                    disposition: "DEFECTIVE_RTV",
-                    is_outside_policy: item.is_outside_policy_window,
-                };
+                next[item.transaction_item_id] = selectionFromItem(item);
             }
             return next;
         });
@@ -186,7 +157,7 @@ export default function Returns() {
     };
 
     const selectedItemsArray = Object.values(selectedItems);
-    const subtotal = sumMoney(selectedItemsArray.map((item) => multiplyMoney(item.unit_price, item.quantity)));
+    const subtotal = refundSubtotal(selectedItemsArray);
     const estimatedTax = foundTx ? receiptRefundTax(foundTx, subtotal) : 0;
     const totalRefund = sumMoney([subtotal, estimatedTax]);
 
@@ -321,49 +292,7 @@ export default function Returns() {
                 }
             />
 
-            <View style={styles.tabBar}>
-                <TouchableOpacity
-                    style={[styles.tabButton, activeTab === "NEW_RETURN" && styles.tabButtonActive]}
-                    onPress={() => setActiveTab("NEW_RETURN")}
-                >
-                    <Ionicons
-                        name="return-down-back"
-                        size={16}
-                        color={activeTab === "NEW_RETURN" ? COLORS.primary : COLORS.textSecondary}
-                    />
-                    <Text style={[styles.tabText, activeTab === "NEW_RETURN" && styles.tabTextActive]}>
-                        Process Return
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.tabButton, activeTab === "HISTORY" && styles.tabButtonActive]}
-                    onPress={() => setActiveTab("HISTORY")}
-                >
-                    <Ionicons
-                        name="receipt-outline"
-                        size={16}
-                        color={activeTab === "HISTORY" ? COLORS.primary : COLORS.textSecondary}
-                    />
-                    <Text style={[styles.tabText, activeTab === "HISTORY" && styles.tabTextActive]}>
-                        History
-                    </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.tabButton, activeTab === "RTV_QUEUE" && styles.tabButtonActive]}
-                    onPress={() => setActiveTab("RTV_QUEUE")}
-                >
-                    <Ionicons
-                        name="cube-outline"
-                        size={16}
-                        color={activeTab === "RTV_QUEUE" ? COLORS.primary : COLORS.textSecondary}
-                    />
-                    <Text style={[styles.tabText, activeTab === "RTV_QUEUE" && styles.tabTextActive]}>
-                        RTV Queue
-                    </Text>
-                </TouchableOpacity>
-            </View>
+            <ReturnsTabBar activeTab={activeTab} onChange={setActiveTab} />
 
             {activeTab === "NEW_RETURN" && (
                 <FlatList
@@ -373,126 +302,17 @@ export default function Returns() {
                     keyExtractor={(item) => String(item.transaction_item_id)}
                     extraData={selectedItems}
                     ListHeaderComponent={
-                        <View style={styles.newReturnHeader}>
-                            <View style={styles.lookupCard}>
-                                <View style={styles.lookupModeRow}>
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.modeToggle,
-                                            lookupMode === "TRANSACTION_ID" && styles.modeToggleActive,
-                                        ]}
-                                        onPress={() => setLookupMode("TRANSACTION_ID")}
-                                    >
-                                        <Ionicons
-                                            name="receipt-outline"
-                                            size={14}
-                                            color={lookupMode === "TRANSACTION_ID" ? COLORS.primary : COLORS.textSecondary}
-                                        />
-                                        <Text
-                                            style={[
-                                                styles.modeToggleText,
-                                                lookupMode === "TRANSACTION_ID" && styles.modeToggleTextActive,
-                                            ]}
-                                        >
-                                            Receipt Lookup
-                                        </Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.modeToggle,
-                                            lookupMode === "PRODUCT_BARCODE" && styles.modeToggleActive,
-                                        ]}
-                                        onPress={() => setLookupMode("PRODUCT_BARCODE")}
-                                    >
-                                        <Ionicons
-                                            name="barcode-outline"
-                                            size={14}
-                                            color={lookupMode === "PRODUCT_BARCODE" ? COLORS.primary : COLORS.textSecondary}
-                                        />
-                                        <Text
-                                            style={[
-                                                styles.modeToggleText,
-                                                lookupMode === "PRODUCT_BARCODE" && styles.modeToggleTextActive,
-                                            ]}
-                                        >
-                                            Product Scan
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-
-                                <View style={styles.searchInputRow}>
-                                    <TextInput
-                                        style={styles.searchInput}
-                                        placeholder={
-                                            lookupMode === "TRANSACTION_ID"
-                                                ? "Enter Transaction ID (e.g. 1042)..."
-                                                : "Enter UPC or SKU..."
-                                        }
-                                        placeholderTextColor={COLORS.placeholder}
-                                        value={lookupInput}
-                                        onChangeText={setLookupInput}
-                                        keyboardType={lookupMode === "TRANSACTION_ID" ? "number-pad" : "default"}
-                                        returnKeyType="search"
-                                        onSubmitEditing={handleSearch}
-                                    />
-                                    <TouchableOpacity
-                                        style={styles.searchButton}
-                                        onPress={handleSearch}
-                                        disabled={isSearchingTx}
-                                    >
-                                        {isSearchingTx ? (
-                                            <ActivityIndicator size="small" color={COLORS.primaryText} />
-                                        ) : (
-                                            <Ionicons name="search" size={18} color={COLORS.primaryText} />
-                                        )}
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
-                            {recentTxResults.length > 0 && (
-                                <View style={styles.recentResultsContainer}>
-                                    <Text style={styles.sectionHeader}>Recent Purchases for this Product</Text>
-                                    {recentTxResults.map((tx) => (
-                                        <TouchableOpacity
-                                            key={tx.transaction_id}
-                                            style={styles.recentTxItem}
-                                            onPress={() => handleSelectTransactionFromList(tx.transaction_id)}
-                                        >
-                                            <View>
-                                                <Text style={styles.recentTxId}>Sale #{tx.transaction_id}</Text>
-                                                <Text style={styles.recentTxDate}>
-                                                    {new Date(tx.created_at).toLocaleDateString()} • Register {tx.register_id}
-                                                </Text>
-                                            </View>
-                                            <View style={styles.recentTxRight}>
-                                                <Text style={styles.recentTxAmount}>{formatMoney(tx.total_amount)}</Text>
-                                                <Text style={styles.recentTxQty}>Qty: {tx.quantity_sold}</Text>
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            )}
-
-                            {foundTx && (
-                                <View style={styles.txSummaryBanner}>
-                                    <View style={styles.txSummaryLeft}>
-                                        <Text style={styles.txSummaryId}>Sale #{foundTx.transaction_id}</Text>
-                                        <Text style={styles.txSummaryDate}>
-                                            Purchased {foundTx.days_since_sale} days ago ({new Date(foundTx.created_at).toLocaleDateString()})
-                                        </Text>
-                                    </View>
-                                    <View style={styles.txSummaryRight}>
-                                        <Text style={styles.txSummaryAmount}>{formatMoney(foundTx.total_amount)}</Text>
-                                        <Text style={styles.txSummaryMethod}>{foundTx.payment_method}</Text>
-                                    </View>
-                                </View>
-                            )}
-
-                            {foundTx && (
-                                <Text style={styles.sectionHeader}>Select Items to Return</Text>
-                            )}
-                        </View>
+                        <ReturnLookupPanel
+                            mode={lookupMode}
+                            onModeChange={setLookupMode}
+                            query={lookupInput}
+                            onQueryChange={setLookupInput}
+                            onSearch={handleSearch}
+                            isSearching={isSearchingTx}
+                            recentResults={recentTxResults}
+                            onSelectTransaction={handleSelectTransactionFromList}
+                            transaction={foundTx}
+                        />
                     }
                     renderItem={({ item }) => (
                         <ReturnSaleItemCard
@@ -506,86 +326,20 @@ export default function Returns() {
                     )}
                     ListFooterComponent={
                         selectedItemsArray.length > 0 ? (
-                            <View style={[styles.refundCalculationCard, styles.refundFooter]}>
-                                <Text style={styles.sectionHeader}>Refund Summary</Text>
-
-                                <View style={styles.calcRow}>
-                                    <Text style={styles.calcLabel}>Subtotal ({selectedItemsArray.length} items):</Text>
-                                    <Text style={styles.calcValue}>{formatMoney(subtotal)}</Text>
-                                </View>
-                                <View style={styles.calcRow}>
-                                    <Text style={styles.calcLabel}>Tax (as charged on receipt):</Text>
-                                    <Text style={styles.calcValue}>{formatMoney(estimatedTax)}</Text>
-                                </View>
-                                <View style={[styles.calcRow, styles.calcRowTotal]}>
-                                    <Text style={styles.totalRefundLabel}>Total Refund:</Text>
-                                    <Text style={styles.totalRefundValue}>{formatMoney(totalRefund)}</Text>
-                                </View>
-
-                                {totalRefund > 50 && !isManagerOrAdmin && (
-                                    <View style={styles.approvalNotice}>
-                                        <Ionicons name="information-circle" size={16} color={COLORS.warning} />
-                                        <Text style={styles.approvalNoticeText}>
-                                            Total exceeds $50.00. This return will be queued for Manager Approval.
-                                        </Text>
-                                    </View>
-                                )}
-
-                                <View style={styles.methodContainer}>
-                                    <Text style={styles.methodTitle}>Refund Method:</Text>
-                                    <View style={styles.methodButtonsRow}>
-                                        {REFUND_METHODS.map((m) => {
-                                            const isDisabled = hasExpiredItem && m !== "STORE_CREDIT";
-                                            const isSelected = refundMethod === m;
-                                            return (
-                                                <TouchableOpacity
-                                                    key={m}
-                                                    style={[
-                                                        styles.methodButton,
-                                                        isSelected && styles.methodButtonSelected,
-                                                        isDisabled && styles.methodButtonDisabled,
-                                                    ]}
-                                                    onPress={() => !isDisabled && setRefundMethod(m)}
-                                                    disabled={isDisabled}
-                                                >
-                                                    <Text
-                                                        style={[
-                                                            styles.methodButtonText,
-                                                            isSelected && styles.methodButtonTextSelected,
-                                                            isDisabled && styles.methodButtonTextDisabled,
-                                                        ]}
-                                                    >
-                                                        {m.replace("_", " ")}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            );
-                                        })}
-                                    </View>
-                                </View>
-
-                                <TextInput
-                                    style={styles.notesInput}
-                                    placeholder="Optional return notes or reason details..."
-                                    placeholderTextColor={COLORS.placeholder}
-                                    value={returnNotes}
-                                    onChangeText={setReturnNotes}
-                                    multiline
-                                />
-
-                                <TouchableOpacity
-                                    style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-                                    onPress={handleSubmitReturn}
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? (
-                                        <ActivityIndicator size="small" color={COLORS.primaryText} />
-                                    ) : (
-                                        <Text style={styles.submitButtonText}>
-                                            Process Return ({formatMoney(totalRefund)})
-                                        </Text>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
+                            <RefundSummaryCard
+                                itemCount={selectedItemsArray.length}
+                                subtotal={subtotal}
+                                tax={estimatedTax}
+                                total={totalRefund}
+                                needsApproval={totalRefund > RETURN_APPROVAL_THRESHOLD && !isManagerOrAdmin}
+                                refundMethod={refundMethod}
+                                onRefundMethodChange={setRefundMethod}
+                                storeCreditOnly={hasExpiredItem}
+                                notes={returnNotes}
+                                onNotesChange={setReturnNotes}
+                                isSubmitting={isSubmitting}
+                                onSubmit={handleSubmitReturn}
+                            />
                         ) : null
                     }
                 />
@@ -593,30 +347,13 @@ export default function Returns() {
 
             {activeTab === "HISTORY" && (
                 <View style={styles.contentContainer}>
-                    <View style={styles.filterPillsRow}>
-                        {["ALL", "PENDING_APPROVAL", "COMPLETED", "REJECTED"].map((st) => (
-                            <TouchableOpacity
-                                key={st}
-                                style={[
-                                    styles.filterPill,
-                                    historyStatusFilter === st && styles.filterPillActive,
-                                ]}
-                                onPress={() => {
-                                    setHistoryStatusFilter(st);
-                                    setHistoryPage(1);
-                                }}
-                            >
-                                <Text
-                                    style={[
-                                        styles.filterPillText,
-                                        historyStatusFilter === st && styles.filterPillTextActive,
-                                    ]}
-                                >
-                                    {st.replace("_", " ")}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                    <HistoryStatusFilters
+                        value={historyStatusFilter}
+                        onChange={(status) => {
+                            setHistoryStatusFilter(status);
+                            setHistoryPage(1);
+                        }}
+                    />
 
                     {isLoadingHistory ? (
                         <View style={styles.centerContainer}>
@@ -631,9 +368,7 @@ export default function Returns() {
                         <FlatList
                             data={historyList}
                             keyExtractor={(item) => String(item.return_id)}
-                            renderItem={({ item }) => (
-                                <ReturnCard returnItem={item} onPress={handleOpenDetail} />
-                            )}
+                            renderItem={({ item }) => <ReturnCard returnItem={item} onPress={handleOpenDetail} />}
                             contentContainerStyle={styles.listContent}
                             ListFooterComponent={
                                 <Pagination
@@ -662,30 +397,7 @@ export default function Returns() {
                         <FlatList
                             data={rtvList}
                             keyExtractor={(item) => String(item.rtv_id)}
-                            renderItem={({ item }) => (
-                                <View style={[globalStyles.card, styles.rtvCard]}>
-                                    <View style={styles.rtvCardHeader}>
-                                        <View>
-                                            <Text style={styles.rtvProductName}>{item.product_name}</Text>
-                                            <Text style={styles.rtvSku}>
-                                                SKU: {item.sku} • UPC: {item.upc}
-                                            </Text>
-                                        </View>
-                                        <View style={styles.rtvBadge}>
-                                            <Text style={styles.rtvBadgeText}>{item.status}</Text>
-                                        </View>
-                                    </View>
-                                    <View style={styles.rtvCardFooter}>
-                                        <Text style={styles.rtvQty}>Qty: {item.quantity}</Text>
-                                        {item.supplier_name && (
-                                            <Text style={styles.rtvSupplier}>Vendor: {item.supplier_name}</Text>
-                                        )}
-                                        <Text style={styles.rtvDate}>
-                                            Queued: {new Date(item.created_at).toLocaleDateString()}
-                                        </Text>
-                                    </View>
-                                </View>
-                            )}
+                            renderItem={({ item }) => <RtvQueueCard item={item} />}
                             contentContainerStyle={styles.listContent}
                             ListFooterComponent={
                                 <Pagination

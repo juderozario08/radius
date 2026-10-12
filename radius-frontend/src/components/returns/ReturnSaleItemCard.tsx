@@ -11,6 +11,9 @@ export interface SelectedReturnItem {
     product_name: string;
     product_sku: string;
     unit_price: Money;
+    line_net_total: Money;
+    purchased_qty: number;
+    already_returned_qty: number;
     quantity: number;
     max_returnable: number;
     return_reason: ReturnReason;

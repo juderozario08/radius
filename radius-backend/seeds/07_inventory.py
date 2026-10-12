@@ -22,7 +22,7 @@ AISLES = ["A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3", "D1", "D2", "E1"
 
 INVENTORY_COLUMNS = (
     "store_id, product_id, reserved_qty, reorder_point, reorder_qty, "
-    "aisle, mims_location, open_box_qty, new_qty, rtv_qty, code88_qty, "
+    "aisle, mims_location_id, open_box_qty, new_qty, rtv_qty, code88_qty, "
     "bopis_qty, quarantine_qty, repair_qty, customer_on_hold_qty, "
     "fc_on_hold_qty, verify_qty, demo_qty, on_order_qty"
 )

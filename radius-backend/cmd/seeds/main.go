@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,19 +19,22 @@ func main() {
 	allowWipe := flag.Bool("i-understand-this-wipes-data", false, "allow destructive seed wipe")
 	flag.Parse()
 	if strings.EqualFold(os.Getenv("GIN_MODE"), "release") && os.Getenv("ALLOW_SEED_WIPE") != "true" {
-		log.Fatal("refusing to run seeds in release mode without ALLOW_SEED_WIPE=true")
+		slog.Error("refusing to run seeds in release mode without ALLOW_SEED_WIPE=true")
+		os.Exit(1)
 	}
 	if !*allowWipe && os.Getenv("ALLOW_SEED_WIPE") != "true" {
-		log.Fatal("refusing to run destructive seeds without --i-understand-this-wipes-data or ALLOW_SEED_WIPE=true")
+		slog.Error("refusing to run destructive seeds without --i-understand-this-wipes-data or ALLOW_SEED_WIPE=true")
+		os.Exit(1)
 	}
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Println("No .env file found, relying on existing environment variables")
+		slog.Info("no .env file found, relying on existing environment variables")
 	}
 
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
-		log.Fatal("DATABASE_URL is not set in the environment")
+		slog.Error("DATABASE_URL is not set in the environment")
+		os.Exit(1)
 	}
 
 	fmt.Println("Running Python seed generator...")
@@ -42,25 +45,29 @@ func main() {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		log.Fatalf("Failed to run python generator: %v", err)
+		slog.Error("failed to run python generator", "error", err)
+		os.Exit(1)
 	}
 
 	db, err := sql.Open("pgx", dbUrl)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		slog.Error("failed to connect to database", "error", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
-		log.Fatalf("Failed to ping database: %v", err)
+		slog.Error("failed to ping database", "error", err)
+		os.Exit(1)
 	}
 	fmt.Println("Successfully connected to Postgres Database.")
 
 	seedsDir := "seeds"
 	files, err := os.ReadDir(seedsDir)
 	if err != nil {
-		log.Fatalf("Failed to read seeds directory: %v", err)
+		slog.Error("failed to read seeds directory", "error", err)
+		os.Exit(1)
 	}
 
 	var sqlFiles []string
@@ -85,18 +92,20 @@ func main() {
 
 		content, err := os.ReadFile(filePath)
 		if err != nil {
-			log.Fatalf("\nFailed to read file %s: %v", fileName, err)
+			slog.Error("failed to read file", "file", fileName, "error", err)
+			os.Exit(1)
 		}
 
 		_, err = db.Exec(string(content))
 		if err != nil {
-			log.Fatalf("\nError executing %s: %v", fileName, err)
+			slog.Error("error executing seed file", "file", fileName, "error", err)
+			os.Exit(1)
 		}
 
 		fmt.Println("SUCCESS")
 
 		if err := os.Remove(filePath); err != nil {
-			log.Printf("Warning: Failed to delete %s: %v\n", filePath, err)
+			slog.Warn("failed to delete seed file", "file", filePath, "error", err)
 		}
 	}
 

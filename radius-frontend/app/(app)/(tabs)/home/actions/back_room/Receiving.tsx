@@ -86,7 +86,7 @@ export default function Receiving() {
                         data={filteredPOs}
                         keyExtractor={(item) => item.po_id.toString()}
                         renderItem={({ item }) => (
-                            <POCard po={item} onPress={(poId) => router.push(`/(app)/(tabs)/home/actions/back_room/ReceivePO?po_id=${poId}` as any)} />
+                            <POCard po={item} onPress={(poId) => router.push(`/(app)/(tabs)/home/actions/back_room/ReceivePO?po_id=${poId}`)} />
                         )}
                         contentContainerStyle={globalStyles.listContainer}
                         refreshControl={<RefreshControl refreshing={isRefreshingPOs} onRefresh={fetchPOs} />}
@@ -109,7 +109,7 @@ export default function Receiving() {
                         renderItem={({ item }) => (
                             <TransferCard
                                 transfer={item}
-                                onPress={(transferId) => router.push(`/(app)/(tabs)/home/actions/back_room/ReceiveTransfer?transfer_id=${transferId}` as any)}
+                                onPress={(transferId) => router.push(`/(app)/(tabs)/home/actions/back_room/ReceiveTransfer?transfer_id=${transferId}`)}
                                 onQuickReceive={handleQuickReceive}
                                 isReceiving={isQuickReceiving[item.transfer_id]}
                             />

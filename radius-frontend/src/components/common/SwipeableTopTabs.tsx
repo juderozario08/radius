@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from "react";
 import { View } from "react-native";
-import { createMaterialTopTabNavigator, MaterialTopTabBar } from "@react-navigation/material-top-tabs";
+import { createMaterialTopTabNavigator, MaterialTopTabBar, MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
 import { COLORS } from "@/constants/colors";
 
 const Tab = createMaterialTopTabNavigator();
 
 interface TabScreen {
     name: string;
-    children: (props: any) => React.ReactElement;
+    children: () => React.ReactElement;
 }
 
 interface SwipeableTopTabsProps {
@@ -21,7 +21,7 @@ function TabBarWrapper({
     renderAboveContent,
     onTabChange,
 }: {
-    tabBarProps: any;
+    tabBarProps: MaterialTopTabBarProps;
     renderAboveContent?: () => React.ReactNode;
     onTabChange?: (index: number) => void;
 }) {

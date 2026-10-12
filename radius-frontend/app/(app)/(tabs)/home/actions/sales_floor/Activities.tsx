@@ -213,7 +213,6 @@ export default function Activities() {
                 counted_items: c.counted_items,
                 total_variance_cost: Number(c.total_variance_cost) || 0,
                 updated_at: c.count_date || new Date().toISOString(),
-                counted_by: (c as any).counted_by,
                 counted_by_name: c.counted_by_name,
             })));
 
@@ -225,7 +224,7 @@ export default function Activities() {
                     title: `Cycle Count #${c.count_id} - ${c.category_name}`,
                     description: `Status: ${c.status} • Progress: ${c.counted_items}/${c.total_items}`,
                     timestamp: c.count_date || new Date().toISOString(),
-                    metadata: { count_id: c.count_id, counted_by: (c as any).counted_by },
+                    metadata: { count_id: c.count_id },
                 });
             });
         }
@@ -271,17 +270,17 @@ export default function Activities() {
     };
 
     const handleActivityPress = (act: StoreActivityPayload) => {
-        const meta = act.metadata as Record<string, any> | undefined;
+        const meta = act.metadata;
         const orderId = meta?.order_id || (act.title.match(/#(\d+)/) ? Number(act.title.match(/#(\d+)/)![1]) : null);
         const countId = meta?.count_id || (act.title.match(/Count #(\d+)/) ? Number(act.title.match(/Count #(\d+)/)![1]) : null);
         const poId = meta?.po_id || (act.title.match(/PO #(\d+)/) ? Number(act.title.match(/PO #(\d+)/)![1]) : null);
 
         if (act.activity_type.includes("ORDER") && orderId) {
-            router.push({ pathname: `/(app)/(tabs)/home/actions/sales_floor/Orders/${orderId}`, params: { from: "activities" } } as any);
+            router.push({ pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders/[id]", params: { id: orderId, from: "activities" } });
         } else if (act.activity_type.includes("CYCLE") && countId) {
-            router.push({ pathname: "/(app)/(tabs)/home/actions/back_room/CycleCountDetail", params: { id: String(countId), from: "activities" } } as any);
+            router.push({ pathname: "/(app)/(tabs)/home/actions/back_room/CycleCountDetail", params: { id: String(countId), from: "activities" } });
         } else if ((act.activity_type.includes("RECEIVING") || act.activity_type.includes("PO")) && poId) {
-            router.push({ pathname: "/(app)/(tabs)/home/actions/back_room/ReceivePO", params: { po_id: String(poId), from: "activities" } } as any);
+            router.push({ pathname: "/(app)/(tabs)/home/actions/back_room/ReceivePO", params: { po_id: String(poId), from: "activities" } });
         }
     };
 

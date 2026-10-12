@@ -397,7 +397,7 @@ export default function ProductSearchScreen() {
     const renderProduct = ({ item }: { item: Product }) => (
         <ProductCard
             product={item}
-            onPress={() => router.push(`/(app)/product/${item.product_id}` as any)}
+            onPress={() => router.push(`/(app)/product/${item.product_id}`)}
         />
     );
 

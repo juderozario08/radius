@@ -132,7 +132,7 @@ export default function TransactionDetail() {
                     <View style={globalStyles.listCardBody}>
                         <TouchableOpacity
                             style={styles.itemRow}
-                            onPress={() => router.push(`/(app)/product/${item.product_id}` as any)}
+                            onPress={() => router.push(`/(app)/product/${item.product_id}`)}
                         >
                             <View style={styles.itemInfo}>
                                 <Text style={styles.itemText}>{item.product_name || 'Unknown Product'}</Text>

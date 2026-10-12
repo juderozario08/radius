@@ -395,7 +395,6 @@ export default function RealTimeDashboard() {
                     counted_items: c.counted_items,
                     total_variance_cost: Number(c.total_variance_cost) || 0,
                     updated_at: c.count_date || new Date().toISOString(),
-                    counted_by: (c as any).counted_by,
                     counted_by_name: c.counted_by_name,
                 }));
             setLiveCycleCounts(mappedCounts);
@@ -480,9 +479,9 @@ export default function RealTimeDashboard() {
 
         if (isAdmin) {
             router.push({
-                pathname: `/(app)/(tabs)/home/actions/sales_floor/Orders/${order.order_id}`,
-                params: { from: "dashboard" },
-            } as any);
+                pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders/[id]",
+                params: { id: order.order_id, from: "dashboard" },
+            });
             return;
         }
 
@@ -494,9 +493,9 @@ export default function RealTimeDashboard() {
             } else {
                 showToast(`ℹ️ Order #${order.order_id} is currently assigned to ${assignee}.`);
                 router.push({
-                    pathname: `/(app)/(tabs)/home/actions/sales_floor/Orders/${order.order_id}`,
-                    params: { from: "dashboard" },
-                } as any);
+                    pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders/[id]",
+                    params: { id: order.order_id, from: "dashboard" },
+                });
                 return;
             }
         }
@@ -536,43 +535,43 @@ export default function RealTimeDashboard() {
         }
 
         router.push({
-            pathname: `/(app)/(tabs)/home/actions/sales_floor/Orders/${order.order_id}`,
-            params: { from: "dashboard" },
-        } as any);
+            pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders/[id]",
+            params: { id: order.order_id, from: "dashboard" },
+        });
     };
 
     const handleCycleCountPress = (count: CycleCountUpdatedPayload) => {
         router.push({
             pathname: "/(app)/(tabs)/home/actions/back_room/CycleCountDetail",
             params: { id: count.count_id, from: "dashboard" },
-        } as any);
+        });
     };
 
     const handleActivityPress = (act: StoreActivityPayload) => {
-        const meta = act.metadata as Record<string, any> | undefined;
+        const meta = act.metadata;
         const orderId = meta?.order_id || (act.title.match(/#(\d+)/) ? Number(act.title.match(/#(\d+)/)![1]) : null);
         const countId = meta?.count_id || (act.title.match(/Count #(\d+)/) ? Number(act.title.match(/Count #(\d+)/)![1]) : null);
         const poId = meta?.po_id || (act.title.match(/PO #(\d+)/) ? Number(act.title.match(/PO #(\d+)/)![1]) : null);
 
         if (act.activity_type.includes("ORDER") && orderId) {
             router.push({
-                pathname: `/(app)/(tabs)/home/actions/sales_floor/Orders/${orderId}`,
-                params: { from: "dashboard" },
-            } as any);
+                pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders/[id]",
+                params: { id: orderId, from: "dashboard" },
+            });
             return;
         }
         if (act.activity_type.includes("CYCLE") && countId) {
             router.push({
                 pathname: "/(app)/(tabs)/home/actions/back_room/CycleCountDetail",
                 params: { id: String(countId), from: "dashboard" },
-            } as any);
+            });
             return;
         }
         if (act.activity_type.includes("POS") || act.activity_type.includes("TRANSACTION")) {
             router.push({
                 pathname: "/(app)/(tabs)/home/actions/sales_floor/Transactions",
                 params: { from: "dashboard" },
-            } as any);
+            });
             return;
         }
         if (act.activity_type.includes("RECEIVING") || act.activity_type.includes("PO")) {
@@ -580,12 +579,12 @@ export default function RealTimeDashboard() {
                 router.push({
                     pathname: "/(app)/(tabs)/home/actions/back_room/ReceivePO",
                     params: { po_id: String(poId), from: "dashboard" },
-                } as any);
+                });
             } else {
                 router.push({
                     pathname: "/(app)/(tabs)/home/actions/back_room/Receiving",
                     params: { from: "dashboard" },
-                } as any);
+                });
             }
             return;
         }
@@ -593,11 +592,11 @@ export default function RealTimeDashboard() {
             router.push({
                 pathname: "/(app)/(tabs)/home/actions/sales_floor/IS4TC",
                 params: { from: "dashboard" },
-            } as any);
+            });
             return;
         }
 
-        router.push("/(app)/(tabs)/home/actions" as any);
+        router.push("/(app)/(tabs)/home/actions");
     };
 
     const currentEmpId = user?.employee_id;
@@ -893,7 +892,7 @@ export default function RealTimeDashboard() {
                                     router.push({
                                         pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders",
                                         params: { from: "dashboard" },
-                                    } as any);
+                                    });
                                 } else {
                                     setActiveTab("orders");
                                 }
@@ -918,7 +917,7 @@ export default function RealTimeDashboard() {
                                     router.push({
                                         pathname: "/(app)/(tabs)/home/actions/back_room/CycleCount",
                                         params: { from: "dashboard" },
-                                    } as any);
+                                    });
                                 } else {
                                     setActiveTab("cycle_counts");
                                 }
@@ -938,7 +937,7 @@ export default function RealTimeDashboard() {
                             style={[styles.metricCard, activeTab === "activities" && styles.metricCardActive]}
                             onPress={() => {
                                 if (activeTab === "activities") {
-                                    router.push("/(app)/(tabs)/home/actions" as any);
+                                    router.push("/(app)/(tabs)/home/actions");
                                 } else {
                                     setActiveTab("activities");
                                 }
@@ -1015,7 +1014,7 @@ export default function RealTimeDashboard() {
                                                 router.push({
                                                     pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders",
                                                     params: { from: "dashboard" },
-                                                } as any)
+                                                })
                                             }
                                         >
                                             <Text style={styles.headerActionText}>View Orders →</Text>
@@ -1075,7 +1074,7 @@ export default function RealTimeDashboard() {
                                                 router.push({
                                                     pathname: "/(app)/(tabs)/home/actions/back_room/CycleCount",
                                                     params: { from: "dashboard" },
-                                                } as any)
+                                                })
                                             }
                                         >
                                             <Text style={styles.headerActionText}>View All →</Text>
@@ -1158,7 +1157,7 @@ export default function RealTimeDashboard() {
                                         </View>
                                         <TouchableOpacity
                                             style={styles.headerActionBtn}
-                                            onPress={() => router.push("/(app)/(tabs)/home/actions" as any)}
+                                            onPress={() => router.push("/(app)/(tabs)/home/actions")}
                                         >
                                             <Text style={styles.headerActionText}>Actions →</Text>
                                         </TouchableOpacity>

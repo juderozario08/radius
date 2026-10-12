@@ -26,7 +26,7 @@ export function resetSessionExpiry() {
 
 export interface ApiCallOptions {
     method?: string;
-    body?: any;
+    body?: unknown;
     swr?: boolean;
     signal?: AbortSignal;
 }
@@ -88,8 +88,8 @@ export async function callApi<T>(
         }
 
         return result;
-    } catch (err: any) {
-        if (err?.name === "AbortError" || options?.signal?.aborted) {
+    } catch (err) {
+        if ((typeof err === "object" && err !== null && "name" in err && err.name === "AbortError") || options?.signal?.aborted) {
             return null;
         }
         const errorMessage = err instanceof Error ? err.message : String(err);

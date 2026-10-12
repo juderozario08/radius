@@ -4,9 +4,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { hasPermission } from "@/utils/roles";
 import { Redirect, Tabs } from "expo-router";
 import React from "react";
-import { Image } from "react-native";
+import { Image, ImageSourcePropType } from "react-native";
 
-function getIcon(focused: boolean, activeSource: any, inactiveSource: any) {
+function getIcon(focused: boolean, activeSource: ImageSourcePropType, inactiveSource: ImageSourcePropType) {
     return (
         <Image
             resizeMethod="scale"

@@ -64,7 +64,7 @@ export default function TransactionsList() {
             <TouchableOpacity
                 style={styles.card}
                 activeOpacity={0.7}
-                onPress={() => router.push(`/(app)/(tabs)/home/actions/sales_floor/Transactions/${item.transaction_id}` as any)}
+                onPress={() => router.push(`/(app)/(tabs)/home/actions/sales_floor/Transactions/${item.transaction_id}`)}
             >
                 <View style={globalStyles.cardHeader}>
                     <Text style={styles.name}>TXN #{item.transaction_id}</Text>

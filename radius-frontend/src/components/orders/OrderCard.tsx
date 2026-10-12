@@ -81,9 +81,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     style,
 }) => {
     const typeStyle = getOrderTypeStyle(order.order_type);
-    const dateStr = order.placed_at || (order as any).created_at;
+    const dateStr = order.placed_at || ("created_at" in order ? order.created_at : undefined);
     const timeAgo = formatTimeAgo(dateStr);
-    const itemsCount = (order as any).items_count ?? 1;
+    const itemsCount = ("items_count" in order ? order.items_count : undefined) ?? 1;
 
     const animValue = useRef(new Animated.Value(isNew ? 1 : 0)).current;
 

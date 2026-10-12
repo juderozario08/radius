@@ -38,7 +38,7 @@ export default function MimsScreen() {
             Toast.show({ type: "success", text1: "Product Scanned", text2: response.message });
             setTimeout(() => {
                 setIsLoadingMims(false);
-                router.push(`/(app)/product/${targetProductId}` as any);
+                router.push(`/(app)/product/${targetProductId}`);
             }, 350);
         } else {
             scannerRef.current?.triggerError();
@@ -98,7 +98,7 @@ export default function MimsScreen() {
             <HeaderComponent
                 headerCenter={<Text style={globalStyles.headerTitle}>MIMS</Text>}
                 headerRight={
-                    <TouchableOpacity onPress={() => router.push("/(app)/product-search" as any)}>
+                    <TouchableOpacity onPress={() => router.push("/(app)/product-search")}>
                         <Image source={require("@/assets/images/search.png")} style={globalStyles.headerImageSize} />
                     </TouchableOpacity>
                 }

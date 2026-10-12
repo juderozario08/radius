@@ -84,6 +84,14 @@ export interface CycleCountUpdatedPayload {
     counted_by_name?: string | null;
 }
 
+export interface StoreActivityMetadata extends Record<string, unknown> {
+    order_id?: number;
+    count_id?: number;
+    po_id?: number;
+    assigned_to?: number | null;
+    counted_by?: number | null;
+}
+
 export interface StoreActivityPayload {
     activity_id: string;
     store_id: number;
@@ -91,7 +99,7 @@ export interface StoreActivityPayload {
     title: string;
     description: string;
     timestamp: string;
-    metadata?: Record<string, unknown>;
+    metadata?: StoreActivityMetadata;
 }
 
 export type OrderCreatedEvent = WSMessage<OrderCreatedPayload>;

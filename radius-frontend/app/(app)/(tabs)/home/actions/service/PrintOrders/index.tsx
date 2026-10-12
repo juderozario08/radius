@@ -135,7 +135,7 @@ export default function PrintOrdersList() {
             <TouchableOpacity
                 style={styles.card}
                 activeOpacity={0.7}
-                onPress={() => router.push(`/(app)/(tabs)/home/actions/service/PrintOrders/${item.print_order_id}` as any)}
+                onPress={() => router.push(`/(app)/(tabs)/home/actions/service/PrintOrders/${item.print_order_id}`)}
             >
                 <View style={globalStyles.cardHeader}>
                     <Text style={styles.name}>Order #{item.print_order_id}</Text>
@@ -218,7 +218,7 @@ export default function PrintOrdersList() {
                         <TouchableOpacity
                             onPress={() =>
                                 router.push(
-                                    `/(app)/(tabs)/home/actions/service/PrintOrders/search?active_tab=${filter}&order_type=${searchParams.order_type}&order_id=${searchParams.order_id}&customer_name=${searchParams.customer_name}&customer_email=${searchParams.customer_email}&customer_phone=${searchParams.customer_phone}&status=${searchParams.status}` as any
+                                    `/(app)/(tabs)/home/actions/service/PrintOrders/search?active_tab=${filter}&order_type=${searchParams.order_type}&order_id=${searchParams.order_id}&customer_name=${searchParams.customer_name}&customer_email=${searchParams.customer_email}&customer_phone=${searchParams.customer_phone}&status=${searchParams.status}`
                                 )
                             }
                             style={{ padding: 8 }}

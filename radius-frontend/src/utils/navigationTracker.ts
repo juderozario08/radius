@@ -1,6 +1,8 @@
+import type { UnknownOutputParams } from "expo-router";
+
 export interface HistoryEntry {
     pathname: string;
-    params?: Record<string, any>;
+    params?: UnknownOutputParams;
 }
 
 export function isSameStack(pathA?: string, pathB?: string): boolean {
@@ -27,7 +29,7 @@ class NavigationTracker {
     private history: HistoryEntry[] = [];
     private isNavigatingBack: boolean = false;
 
-    public record(pathname: string, params?: Record<string, any>) {
+    public record(pathname: string, params?: UnknownOutputParams) {
         if (!pathname) return;
 
         if (this.isNavigatingBack) {

@@ -1,12 +1,12 @@
 export type CachePolicy = "no-store" | "cache-first" | "swr" | "network-first";
 
-export interface CacheEntry<T = any> {
+export interface CacheEntry<T = unknown> {
     data: T;
     timestamp: number;
     generation: number;
 }
 
-export interface ETagEntry<T = any> {
+export interface ETagEntry<T = unknown> {
     etag: string;
     data: T;
     generation: number;
@@ -48,9 +48,9 @@ export function buildCacheKey(method: string, path: string): string {
 export const MAX_CACHE_ENTRIES = 100;
 export const swrCache = new Map<string, CacheEntry>();
 export const etagStore = new Map<string, ETagEntry>();
-export const inFlightRequests = new Map<string, Promise<any>>();
+export const inFlightRequests = new Map<string, Promise<unknown>>();
 
-const cacheSubscribers = new Map<string, Set<(data: any) => void>>();
+const cacheSubscribers = new Map<string, Set<(data: unknown) => void>>();
 
 export function subscribeCache<T>(key: string, callback: (data: T) => void): () => void {
     let subscribers = cacheSubscribers.get(key);
@@ -58,11 +58,11 @@ export function subscribeCache<T>(key: string, callback: (data: T) => void): () 
         subscribers = new Set();
         cacheSubscribers.set(key, subscribers);
     }
-    subscribers.add(callback as (data: any) => void);
+    subscribers.add(callback as (data: unknown) => void);
     return () => {
         const current = cacheSubscribers.get(key);
         if (!current) return;
-        current.delete(callback as (data: any) => void);
+        current.delete(callback as (data: unknown) => void);
         if (current.size === 0) {
             cacheSubscribers.delete(key);
         }

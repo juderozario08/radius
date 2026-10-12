@@ -203,7 +203,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
     const handleSubmit = async () => {
         if (!isFormValid()) return;
 
-        const payload: Record<string, any> = {
+        const payload = {
             ...formValues,
             postal_code: normalizeCanadianPostalCode(formValues.postal_code),
         };

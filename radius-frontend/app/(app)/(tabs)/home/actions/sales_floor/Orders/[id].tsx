@@ -591,7 +591,7 @@ export default function OnlineOrderDetail() {
                                         activeOpacity={0.7}
                                         onPress={() => {
                                             if (scannedItem.item.product_id) {
-                                                router.push(`/(app)/product/${scannedItem.item.product_id}` as any);
+                                                router.push(`/(app)/product/${scannedItem.item.product_id}`);
                                             }
                                         }}
                                     >
@@ -700,7 +700,7 @@ export default function OnlineOrderDetail() {
                                                 activeOpacity={0.7}
                                                 onPress={() => {
                                                     if (item.product_id) {
-                                                        router.push(`/(app)/product/${item.product_id}` as any);
+                                                        router.push(`/(app)/product/${item.product_id}`);
                                                     }
                                                 }}
                                             >
@@ -754,7 +754,7 @@ export default function OnlineOrderDetail() {
                                             activeOpacity={0.7}
                                             onPress={() => {
                                                 if (item.product_id) {
-                                                    router.push(`/(app)/product/${item.product_id}` as any);
+                                                    router.push(`/(app)/product/${item.product_id}`);
                                                 }
                                             }}
                                         >
@@ -1028,7 +1028,7 @@ export default function OnlineOrderDetail() {
                                                 setItemActionType(null);
                                                 setSelectedItemForAction(null);
                                                 if (prodId) {
-                                                    router.push(`/(app)/product/${prodId}` as any);
+                                                    router.push(`/(app)/product/${prodId}`);
                                                 }
                                             }}
                                         >

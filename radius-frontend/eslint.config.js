@@ -8,6 +8,13 @@ module.exports = defineConfig([
     ignores: ['dist/*'],
   },
   {
+    files: ['app/**', 'src/**'],
+    ignores: ['**/__tests__/**', '**/*.test.ts', '**/*.test.tsx'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+  {
     files: ['app/**', 'src/components/**'],
     ignores: ['app/(auth)/**'],
     rules: {

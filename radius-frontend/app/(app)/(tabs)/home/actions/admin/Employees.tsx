@@ -297,15 +297,13 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
     const handleSubmit = async () => {
         if (!isFormValid()) return;
 
-        const payload: Record<string, any> = {
-            ...formValues,
+        const { password, ...fields } = formValues;
+        const payload = {
+            ...fields,
+            ...(isEditMode ? {} : { password }),
             store_id: parseInt(formValues.store_id, 10),
             postal_code: normalizeCanadianPostalCode(formValues.postal_code),
         };
-
-        if (isEditMode) {
-            delete payload.password;
-        }
 
         setIsSubmitting(true);
         const endpoint = isEditMode && employee ? ENDPOINTS.ADMIN.EMPLOYEES.update(employee.employee_id) : (ENDPOINTS.ADMIN.EMPLOYEES.create as string);

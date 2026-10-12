@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from "react";
 import { globalStyles } from "@/constants/styles";
-import { router, useLocalSearchParams, usePathname } from "expo-router";
+import { Href, router, UnknownOutputParams, useLocalSearchParams, usePathname } from "expo-router";
 import {
     TouchableOpacity,
     Image,
@@ -48,7 +48,7 @@ const BackButton: React.FC<BackButtonProps> = ({
                 if (typeof router.canDismiss === "function" && router.canDismiss()) {
                     router.dismiss();
                 }
-                router.navigate("/(app)/(tabs)/home/actions/sales_floor/Activities" as any);
+                router.navigate("/(app)/(tabs)/home/actions/sales_floor/Activities");
                 return;
             }
 
@@ -56,7 +56,7 @@ const BackButton: React.FC<BackButtonProps> = ({
                 if (typeof router.canDismiss === "function" && router.canDismiss()) {
                     router.dismiss();
                 }
-                router.navigate(from as any);
+                router.navigate(from as Href);
                 return;
             }
 
@@ -75,18 +75,18 @@ const BackButton: React.FC<BackButtonProps> = ({
                 }
 
                 if (previous.params && Object.keys(previous.params).length > 0) {
-                    const cleanParams: Record<string, any> = {};
+                    const cleanParams: UnknownOutputParams = {};
                     for (const [k, v] of Object.entries(previous.params)) {
                         if (k !== "screen" && v !== undefined && v !== null && v !== "") {
                             cleanParams[k] = v;
                         }
                     }
                     router.navigate({
-                        pathname: previous.pathname as any,
+                        pathname: previous.pathname,
                         params: cleanParams,
-                    });
+                    } as Href);
                 } else {
-                    router.navigate(previous.pathname as any);
+                    router.navigate(previous.pathname as Href);
                 }
                 return;
             }

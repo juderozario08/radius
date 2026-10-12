@@ -28,10 +28,10 @@ import { globalStyles } from '@/constants/styles';
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { useAuth } from '@/hooks/useAuth';
 
-const FILTER_TABS: { id: FillReportFilterType; label: string; icon: string }[] = [
+const FILTER_TABS: { id: FillReportFilterType; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
     { id: 'ALL', label: 'All Items', icon: 'grid-outline' },
     { id: 'TRANSACTIONS', label: 'POS Sales', icon: 'cart-outline' },
-    { id: 'IS4TC', label: 'IS4TC Holes', icon: 'alert-decagram-outline' },
+    { id: 'IS4TC', label: 'IS4TC Holes', icon: 'alert-circle-outline' },
     { id: 'NEGATIVE', label: 'Negative Stock', icon: 'warning-outline' },
     { id: 'IN_STOCK', label: 'In Stock', icon: 'checkmark-circle-outline' },
 ];
@@ -170,7 +170,7 @@ export default function FillReportScreen() {
                                 onPress={() => setActiveFilter(tab.id)}
                             >
                                 <Ionicons
-                                    name={tab.icon as any}
+                                    name={tab.icon}
                                     size={14}
                                     color={isSelected ? '#FFFFFF' : COLORS.textSecondary}
                                 />

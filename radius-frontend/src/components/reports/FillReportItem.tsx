@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, GestureResponderEvent } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { FillReportItemDetail } from '@/types/report.types';
@@ -29,7 +29,7 @@ export const FillReportItem: React.FC<FillReportItemProps> = ({ item, onPress })
         }
     };
 
-    const handleAdjustPress = (e: any) => {
+    const handleAdjustPress = (e: GestureResponderEvent) => {
         e.stopPropagation?.();
         router.push(`/(app)/(tabs)/home/actions/sales_floor/ItemAdjust?productId=${item.product_id}`);
     };

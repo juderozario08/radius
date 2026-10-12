@@ -15,7 +15,7 @@ function NavigationHistoryWatcher() {
 
     useEffect(() => {
         if (pathname && !pathname.includes("/(auth)")) {
-            navigationTracker.record(pathname, params as Record<string, any>);
+            navigationTracker.record(pathname, params);
         }
     }, [pathname, params]);
 

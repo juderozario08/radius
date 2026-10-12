@@ -127,7 +127,7 @@ export default function OnlineOrdersList() {
             <TouchableOpacity
                 style={styles.card}
                 activeOpacity={0.7}
-                onPress={() => router.push(`/(app)/(tabs)/home/actions/sales_floor/Orders/${item.order_id}` as any)}
+                onPress={() => router.push(`/(app)/(tabs)/home/actions/sales_floor/Orders/${item.order_id}`)}
             >
                 <View style={globalStyles.cardHeader}>
                     <Text style={styles.name}>Order #{item.order_id}</Text>
@@ -204,7 +204,7 @@ export default function OnlineOrdersList() {
                         <TouchableOpacity onPress={() => loadAll()} style={{ padding: 8 }}>
                             <Ionicons name="refresh" size={24} color={COLORS.textPrimary} />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.push(`/(app)/(tabs)/home/actions/sales_floor/Orders/search?active_tab=${filter}&order_type=${searchParams.order_type}&order_id=${searchParams.order_id}&customer_first_name=${searchParams.customer_first_name}&customer_last_name=${searchParams.customer_last_name}&customer_email=${searchParams.customer_email}&sku=${searchParams.sku}&billing_phone=${searchParams.billing_phone}&payment_card=${searchParams.payment_card}&status=${searchParams.status}` as any)} style={{ padding: 8 }}>
+                        <TouchableOpacity onPress={() => router.push(`/(app)/(tabs)/home/actions/sales_floor/Orders/search?active_tab=${filter}&order_type=${searchParams.order_type}&order_id=${searchParams.order_id}&customer_first_name=${searchParams.customer_first_name}&customer_last_name=${searchParams.customer_last_name}&customer_email=${searchParams.customer_email}&sku=${searchParams.sku}&billing_phone=${searchParams.billing_phone}&payment_card=${searchParams.payment_card}&status=${searchParams.status}`)} style={{ padding: 8 }}>
                             <Ionicons name="search" size={24} color={COLORS.textPrimary} />
                         </TouchableOpacity>
                     </View>

@@ -186,6 +186,11 @@ export const globalStyles = StyleSheet.create({
         borderColor: COLORS.border,
         paddingTop: SPACING.lg,
         paddingHorizontal: SPACING.lg,
+        shadowColor: COLORS.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     listCardBody: {
         backgroundColor: COLORS.surface,
@@ -193,6 +198,11 @@ export const globalStyles = StyleSheet.create({
         borderRightWidth: 1,
         borderColor: COLORS.border,
         paddingHorizontal: SPACING.lg,
+        shadowColor: COLORS.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     listCardBottom: {
         backgroundColor: COLORS.surface,
@@ -203,6 +213,11 @@ export const globalStyles = StyleSheet.create({
         borderColor: COLORS.border,
         paddingBottom: SPACING.lg,
         marginBottom: SPACING.lg,
+        shadowColor: COLORS.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
 
     shadowLight: {

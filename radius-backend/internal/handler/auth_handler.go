@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
+	"radius/internal/api"
 	"radius/internal/models"
 	"radius/internal/service"
 
@@ -73,9 +75,13 @@ func (h *AuthHandler) RefreshToken(ctx *gin.Context) {
 	}
 
 	result, err := h.authService.RefreshToken(ctx.Request.Context(), body.RefreshToken)
-	if err != nil {
-		slog.ErrorContext(ctx.Request.Context(), "AuthHandler.RefreshToken: service error", "error", err)
+	if errors.Is(err, service.ErrUnauthorized) {
+		slog.WarnContext(ctx.Request.Context(), "AuthHandler.RefreshToken: refresh rejected", "error", err)
 		ctx.JSON(http.StatusUnauthorized, models.APIError{Error: "Request could not be completed"})
+		return
+	}
+	if err != nil {
+		api.HandleError(ctx, err, "AuthHandler.RefreshToken: service error")
 		return
 	}
 

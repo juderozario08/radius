@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -157,20 +158,20 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 		return s.jwtSecret, nil
 	})
 	if err != nil {
-		return "", "", errors.New("invalid or expired refresh token")
+		return "", "", fmt.Errorf("%w: invalid or expired refresh token", ErrUnauthorized)
 	}
 	if !token.Valid {
-		return "", "", errors.New("invalid refresh token")
+		return "", "", fmt.Errorf("%w: invalid refresh token", ErrUnauthorized)
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", "", errors.New("could not extract claims from refresh token")
+		return "", "", fmt.Errorf("%w: could not extract claims from refresh token", ErrUnauthorized)
 	}
 
 	tokenType, ok := claims["token_type"]
 	if !ok || tokenType != "refresh" {
-		return "", "", errors.New("invalid token type: expected refresh token")
+		return "", "", fmt.Errorf("%w: invalid token type: expected refresh token", ErrUnauthorized)
 	}
 
 	refreshTokenHash := utils.HashTokenForDB(refreshTokenString)
@@ -180,9 +181,13 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 			sessionID, markerErr := s.redisClient.Get(ctx, "radius:auth:used-refresh:"+refreshTokenHash).Int()
 			if markerErr == nil && sessionID > 0 {
 				_, _ = s.TerminateSessionById(ctx, sessionID)
+				return "", "", fmt.Errorf("%w: refresh token reuse detected", ErrUnauthorized)
 			}
 		}
-		return "", "", errors.New("session not found or already logged out")
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return "", "", fmt.Errorf("get session by refresh token: %w", err)
+		}
+		return "", "", fmt.Errorf("%w: session not found or already logged out", ErrUnauthorized)
 	}
 
 	if time.Now().After(session.ExpiresAt) {
@@ -190,7 +195,7 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash), cache.LegacyAuthTokenKey(session.AccessTokenHash)).Err()
 		}
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
-		return "", "", errors.New("session expired")
+		return "", "", fmt.Errorf("%w: session expired", ErrUnauthorized)
 	}
 
 	if session.IsActive != nil && !(*session.IsActive) {
@@ -198,27 +203,27 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash), cache.LegacyAuthTokenKey(session.AccessTokenHash)).Err()
 		}
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
-		return "", "", errors.New("inactive account")
+		return "", "", fmt.Errorf("%w: inactive account", ErrUnauthorized)
 	}
 	if session.IsTerminated != nil && *session.IsTerminated {
 		if session.AccessTokenHash != "" && s.redisClient != nil {
 			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash), cache.LegacyAuthTokenKey(session.AccessTokenHash)).Err()
 		}
 		_ = s.sessionRepo.TerminateSessionById(ctx, session.SessionId)
-		return "", "", errors.New("terminated account")
+		return "", "", fmt.Errorf("%w: terminated account", ErrUnauthorized)
 	}
 
 	employeeIdRaw, ok := claims["employee_id"].(float64)
 	if !ok {
-		return "", "", errors.New("invalid token claims")
+		return "", "", fmt.Errorf("%w: invalid token claims", ErrUnauthorized)
 	}
 	email, ok := claims["email"].(string)
 	if !ok {
-		return "", "", errors.New("invalid token claims")
+		return "", "", fmt.Errorf("%w: invalid token claims", ErrUnauthorized)
 	}
 	roleStr, ok := claims["role"].(string)
 	if !ok {
-		return "", "", errors.New("invalid token claims")
+		return "", "", fmt.Errorf("%w: invalid token claims", ErrUnauthorized)
 	}
 	employeeId := int(employeeIdRaw)
 	role := models.EmployeeRole(roleStr)
@@ -226,22 +231,22 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 
 	newAccessToken, err := utils.GenerateAccessToken(employeeId, email, role, storeId, s.jwtSecret)
 	if err != nil {
-		return "", "", errors.New("failed to generate new access token")
+		return "", "", fmt.Errorf("generate access token: %w", err)
 	}
 
 	newRefreshToken, err := utils.GenerateRefreshToken(employeeId, email, role, storeId, s.jwtSecret)
 	if err != nil {
-		return "", "", errors.New("failed to generate new refresh token")
+		return "", "", fmt.Errorf("generate refresh token: %w", err)
 	}
 	newAccessHash := utils.HashTokenForDB(newAccessToken)
 	newRefreshHash := utils.HashTokenForDB(newRefreshToken)
 	rotated, err := s.sessionRepo.RotateSessionTokens(ctx, session.SessionId, refreshTokenHash, newAccessHash, newRefreshHash, time.Now().Add(utils.SessionInactivityTimeout))
 	if err != nil {
-		return "", "", errors.New("failed to rotate session")
+		return "", "", fmt.Errorf("rotate session tokens: %w", err)
 	}
 	if !rotated {
 		_, _ = s.TerminateSessionById(ctx, session.SessionId)
-		return "", "", errors.New("refresh token already used")
+		return "", "", fmt.Errorf("%w: refresh token already used", ErrUnauthorized)
 	}
 	if s.redisClient == nil || s.redisClient.Set(ctx, "radius:auth:used-refresh:"+refreshTokenHash, session.SessionId, utils.MaxSessionLifetime).Err() != nil {
 		_, _ = s.TerminateSessionById(ctx, session.SessionId)

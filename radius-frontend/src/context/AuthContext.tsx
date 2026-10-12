@@ -1,4 +1,4 @@
-import { apiFetch, setClientContext, resetClientContext } from "@/api/client";
+import { apiFetch, setClientContext, resetClientContext, UnauthorizedError } from "@/api/client";
 import { deleteToken, getToken, saveToken, saveRefreshToken, deleteRefreshToken } from "@/utils/token";
 import { createContext, ReactNode, useEffect, useState, useMemo } from "react";
 import Toast from "react-native-toast-message";
@@ -26,6 +26,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        const restoreStoredSession = async () => {
+            const userInfoStr = await SecureStore.getItemAsync("user_info");
+            if (!userInfoStr) {
+                setToken(null);
+                setUser(null);
+                return;
+            }
+            const { token: _token, refresh_token: _refreshToken, ...storedUser } = JSON.parse(userInfoStr) as LoginResponse;
+            setUser(storedUser);
+            setClientContext({
+                storeId: storedUser.store_id,
+                employeeId: storedUser.employee_id,
+            });
+            setToken(await getToken());
+        };
+
         const verifyToken = async () => {
             try {
                 const t = await getToken();
@@ -36,19 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const res = await apiFetch<VerifyTokenResponse>(ENDPOINTS.AUTH.verifyToken, {
                     method: "POST",
                 });
-
-                const userInfoStr = await SecureStore.getItemAsync("user_info");
-                if (userInfoStr) {
-                    const parsedUser = JSON.parse(userInfoStr);
-                    setUser(parsedUser);
-                    setClientContext({
-                        storeId: parsedUser.store_id,
-                        employeeId: parsedUser.employee_id,
-                    });
-                }
-
-                const currentToken = await getToken();
-                setToken(currentToken);
+                await restoreStoredSession();
                 setIsLoading(false);
                 Toast.show({
                     type: "success",
@@ -56,16 +60,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     visibilityTime: 1000,
                 });
             } catch (err) {
-                resetClientContext();
-                await deleteToken();
-                await deleteRefreshToken();
-                await SecureStore.deleteItemAsync("user_info");
-                setToken(null);
-                setUser(null);
+                if (err instanceof UnauthorizedError) {
+                    resetClientContext();
+                    await deleteToken();
+                    await deleteRefreshToken();
+                    await SecureStore.deleteItemAsync("user_info");
+                    setToken(null);
+                    setUser(null);
+                } else {
+                    await restoreStoredSession().catch(() => {
+                        setToken(null);
+                        setUser(null);
+                    });
+                }
                 setIsLoading(false);
                 Toast.show({
                     type: "error",
-                    text1: String(err),
+                    text1: err instanceof Error ? err.message : String(err),
                     visibilityTime: 1000,
                     autoHide: true,
                     position: "bottom",

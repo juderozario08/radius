@@ -15,7 +15,7 @@ import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { ENDPOINTS } from "@/constants/routes";
 import { callApi } from "@/utils/helpers";
 import { useAuth } from "@/hooks/useAuth";
@@ -121,7 +121,7 @@ function FilterPanel({
                             </View>
                         )}
 
-                        <Text style={[filterStyles.label, { marginTop: 20 }]}>Brand</Text>
+                        <Text style={[filterStyles.label, { marginTop: SPACING.xl }]}>Brand</Text>
                         <TouchableOpacity
                             style={filterStyles.pickerButton}
                             onPress={() => setShowBrandPicker(!showBrandPicker)}
@@ -175,7 +175,7 @@ function FilterPanel({
                             </View>
                         )}
 
-                        <Text style={[filterStyles.label, { marginTop: 20 }]}>Status</Text>
+                        <Text style={[filterStyles.label, { marginTop: SPACING.xl }]}>Status</Text>
                         <View style={filterStyles.chipRow}>
                             <TouchableOpacity
                                 style={[filterStyles.chip, localFilters.is_active === undefined && filterStyles.chipActive]}
@@ -197,7 +197,7 @@ function FilterPanel({
                             </TouchableOpacity>
                         </View>
 
-                        <Text style={[filterStyles.label, { marginTop: 20 }]}>Unit of Measure</Text>
+                        <Text style={[filterStyles.label, { marginTop: SPACING.xl }]}>Unit of Measure</Text>
                         <View style={filterStyles.chipRow}>
                             {[undefined, "EACH", "CASE", "PACK"].map((uom) => (
                                 <TouchableOpacity
@@ -240,9 +240,9 @@ function FilterPanel({
 
 function ProductCard({ product, onPress }: { product: Product; onPress: () => void }) {
     return (
-        <TouchableOpacity style={[globalStyles.card, { marginBottom: 10, borderWidth: 1, borderColor: COLORS.border, shadowOpacity: 0.05, elevation: 1 }]} onPress={onPress} activeOpacity={0.7}>
+        <TouchableOpacity style={[globalStyles.card, { marginBottom: SPACING.smd, borderWidth: 1, borderColor: COLORS.border, shadowOpacity: 0.05, elevation: 1 }]} onPress={onPress} activeOpacity={0.7}>
             <View style={globalStyles.cardHeader}>
-                <View style={{ flex: 1, marginRight: 8 }}>
+                <View style={{ flex: 1, marginRight: SPACING.sm }}>
                     <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
                     <Text style={styles.productBrand}>{product.brand}</Text>
                 </View>
@@ -456,7 +456,7 @@ export default function ProductSearchScreen() {
                 >
                     <Image
                         source={require("@/assets/images/filter.png")}
-                        style={[globalStyles.headerImageSize, activeFilterCount > 0 && { tintColor: "#FFFFFF" }]}
+                        style={[globalStyles.headerImageSize, activeFilterCount > 0 && { tintColor: COLORS.surface }]}
                     />
                     {activeFilterCount > 0 && (
                         <View style={styles.filterBadge}>
@@ -482,7 +482,7 @@ export default function ProductSearchScreen() {
             {isLoading ? (
                 <View style={globalStyles.centerElement}>
                     <LoadingSpinner />
-                    <Text style={{ marginTop: 12, color: COLORS.textSecondary }}>Searching...</Text>
+                    <Text style={{ marginTop: SPACING.md, color: COLORS.textSecondary }}>Searching...</Text>
                 </View>
             ) : (
                 <FlatList
@@ -514,9 +514,9 @@ export default function ProductSearchScreen() {
 const styles = StyleSheet.create({
     searchBarContainer: {
         flexDirection: "row",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        gap: 10,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.md,
+        gap: SPACING.smd,
         backgroundColor: COLORS.headerBackground,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
@@ -526,27 +526,27 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: COLORS.inputBg,
-        borderRadius: 10,
+        borderRadius: RADIUS.mdl,
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
-        paddingHorizontal: 12,
+        paddingHorizontal: SPACING.md,
     },
     searchIcon: {
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     searchInput: {
         flex: 1,
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         color: COLORS.textPrimary,
         height: 44,
     },
     clearIcon: {
-        padding: 4,
+        padding: SPACING.xs,
     },
     filterButton: {
         width: 46,
         height: 46,
-        borderRadius: 10,
+        borderRadius: RADIUS.mdl,
         backgroundColor: COLORS.inputBg,
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
         top: -4,
         right: -4,
         backgroundColor: COLORS.primary,
-        borderRadius: 10,
+        borderRadius: RADIUS.mdl,
         minWidth: 18,
         height: 18,
         justifyContent: "center",
@@ -572,31 +572,31 @@ const styles = StyleSheet.create({
     },
     filterBadgeText: {
         color: "white",
-        fontSize: 10,
+        fontSize: FONT_SIZE.xxs,
         fontWeight: "700",
     },
     resultsHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.sm,
         backgroundColor: COLORS.background,
     },
     resultsCount: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
         fontWeight: "600",
     },
     clearFiltersText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.primary,
         fontWeight: "600",
     },
     listContent: {
-        paddingHorizontal: 16,
-        paddingTop: 8,
-        paddingBottom: 20,
+        paddingHorizontal: SPACING.lg,
+        paddingTop: SPACING.sm,
+        paddingBottom: SPACING.xl,
         flexGrow: 1,
     },
 
@@ -604,45 +604,45 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "flex-start",
-        marginBottom: 10,
+        marginBottom: SPACING.smd,
     },
     productName: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
         color: COLORS.textPrimary,
         lineHeight: 22,
     },
     productBrand: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     productMeta: {
         flexDirection: "row",
-        gap: 16,
-        marginBottom: 8,
+        gap: SPACING.lg,
+        marginBottom: SPACING.sm,
     },
     metaItem: {
         flexDirection: "column",
     },
     metaLabel: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "600",
         color: COLORS.textSecondary,
         textTransform: "uppercase",
         letterSpacing: 0.5,
     },
     metaValue: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textPrimary,
         fontWeight: "500",
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     productDescription: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
         lineHeight: 18,
-        marginTop: 4,
+        marginTop: SPACING.xs,
     },
     cardArrow: {
         position: "absolute",
@@ -656,26 +656,26 @@ const styles = StyleSheet.create({
         paddingTop: 60,
     },
     emptyTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginTop: 16,
+        marginTop: SPACING.lg,
     },
     emptySubtitle: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textSecondary,
-        marginTop: 6,
+        marginTop: SPACING.xsm,
         textAlign: "center",
     },
     loadingMore: {
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        paddingVertical: 16,
-        gap: 8,
+        paddingVertical: SPACING.lg,
+        gap: SPACING.sm,
     },
     loadingMoreText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
     },
 });
@@ -683,40 +683,40 @@ const styles = StyleSheet.create({
 const filterStyles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        backgroundColor: COLORS.overlay,
         justifyContent: "flex-end",
     },
     container: {
         backgroundColor: COLORS.surface,
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        borderTopLeftRadius: RADIUS.xxl,
+        borderTopRightRadius: RADIUS.xxl,
         maxHeight: "80%",
-        paddingBottom: 30,
+        paddingBottom: SPACING.xxlPlus,
     },
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 12,
+        paddingHorizontal: SPACING.xl,
+        paddingTop: SPACING.xl,
+        paddingBottom: SPACING.md,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
     title: {
-        fontSize: 20,
+        fontSize: FONT_SIZE.xxl,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     body: {
-        paddingHorizontal: 20,
-        paddingTop: 16,
+        paddingHorizontal: SPACING.xl,
+        paddingTop: SPACING.lg,
     },
     label: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginBottom: 8,
+        marginBottom: SPACING.sm,
         textTransform: "uppercase",
         letterSpacing: 0.5,
     },
@@ -727,33 +727,33 @@ const filterStyles = StyleSheet.create({
         backgroundColor: COLORS.inputBg,
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
-        borderRadius: 10,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
+        borderRadius: RADIUS.mdl,
+        paddingHorizontal: SPACING.mdl,
+        paddingVertical: SPACING.md,
     },
     pickerText: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         color: COLORS.textPrimary,
     },
     pickerList: {
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
-        borderRadius: 10,
-        marginTop: 6,
+        borderRadius: RADIUS.mdl,
+        marginTop: SPACING.xsm,
         maxHeight: 200,
         backgroundColor: COLORS.inputBg,
     },
     pickerItem: {
-        paddingHorizontal: 14,
+        paddingHorizontal: SPACING.mdl,
         paddingVertical: 11,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
     pickerItemSelected: {
-        backgroundColor: "#FFF0F0",
+        backgroundColor: COLORS.primarySurfaceStrong,
     },
     pickerItemText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textPrimary,
     },
     pickerItemTextSelected: {
@@ -761,9 +761,9 @@ const filterStyles = StyleSheet.create({
         fontWeight: "600",
     },
     brandSearchInput: {
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        fontSize: 14,
+        paddingHorizontal: SPACING.mdl,
+        paddingVertical: SPACING.smd,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textPrimary,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
@@ -771,12 +771,12 @@ const filterStyles = StyleSheet.create({
     chipRow: {
         flexDirection: "row",
         flexWrap: "wrap",
-        gap: 8,
+        gap: SPACING.sm,
     },
     chip: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.sm,
+        borderRadius: RADIUS.xxl,
         backgroundColor: COLORS.inputBg,
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
@@ -786,7 +786,7 @@ const filterStyles = StyleSheet.create({
         borderColor: COLORS.primary,
     },
     chipText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
@@ -795,34 +795,34 @@ const filterStyles = StyleSheet.create({
     },
     footer: {
         flexDirection: "row",
-        paddingHorizontal: 20,
-        paddingTop: 16,
-        gap: 12,
+        paddingHorizontal: SPACING.xl,
+        paddingTop: SPACING.lg,
+        gap: SPACING.md,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
     },
     clearButton: {
         flex: 1,
-        paddingVertical: 14,
-        borderRadius: 10,
+        paddingVertical: SPACING.mdl,
+        borderRadius: RADIUS.mdl,
         borderWidth: 1,
         borderColor: COLORS.border,
         alignItems: "center",
     },
     clearButtonText: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "600",
         color: COLORS.textSecondary,
     },
     applyButton: {
         flex: 2,
-        paddingVertical: 14,
-        borderRadius: 10,
+        paddingVertical: SPACING.mdl,
+        borderRadius: RADIUS.mdl,
         backgroundColor: COLORS.primary,
         alignItems: "center",
     },
     applyButtonText: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "700",
         color: "white",
     },

@@ -12,7 +12,7 @@ import { ProductDetails } from "@/components/inventory/ProductDetails";
 import { ProductLocations } from "@/components/inventory/ProductLocations";
 import { useAuth } from "@/hooks/useAuth";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { formatMoney } from "@/utils/money";
 
@@ -148,26 +148,26 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     headerInfo: {
-        padding: 16,
+        padding: SPACING.lg,
         backgroundColor: COLORS.headerBackground,
         flexDirection: "row",
         justifyContent: "space-between",
     },
     headerTextContainer: {
         flex: 1,
-        marginRight: 16,
+        marginRight: SPACING.lg,
     },
     headerSubtitle: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textSecondary,
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     headerTitle: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginTop: 4,
-        marginBottom: 8,
+        marginTop: SPACING.xs,
+        marginBottom: SPACING.sm,
     },
     priceRow: {
         flexDirection: "row",
@@ -175,48 +175,48 @@ const styles = StyleSheet.create({
         flexWrap: "wrap",
     },
     price: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.success,
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     constrainedText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.error,
         fontWeight: "600",
     },
     imagePlaceholder: {
         width: 60,
         height: 60,
-        backgroundColor: "rgba(0,0,0,0.05)",
-        borderRadius: 8,
+        backgroundColor: COLORS.blackAlpha05,
+        borderRadius: RADIUS.md,
         alignItems: "center",
         justifyContent: "center",
     },
     tabsContainer: {
         flexDirection: "row",
-        backgroundColor: "rgba(0,0,0,0.05)",
-        marginHorizontal: 16,
-        borderRadius: 8,
-        padding: 4,
-        marginBottom: 16,
+        backgroundColor: COLORS.blackAlpha05,
+        marginHorizontal: SPACING.lg,
+        borderRadius: RADIUS.md,
+        padding: SPACING.xs,
+        marginBottom: SPACING.lg,
     },
     tab: {
         flex: 1,
-        paddingVertical: 8,
+        paddingVertical: SPACING.sm,
         alignItems: "center",
-        borderRadius: 6,
+        borderRadius: RADIUS.sm,
     },
     activeTab: {
         backgroundColor: COLORS.surface,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
         elevation: 2,
     },
     tabText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "500",
         color: COLORS.textSecondary,
     },

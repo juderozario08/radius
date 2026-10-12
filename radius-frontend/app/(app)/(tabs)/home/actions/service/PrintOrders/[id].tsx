@@ -1,7 +1,7 @@
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { ENDPOINTS } from "@/constants/routes";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { DetailRow } from "@/components/common/DetailRow";
@@ -24,20 +24,20 @@ import { formatMoney, multiplyMoney } from "@/utils/money";
 const getStatusColor = (status: string) => {
     switch (status) {
         case "READY FOR PICKUP":
-            return { bg: "#FFF3E0", text: "#E65100" };
+            return { bg: COLORS.warningBg, text: COLORS.warning };
         case "PENDING":
-            return { bg: "#FFF8E1", text: "#F57F17" };
+            return { bg: COLORS.pendingBg, text: COLORS.pending };
         case "COMPLETED":
         case "DELIVERED":
         case "RELEASED":
-            return { bg: "#E8F5E9", text: "#2E7D32" };
+            return { bg: COLORS.activeBg, text: COLORS.success };
         case "IN PROGRESS":
         case "WORK IN PROGRESS":
-            return { bg: "#E3F2FD", text: "#1565C0" };
+            return { bg: COLORS.infoBg, text: COLORS.info };
         case "SHIPPED":
-            return { bg: "#F3E5F5", text: "#6A1B9A" };
+            return { bg: COLORS.purpleBg, text: COLORS.purple };
         case "CANCELLED":
-            return { bg: "#FFEBEE", text: "#C62828" };
+            return { bg: COLORS.inactiveBg, text: COLORS.dangerDark };
         default:
             return { bg: COLORS.surface, text: COLORS.textSecondary };
     }
@@ -178,20 +178,20 @@ export default function PrintOrderDetail() {
 
                         {order.order_type === "WEB" && order.shipping_address && (
                             <View style={styles.card}>
-                                <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Shipping / Delivery</Text>
+                                <Text style={[styles.sectionTitle, { marginBottom: SPACING.md }]}>Shipping / Delivery</Text>
                                 <DetailRow label="Address:" value={order.shipping_address} />
                             </View>
                         )}
 
                         {order.notes ? (
                             <View style={styles.card}>
-                                <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Order Notes</Text>
+                                <Text style={[styles.sectionTitle, { marginBottom: SPACING.md }]}>Order Notes</Text>
                                 <Text style={styles.notesText}>{order.notes}</Text>
                             </View>
                         ) : null}
 
                         <View style={styles.card}>
-                            <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Financials</Text>
+                            <Text style={[styles.sectionTitle, { marginBottom: SPACING.md }]}>Financials</Text>
                             <DetailRow label="Subtotal:" value={formatMoney(order.subtotal)} />
                             <DetailRow label="Tax:" value={formatMoney(order.tax_amount)} />
                             {order.shipping_fee > 0 && (
@@ -202,7 +202,7 @@ export default function PrintOrderDetail() {
                         </View>
 
                         <View style={globalStyles.listCardTop}>
-                            <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Print Items ({items.length})</Text>
+                            <Text style={[styles.sectionTitle, { marginBottom: SPACING.md }]}>Print Items ({items.length})</Text>
                         </View>
                     </>
                 }
@@ -235,27 +235,27 @@ export default function PrintOrderDetail() {
 }
 
 const styles = StyleSheet.create({
-    actions: { gap: 8, marginTop: 12 },
+    actions: { gap: SPACING.sm, marginTop: SPACING.md },
     card: {
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.lg,
+        marginBottom: SPACING.lg,
         borderWidth: 1,
         borderColor: COLORS.border,
         elevation: 2,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     notesText: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         color: COLORS.textPrimary,
         lineHeight: 22,
     },
@@ -263,39 +263,39 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: 12,
+        paddingVertical: SPACING.md,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
     itemInfo: {
         flex: 1,
-        marginRight: 12,
+        marginRight: SPACING.md,
     },
     listFooter: {
         marginBottom: 56,
     },
     itemText: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "600",
         color: COLORS.textPrimary,
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     itemSubText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
     },
     itemTotal: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
         color: COLORS.primary,
     },
     statusBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.xs,
+        borderRadius: RADIUS.lg,
     },
     statusText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
     },
 });

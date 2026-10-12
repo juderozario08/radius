@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: SPACING.sm,
         backgroundColor: COLORS.primary,
-        paddingHorizontal: 18,
+        paddingHorizontal: SPACING.lgPlus,
         paddingVertical: SPACING.smd,
         borderRadius: RADIUS.md,
     },

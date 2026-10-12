@@ -1,7 +1,7 @@
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { ENDPOINTS } from "@/constants/routes";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { GetAllSessionsResponse, Session } from "@/types/admin.types";
@@ -62,7 +62,7 @@ const SessionDetailModal: React.FC<{
                     <View style={globalStyles.modalCardContainer}>
                         {isCurrent && (
                             <View style={styles.currentBanner}>
-                                <Ionicons name="phone-portrait" size={16} color="#1B5E20" />
+                                <Ionicons name="phone-portrait" size={16} color={COLORS.successDark} />
                                 <Text style={styles.currentBannerText}>This is your active session on this device</Text>
                             </View>
                         )}
@@ -160,11 +160,11 @@ export default function Sessions() {
                 }}
             >
                 <View style={globalStyles.cardHeader}>
-                    <View style={{ flex: 1, marginRight: 8 }}>
+                    <View style={{ flex: 1, marginRight: SPACING.sm }}>
                         <Text style={styles.name}>{item.first_name} {item.last_name}</Text>
                         {isCurrent && (
                             <View style={styles.currentBadge}>
-                                <Ionicons name="phone-portrait" size={12} color="#FFFFFF" />
+                                <Ionicons name="phone-portrait" size={12} color={COLORS.surface} />
                                 <Text style={styles.currentBadgeText}>Current Session (This Device)</Text>
                             </View>
                         )}
@@ -233,62 +233,62 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingBottom: 0,
     },
-    name: { fontSize: 18, fontWeight: "700", color: COLORS.textPrimary },
-    detailsContainer: { gap: 6 },
+    name: { fontSize: FONT_SIZE.xl, fontWeight: "700", color: COLORS.textPrimary },
+    detailsContainer: { gap: SPACING.xsm },
     currentCardHighlight: {
         borderColor: COLORS.primary,
         borderWidth: 2,
-        backgroundColor: "#F6FBF7",
+        backgroundColor: COLORS.successSurface,
     },
     currentBadge: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#2E7D32",
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 6,
+        backgroundColor: COLORS.success,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: SPACING.micro,
+        borderRadius: RADIUS.sm,
         alignSelf: "flex-start",
-        marginTop: 4,
-        gap: 4,
+        marginTop: SPACING.xs,
+        gap: SPACING.xs,
     },
     currentBadgeText: {
-        color: "#FFFFFF",
-        fontSize: 11,
+        color: COLORS.surface,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "700",
         letterSpacing: 0.2,
     },
     currentBanner: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#E8F5E9",
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        marginBottom: 12,
-        gap: 8,
+        backgroundColor: COLORS.activeBg,
+        paddingVertical: SPACING.sm,
+        paddingHorizontal: SPACING.md,
+        borderRadius: RADIUS.md,
+        marginBottom: SPACING.md,
+        gap: SPACING.sm,
         borderWidth: 1,
-        borderColor: "#A5D6A7",
+        borderColor: COLORS.successBorder,
     },
     currentBannerText: {
-        color: "#1B5E20",
-        fontSize: 12,
+        color: COLORS.successDark,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
         flex: 1,
     },
     badgesRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
+        gap: SPACING.xsm,
     },
     currentBadgeSmall: {
-        backgroundColor: "#2E7D32",
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
+        backgroundColor: COLORS.success,
+        paddingHorizontal: SPACING.xsm,
+        paddingVertical: SPACING.xxs,
+        borderRadius: RADIUS.xs,
     },
     currentBadgeSmallText: {
-        color: "#FFFFFF",
-        fontSize: 10,
+        color: COLORS.surface,
+        fontSize: FONT_SIZE.xxs,
         fontWeight: "700",
     },
 });

@@ -9,7 +9,7 @@ import { BarcodeScanner, BarcodeScannerRef } from "@/components/common/BarcodeSc
 import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
 import { LocationInput } from "@/components/common/LocationInput";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { ENDPOINTS } from "@/constants/routes";
 import { callApi } from "@/utils/helpers";
 import { useAuth } from "@/hooks/useAuth";
@@ -161,7 +161,7 @@ function LocationTabContent({
                 <View style={styles.locationFormWrapper}>
                     <View style={styles.locationForm}>
                         <Text style={styles.inputLabel}>Enter the 9-digit bin number</Text>
-                        <View style={{ marginBottom: 24 }}>
+                        <View style={{ marginBottom: SPACING.xxl }}>
                             <LocationInput
                                 value={locationId}
                                 onChangeText={onLocationInputChange}
@@ -185,30 +185,30 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
         backgroundColor: COLORS.headerBackground,
-        padding: 16,
+        padding: SPACING.lg,
     },
     loadingText: {
-        marginTop: 10,
+        marginTop: SPACING.smd,
         color: COLORS.textSecondary,
     },
     instructionText: {
-        marginTop: 12,
+        marginTop: SPACING.md,
         color: COLORS.textSecondary,
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         textAlign: "center",
     },
     locationFormWrapper: {
         flex: 1,
         justifyContent: "center",
-        paddingHorizontal: 24,
+        paddingHorizontal: SPACING.xxl,
     },
     locationForm: {
-        marginBottom: 16,
+        marginBottom: SPACING.lg,
     },
     inputLabel: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         color: COLORS.textSecondary,
-        marginBottom: 16,
+        marginBottom: SPACING.lg,
         fontWeight: "600",
         textAlign: "center",
     },
@@ -216,13 +216,13 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary,
         justifyContent: "center",
         alignItems: "center",
-        paddingHorizontal: 20,
-        borderRadius: 8,
+        paddingHorizontal: SPACING.xl,
+        borderRadius: RADIUS.md,
         height: 50,
     },
     searchButtonText: {
         color: "white",
         fontWeight: "700",
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
     },
 });

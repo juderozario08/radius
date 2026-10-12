@@ -2,7 +2,7 @@ import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { COLORS } from "@/constants/colors";
 import { ENDPOINTS } from "@/constants/routes";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { EmployeeRole } from "@/types/auth.types";
@@ -180,7 +180,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
                                 <Text style={globalStyles.modalName}>{employee.first_name} {employee.last_name}</Text>
                                 <Text style={globalStyles.modalRole}>{capitalize(employee.role)}</Text>
                             </View>
-                            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                            <View style={{ flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' }}>
                                 <TerminatedBadge isTerminated={employee.is_terminated} />
                                 <StatusBadge isActive={employee.is_active} />
                             </View>
@@ -565,7 +565,7 @@ export default function Employees() {
                 <Text style={styles.name}>
                     {item.first_name} {item.last_name}
                 </Text>
-                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' }}>
                     <RoleBadge role={item.role} />
                     <TerminatedBadge isTerminated={item.is_terminated} />
                     <StatusBadge isActive={item.is_active} />
@@ -662,42 +662,42 @@ const styles = StyleSheet.create({
         height: 25
     },
     name: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary
     },
     detailsContainer: {
-        gap: 6
+        gap: SPACING.xsm
     },
     formHeader: {
-        padding: 20,
+        padding: SPACING.xl,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
-        backgroundColor: "#FAFAFA"
+        backgroundColor: COLORS.surfaceMuted
     },
     formHeaderEdit: {
         borderBottomColor: COLORS.accent,
-        backgroundColor: "#EEF3F8"
+        backgroundColor: COLORS.accentBg
     },
     formContainer: {
-        padding: 20
+        padding: SPACING.xl
     },
     inputLabel: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "600",
         color: COLORS.textSecondary,
-        marginBottom: 8,
-        marginTop: 12
+        marginBottom: SPACING.sm,
+        marginTop: SPACING.md
     },
     input: {
         backgroundColor: COLORS.inputBg,
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
-        borderRadius: 8,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        fontSize: 15,
-        marginBottom: 12,
+        borderRadius: RADIUS.md,
+        paddingHorizontal: SPACING.mdl,
+        paddingVertical: SPACING.md,
+        fontSize: FONT_SIZE.mdl,
+        marginBottom: SPACING.md,
         color: COLORS.textPrimary,
     },
     inputRow: {
@@ -706,18 +706,18 @@ const styles = StyleSheet.create({
     },
     inputHalf: {
         flex: 1,
-        marginRight: 8
+        marginRight: SPACING.sm
     },
     rolesContainer: {
         flexDirection: "row",
         flexWrap: "wrap",
-        gap: 8,
-        marginBottom: 12
+        gap: SPACING.sm,
+        marginBottom: SPACING.md
     },
     rolePill: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 20,
+        paddingVertical: SPACING.sm,
+        paddingHorizontal: SPACING.lg,
+        borderRadius: RADIUS.xxl,
         backgroundColor: COLORS.background,
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
@@ -727,11 +727,11 @@ const styles = StyleSheet.create({
         borderColor: COLORS.primary
     },
     rolePillText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textSecondary
     },
     rolePillTextActive: {
-        color: "#FFFFFF"
+        color: COLORS.surface
     },
 });

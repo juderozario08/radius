@@ -4,7 +4,7 @@ import LogoutComponent from "@/components/common/Logout";
 import NotificationIconComponent from "@/components/common/NotificationIcon";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { Permission } from "@/utils/roles";
 import { Href, router } from "expo-router";
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -66,7 +66,7 @@ export default function Actions() {
         <TopSafeAreaView>
             <HeaderComponent headerRight={[<NotificationIconComponent key="notifications" />, <LogoutComponent key="logout" />]} />
             <ScrollView style={{ backgroundColor: COLORS.background }}>
-                <View style={[globalStyles.container, { paddingHorizontal: 10, gap: 50 }]}>
+                <View style={[globalStyles.container, { paddingHorizontal: SPACING.smd, gap: 50 }]}>
                     <Gate permission="view_admin_actions">
                         <Subsection title="Admin Actions" mapping={adminActionsMapping} />
                     </Gate>
@@ -92,40 +92,40 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginTop: 10,
-        marginBottom: 10,
-        marginLeft: 15,
-        color: '#333',
+        marginTop: SPACING.smd,
+        marginBottom: SPACING.smd,
+        marginLeft: SPACING.mdlPlus,
+        color: COLORS.textPrimary,
     },
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         alignContent: 'flex-start',
-        gap: 10,
-        paddingHorizontal: 10
+        gap: SPACING.smd,
+        paddingHorizontal: SPACING.smd
     },
     itemWrapper: {
         width: 83,
         alignItems: 'center',
     },
     button: {
-        backgroundColor: "#C70202",
+        backgroundColor: COLORS.primary,
         paddingVertical: 25,
-        borderRadius: 12,
+        borderRadius: RADIUS.lg,
         alignItems: 'center',
         justifyContent: 'center',
         elevation: 2,
-        shadowColor: '#000',
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
         width: '100%',
-        marginBottom: 5
+        marginBottom: SPACING.xsPlus
     },
     buttonText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: '600',
-        color: '#000',
+        color: COLORS.black,
         textAlign: 'center',
     }
 });

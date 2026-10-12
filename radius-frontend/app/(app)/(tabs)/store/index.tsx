@@ -9,7 +9,7 @@ import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import { CANADIAN_PROVINCES, isCanadianProvince, normalizeCanadianPostalCode } from "@/constants/canada";
 import { COLORS } from "@/constants/colors";
 import { ENDPOINTS } from "@/constants/routes";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, FONT_SIZE } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { clearSWRCache } from "@/api/client";
 import { GetAllStoresResponse, Store } from "@/types/admin.types";
@@ -113,7 +113,7 @@ const StoreDetailModal: React.FC<{
                 <View style={globalStyles.modalContentWrapper}>
                     <View style={globalStyles.modalCardContainer}>
                         <View style={globalStyles.modalHeader}>
-                            <View style={{ flex: 1, marginRight: 8 }}>
+                            <View style={{ flex: 1, marginRight: SPACING.sm }}>
                                 <Text style={globalStyles.modalName}>{store.name}</Text>
                                 <Text style={globalStyles.modalRole}>Store ID: {store.store_id}</Text>
                             </View>
@@ -229,9 +229,9 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                     </View>
 
                     <ScrollView style={[styles.formContainer, { backgroundColor: COLORS.background }]} showsVerticalScrollIndicator>
-                        <Text style={[globalStyles.modalInputLabel, { marginTop: 12 }]}>Store Details *</Text>
+                        <Text style={[globalStyles.modalInputLabel, { marginTop: SPACING.md }]}>Store Details *</Text>
                         <TextInput
-                            style={[globalStyles.textInput, { marginBottom: 12 }]}
+                            style={[globalStyles.textInput, { marginBottom: SPACING.md }]}
                             placeholder="Store Name"
                             value={formValues.name}
                             onChangeText={(text) => updateField("name", text)}
@@ -240,7 +240,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             onSubmitEditing={() => phoneRef.current?.focus()}
                         />
                         <TextInput
-                            style={[globalStyles.textInput, { marginBottom: 12 }]}
+                            style={[globalStyles.textInput, { marginBottom: SPACING.md }]}
                             placeholder="Phone Number"
                             keyboardType="phone-pad"
                             value={formValues.phone}
@@ -251,9 +251,9 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             onSubmitEditing={() => addressRef.current?.focus()}
                         />
 
-                        <Text style={[globalStyles.modalInputLabel, { marginTop: 12 }]}>Location *</Text>
+                        <Text style={[globalStyles.modalInputLabel, { marginTop: SPACING.md }]}>Location *</Text>
                         <TextInput
-                            style={[globalStyles.textInput, { marginBottom: 12 }]}
+                            style={[globalStyles.textInput, { marginBottom: SPACING.md }]}
                             placeholder="Street Address"
                             value={formValues.address}
                             onChangeText={(text) => updateField("address", text)}
@@ -263,7 +263,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             onSubmitEditing={() => cityRef.current?.focus()}
                         />
                         <TextInput
-                            style={[globalStyles.textInput, { marginBottom: 12 }]}
+                            style={[globalStyles.textInput, { marginBottom: SPACING.md }]}
                             placeholder="City"
                             value={formValues.city}
                             onChangeText={(text) => updateField("city", text)}
@@ -279,7 +279,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
                             onChange={(v) => updateField("province", v)}
                         />
                         <TextInput
-                            style={[globalStyles.textInput, { marginBottom: 12 }]}
+                            style={[globalStyles.textInput, { marginBottom: SPACING.md }]}
                             placeholder="Postal (A1A 1A1)"
                             autoCapitalize="characters"
                             value={formValues.postal_code}
@@ -292,7 +292,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
 
                         <Text style={globalStyles.modalInputLabel}>System Configuration</Text>
                         <TextInput
-                            style={[globalStyles.textInput, { marginBottom: 12 }]}
+                            style={[globalStyles.textInput, { marginBottom: SPACING.md }]}
                             placeholder="Timezone (e.g. America/Toronto)"
                             value={formValues.timezone}
                             autoCapitalize="none"
@@ -497,27 +497,27 @@ const styles = StyleSheet.create({
         paddingBottom: 0,
     },
     name: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary,
         flex: 1,
-        marginRight: 8
+        marginRight: SPACING.sm
     },
     detailsContainer: {
-        gap: 6
+        gap: SPACING.xsm
     },
     formHeader: {
-        padding: 20,
+        padding: SPACING.xl,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
-        backgroundColor: "#FAFAFA"
+        backgroundColor: COLORS.surfaceMuted
     },
     formHeaderEdit: {
         borderBottomColor: COLORS.accent,
-        backgroundColor: "#EEF3F8"
+        backgroundColor: COLORS.accentBg
     },
     formContainer: {
-        padding: 20
+        padding: SPACING.xl
     },
     inputRow: {
         flexDirection: "row",

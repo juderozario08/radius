@@ -5,7 +5,7 @@ import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
 import Dropdown from "@/components/common/Dropdown";
 import PillGroup from "@/components/common/PillGroup";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { router, useLocalSearchParams } from "expo-router";
 
@@ -66,7 +66,7 @@ export default function PrintOrderSearchScreen() {
                 headerLeft={<BackButton />}
                 headerCenter={<Text style={globalStyles.headerTitle}>Advanced Search</Text>}
                 headerRight={
-                    <TouchableOpacity onPress={handleClear} style={{ padding: 8 }}>
+                    <TouchableOpacity onPress={handleClear} style={{ padding: SPACING.sm }}>
                         <Text style={{ color: COLORS.primary, fontWeight: "600" }}>Clear</Text>
                     </TouchableOpacity>
                 }
@@ -157,48 +157,48 @@ export default function PrintOrderSearchScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
+        padding: SPACING.lg,
         backgroundColor: COLORS.background,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "600",
         color: COLORS.textPrimary,
-        marginBottom: 16,
+        marginBottom: SPACING.lg,
     },
     inputGroup: {
-        marginBottom: 16,
+        marginBottom: SPACING.lg,
     },
     label: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "500",
         color: COLORS.textSecondary,
-        marginBottom: 6,
+        marginBottom: SPACING.xsm,
     },
     dropdownWrapper: {
         backgroundColor: COLORS.surface,
-        borderRadius: 8,
+        borderRadius: RADIUS.md,
     },
     input: {
         backgroundColor: COLORS.surface,
         borderWidth: 1,
         borderColor: COLORS.border,
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        fontSize: 16,
+        borderRadius: RADIUS.md,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.smd,
+        fontSize: FONT_SIZE.lg,
         color: COLORS.textPrimary,
     },
     applyButton: {
         backgroundColor: COLORS.primary,
-        paddingVertical: 14,
-        borderRadius: 8,
+        paddingVertical: SPACING.mdl,
+        borderRadius: RADIUS.md,
         alignItems: "center",
-        marginTop: 12,
+        marginTop: SPACING.md,
     },
     applyButtonText: {
         color: COLORS.primaryText,
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "600",
     },
 });

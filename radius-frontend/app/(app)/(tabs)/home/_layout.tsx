@@ -1,3 +1,4 @@
+import { SPACING, RADIUS } from "@/constants/styles";
 import {
     createMaterialTopTabNavigator,
     MaterialTopTabNavigationOptions,
@@ -62,7 +63,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        paddingVertical: 10,
+        paddingVertical: SPACING.smd,
         position: "absolute",
         bottom: 0,
         left: 0,
@@ -72,7 +73,7 @@ const styles = StyleSheet.create({
     dot: {
         width: 8,
         height: 8,
-        borderRadius: 4,
-        marginHorizontal: 4,
+        borderRadius: RADIUS.xs,
+        marginHorizontal: SPACING.xs,
     },
 });

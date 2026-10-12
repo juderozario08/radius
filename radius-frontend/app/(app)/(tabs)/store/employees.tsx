@@ -2,7 +2,7 @@ import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { COLORS } from "@/constants/colors";
 import { ENDPOINTS } from "@/constants/routes";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, FONT_SIZE } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { callApi, capitalize } from "@/utils/helpers";
@@ -45,7 +45,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
                                 <Text style={globalStyles.modalName}>{employee.first_name} {employee.last_name}</Text>
                                 <Text style={globalStyles.modalRole}>{capitalize(employee.role)}</Text>
                             </View>
-                            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                            <View style={{ flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' }}>
                                 <TerminatedBadge isTerminated={employee.is_terminated} />
                                 <StatusBadge isActive={employee.is_active} />
                             </View>
@@ -140,7 +140,7 @@ export default function StoreEmployees() {
                 <Text style={styles.name}>
                     {item.first_name} {item.last_name}
                 </Text>
-                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' }}>
                     <RoleBadge role={item.role} />
                 </View>
             </View>
@@ -212,13 +212,13 @@ const styles = StyleSheet.create({
         paddingBottom: 0,
     },
     name: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary,
         flex: 1,
-        marginRight: 8
+        marginRight: SPACING.sm
     },
     detailsContainer: {
-        gap: 6
+        gap: SPACING.xsm
     },
 });

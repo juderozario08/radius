@@ -17,7 +17,7 @@ import LogoutComponent from "@/components/common/Logout";
 import NotificationIconComponent from "@/components/common/NotificationIcon";
 import { ConnectionStatusBadge } from "@/components/common/ConnectionStatusBadge";
 import { OrderCard } from "@/components/orders/OrderCard";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -662,7 +662,7 @@ export default function RealTimeDashboard() {
 
             {toastMessage && (
                 <Animated.View style={[styles.toastBanner, { opacity: toastOpacity }]}>
-                    <Ionicons name="flash" size={16} color="#FFFFFF" />
+                    <Ionicons name="flash" size={16} color={COLORS.surface} />
                     <Text style={styles.toastText} numberOfLines={2}>
                         {toastMessage}
                     </Text>
@@ -703,7 +703,7 @@ export default function RealTimeDashboard() {
 
                             <View style={styles.networkStatsRow}>
                                 <View style={styles.networkStatCard}>
-                                    <View style={[styles.networkStatIconCircle, { backgroundColor: "#FFEBEE" }]}>
+                                    <View style={[styles.networkStatIconCircle, { backgroundColor: COLORS.inactiveBg }]}>
                                         <Ionicons name="business" size={15} color={COLORS.primary} />
                                     </View>
                                     <Text style={styles.networkStatValue}>
@@ -713,8 +713,8 @@ export default function RealTimeDashboard() {
                                 </View>
 
                                 <View style={styles.networkStatCard}>
-                                    <View style={[styles.networkStatIconCircle, { backgroundColor: "#FFF3E0" }]}>
-                                        <Ionicons name="cart" size={15} color="#E65100" />
+                                    <View style={[styles.networkStatIconCircle, { backgroundColor: COLORS.warningBg }]}>
+                                        <Ionicons name="cart" size={15} color={COLORS.warning} />
                                     </View>
                                     <Text style={styles.networkStatValue}>
                                         {storeOperations.reduce((sum, s) => sum + s.active_orders_count, 0)}
@@ -723,8 +723,8 @@ export default function RealTimeDashboard() {
                                 </View>
 
                                 <View style={styles.networkStatCard}>
-                                    <View style={[styles.networkStatIconCircle, { backgroundColor: "#E3F2FD" }]}>
-                                        <Ionicons name="clipboard" size={15} color="#1565C0" />
+                                    <View style={[styles.networkStatIconCircle, { backgroundColor: COLORS.infoBg }]}>
+                                        <Ionicons name="clipboard" size={15} color={COLORS.info} />
                                     </View>
                                     <Text style={styles.networkStatValue}>
                                         {storeOperations.reduce((sum, s) => sum + s.active_counts_count, 0)}
@@ -733,8 +733,8 @@ export default function RealTimeDashboard() {
                                 </View>
 
                                 <View style={styles.networkStatCard}>
-                                    <View style={[styles.networkStatIconCircle, { backgroundColor: "#E8F5E9" }]}>
-                                        <Ionicons name="cube" size={15} color="#2E7D32" />
+                                    <View style={[styles.networkStatIconCircle, { backgroundColor: COLORS.activeBg }]}>
+                                        <Ionicons name="cube" size={15} color={COLORS.success} />
                                     </View>
                                     <Text style={styles.networkStatValue}>
                                         {storeOperations.reduce((sum, s) => sum + s.pending_pos_count, 0)}
@@ -744,7 +744,7 @@ export default function RealTimeDashboard() {
                             </View>
 
                             <View style={styles.hubInstructionBanner}>
-                                <Ionicons name="information-circle-outline" size={18} color="#283593" />
+                                <Ionicons name="information-circle-outline" size={18} color={COLORS.indigo} />
                                 <Text style={styles.hubInstructionText}>
                                     Tap any store branch below to monitor and manage its real-time orders, cycle counts, and dock receiving.
                                 </Text>
@@ -1224,7 +1224,7 @@ export default function RealTimeDashboard() {
 
 const styles = StyleSheet.create({
     scrollContent: {
-        paddingBottom: 40,
+        paddingBottom: SPACING.huge,
     },
     toastBanner: {
         position: "absolute",
@@ -1232,22 +1232,22 @@ const styles = StyleSheet.create({
         left: 16,
         right: 16,
         zIndex: 999,
-        backgroundColor: "#1B5E20",
+        backgroundColor: COLORS.successDark,
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: 8,
-        gap: 8,
-        shadowColor: "#000",
+        paddingVertical: SPACING.smd,
+        paddingHorizontal: SPACING.mdl,
+        borderRadius: RADIUS.md,
+        gap: SPACING.sm,
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.25,
         shadowRadius: 5,
         elevation: 6,
     },
     toastText: {
-        color: "#FFFFFF",
-        fontSize: 13,
+        color: COLORS.surface,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         flex: 1,
     },
@@ -1255,34 +1255,34 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 10,
+        paddingHorizontal: SPACING.lg,
+        paddingTop: SPACING.lg,
+        paddingBottom: SPACING.smd,
     },
     titleColumn: {
         flex: 1,
     },
     statusColumn: {
-        marginLeft: 10,
+        marginLeft: SPACING.smd,
     },
     welcomeText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
         fontWeight: "500",
         textTransform: "uppercase",
         letterSpacing: 0.5,
     },
     headerTitle: {
-        fontSize: 22,
+        fontSize: FONT_SIZE.xxxl,
         fontWeight: "800",
         color: COLORS.textPrimary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     scopeSwitcherContainer: {
         flexDirection: "row",
-        paddingHorizontal: 16,
-        gap: 10,
-        marginBottom: 12,
+        paddingHorizontal: SPACING.lg,
+        gap: SPACING.smd,
+        marginBottom: SPACING.md,
     },
     scopeButton: {
         flex: 1,
@@ -1290,19 +1290,19 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: COLORS.surface,
-        borderRadius: 10,
+        borderRadius: RADIUS.mdl,
         paddingVertical: 9,
-        paddingHorizontal: 12,
+        paddingHorizontal: SPACING.md,
         borderWidth: 1.5,
         borderColor: COLORS.border,
-        gap: 6,
+        gap: SPACING.xsm,
     },
     scopeButtonActive: {
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
     },
     scopeText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "700",
         color: COLORS.textSecondary,
     },
@@ -1310,30 +1310,30 @@ const styles = StyleSheet.create({
         color: COLORS.primaryText,
     },
     scopeCountBadge: {
-        backgroundColor: "#FFFFFF",
-        paddingHorizontal: 6,
-        paddingVertical: 1,
-        borderRadius: 10,
+        backgroundColor: COLORS.surface,
+        paddingHorizontal: SPACING.xsm,
+        paddingVertical: SPACING.hairline,
+        borderRadius: RADIUS.mdl,
     },
     scopeCountText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "800",
         color: COLORS.primary,
     },
     metricsRow: {
         flexDirection: "row",
-        paddingHorizontal: 16,
-        gap: 10,
-        marginBottom: 14,
+        paddingHorizontal: SPACING.lg,
+        gap: SPACING.smd,
+        marginBottom: SPACING.mdl,
     },
     metricCard: {
         flex: 1,
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 12,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.md,
         borderWidth: 1,
         borderColor: COLORS.border,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 3,
@@ -1341,16 +1341,16 @@ const styles = StyleSheet.create({
     },
     metricCardActive: {
         borderColor: COLORS.primary,
-        backgroundColor: "#FFF5F5",
+        backgroundColor: COLORS.primarySurfaceTint,
     },
     metricIconRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     metricValue: {
-        fontSize: 20,
+        fontSize: FONT_SIZE.xxl,
         fontWeight: "800",
         color: COLORS.textPrimary,
     },
@@ -1360,20 +1360,20 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     metricLabel: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "600",
         color: COLORS.textSecondary,
     },
     tabsContainer: {
         flexDirection: "row",
-        paddingHorizontal: 16,
-        gap: 8,
-        marginBottom: 16,
+        paddingHorizontal: SPACING.lg,
+        gap: SPACING.sm,
+        marginBottom: SPACING.lg,
     },
     tabButton: {
         paddingVertical: 7,
-        paddingHorizontal: 12,
-        borderRadius: 20,
+        paddingHorizontal: SPACING.md,
+        borderRadius: RADIUS.xxl,
         backgroundColor: COLORS.surface,
         borderWidth: 1,
         borderColor: COLORS.border,
@@ -1383,7 +1383,7 @@ const styles = StyleSheet.create({
         borderColor: COLORS.primary,
     },
     tabText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "600",
         color: COLORS.textSecondary,
     },
@@ -1391,78 +1391,78 @@ const styles = StyleSheet.create({
         color: COLORS.primaryText,
     },
     loadingContainer: {
-        paddingVertical: 40,
+        paddingVertical: SPACING.huge,
         alignItems: "center",
-        gap: 12,
+        gap: SPACING.md,
     },
     loadingText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textSecondary,
     },
     sectionContainer: {
-        paddingHorizontal: 16,
-        marginBottom: 20,
+        paddingHorizontal: SPACING.lg,
+        marginBottom: SPACING.xl,
     },
     sectionHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 10,
+        marginBottom: SPACING.smd,
     },
     sectionTitleRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
+        gap: SPACING.xsm,
     },
     sectionHeading: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     headerActionBtn: {
-        paddingVertical: 4,
-        paddingHorizontal: 8,
+        paddingVertical: SPACING.xs,
+        paddingHorizontal: SPACING.sm,
     },
     headerActionText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
         color: COLORS.primary,
     },
     cardSpacing: {
-        marginBottom: 10,
+        marginBottom: SPACING.smd,
     },
     emptyCard: {
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 24,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.xxl,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
         borderColor: COLORS.border,
-        gap: 8,
+        gap: SPACING.sm,
     },
     emptyCardText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
         fontWeight: "500",
         textAlign: "center",
     },
     emptyCardAction: {
-        marginTop: 6,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        backgroundColor: "#FFF5F5",
-        borderRadius: 8,
+        marginTop: SPACING.xsm,
+        paddingVertical: SPACING.xsm,
+        paddingHorizontal: SPACING.md,
+        backgroundColor: COLORS.primarySurfaceTint,
+        borderRadius: RADIUS.md,
         borderWidth: 1,
         borderColor: COLORS.primary,
     },
     emptyCardActionText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
         color: COLORS.primary,
     },
     cycleCountCard: {
-        marginBottom: 10,
+        marginBottom: SPACING.smd,
         borderLeftWidth: 4,
         borderLeftColor: COLORS.accent,
     },
@@ -1470,43 +1470,43 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "flex-start",
-        marginBottom: 10,
+        marginBottom: SPACING.smd,
     },
     cycleInfoColumn: {
         flex: 1,
     },
     cycleCategory: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     cycleSubtext: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     cycleBadgeRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
+        gap: SPACING.xsm,
     },
     cycleBadge: {
-        backgroundColor: "#E3F2FD",
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 6,
+        backgroundColor: COLORS.infoBg,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: SPACING.micro,
+        borderRadius: RADIUS.sm,
     },
     cycleBadgeText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "700",
-        color: "#1565C0",
+        color: COLORS.info,
     },
     progressBarBackground: {
         height: 6,
-        backgroundColor: "#E0E0E0",
+        backgroundColor: COLORS.inputBorder,
         borderRadius: 3,
         overflow: "hidden",
-        marginBottom: 8,
+        marginBottom: SPACING.sm,
     },
     progressBarFill: {
         height: "100%",
@@ -1519,7 +1519,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     cycleStatLabel: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     cycleStatBold: {
@@ -1537,16 +1537,16 @@ const styles = StyleSheet.create({
     activityCard: {
         flexDirection: "row",
         alignItems: "center",
-        padding: 12,
-        marginBottom: 8,
+        padding: SPACING.md,
+        marginBottom: SPACING.sm,
         borderLeftWidth: 3,
         borderLeftColor: COLORS.success,
-        gap: 12,
+        gap: SPACING.md,
     },
     activityIconCircle: {
         width: 32,
         height: 32,
-        borderRadius: 16,
+        borderRadius: RADIUS.xl,
         backgroundColor: COLORS.activeBg,
         alignItems: "center",
         justifyContent: "center",
@@ -1558,42 +1558,42 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 2,
+        marginBottom: SPACING.xxs,
     },
     activityTitle: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     activityTimeGroup: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
+        gap: SPACING.xs,
     },
     activityTime: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         color: COLORS.textSecondary,
     },
     activityDescription: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     networkStatsRow: {
         flexDirection: "row",
-        gap: 8,
-        marginHorizontal: 16,
-        marginTop: 10,
-        marginBottom: 14,
+        gap: SPACING.sm,
+        marginHorizontal: SPACING.lg,
+        marginTop: SPACING.smd,
+        marginBottom: SPACING.mdl,
     },
     networkStatCard: {
         flex: 1,
         backgroundColor: COLORS.surface,
-        borderRadius: 10,
-        padding: 10,
+        borderRadius: RADIUS.mdl,
+        padding: SPACING.smd,
         alignItems: "center",
         borderWidth: 1,
         borderColor: COLORS.border,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.04,
         shadowRadius: 2,
@@ -1602,19 +1602,19 @@ const styles = StyleSheet.create({
     networkStatIconCircle: {
         width: 28,
         height: 28,
-        borderRadius: 14,
+        borderRadius: RADIUS.lgPlus,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 6,
+        marginBottom: SPACING.xsm,
     },
     networkStatValue: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "800",
         color: COLORS.textPrimary,
-        marginBottom: 2,
+        marginBottom: SPACING.xxs,
     },
     networkStatLabel: {
-        fontSize: 10,
+        fontSize: FONT_SIZE.xxs,
         fontWeight: "600",
         color: COLORS.textSecondary,
         textAlign: "center",
@@ -1622,89 +1622,89 @@ const styles = StyleSheet.create({
     hubInstructionBanner: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#E8EAF6",
-        borderRadius: 8,
-        padding: 10,
-        marginHorizontal: 16,
-        marginBottom: 16,
-        gap: 8,
+        backgroundColor: COLORS.indigoBg,
+        borderRadius: RADIUS.md,
+        padding: SPACING.smd,
+        marginHorizontal: SPACING.lg,
+        marginBottom: SPACING.lg,
+        gap: SPACING.sm,
     },
     hubInstructionText: {
-        fontSize: 12,
-        color: "#283593",
+        fontSize: FONT_SIZE.sm,
+        color: COLORS.indigo,
         flex: 1,
         lineHeight: 16,
     },
     storeListContainer: {
-        paddingHorizontal: 16,
+        paddingHorizontal: SPACING.lg,
     },
     sectionHeaderRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingHorizontal: 16,
-        marginBottom: 12,
+        paddingHorizontal: SPACING.lg,
+        marginBottom: SPACING.md,
     },
     sectionSubtext: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     storeSelectedBanner: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: "#FFF8F8",
+        backgroundColor: COLORS.primarySurface,
         borderWidth: 1,
-        borderColor: "#FFCDD2",
-        borderRadius: 10,
-        padding: 12,
-        marginHorizontal: 16,
-        marginTop: 10,
-        marginBottom: 14,
+        borderColor: COLORS.dangerBorderLight,
+        borderRadius: RADIUS.mdl,
+        padding: SPACING.md,
+        marginHorizontal: SPACING.lg,
+        marginTop: SPACING.smd,
+        marginBottom: SPACING.mdl,
     },
     storeSelectedInfo: {
         flex: 1,
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     storeSelectedTitleRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
+        gap: SPACING.xsm,
     },
     storeSelectedName: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     storeSelectedSub: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     hqBadge: {
-        backgroundColor: "#EDE7F6",
-        paddingHorizontal: 6,
-        paddingVertical: 1,
-        borderRadius: 4,
+        backgroundColor: COLORS.violetBg,
+        paddingHorizontal: SPACING.xsm,
+        paddingVertical: SPACING.hairline,
+        borderRadius: RADIUS.xs,
     },
     hqText: {
-        fontSize: 10,
+        fontSize: FONT_SIZE.xxs,
         fontWeight: "700",
-        color: "#5E35B1",
+        color: COLORS.violet,
     },
     allStoresButton: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.surface,
         borderWidth: 1,
         borderColor: COLORS.primary,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 8,
-        gap: 4,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.xsm,
+        borderRadius: RADIUS.md,
+        gap: SPACING.xs,
     },
     allStoresButtonText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
         color: COLORS.primary,
     },

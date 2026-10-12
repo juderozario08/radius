@@ -21,7 +21,7 @@ import { ActionButtonRow } from "@/components/common/ActionButtonRow";
 import { DetailRow } from "@/components/common/DetailRow";
 import { OutboundTransferCard } from "@/components/receiving/OutboundTransferCard";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { ENDPOINTS } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
 import { callApi, showToast } from "@/utils/helpers";
@@ -772,7 +772,7 @@ export default function TransfersScreen() {
                                             <Text style={styles.manifestItemSku}>SKU: {it.sku} â€¢ Qty: {it.qty_requested}</Text>
                                         </View>
                                         <TouchableOpacity onPress={() => handleRemovePendingItem(it.product_id)}>
-                                            <Ionicons name="trash-outline" size={20} color="#C62828" />
+                                            <Ionicons name="trash-outline" size={20} color={COLORS.dangerDark} />
                                         </TouchableOpacity>
                                     </View>
                                 )}
@@ -813,13 +813,13 @@ export default function TransfersScreen() {
 function getBadgeBg(status: string) {
     switch (status) {
         case "PENDING":
-            return { backgroundColor: "#FFF3E0" };
+            return { backgroundColor: COLORS.warningBg };
         case "IN_TRANSIT":
-            return { backgroundColor: "#E3F2FD" };
+            return { backgroundColor: COLORS.infoBg };
         case "RECEIVED":
-            return { backgroundColor: "#E8F5E9" };
+            return { backgroundColor: COLORS.activeBg };
         case "CANCELLED":
-            return { backgroundColor: "#FFEBEE" };
+            return { backgroundColor: COLORS.inactiveBg };
         default:
             return { backgroundColor: COLORS.surface };
     }
@@ -828,13 +828,13 @@ function getBadgeBg(status: string) {
 function getBadgeTextColor(status: string) {
     switch (status) {
         case "PENDING":
-            return { color: "#E65100" };
+            return { color: COLORS.warning };
         case "IN_TRANSIT":
-            return { color: "#1565C0" };
+            return { color: COLORS.info };
         case "RECEIVED":
-            return { color: "#2E7D32" };
+            return { color: COLORS.success };
         case "CANCELLED":
-            return { color: "#C62828" };
+            return { color: COLORS.dangerDark };
         default:
             return { color: COLORS.textSecondary };
     }
@@ -846,12 +846,12 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     headerAddBtn: {
-        padding: 4,
+        padding: SPACING.xs,
     },
     filterSection: {
-        paddingHorizontal: 16,
-        paddingTop: 8,
-        paddingBottom: 6,
+        paddingHorizontal: SPACING.lg,
+        paddingTop: SPACING.sm,
+        paddingBottom: SPACING.xsm,
         backgroundColor: COLORS.surface,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
@@ -860,26 +860,26 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: COLORS.background,
-        borderRadius: 8,
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        gap: 8,
+        borderRadius: RADIUS.md,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.sm,
+        gap: SPACING.sm,
     },
     searchInput: {
         flex: 1,
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textPrimary,
         padding: 0,
     },
     statusTabs: {
         flexDirection: "row",
-        gap: 8,
-        paddingVertical: 10,
+        gap: SPACING.sm,
+        paddingVertical: SPACING.smd,
     },
     statusTabPill: {
-        paddingHorizontal: 14,
-        paddingVertical: 6,
-        borderRadius: 16,
+        paddingHorizontal: SPACING.mdl,
+        paddingVertical: SPACING.xsm,
+        borderRadius: RADIUS.xl,
         backgroundColor: COLORS.background,
         borderWidth: 1,
         borderColor: COLORS.border,
@@ -889,58 +889,58 @@ const styles = StyleSheet.create({
         borderColor: COLORS.primary,
     },
     statusTabText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "600",
         color: COLORS.textSecondary,
     },
     statusTabTextActive: {
-        color: "#FFFFFF",
+        color: COLORS.surface,
     },
     listWrapper: {
         flex: 1,
-        paddingHorizontal: 16,
-        paddingTop: 12,
+        paddingHorizontal: SPACING.lg,
+        paddingTop: SPACING.md,
     },
     listContent: {
-        paddingBottom: 24,
+        paddingBottom: SPACING.xxl,
     },
     emptyContainer: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        paddingHorizontal: 32,
+        paddingHorizontal: SPACING.xxxl,
     },
     emptyTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginTop: 12,
+        marginTop: SPACING.md,
     },
     emptySubtitle: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textSecondary,
         textAlign: "center",
-        marginTop: 6,
+        marginTop: SPACING.xsm,
     },
     detailModalContainer: {
         maxHeight: "85%",
     },
     modalLoading: {
-        padding: 40,
+        padding: SPACING.huge,
         alignItems: "center",
     },
     modalSubHeader: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     detailStatusBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.xs,
+        borderRadius: RADIUS.lg,
     },
     detailStatusText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "700",
         textTransform: "uppercase",
     },
@@ -951,29 +951,29 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: 8,
+        paddingVertical: SPACING.sm,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
     itemRowLeft: {
         flex: 1,
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     itemRowName: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
     itemRowSku: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     itemRowRight: {
         alignItems: "flex-end",
     },
     itemRowQtyLabel: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     itemRowQtyValue: {
@@ -981,12 +981,12 @@ const styles = StyleSheet.create({
         color: COLORS.textPrimary,
     },
     dispatchSubtitle: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
-        marginTop: 4,
+        marginTop: SPACING.xs,
     },
     formField: {
-        marginBottom: 14,
+        marginBottom: SPACING.mdl,
     },
     createModalCard: {
         maxHeight: "90%",
@@ -996,48 +996,48 @@ const styles = StyleSheet.create({
     },
     storeListScroll: {
         flexDirection: "row",
-        marginTop: 6,
+        marginTop: SPACING.xsm,
     },
     storePill: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 8,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
+        borderRadius: RADIUS.md,
         backgroundColor: COLORS.background,
         borderWidth: 1,
         borderColor: COLORS.border,
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     storePillSelected: {
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
     },
     storePillText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textPrimary,
         fontWeight: "500",
     },
     storePillTextSelected: {
-        color: "#FFFFFF",
+        color: COLORS.surface,
         fontWeight: "600",
     },
     toggleRow: {
         flexDirection: "row",
         alignItems: "flex-start",
-        gap: 10,
-        marginBottom: 14,
+        gap: SPACING.smd,
+        marginBottom: SPACING.mdl,
     },
     toggleTextContainer: {
         flex: 1,
     },
     toggleTitle: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
     toggleSubtext: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     productSearchRow: {
         position: "relative",
@@ -1054,53 +1054,53 @@ const styles = StyleSheet.create({
         maxHeight: 180,
         borderWidth: 1,
         borderColor: COLORS.border,
-        borderRadius: 8,
+        borderRadius: RADIUS.md,
         backgroundColor: COLORS.surface,
-        marginTop: 4,
+        marginTop: SPACING.xs,
     },
     searchResultItem: {
-        padding: 10,
+        padding: SPACING.smd,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
     searchResultName: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
     searchResultSku: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     selectedProductBox: {
-        marginTop: 8,
-        padding: 10,
-        borderRadius: 8,
-        backgroundColor: "#F5F5F5",
+        marginTop: SPACING.sm,
+        padding: SPACING.smd,
+        borderRadius: RADIUS.md,
+        backgroundColor: COLORS.background,
         borderWidth: 1,
         borderColor: COLORS.border,
     },
     selectedProductInfo: {
-        marginBottom: 8,
+        marginBottom: SPACING.sm,
     },
     selectedProductName: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
     selectedProductSku: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         color: COLORS.textSecondary,
-        marginTop: 1,
+        marginTop: SPACING.hairline,
     },
     qtyAddRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
+        gap: SPACING.sm,
     },
     qtyLabel: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
@@ -1109,34 +1109,34 @@ const styles = StyleSheet.create({
         height: 36,
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
-        borderRadius: 6,
+        borderRadius: RADIUS.sm,
         textAlign: "center",
         backgroundColor: COLORS.surface,
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textPrimary,
     },
     addBtn: {
         backgroundColor: COLORS.primary,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 6,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.sm,
+        borderRadius: RADIUS.sm,
     },
     addBtnText: {
-        color: "#FFFFFF",
+        color: COLORS.surface,
         fontWeight: "600",
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
     },
     pendingItemsSection: {
-        marginTop: 10,
+        marginTop: SPACING.smd,
     },
     pendingItemsTitle: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginBottom: 6,
+        marginBottom: SPACING.xsm,
     },
     emptyPendingText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
         fontStyle: "italic",
     },
@@ -1144,22 +1144,22 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: 8,
+        paddingVertical: SPACING.sm,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
     manifestItemLeft: {
         flex: 1,
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     manifestItemName: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
     manifestItemSku: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
 });

@@ -9,7 +9,7 @@ import { ENDPOINTS } from "@/constants/routes";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING } from "@/constants/styles";
 
 function checkEmail(email: string): boolean {
     let atSeen = false;
@@ -132,18 +132,18 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: "center",
-        padding: 24,
+        padding: SPACING.xxl,
         backgroundColor: COLORS.surface,
     },
     title: {
         fontSize: 32,
         fontWeight: "700",
-        marginBottom: 40,
+        marginBottom: SPACING.huge,
         alignSelf: "center",
         color: COLORS.textPrimary,
     },
     inputMargin: {
-        marginBottom: 5,
+        marginBottom: SPACING.xsPlus,
     },
     errorWrapper: {
         height: 20,
@@ -152,13 +152,13 @@ const styles = StyleSheet.create({
         color: COLORS.danger,
     },
     passwordContainer: {
-        marginTop: 5, 
-        marginBottom: 12, 
+        marginTop: SPACING.xsPlus,
+        marginBottom: SPACING.md,
         justifyContent: "center"
     },
     passwordInput: {
-        marginTop: 0, 
-        marginBottom: 0, 
+        marginTop: 0,
+        marginBottom: 0,
         paddingRight: 60,
     },
     hidingText: { color: COLORS.textSecondary },

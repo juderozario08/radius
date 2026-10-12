@@ -13,7 +13,7 @@ import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
 import { ProductAdjusterCard } from "@/components/inventory/ProductAdjusterCard";
 import { BinActionToggle } from "@/components/inventory/BinActionToggle";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, FONT_SIZE } from "@/constants/styles";
 import { ENDPOINTS } from "@/constants/routes";
 import { callApi } from "@/utils/helpers";
 import { useAuth } from "@/hooks/useAuth";
@@ -225,7 +225,7 @@ function ListTabContent({
                         data={products}
                         keyExtractor={(item) => item.product_id.toString()}
                         renderItem={({ item }) => <ProductAdjusterCard product={item} onUpdateQuantity={onUpdateQuantity} />}
-                        contentContainerStyle={{ paddingBottom: 20 }}
+                        contentContainerStyle={{ paddingBottom: SPACING.xl }}
                         ListEmptyComponent={<Text style={globalStyles.emptyText}>No products found at this location.</Text>}
                     />
                 )}
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.headerBackground,
     },
     backButton: {
-        padding: 8,
+        padding: SPACING.sm,
     },
     tabContainer: {
         flex: 1,
@@ -249,28 +249,28 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
         backgroundColor: COLORS.headerBackground,
-        padding: 16,
+        padding: SPACING.lg,
     },
     loadingText: {
-        marginTop: 10,
+        marginTop: SPACING.smd,
         color: COLORS.textSecondary,
     },
     instructionText: {
-        marginTop: 12,
+        marginTop: SPACING.md,
         color: COLORS.textSecondary,
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         textAlign: "center",
     },
     errorTitle: {
-        fontSize: 20,
+        fontSize: FONT_SIZE.xxl,
         color: COLORS.danger,
         fontWeight: "bold",
-        marginTop: 16,
+        marginTop: SPACING.lg,
     },
     errorSubtitle: {
         color: COLORS.textSecondary,
-        marginTop: 8,
+        marginTop: SPACING.sm,
         textAlign: "center",
-        marginHorizontal: 20,
+        marginHorizontal: SPACING.xl,
     },
 });

@@ -7,14 +7,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { OrderFinancialsModal } from "@/components/orders/OrderFinancialsModal";
 import { OrderAssignModal } from "@/components/orders/OrderAssignModal";
 import { OrderItemActionModal } from "@/components/orders/OrderItemActionModal";
+import { OrderProductCard } from "@/components/orders/OrderProductCard";
+import { ScannedOrderItemCard } from "@/components/orders/ScannedOrderItemCard";
+import { OrderMenuModal, OrderCancelModal } from "@/components/orders/OrderActionModals";
 import { BarcodeScanner, BarcodeScannerRef } from "@/components/common/BarcodeScanner";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
     FlatList,
-    Modal,
-    ScrollView,
     Text,
     TextInput,
     TouchableOpacity,
@@ -23,19 +24,11 @@ import {
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import { OnlineOrder, OnlineOrderItem, OrderItemStatus } from "@/types/order.types";
 import { assignOnlineOrder, cancelOnlineOrder, completeOnlineOrderPick, getOnlineOrder, updateOnlineOrderItem } from "@/api/onlineOrders.api";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { formatMoney } from "@/utils/money";
 
 type TabType = "SCANNER" | "PRODUCTS";
-
-const CANCEL_ORDER_REASONS = [
-    "Customer Requested Cancellation",
-    "All Items Unavailable / Out of Stock",
-    "Pickup Window Expired (5 Days)",
-    "Store Unable to Process Order",
-];
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -85,7 +78,6 @@ export default function OnlineOrderDetail() {
 
     const [isOrderMenuVisible, setIsOrderMenuVisible] = useState(false);
     const [isCancelOrderModalVisible, setIsCancelOrderModalVisible] = useState(false);
-    const [selectedCancelOrderReason, setSelectedCancelOrderReason] = useState(CANCEL_ORDER_REASONS[0]);
 
     const [isFinancialsModalVisible, setIsFinancialsModalVisible] = useState(false);
 
@@ -222,10 +214,10 @@ export default function OnlineOrderDetail() {
         setIsSaving(false);
     };
 
-    const handleCancelOrderSubmit = async () => {
+    const handleCancelOrderSubmit = async (reason: string) => {
         if (!order) return;
         setIsSaving(true);
-        const res = await cancelOnlineOrder(order.order_id, selectedCancelOrderReason, logout);
+        const res = await cancelOnlineOrder(order.order_id, reason, logout);
         if (res === null) {
             setIsSaving(false);
             return;
@@ -234,7 +226,7 @@ export default function OnlineOrderDetail() {
         if (res.online_order) {
             setOrder(res.online_order);
         } else {
-            setOrder((prev) => prev ? { ...prev, status: "CANCELLED", cancellation_reason: selectedCancelOrderReason } : prev);
+            setOrder((prev) => prev ? { ...prev, status: "CANCELLED", cancellation_reason: reason } : prev);
         }
 
         setIsCancelOrderModalVisible(false);
@@ -463,88 +455,14 @@ export default function OnlineOrderDetail() {
                         </View>
 
                         {scannedItem ? (
-                            <View style={styles.scannedCardPopup}>
-                                <View style={styles.scannedCardHeader}>
-                                    <TouchableOpacity
-                                        style={{ flex: 1 }}
-                                        activeOpacity={0.7}
-                                        onPress={() => {
-                                            if (scannedItem.item.product_id) {
-                                                router.push(`/(app)/product/${scannedItem.item.product_id}`);
-                                            }
-                                        }}
-                                    >
-                                        <View style={{ flexDirection: "row", alignItems: "center", gap: SPACING.xsm }}>
-                                            <Text style={styles.scannedCardTitle}>
-                                                SKU: {scannedItem.item.product_sku || "N/A"}
-                                            </Text>
-                                            <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
-                                        </View>
-                                        <Text style={styles.scannedCardSub}>
-                                            Price: {formatMoney(scannedItem.item.unit_price)} | Ordered: {scannedItem.item.quantity}
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            setScannedItem(null);
-                                            scannerRef.current?.resetScanner();
-                                        }}
-                                    >
-                                        <Ionicons name="close" size={24} color={COLORS.textSecondary} />
-                                    </TouchableOpacity>
-                                </View>
-
-                                <View style={styles.stepperSection}>
-                                    <Text style={styles.stepperLabel}>Picked Quantity:</Text>
-                                    <View style={styles.stepperControls}>
-                                        <TouchableOpacity
-                                            style={styles.stepperBtn}
-                                            onPress={() =>
-                                                setScannedItem((prev) =>
-                                                    prev
-                                                        ? { ...prev, tempPickedQty: Math.max(0, prev.tempPickedQty - 1) }
-                                                        : null
-                                                )
-                                            }
-                                        >
-                                            <Ionicons name="remove" size={20} color={COLORS.textPrimary} />
-                                        </TouchableOpacity>
-
-                                        <Text style={styles.stepperValue}>{scannedItem.tempPickedQty}</Text>
-
-                                        <TouchableOpacity
-                                            style={styles.stepperBtn}
-                                            onPress={() =>
-                                                setScannedItem((prev) =>
-                                                    prev
-                                                        ? {
-                                                              ...prev,
-                                                              tempPickedQty: Math.min(
-                                                                  prev.item.quantity,
-                                                                  prev.tempPickedQty + 1
-                                                              ),
-                                                          }
-                                                        : null
-                                                )
-                                            }
-                                        >
-                                            <Ionicons name="add" size={20} color={COLORS.textPrimary} />
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-
-                                <TouchableOpacity
-                                    style={[globalStyles.buttonPrimary, { marginTop: SPACING.md }]}
-                                    disabled={isSaving}
-                                    onPress={handleSaveScannedQuantity}
-                                >
-                                    {isSaving ? (
-                                        <ActivityIndicator size="small" color={COLORS.surface} />
-                                    ) : (
-                                        <Text style={globalStyles.buttonTextPrimary}>Update Picked Quantity</Text>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
+                            <ScannedOrderItemCard
+                                item={scannedItem.item}
+                                pickedQty={scannedItem.tempPickedQty}
+                                isSaving={isSaving}
+                                onQtyChange={(qty) => setScannedItem((prev) => prev ? { ...prev, tempPickedQty: qty } : null)}
+                                onDismiss={() => { setScannedItem(null); scannerRef.current?.resetScanner(); }}
+                                onSave={handleSaveScannedQuantity}
+                            />
                         ) : (
                             <View style={styles.emptyScannerArea}>
                                 <Ionicons name="scan-outline" size={40} color={COLORS.inactiveTint} />
@@ -560,116 +478,10 @@ export default function OnlineOrderDetail() {
                             data={items}
                             keyExtractor={(item) => item.order_item_id.toString()}
                             contentContainerStyle={styles.productsList}
-                            renderItem={({ item }) => {
-                                const isItemCancelled = item.status === "CANCELLED";
-                                const isItemRemoved = item.status === "REMOVED";
-                                const isItemComplete = !isItemCancelled && !isItemRemoved && item.picked_qty >= item.quantity;
-
-                                return (
-                                    <View
-                                        style={[
-                                            styles.productCard,
-                                            (isItemCancelled || isItemRemoved) && styles.productCardDimmed,
-                                            isItemComplete && styles.productCardComplete,
-                                        ]}
-                                    >
-                                        <View style={styles.productCardHeader}>
-                                            <TouchableOpacity
-                                                style={{ flex: 1 }}
-                                                activeOpacity={0.7}
-                                                onPress={() => {
-                                                    if (item.product_id) {
-                                                        router.push(`/(app)/product/${item.product_id}`);
-                                                    }
-                                                }}
-                                            >
-                                                <View style={{ flexDirection: "row", alignItems: "center", gap: SPACING.sm }}>
-                                                    <Text style={styles.productSku}>SKU: {item.product_sku || "N/A"}</Text>
-                                                    <Ionicons name="chevron-forward" size={14} color={COLORS.textSecondary} />
-                                                    {item.status && item.status !== "ACTIVE" && (
-                                                        <View
-                                                            style={[
-                                                                styles.itemStatusBadge,
-                                                                {
-                                                                    backgroundColor:
-                                                                        item.status === "CANCELLED" ? COLORS.inactiveBg : COLORS.warningBg,
-                                                                },
-                                                            ]}
-                                                        >
-                                                            <Text
-                                                                style={[
-                                                                    styles.itemStatusText,
-                                                                    {
-                                                                        color:
-                                                                            item.status === "CANCELLED"
-                                                                                ? COLORS.primary
-                                                                                : COLORS.warning,
-                                                                    },
-                                                                ]}
-                                                            >
-                                                                {item.status}
-                                                            </Text>
-                                                        </View>
-                                                    )}
-                                                </View>
-                                                <Text style={styles.productPrice}>
-                                                    {formatMoney(item.unit_price)} each
-                                                </Text>
-                                            </TouchableOpacity>
-
-                                            <TouchableOpacity
-                                                style={styles.itemActionBtn}
-                                                onPress={() => {
-                                                    setSelectedItemForAction(item);
-                                                    setItemActionType("MENU");
-                                                }}
-                                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                            >
-                                                <Ionicons name="ellipsis-vertical" size={20} color={COLORS.textPrimary} />
-                                            </TouchableOpacity>
-                                        </View>
-
-                                        <TouchableOpacity
-                                            activeOpacity={0.7}
-                                            onPress={() => {
-                                                if (item.product_id) {
-                                                    router.push(`/(app)/product/${item.product_id}`);
-                                                }
-                                            }}
-                                        >
-                                            <View style={styles.progressRow}>
-                                                <Text style={styles.progressLabel}>
-                                                    Picked: {item.picked_qty} / {item.quantity}
-                                                </Text>
-                                                <View style={styles.progressBarBg}>
-                                                    <View
-                                                        style={[
-                                                            styles.progressBarFill,
-                                                            {
-                                                                width: `${Math.min(
-                                                                    100,
-                                                                    (item.picked_qty / Math.max(1, item.quantity)) * 100
-                                                                )}%`,
-                                                                backgroundColor:
-                                                                    item.picked_qty >= item.quantity
-                                                                        ? COLORS.success
-                                                                        : COLORS.primary,
-                                                            },
-                                                        ]}
-                                                    />
-                                                </View>
-                                            </View>
-
-                                            {item.reason && (
-                                                <View style={styles.itemReasonRow}>
-                                                    <Ionicons name="information-circle-outline" size={14} color={COLORS.textSecondary} />
-                                                    <Text style={styles.itemReasonText}>Note: {item.reason}</Text>
-                                                </View>
-                                            )}
-                                        </TouchableOpacity>
-                                    </View>
-                                );
-                            }}
+                            renderItem={({ item }) => <OrderProductCard item={item} onAction={(selected) => {
+                                setSelectedItemForAction(selected);
+                                setItemActionType("MENU");
+                            }} />}
                             ListEmptyComponent={<Text style={globalStyles.emptyText}>No items found in this order.</Text>}
                         />
 
@@ -703,137 +515,22 @@ export default function OnlineOrderDetail() {
                 )}
             </View>
 
-            <Modal
+            <OrderMenuModal
                 visible={isOrderMenuVisible}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setIsOrderMenuVisible(false)}
-            >
-                <TouchableOpacity
-                    style={globalStyles.modalOverlay}
-                    activeOpacity={1}
-                    onPress={() => setIsOrderMenuVisible(false)}
-                >
-                    <View style={[globalStyles.modalContentWrapper, { maxWidth: 360 }]}>
-                        <View style={styles.modalBody}>
-                            <Text style={styles.modalTitle}>Order Actions</Text>
-                            <View style={globalStyles.divider} />
-
-                            <TouchableOpacity
-                                style={styles.menuItem}
-                                onPress={() => {
-                                    setIsOrderMenuVisible(false);
-                                    setIsFinancialsModalVisible(true);
-                                }}
-                            >
-                                <Ionicons name="receipt-outline" size={20} color={COLORS.textPrimary} />
-                                <Text style={styles.menuItemText}>View Financials & Shipping</Text>
-                            </TouchableOpacity>
-
-                            {isManagerOrAdmin && (
-                                <TouchableOpacity
-                                    style={styles.menuItem}
-                                    onPress={() => {
-                                        setIsOrderMenuVisible(false);
-                                        setIsAssignModalVisible(true);
-                                    }}
-                                >
-                                    <Ionicons name="swap-horizontal" size={20} color={COLORS.textPrimary} />
-                                    <Text style={styles.menuItemText}>
-                                        {order.assigned_to ? "Reassign Order" : "Assign Order"}
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
-
-                            {order.status !== "CANCELLED" && (
-                                <TouchableOpacity
-                                    style={styles.menuItem}
-                                    onPress={() => {
-                                        setIsOrderMenuVisible(false);
-                                        setSelectedCancelOrderReason(CANCEL_ORDER_REASONS[0]);
-                                        setIsCancelOrderModalVisible(true);
-                                    }}
-                                >
-                                    <Ionicons name="close-circle-outline" size={20} color={COLORS.primary} />
-                                    <Text style={[styles.menuItemText, { color: COLORS.primary }]}>Cancel Entire Order</Text>
-                                </TouchableOpacity>
-                            )}
-
-                            <TouchableOpacity
-                                style={[styles.menuItem, { borderBottomWidth: 0, marginTop: SPACING.sm }]}
-                                onPress={() => setIsOrderMenuVisible(false)}
-                            >
-                                <Text style={[styles.menuItemText, { color: COLORS.textSecondary, textAlign: "center", width: "100%" }]}>
-                                    Dismiss
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </TouchableOpacity>
-            </Modal>
-
-            <Modal
+                order={order}
+                isManagerOrAdmin={isManagerOrAdmin}
+                onClose={() => setIsOrderMenuVisible(false)}
+                onFinancials={() => { setIsOrderMenuVisible(false); setIsFinancialsModalVisible(true); }}
+                onAssign={() => { setIsOrderMenuVisible(false); setIsAssignModalVisible(true); }}
+                onCancelOrder={() => { setIsOrderMenuVisible(false); setIsCancelOrderModalVisible(true); }}
+            />
+            <OrderCancelModal
                 visible={isCancelOrderModalVisible}
-                transparent={true}
-                animationType="slide"
-                onRequestClose={() => setIsCancelOrderModalVisible(false)}
-            >
-                <View style={globalStyles.modalOverlay}>
-                    <View style={[globalStyles.modalContentWrapper, { maxWidth: 400 }]}>
-                        <View style={styles.modalBody}>
-                            <Text style={styles.modalTitle}>Cancel Order #{order.order_id}</Text>
-                            <Text style={styles.modalSubtitle}>Please select a cancellation reason:</Text>
-
-                            <ScrollView style={{ maxHeight: 240 }}>
-                                {CANCEL_ORDER_REASONS.map((r) => (
-                                    <TouchableOpacity
-                                        key={r}
-                                        style={[
-                                            styles.radioRow,
-                                            selectedCancelOrderReason === r && styles.radioRowSelected,
-                                        ]}
-                                        onPress={() => setSelectedCancelOrderReason(r)}
-                                    >
-                                        <Ionicons
-                                            name={selectedCancelOrderReason === r ? "radio-button-on" : "radio-button-off"}
-                                            size={20}
-                                            color={selectedCancelOrderReason === r ? COLORS.primary : COLORS.textSecondary}
-                                        />
-                                        <Text
-                                            style={[
-                                                styles.radioLabel,
-                                                selectedCancelOrderReason === r && styles.radioLabelSelected,
-                                            ]}
-                                        >
-                                            {r}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-
-                            <View style={styles.modalBtnRow}>
-                                <TouchableOpacity
-                                    style={[globalStyles.buttonSecondary, { flex: 1 }]}
-                                    onPress={() => setIsCancelOrderModalVisible(false)}
-                                >
-                                    <Text style={globalStyles.buttonTextSecondary}>Keep Order</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[globalStyles.buttonPrimary, { flex: 1, backgroundColor: COLORS.primary }]}
-                                    onPress={handleCancelOrderSubmit}
-                                    disabled={isSaving}
-                                >
-                                    {isSaving ? (
-                                        <ActivityIndicator size="small" color={COLORS.surface} />
-                                    ) : (
-                                        <Text style={globalStyles.buttonTextPrimary}>Cancel Order</Text>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+                orderId={order.order_id}
+                isSaving={isSaving}
+                onClose={() => setIsCancelOrderModalVisible(false)}
+                onSubmit={handleCancelOrderSubmit}
+            />
 
             <OrderFinancialsModal order={order} visible={isFinancialsModalVisible} onClose={() => setIsFinancialsModalVisible(false)} />
 

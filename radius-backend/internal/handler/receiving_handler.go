@@ -141,6 +141,10 @@ func (h *ReceivingHandler) ReceiveLPR(ctx *gin.Context) {
 	err := h.receivingService.ReceiveLPR(ctx.Request.Context(), storeId, employeeId, role, req)
 	if err != nil {
 		slog.ErrorContext(ctx.Request.Context(), "ReceivingHandler.ReceiveLPR failed", "error", err)
+		if errors.Is(err, service.ErrConflict) {
+			ctx.JSON(http.StatusConflict, models.APIError{Error: "LPR already received"})
+			return
+		}
 		if errors.Is(err, service.ErrNotFound) || errors.Is(err, service.ErrValidation) {
 			ctx.JSON(http.StatusBadRequest, models.APIError{Error: "Request could not be completed"})
 			return

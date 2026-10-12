@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"radius/internal/cache"
 	"radius/internal/database"
@@ -198,8 +199,14 @@ func (s *StoreService) ActivateStore(ctx context.Context, storeId int) (*models.
 }
 
 func (s *StoreService) DeactivateStore(ctx context.Context, storeId int) (*models.APIMessage, error) {
-	err := s.storeRepo.DeactivateStore(ctx, storeId)
+	summaries, err := s.storeRepo.GetStoreOperationsSummaries(ctx, storeId)
 	if err != nil {
+		return nil, err
+	}
+	if len(summaries) > 0 && summaries[0].HasActiveOperations {
+		return nil, fmt.Errorf("%w: store %d still has active orders, cycle counts or purchase orders", ErrConflict, storeId)
+	}
+	if err := s.storeRepo.DeactivateStore(ctx, storeId); err != nil {
 		return nil, err
 	}
 	s.InvalidateStoreDirectoryCache(ctx)

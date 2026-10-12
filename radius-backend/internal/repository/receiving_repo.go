@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"radius/internal/api"
 	"radius/internal/models"
 	"radius/internal/util/queryutil"
 	"time"
@@ -235,12 +236,12 @@ func (r *ReceivingRepo) ReceiveLPR(ctx context.Context, storeID int, poID int, l
 	).Scan(&lprID, &isReceived)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return fmt.Errorf("LPR barcode not found in this PO")
+			return fmt.Errorf("%w: LPR barcode not found in this PO", api.ErrNotFound)
 		}
 		return err
 	}
 	if isReceived {
-		return fmt.Errorf("LPR already received")
+		return fmt.Errorf("%w: LPR already received", api.ErrConflict)
 	}
 
 	now := time.Now()

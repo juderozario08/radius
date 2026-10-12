@@ -502,8 +502,9 @@ func (r *OrdersRepo) GetPrintOrderByID(ctx context.Context, id int, storeID *int
 func (r *OrdersRepo) UpdatePrintOrderStatus(ctx context.Context, id, storeID int, previous, next models.PrintOrderStatus) (bool, error) {
 	result, err := r.db.ExecContext(ctx, `
 		UPDATE print_orders
-		SET status = $1, fulfilled_at = CASE WHEN $1 = 'COMPLETED' THEN NOW() ELSE fulfilled_at END
-		WHERE print_order_id = $2 AND store_id = $3 AND status = $4
+		SET status = $1::print_order_status,
+		    fulfilled_at = CASE WHEN $1::print_order_status = 'COMPLETED' THEN NOW() ELSE fulfilled_at END
+		WHERE print_order_id = $2 AND store_id = $3 AND status = $4::print_order_status
 	`, next, id, storeID, previous)
 	if err != nil {
 		return false, err
@@ -566,8 +567,8 @@ func (r *OrdersRepo) UpdateOnlineOrderItem(ctx context.Context, orderID, itemID 
 	query := `
 		UPDATE online_order_items
 		SET picked_qty = COALESCE($1, picked_qty),
-		    status = CASE WHEN $2 != '' THEN $2 ELSE status END,
-		    reason = CASE WHEN $3 IS NOT NULL THEN $3 ELSE reason END
+		    status = CASE WHEN $2::varchar <> '' THEN $2::varchar ELSE status END,
+		    reason = COALESCE($3::varchar, reason)
 		WHERE order_id = $4 AND order_item_id = $5
 	`
 	_, err := r.db.ExecContext(ctx, query, pickedQty, status, reason, orderID, itemID)
@@ -577,9 +578,9 @@ func (r *OrdersRepo) UpdateOnlineOrderItem(ctx context.Context, orderID, itemID 
 func (r *OrdersRepo) UpdateOnlineOrderStatus(ctx context.Context, orderID int, status models.OnlineOrderStatus, cancellationReason *string) (*models.OnlineOrder, error) {
 	query := `
 		UPDATE online_orders
-		SET status = $1,
-		    cancellation_reason = CASE WHEN $2 IS NOT NULL THEN $2 ELSE cancellation_reason END,
-		    fulfilled_at = CASE WHEN $1 IN ('READY FOR PICKUP', 'AWAITING PICKUP', 'DELIVERED') AND fulfilled_at IS NULL THEN NOW() ELSE fulfilled_at END
+		SET status = $1::online_order_status,
+		    cancellation_reason = COALESCE($2::varchar, cancellation_reason),
+		    fulfilled_at = CASE WHEN $1::online_order_status IN ('READY FOR PICKUP', 'AWAITING PICKUP', 'DELIVERED') AND fulfilled_at IS NULL THEN NOW() ELSE fulfilled_at END
 		WHERE order_id = $3
 	`
 	_, err := r.db.ExecContext(ctx, query, status, cancellationReason, orderID)

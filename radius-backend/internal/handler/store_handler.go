@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"radius/internal/models"
@@ -116,6 +117,10 @@ func (h *StoreHandler) DeactivateStore(ctx *gin.Context) {
 
 	res, err := h.storeService.DeactivateStore(ctx.Request.Context(), storeID)
 	if err != nil {
+		if errors.Is(err, service.ErrConflict) {
+			ctx.JSON(http.StatusConflict, models.APIError{Error: "Store has active orders, cycle counts or purchase orders and cannot be deactivated"})
+			return
+		}
 		slog.ErrorContext(ctx.Request.Context(), "StoreHandler.DeactivateStore: service error", "error", err)
 		ctx.JSON(http.StatusInternalServerError, models.APIError{Error: "An internal error occurred"})
 		return

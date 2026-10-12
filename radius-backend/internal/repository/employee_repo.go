@@ -189,7 +189,7 @@ func (r *EmployeeRepo) CreateEmployee(ctx context.Context, model models.CreateEm
 	query := `
 		INSERT INTO employees (email, store_id, first_name, last_name, role, password_hash, phone, address, city, province, postal_code, is_active, is_terminated)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-		RETURNING employee_id, store_id, first_name, last_name, role
+		RETURNING employee_id, store_id, first_name, last_name, role, is_active
 	`
 	err := r.db.QueryRowContext(
 		ctx, query, model.Email, model.StoreId,
@@ -197,7 +197,7 @@ func (r *EmployeeRepo) CreateEmployee(ctx context.Context, model models.CreateEm
 		model.Address, model.City, model.Province, model.PostalCode, model.IsActive, model.IsTerminated,
 	).Scan(
 		&employee.EmployeeId, &employee.StoreId,
-		&employee.FirstName, &employee.LastName, &employee.Role,
+		&employee.FirstName, &employee.LastName, &employee.Role, &employee.IsActive,
 	)
 	if err != nil {
 		return nil, err

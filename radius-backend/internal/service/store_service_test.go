@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"radius/internal/models"
 	"radius/internal/service"
 	"radius/internal/service/mocks"
@@ -221,5 +222,40 @@ func TestStoreService_GetStoreOperations_CrossStoreIsolation(t *testing.T) {
 	}
 	if len(cachedStore20) != 1 || cachedStore20[0].StoreID != 20 {
 		t.Fatalf("Store 20 cache leak detected: %+v", cachedStore20)
+	}
+}
+
+func TestStoreService_DeactivateStore(t *testing.T) {
+	tests := []struct {
+		name        string
+		active      bool
+		wantErr     bool
+		deactivates bool
+	}{
+		{name: "idle store is deactivated", active: false, deactivates: true},
+		{name: "store with active operations is refused", active: true, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			mockStoreRepo := mocks.NewMockStoreRepository(ctrl)
+			svc := service.NewStoreService(mockStoreRepo, nil, nil)
+
+			mockStoreRepo.EXPECT().
+				GetStoreOperationsSummaries(gomock.Any(), 4).
+				Return([]models.StoreOperationSummary{{StoreID: 4, HasActiveOperations: tt.active}}, nil)
+			if tt.deactivates {
+				mockStoreRepo.EXPECT().DeactivateStore(gomock.Any(), 4).Return(nil)
+			}
+
+			_, err := svc.DeactivateStore(context.Background(), 4)
+			if tt.wantErr && !errors.Is(err, service.ErrConflict) {
+				t.Fatalf("expected ErrConflict, got %v", err)
+			}
+			if !tt.wantErr && err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+		})
 	}
 }

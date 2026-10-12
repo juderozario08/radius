@@ -26,16 +26,12 @@ export default function IS4TCScanScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const fetchSession = useCallback(async () => {
-    try {
-      const url = user?.store_id
-        ? `${ENDPOINTS.SALES_FLOOR.IS4TC.session}?store_id=${user.store_id}`
-        : ENDPOINTS.SALES_FLOOR.IS4TC.session;
-      const response = await callApi<{status: string, items: MimsProductInventory[]}>(url, { method: "GET" }, logout);
-      if (response && response.items) {
-        setScannedItems(response.items);
-      }
-    } catch (error) {
-      console.error("Failed to fetch IS4TC session:", error);
+    const url = user?.store_id
+      ? `${ENDPOINTS.SALES_FLOOR.IS4TC.session}?store_id=${user.store_id}`
+      : ENDPOINTS.SALES_FLOOR.IS4TC.session;
+    const response = await callApi<{status: string, items: MimsProductInventory[]}>(url, { method: "GET" }, logout);
+    if (response && response.items) {
+      setScannedItems(response.items);
     }
   }, [logout, user?.store_id]);
 

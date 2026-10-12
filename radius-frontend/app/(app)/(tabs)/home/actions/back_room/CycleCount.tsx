@@ -73,17 +73,13 @@ export default function CycleCountDashboard() {
     }, [logout]);
 
     const fetchCategories = useCallback(async () => {
-        try {
-            const data = await callApi<Category[]>(
-                ENDPOINTS.SALES_FLOOR.PRODUCTS.categories,
-                { method: "GET", swr: true },
-                logout
-            );
-            if (data) {
-                setCategories(data);
-            }
-        } catch (err) {
-            console.error("Failed to fetch categories:", err);
+        const data = await callApi<Category[]>(
+            ENDPOINTS.SALES_FLOOR.PRODUCTS.categories,
+            { method: "GET", swr: true },
+            logout
+        );
+        if (data) {
+            setCategories(data);
         }
     }, [logout]);
 

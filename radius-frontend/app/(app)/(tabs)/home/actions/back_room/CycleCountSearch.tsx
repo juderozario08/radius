@@ -55,8 +55,6 @@ export default function CycleCountSearch() {
                 if (data) {
                     setResults(data);
                 }
-            } catch (err) {
-                console.error("Search failed:", err);
             } finally {
                 if (!signal?.aborted) {
                     setIsLoading(false);

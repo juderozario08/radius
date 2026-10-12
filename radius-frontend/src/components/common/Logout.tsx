@@ -23,7 +23,6 @@ const LogoutComponent = () => {
                 position: "bottom",
             });
         } catch (err) {
-            console.error(err);
             Alert.alert("An error occured", String(err));
             if (err instanceof UnauthorizedError) {
                 await logout();

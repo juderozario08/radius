@@ -69,7 +69,6 @@ export default function FillReportScreen() {
             });
             setReportData(resp);
         } catch (err: any) {
-            console.error('Failed to load fill report:', err);
             Toast.show({
                 type: 'error',
                 text1: 'Error Loading Report',

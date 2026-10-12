@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import { useAuth } from "./useAuth";
 import { getToken } from "@/utils/token";
+import { logger } from "@/utils/logger";
 import { apiFetch } from "@/api/client";
 import { ENDPOINTS } from "@/constants/routes";
 import {
@@ -125,7 +126,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
                 wsRef.current.send(message);
                 return true;
             } catch (err) {
-                console.warn("[useWebSocket] Send error:", err);
+                logger.warn("[useWebSocket] Send error:", err);
                 return false;
             }
         }
@@ -310,13 +311,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
                     const wildcardListeners = listenersRef.current.get("*");
                     wildcardListeners?.forEach((fn) => fn(parsed));
                 } catch (err) {
-                    console.warn("[useWebSocket] Failed to parse message:", err);
+                    logger.warn("[useWebSocket] Failed to parse message:", err);
                 }
             };
 
             ws.onerror = (err) => {
                 if (!isMountedRef.current || wsRef.current !== ws) return;
-                console.warn("[useWebSocket] Socket error:", err);
+                logger.warn("[useWebSocket] Socket error:", err);
             };
 
             ws.onclose = (e: WebSocketCloseEvent) => {
@@ -347,7 +348,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
                 }, delay);
             };
         } catch (err) {
-            console.warn("[useWebSocket] Connection attempt failed:", err);
+            logger.warn("[useWebSocket] Connection attempt failed:", err);
             updateStatus("disconnected");
         }
     }, [

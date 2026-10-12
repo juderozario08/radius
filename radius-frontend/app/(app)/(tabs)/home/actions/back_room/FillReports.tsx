@@ -17,6 +17,7 @@ import { FillReportResponse } from '@/types/report.types';
 import { COLORS } from '@/constants/colors';
 import { globalStyles } from '@/constants/styles';
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { showToast } from '@/utils/helpers';
 
 export default function BackRoomFillReportsScreen() {
     const router = useRouter();
@@ -28,8 +29,8 @@ export default function BackRoomFillReportsScreen() {
         try {
             const data = await getFillReport();
             setReport(data);
-        } catch (err) {
-            console.error('Failed to load store fill status:', err);
+        } catch (err: any) {
+            showToast('error', err?.message || 'Could not load store fill status.');
         } finally {
             setLoading(false);
             setRefreshing(false);

@@ -1,6 +1,7 @@
 import { getToken, saveToken, saveRefreshToken, getRefreshToken, deleteToken, deleteRefreshToken } from "@/utils/token";
 import { ENDPOINTS } from "@/constants/routes";
 import { RefreshTokenResponse } from "@/types/auth.types";
+import { logger } from "@/utils/logger";
 import {
     CachePolicy,
     setClientContext,
@@ -29,7 +30,7 @@ export {
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 if (!BASE_URL) {
-    console.warn("Missing EXPO_PUBLIC_API_URL in .env file");
+    logger.warn("Missing EXPO_PUBLIC_API_URL in .env file");
 }
 
 export class ConflictError extends Error {

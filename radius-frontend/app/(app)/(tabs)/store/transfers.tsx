@@ -2,47 +2,34 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import {
     View,
     Text,
-    StyleSheet,
     FlatList,
     TextInput,
     TouchableOpacity,
-    Modal,
     ScrollView,
-    ActivityIndicator,
     Alert,
-    KeyboardAvoidingView,
-    Platform,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
 import Pagination from "@/components/common/Pagination";
-import { ActionButtonRow } from "@/components/common/ActionButtonRow";
-import { DetailRow } from "@/components/common/DetailRow";
 import { OutboundTransferCard } from "@/components/receiving/OutboundTransferCard";
 import { COLORS } from "@/constants/colors";
-import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
-import { ENDPOINTS } from "@/constants/routes";
+import { globalStyles } from "@/constants/styles";
+import { transferScreenStyles as styles } from "@/components/transfers/transferScreenStyles";
+import { TransferDetailModal } from "@/components/transfers/TransferDetailModal";
+import { TransferDispatchModal } from "@/components/transfers/TransferDispatchModal";
+import { TransferCreateModal, NewItemEntry } from "@/components/transfers/TransferCreateModal";
 import { useAuth } from "@/hooks/useAuth";
-import { callApi, showToast } from "@/utils/helpers";
+import { showToast } from "@/utils/helpers";
+import { cancelOutboundTransfer, createOutboundTransfer, dispatchOutboundTransfer, getOutboundTransferDetail, getOutboundTransfers, getTransferDestinationStores, searchTransferProducts } from "@/api/transfers.api";
 import {
     OutboundTransferSummary,
     OutboundTransferDetailResponse,
     DestinationStore,
-    GetAllOutboundTransfersResponse,
 } from "@/types/receiving.types";
-import { SearchProductsResponse, Product } from "@/types/inventory.types";
+import { Product } from "@/types/inventory.types";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-
-interface NewItemEntry {
-    product_id: number;
-    sku: string;
-    upc: string;
-    name: string;
-    brand: string;
-    qty_requested: number;
-}
 
 export default function TransfersScreen() {
     const { logout, user } = useAuth();
@@ -95,8 +82,7 @@ export default function TransfersScreen() {
 
     const fetchTransfers = useCallback(async (page: number, size: number) => {
         setIsLoading(true);
-        const endpoint = `${ENDPOINTS.SALES_FLOOR.TRANSFERS.getAll}?page_number=${page}&page_size=${size}`;
-        const data = await callApi<GetAllOutboundTransfersResponse>(endpoint, { method: "GET" }, logout);
+        const data = await getOutboundTransfers(page, size, logout);
         if (data) {
             setTransfers(data.transfers || []);
             setTotalLength(data.total_length || 0);
@@ -105,7 +91,7 @@ export default function TransfersScreen() {
     }, [logout]);
 
     const fetchDestinationStores = useCallback(async () => {
-        const data = await callApi<{ stores: DestinationStore[] }>(ENDPOINTS.SALES_FLOOR.TRANSFERS.stores, { method: "GET" }, logout);
+        const data = await getTransferDestinationStores(logout);
         if (data && data.stores) {
             setDestinationStores(data.stores);
         }
@@ -125,8 +111,7 @@ export default function TransfersScreen() {
         setSelectedTransferId(transferId);
         setIsDetailModalVisible(true);
         setIsDetailLoading(true);
-        const endpoint = ENDPOINTS.SALES_FLOOR.TRANSFERS.getDetail(transferId);
-        const data = await callApi<OutboundTransferDetailResponse>(endpoint, { method: "GET" }, logout);
+        const data = await getOutboundTransferDetail(transferId, logout);
         if (data) {
             setTransferDetail(data);
         }
@@ -143,13 +128,12 @@ export default function TransfersScreen() {
     const handleConfirmDispatch = async () => {
         if (!dispatchTargetId) return;
         setIsDispatching(true);
-        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.TRANSFERS.dispatch(dispatchTargetId), {
-            method: "POST",
-            body: {
-                carrier: carrier.trim() ? carrier.trim() : null,
-                tracking_number: trackingNumber.trim() ? trackingNumber.trim() : null,
-            },
-        }, logout);
+        const res = await dispatchOutboundTransfer(
+            dispatchTargetId,
+            carrier.trim() || null,
+            trackingNumber.trim() || null,
+            logout
+        );
 
         if (res) {
             showToast("success", res.message);
@@ -172,7 +156,7 @@ export default function TransfersScreen() {
                     text: "Yes, Cancel",
                     style: "destructive",
                     onPress: async () => {
-                        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.TRANSFERS.cancel(transferId), { method: "POST" }, logout);
+                        const res = await cancelOutboundTransfer(transferId, logout);
                         if (res) {
                             showToast("success", res.message);
                             if (isDetailModalVisible) {
@@ -208,8 +192,7 @@ export default function TransfersScreen() {
         const currentSeq = ++productSearchSeq.current;
 
         setIsSearchingProducts(true);
-        const endpoint = `${ENDPOINTS.SALES_FLOOR.PRODUCTS.search}?q=${encodeURIComponent(trimmed)}&limit=8&offset=0`;
-        const data = await callApi<SearchProductsResponse>(endpoint, { method: "GET", signal: controller.signal }, logout);
+        const data = await searchTransferProducts(trimmed, controller.signal, logout);
 
         if (controller.signal.aborted || currentSeq !== productSearchSeq.current) {
             return;
@@ -298,17 +281,14 @@ export default function TransfersScreen() {
         }
 
         setIsSubmittingCreate(true);
-        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.TRANSFERS.create, {
-            method: "POST",
-            body: {
-                to_store_id: selectedStoreId,
-                transfer_reason: transferReason.trim(),
-                manual_check_required: manualCheck,
-                items: pendingItems.map((it) => ({
-                    product_id: it.product_id,
-                    qty_requested: it.qty_requested,
-                })),
-            },
+        const res = await createOutboundTransfer({
+            to_store_id: selectedStoreId,
+            transfer_reason: transferReason.trim(),
+            manual_check_required: manualCheck,
+            items: pendingItems.map((it) => ({
+                product_id: it.product_id,
+                qty_requested: it.qty_requested,
+            })),
         }, logout);
 
         if (res) {
@@ -424,742 +404,52 @@ export default function TransfersScreen() {
                 />
             </View>
 
-            <Modal
-                visible={isDetailModalVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setIsDetailModalVisible(false)}
-            >
-                <View style={globalStyles.modalOverlay}>
-                    <View style={globalStyles.modalContentWrapper}>
-                        <View style={[globalStyles.modalCardContainer, styles.detailModalContainer]}>
-                            {isDetailLoading || !transferDetail ? (
-                                <View style={styles.modalLoading}>
-                                    <LoadingSpinner />
-                                </View>
-                            ) : (
-                                <>
-                                    <View style={globalStyles.modalHeader}>
-                                        <View>
-                                            <Text style={globalStyles.modalName}>
-                                                Transfer #{transferDetail.transfer_id}
-                                            </Text>
-                                            <Text style={styles.modalSubHeader}>
-                                                To: {transferDetail.to_store_name}
-                                            </Text>
-                                        </View>
-                                        <View style={[styles.detailStatusBadge, getBadgeBg(transferDetail.status)]}>
-                                            <Text style={[styles.detailStatusText, getBadgeTextColor(transferDetail.status)]}>
-                                                {transferDetail.status.replace("_", " ")}
-                                            </Text>
-                                        </View>
-                                    </View>
+            <TransferDetailModal
+                isDetailModalVisible={isDetailModalVisible}
+                setIsDetailModalVisible={setIsDetailModalVisible}
+                isDetailLoading={isDetailLoading}
+                transferDetail={transferDetail}
+                isAdmin={isAdmin}
+                handleCancelTransfer={handleCancelTransfer}
+                handleOpenDispatchModal={handleOpenDispatchModal}
+            />
 
-                                    <View style={globalStyles.divider} />
+            <TransferDispatchModal
+                isDispatchModalVisible={isDispatchModalVisible}
+                setIsDispatchModalVisible={setIsDispatchModalVisible}
+                dispatchTargetId={dispatchTargetId}
+                carrier={carrier}
+                setCarrier={setCarrier}
+                trackingNumber={trackingNumber}
+                setTrackingNumber={setTrackingNumber}
+                isDispatching={isDispatching}
+                handleConfirmDispatch={handleConfirmDispatch}
+            />
 
-                                    <FlatList
-                                        style={styles.detailScroll}
-                                        showsVerticalScrollIndicator={false}
-                                        data={transferDetail.items}
-                                        keyExtractor={(it) => String(it.transfer_item_id)}
-                                        contentContainerStyle={globalStyles.section}
-                                        ListHeaderComponent={
-                                            <>
-                                                <View style={globalStyles.section}>
-                                                    <Text style={globalStyles.sectionTitle}>Transfer Info</Text>
-                                                    {isAdmin && <DetailRow label="Origin Store:" value={transferDetail.from_store_name} />}
-                                                    <DetailRow label="Destination Store:" value={transferDetail.to_store_name} />
-                                                    <DetailRow label="Created By:" value={transferDetail.requested_by_name} />
-                                                    <DetailRow
-                                                        label="Created At:"
-                                                        value={new Date(transferDetail.created_at).toLocaleString()}
-                                                    />
-                                                    {transferDetail.transfer_reason ? (
-                                                        <DetailRow label="Reason:" value={transferDetail.transfer_reason} />
-                                                    ) : null}
-                                                    <DetailRow
-                                                        label="Manual Check:"
-                                                        value={transferDetail.manual_check_required ? "Yes (Itemized Scan)" : "No (Auto-Receive Allowed)"}
-                                                    />
-                                                </View>
-
-                                                {(transferDetail.shipped_at || transferDetail.carrier || transferDetail.tracking_number) && (
-                                                    <View style={globalStyles.section}>
-                                                        <Text style={globalStyles.sectionTitle}>Dispatch & Tracking</Text>
-                                                        {transferDetail.shipped_at && (
-                                                            <DetailRow
-                                                                label="Dispatched At:"
-                                                                value={new Date(transferDetail.shipped_at).toLocaleString()}
-                                                            />
-                                                        )}
-                                                        {transferDetail.carrier && (
-                                                            <DetailRow label="Carrier:" value={transferDetail.carrier} />
-                                                        )}
-                                                        {transferDetail.tracking_number && (
-                                                            <DetailRow label="Tracking #:" value={transferDetail.tracking_number} />
-                                                        )}
-                                                    </View>
-                                                )}
-                                                <Text style={globalStyles.sectionTitle}>
-                                                    Items ({transferDetail.items.length})
-                                                </Text>
-                                            </>
-                                        }
-                                        renderItem={({ item: it }) => (
-                                            <View style={styles.itemRowCard}>
-                                                <View style={styles.itemRowLeft}>
-                                                    <Text style={styles.itemRowName} numberOfLines={1}>{it.name}</Text>
-                                                    <Text style={styles.itemRowSku}>SKU: {it.sku} â€¢ UPC: {it.upc}</Text>
-                                                </View>
-                                                <View style={styles.itemRowRight}>
-                                                    <Text style={styles.itemRowQtyLabel}>Requested: <Text style={styles.itemRowQtyValue}>{it.qty_requested}</Text></Text>
-                                                    {it.qty_sent !== null && (
-                                                        <Text style={styles.itemRowQtyLabel}>Sent: <Text style={styles.itemRowQtyValue}>{it.qty_sent}</Text></Text>
-                                                    )}
-                                                    {it.qty_received !== null && (
-                                                        <Text style={styles.itemRowQtyLabel}>Received: <Text style={styles.itemRowQtyValue}>{it.qty_received}</Text></Text>
-                                                    )}
-                                                </View>
-                                            </View>
-                                        )}
-                                    />
-
-                                    <View style={globalStyles.divider} />
-
-                                    <ActionButtonRow
-                                        buttons={[
-                                            {
-                                                key: "close",
-                                                label: "Close",
-                                                kind: "neutral",
-                                                onPress: () => setIsDetailModalVisible(false),
-                                            },
-                                            ...(transferDetail.status === "PENDING"
-                                                ? [
-                                                    {
-                                                        key: "cancel",
-                                                        label: "Cancel",
-                                                        kind: "danger" as const,
-                                                        onPress: () => handleCancelTransfer(transferDetail.transfer_id),
-                                                    },
-                                                    {
-                                                        key: "dispatch",
-                                                        label: "Dispatch",
-                                                        kind: "primary" as const,
-                                                        onPress: () => handleOpenDispatchModal(transferDetail.transfer_id),
-                                                    },
-                                                ]
-                                                : []),
-                                        ]}
-                                    />
-                                </>
-                            )}
-                        </View>
-                    </View>
-                </View>
-            </Modal>
-
-            <Modal
-                visible={isDispatchModalVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setIsDispatchModalVisible(false)}
-            >
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === "ios" ? "padding" : "height"}
-                    style={globalStyles.modalOverlay}
-                >
-                    <View style={globalStyles.modalContentWrapper}>
-                        <View style={globalStyles.modalCardContainer}>
-                            <View style={globalStyles.modalHeader}>
-                                <Text style={globalStyles.modalName}>Dispatch Transfer #{dispatchTargetId}</Text>
-                            </View>
-                            <Text style={styles.dispatchSubtitle}>
-                                Dispatched items will be marked as in-transit and ready for destination store receiving.
-                            </Text>
-
-                            <View style={globalStyles.divider} />
-
-                            <View style={styles.formField}>
-                                <Text style={globalStyles.modalInputLabel}>Carrier (Optional)</Text>
-                                <TextInput
-                                    style={globalStyles.textInput}
-                                    placeholder="e.g. FedEx, Purolator, Internal Van"
-                                    placeholderTextColor={COLORS.textSecondary}
-                                    value={carrier}
-                                    onChangeText={setCarrier}
-                                />
-                            </View>
-
-                            <View style={styles.formField}>
-                                <Text style={globalStyles.modalInputLabel}>Tracking Number (Optional)</Text>
-                                <TextInput
-                                    style={globalStyles.textInput}
-                                    placeholder="e.g. TRK-98437291"
-                                    placeholderTextColor={COLORS.textSecondary}
-                                    value={trackingNumber}
-                                    onChangeText={setTrackingNumber}
-                                />
-                            </View>
-
-                            <View style={globalStyles.divider} />
-
-                            <ActionButtonRow
-                                buttons={[
-                                    {
-                                        key: "back",
-                                        label: "Back",
-                                        kind: "neutral",
-                                        onPress: () => setIsDispatchModalVisible(false),
-                                        disabled: isDispatching,
-                                    },
-                                    {
-                                        key: "dispatch-confirm",
-                                        label: isDispatching ? "Dispatching..." : "Confirm Dispatch",
-                                        kind: "primary",
-                                        onPress: handleConfirmDispatch,
-                                        loading: isDispatching,
-                                    },
-                                ]}
-                            />
-                        </View>
-                    </View>
-                </KeyboardAvoidingView>
-            </Modal>
-
-            <Modal
-                visible={isCreateModalVisible}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setIsCreateModalVisible(false)}
-            >
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === "ios" ? "padding" : "height"}
-                    style={globalStyles.modalOverlay}
-                >
-                    <View style={globalStyles.modalContentWrapper}>
-                        <View style={[globalStyles.modalCardContainer, styles.createModalCard]}>
-                            <View style={globalStyles.modalHeader}>
-                                <Text style={globalStyles.modalName}>New Outbound Transfer</Text>
-                                <TouchableOpacity onPress={() => setIsCreateModalVisible(false)}>
-                                    <Ionicons name="close" size={24} color={COLORS.textPrimary} />
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={globalStyles.divider} />
-
-                            <FlatList
-                                style={styles.createScroll}
-                                showsVerticalScrollIndicator={false}
-                                data={pendingItems}
-                                keyExtractor={(it) => String(it.product_id)}
-                                ListHeaderComponent={
-                                    <>
-                                        <View style={styles.formField}>
-                                            <Text style={globalStyles.modalInputLabel}>Destination Store *</Text>
-                                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storeListScroll}>
-                                                {destinationStores.map((st) => {
-                                                    const isSelected = selectedStoreId === st.store_id;
-                                                    return (
-                                                        <TouchableOpacity
-                                                            key={st.store_id}
-                                                            style={[styles.storePill, isSelected && styles.storePillSelected]}
-                                                            onPress={() => setSelectedStoreId(st.store_id)}
-                                                        >
-                                                            <Text style={[styles.storePillText, isSelected && styles.storePillTextSelected]}>
-                                                                {st.name} ({st.city})
-                                                            </Text>
-                                                        </TouchableOpacity>
-                                                    );
-                                                })}
-                                            </ScrollView>
-                                        </View>
-
-                                        <View style={styles.formField}>
-                                            <Text style={globalStyles.modalInputLabel}>Transfer Reason *</Text>
-                                            <TextInput
-                                                style={globalStyles.textInput}
-                                                placeholder="e.g. Restock, Customer Request, Stock Rebalance"
-                                                placeholderTextColor={COLORS.textSecondary}
-                                                value={transferReason}
-                                                onChangeText={setTransferReason}
-                                            />
-                                        </View>
-
-                                        <TouchableOpacity
-                                            style={styles.toggleRow}
-                                            onPress={() => setManualCheck(!manualCheck)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Ionicons
-                                                name={manualCheck ? "checkbox" : "square-outline"}
-                                                size={22}
-                                                color={COLORS.primary}
-                                            />
-                                            <View style={styles.toggleTextContainer}>
-                                                <Text style={styles.toggleTitle}>Require Itemized Scan on Delivery</Text>
-                                                <Text style={styles.toggleSubtext}>
-                                                    If checked, destination store must scan each item rather than auto-receiving.
-                                                </Text>
-                                            </View>
-                                        </TouchableOpacity>
-
-                                        <View style={globalStyles.divider} />
-
-                                        <View style={styles.formField}>
-                                            <Text style={globalStyles.modalInputLabel}>Add Products *</Text>
-                                            <View style={styles.productSearchRow}>
-                                                <TextInput
-                                                    style={[globalStyles.textInput, styles.productSearchInput]}
-                                                    placeholder="Search product by name, SKU, UPC..."
-                                                    placeholderTextColor={COLORS.textSecondary}
-                                                    value={productSearchQuery}
-                                                    onChangeText={handleSearchProducts}
-                                                />
-                                                {isSearchingProducts ? (
-                                                    <ActivityIndicator size="small" color={COLORS.primary} style={styles.searchSpinner} />
-                                                ) : null}
-                                            </View>
-
-                                            {searchResults.length > 0 && (
-                                                <View style={styles.searchResultsBox}>
-                                                    {searchResults.map((prod) => (
-                                                        <TouchableOpacity
-                                                            key={prod.product_id}
-                                                            style={styles.searchResultItem}
-                                                            onPress={() => handleSelectProduct(prod)}
-                                                        >
-                                                            <Text style={styles.searchResultName} numberOfLines={1}>{prod.name}</Text>
-                                                            <Text style={styles.searchResultSku}>SKU: {prod.sku} â€¢ Brand: {prod.brand}</Text>
-                                                        </TouchableOpacity>
-                                                    ))}
-                                                </View>
-                                            )}
-
-                                            {selectedProduct && (
-                                                <View style={styles.selectedProductBox}>
-                                                    <View style={styles.selectedProductInfo}>
-                                                        <Text style={styles.selectedProductName} numberOfLines={1}>{selectedProduct.name}</Text>
-                                                        <Text style={styles.selectedProductSku}>SKU: {selectedProduct.sku}</Text>
-                                                    </View>
-                                                    <View style={styles.qtyAddRow}>
-                                                        <Text style={styles.qtyLabel}>Qty:</Text>
-                                                        <TextInput
-                                                            style={styles.qtyInput}
-                                                            keyboardType="number-pad"
-                                                            value={itemQtyText}
-                                                            onChangeText={setItemQtyText}
-                                                        />
-                                                        <TouchableOpacity style={styles.addBtn} onPress={handleAddPendingItem}>
-                                                            <Text style={styles.addBtnText}>Add</Text>
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                </View>
-                                            )}
-                                        </View>
-
-                                        <View style={styles.pendingItemsSection}>
-                                            <Text style={styles.pendingItemsTitle}>
-                                                Transfer Manifest ({pendingItems.length} {pendingItems.length === 1 ? "item" : "items"})
-                                            </Text>
-                                        </View>
-                                    </>
-                                }
-                                renderItem={({ item: it }) => (
-                                    <View style={styles.manifestItemRow}>
-                                        <View style={styles.manifestItemLeft}>
-                                            <Text style={styles.manifestItemName} numberOfLines={1}>{it.name}</Text>
-                                            <Text style={styles.manifestItemSku}>SKU: {it.sku} â€¢ Qty: {it.qty_requested}</Text>
-                                        </View>
-                                        <TouchableOpacity onPress={() => handleRemovePendingItem(it.product_id)}>
-                                            <Ionicons name="trash-outline" size={20} color={COLORS.dangerDark} />
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                                ListEmptyComponent={
-                                    <Text style={styles.emptyPendingText}>No products added to manifest yet.</Text>
-                                }
-                            />
-
-                            <View style={globalStyles.divider} />
-
-                            <ActionButtonRow
-                                buttons={[
-                                    {
-                                        key: "cancel-create",
-                                        label: "Cancel",
-                                        kind: "neutral",
-                                        onPress: () => setIsCreateModalVisible(false),
-                                        disabled: isSubmittingCreate,
-                                    },
-                                    {
-                                        key: "submit-create",
-                                        label: isSubmittingCreate ? "Creating..." : "Create Transfer",
-                                        kind: "primary",
-                                        onPress: handleSubmitCreateTransfer,
-                                        loading: isSubmittingCreate,
-                                        disabled: pendingItems.length === 0 || !selectedStoreId,
-                                    },
-                                ]}
-                            />
-                        </View>
-                    </View>
-                </KeyboardAvoidingView>
-            </Modal>
+            <TransferCreateModal
+                isCreateModalVisible={isCreateModalVisible}
+                setIsCreateModalVisible={setIsCreateModalVisible}
+                pendingItems={pendingItems}
+                destinationStores={destinationStores}
+                selectedStoreId={selectedStoreId}
+                setSelectedStoreId={setSelectedStoreId}
+                transferReason={transferReason}
+                setTransferReason={setTransferReason}
+                manualCheck={manualCheck}
+                setManualCheck={setManualCheck}
+                productSearchQuery={productSearchQuery}
+                handleSearchProducts={handleSearchProducts}
+                isSearchingProducts={isSearchingProducts}
+                searchResults={searchResults}
+                selectedProduct={selectedProduct}
+                handleSelectProduct={handleSelectProduct}
+                itemQtyText={itemQtyText}
+                setItemQtyText={setItemQtyText}
+                handleAddPendingItem={handleAddPendingItem}
+                handleRemovePendingItem={handleRemovePendingItem}
+                isSubmittingCreate={isSubmittingCreate}
+                handleSubmitCreateTransfer={handleSubmitCreateTransfer}
+            />
         </TopSafeAreaView>
     );
 }
-
-function getBadgeBg(status: string) {
-    switch (status) {
-        case "PENDING":
-            return { backgroundColor: COLORS.warningBg };
-        case "IN_TRANSIT":
-            return { backgroundColor: COLORS.infoBg };
-        case "RECEIVED":
-            return { backgroundColor: COLORS.activeBg };
-        case "CANCELLED":
-            return { backgroundColor: COLORS.inactiveBg };
-        default:
-            return { backgroundColor: COLORS.surface };
-    }
-}
-
-function getBadgeTextColor(status: string) {
-    switch (status) {
-        case "PENDING":
-            return { color: COLORS.warning };
-        case "IN_TRANSIT":
-            return { color: COLORS.info };
-        case "RECEIVED":
-            return { color: COLORS.success };
-        case "CANCELLED":
-            return { color: COLORS.dangerDark };
-        default:
-            return { color: COLORS.textSecondary };
-    }
-}
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.background,
-    },
-    headerAddBtn: {
-        padding: SPACING.xs,
-    },
-    filterSection: {
-        paddingHorizontal: SPACING.lg,
-        paddingTop: SPACING.sm,
-        paddingBottom: SPACING.xsm,
-        backgroundColor: COLORS.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    searchBar: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: COLORS.background,
-        borderRadius: RADIUS.md,
-        paddingHorizontal: SPACING.smd,
-        paddingVertical: SPACING.sm,
-        gap: SPACING.sm,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: FONT_SIZE.md,
-        color: COLORS.textPrimary,
-        padding: 0,
-    },
-    statusTabs: {
-        flexDirection: "row",
-        gap: SPACING.sm,
-        paddingVertical: SPACING.smd,
-    },
-    statusTabPill: {
-        paddingHorizontal: SPACING.mdl,
-        paddingVertical: SPACING.xsm,
-        borderRadius: RADIUS.xl,
-        backgroundColor: COLORS.background,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    statusTabPillActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    statusTabText: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-    },
-    statusTabTextActive: {
-        color: COLORS.surface,
-    },
-    listWrapper: {
-        flex: 1,
-        paddingHorizontal: SPACING.lg,
-        paddingTop: SPACING.md,
-    },
-    listContent: {
-        paddingBottom: SPACING.xxl,
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: SPACING.xxxl,
-    },
-    emptyTitle: {
-        fontSize: FONT_SIZE.xl,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-        marginTop: SPACING.md,
-    },
-    emptySubtitle: {
-        fontSize: FONT_SIZE.md,
-        color: COLORS.textSecondary,
-        textAlign: "center",
-        marginTop: SPACING.xsm,
-    },
-    detailModalContainer: {
-        maxHeight: "85%",
-    },
-    modalLoading: {
-        padding: SPACING.huge,
-        alignItems: "center",
-    },
-    modalSubHeader: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-    detailStatusBadge: {
-        paddingHorizontal: SPACING.smd,
-        paddingVertical: SPACING.xs,
-        borderRadius: RADIUS.lg,
-    },
-    detailStatusText: {
-        fontSize: FONT_SIZE.xs,
-        fontWeight: "700",
-        textTransform: "uppercase",
-    },
-    detailScroll: {
-        maxHeight: 400,
-    },
-    itemRowCard: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: SPACING.sm,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    itemRowLeft: {
-        flex: 1,
-        marginRight: SPACING.sm,
-    },
-    itemRowName: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    itemRowSku: {
-        fontSize: FONT_SIZE.xs,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-    itemRowRight: {
-        alignItems: "flex-end",
-    },
-    itemRowQtyLabel: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-    },
-    itemRowQtyValue: {
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    dispatchSubtitle: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xs,
-    },
-    formField: {
-        marginBottom: SPACING.mdl,
-    },
-    createModalCard: {
-        maxHeight: "90%",
-    },
-    createScroll: {
-        maxHeight: 450,
-    },
-    storeListScroll: {
-        flexDirection: "row",
-        marginTop: SPACING.xsm,
-    },
-    storePill: {
-        paddingHorizontal: SPACING.md,
-        paddingVertical: SPACING.sm,
-        borderRadius: RADIUS.md,
-        backgroundColor: COLORS.background,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        marginRight: SPACING.sm,
-    },
-    storePillSelected: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    storePillText: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textPrimary,
-        fontWeight: "500",
-    },
-    storePillTextSelected: {
-        color: COLORS.surface,
-        fontWeight: "600",
-    },
-    toggleRow: {
-        flexDirection: "row",
-        alignItems: "flex-start",
-        gap: SPACING.smd,
-        marginBottom: SPACING.mdl,
-    },
-    toggleTextContainer: {
-        flex: 1,
-    },
-    toggleTitle: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    toggleSubtext: {
-        fontSize: FONT_SIZE.xs,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-    productSearchRow: {
-        position: "relative",
-    },
-    productSearchInput: {
-        paddingRight: 36,
-    },
-    searchSpinner: {
-        position: "absolute",
-        right: 12,
-        top: 14,
-    },
-    searchResultsBox: {
-        maxHeight: 180,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        borderRadius: RADIUS.md,
-        backgroundColor: COLORS.surface,
-        marginTop: SPACING.xs,
-    },
-    searchResultItem: {
-        padding: SPACING.smd,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    searchResultName: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    searchResultSku: {
-        fontSize: FONT_SIZE.xs,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-    selectedProductBox: {
-        marginTop: SPACING.sm,
-        padding: SPACING.smd,
-        borderRadius: RADIUS.md,
-        backgroundColor: COLORS.background,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    selectedProductInfo: {
-        marginBottom: SPACING.sm,
-    },
-    selectedProductName: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    selectedProductSku: {
-        fontSize: FONT_SIZE.xs,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.hairline,
-    },
-    qtyAddRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.sm,
-    },
-    qtyLabel: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    qtyInput: {
-        width: 60,
-        height: 36,
-        borderWidth: 1,
-        borderColor: COLORS.inputBorder,
-        borderRadius: RADIUS.sm,
-        textAlign: "center",
-        backgroundColor: COLORS.surface,
-        fontSize: FONT_SIZE.md,
-        color: COLORS.textPrimary,
-    },
-    addBtn: {
-        backgroundColor: COLORS.primary,
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.sm,
-        borderRadius: RADIUS.sm,
-    },
-    addBtnText: {
-        color: COLORS.surface,
-        fontWeight: "600",
-        fontSize: FONT_SIZE.smd,
-    },
-    pendingItemsSection: {
-        marginTop: SPACING.smd,
-    },
-    pendingItemsTitle: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-        marginBottom: SPACING.xsm,
-    },
-    emptyPendingText: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-        fontStyle: "italic",
-    },
-    manifestItemRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: SPACING.sm,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    manifestItemLeft: {
-        flex: 1,
-        marginRight: SPACING.sm,
-    },
-    manifestItemName: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    manifestItemSku: {
-        fontSize: FONT_SIZE.xs,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-});

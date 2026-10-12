@@ -1,12 +1,16 @@
 package router_test
 
 import (
+	"bytes"
+	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"radius/internal/config"
 	"radius/internal/handler"
+	"radius/internal/logging"
 	"radius/internal/router"
 	"radius/internal/service"
 
@@ -90,5 +94,66 @@ func testHandlers() router.Handlers {
 		PrintOrderHandler:  &handler.PrintOrderHandler{},
 		WSHandler:          &handler.WSHandler{},
 		MetricsHandler:     &handler.MetricsHandler{},
+	}
+}
+
+func TestNewRouter_StatusPropagation(t *testing.T) {
+	var logs bytes.Buffer
+	prev := slog.Default()
+	slog.SetDefault(logging.New(&logs, "release", "debug"))
+	t.Cleanup(func() { slog.SetDefault(prev) })
+
+	r := router.NewRouter(router.Config{
+		Handlers:    testHandlers(),
+		AuthService: &service.AuthService{},
+		AppConfig:   &config.Config{GinMode: "test"},
+	})
+
+	healthReq := httptest.NewRequest(http.MethodGet, "/health", nil)
+	healthRes := httptest.NewRecorder()
+	r.ServeHTTP(healthRes, healthReq)
+	etag := healthRes.Header().Get("ETag")
+	if healthRes.Code != http.StatusOK || etag == "" {
+		t.Fatalf("GET /health = %d with ETag %q, want 200 with ETag", healthRes.Code, etag)
+	}
+
+	tests := []struct {
+		name        string
+		method      string
+		target      string
+		ifNoneMatch string
+		wantStatus  int
+		wantBody    string
+	}{
+		{name: "unknown GET", method: http.MethodGet, target: "/api/does-not-exist", wantStatus: http.StatusNotFound, wantBody: `{"error":"Route not found"}`},
+		{name: "unknown POST", method: http.MethodPost, target: "/api/does-not-exist", wantStatus: http.StatusNotFound, wantBody: `{"error":"Route not found"}`},
+		{name: "ETag match returns 304", method: http.MethodGet, target: "/health", ifNoneMatch: etag, wantStatus: http.StatusNotModified},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logs.Reset()
+			req := httptest.NewRequest(tt.method, tt.target, nil)
+			if tt.ifNoneMatch != "" {
+				req.Header.Set("If-None-Match", tt.ifNoneMatch)
+			}
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != tt.wantStatus {
+				t.Fatalf("status = %d, want %d", w.Code, tt.wantStatus)
+			}
+			if w.Body.String() != tt.wantBody {
+				t.Fatalf("body = %q, want %q", w.Body.String(), tt.wantBody)
+			}
+
+			var record map[string]any
+			if err := json.Unmarshal(logs.Bytes(), &record); err != nil {
+				t.Fatalf("access log is not a single JSON record: %v (%q)", err, logs.String())
+			}
+			if record["status"] != float64(tt.wantStatus) {
+				t.Fatalf("logged status = %v, want %d", record["status"], tt.wantStatus)
+			}
+		})
 	}
 }

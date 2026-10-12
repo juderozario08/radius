@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log/slog"
 	"net/http"
+	"radius/internal/api"
 	"radius/internal/config"
 	"radius/internal/handler"
 	"radius/internal/middleware"
@@ -84,6 +85,9 @@ func NewRouter(cfg Config) *gin.Engine {
 		router.Use(cors.New(corsConfig))
 	}
 	router.Use(middleware.ETagMiddleware())
+	router.NoRoute(func(c *gin.Context) {
+		api.Error(c, http.StatusNotFound, "Route not found")
+	})
 
 	public := router.Group("/")
 	{

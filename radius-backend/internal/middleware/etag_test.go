@@ -113,3 +113,53 @@ func TestETagMiddleware_WebsocketIgnored(t *testing.T) {
 		t.Fatal("expected no ETag for websocket upgrade")
 	}
 }
+
+func TestETagMiddleware_PreservesUnwrittenStatus(t *testing.T) {
+	tests := []struct {
+		name        string
+		noRoute     gin.HandlerFunc
+		target      string
+		ifNoneMatch string
+		wantStatus  int
+		wantBody    string
+		wantLogged  int
+	}{
+		{name: "unknown route keeps gin default 404", target: "/missing", wantStatus: http.StatusNotFound, wantBody: "404 page not found", wantLogged: http.StatusNotFound},
+		{name: "unknown route with NoRoute handler", noRoute: func(c *gin.Context) { c.JSON(http.StatusNotFound, gin.H{"error": "Route not found"}) }, target: "/missing", wantStatus: http.StatusNotFound, wantBody: `{"error":"Route not found"}`, wantLogged: http.StatusNotFound},
+		{name: "known route returns 200", target: "/known", wantStatus: http.StatusOK, wantBody: "ok", wantLogged: http.StatusOK},
+		{name: "known route revalidated returns 304", target: "/known", ifNoneMatch: "*", wantStatus: http.StatusNotModified, wantLogged: http.StatusNotModified},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gin.SetMode(gin.TestMode)
+			r := gin.New()
+			var logged int
+			r.Use(func(c *gin.Context) {
+				c.Next()
+				logged = c.Writer.Status()
+			}, ETagMiddleware())
+			r.GET("/known", func(c *gin.Context) { c.String(http.StatusOK, "ok") })
+			if tt.noRoute != nil {
+				r.NoRoute(tt.noRoute)
+			}
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(http.MethodGet, tt.target, nil)
+			if tt.ifNoneMatch != "" {
+				req.Header.Set("If-None-Match", tt.ifNoneMatch)
+			}
+			r.ServeHTTP(w, req)
+
+			if w.Code != tt.wantStatus {
+				t.Fatalf("status = %d, want %d", w.Code, tt.wantStatus)
+			}
+			if w.Body.String() != tt.wantBody {
+				t.Fatalf("body = %q, want %q", w.Body.String(), tt.wantBody)
+			}
+			if logged != tt.wantLogged {
+				t.Fatalf("outer middleware saw status %d, want %d", logged, tt.wantLogged)
+			}
+		})
+	}
+}

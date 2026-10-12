@@ -30,7 +30,7 @@ func (w *etagWriter) WriteString(s string) (int, error) {
 
 func (w *etagWriter) Status() int {
 	if w.statusCode == 0 {
-		return http.StatusOK
+		return w.ResponseWriter.Status()
 	}
 	return w.statusCode
 }
@@ -51,11 +51,15 @@ func ETagMiddleware() gin.HandlerFunc {
 		w := &etagWriter{
 			ResponseWriter: c.Writer,
 			body:           &bytes.Buffer{},
-			statusCode:     http.StatusOK,
 		}
 		c.Writer = w
 
 		c.Next()
+		c.Writer = w.ResponseWriter
+
+		if w.statusCode == 0 && w.body.Len() == 0 {
+			return
+		}
 
 		status := w.Status()
 

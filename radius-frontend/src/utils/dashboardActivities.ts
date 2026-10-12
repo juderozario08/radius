@@ -2,13 +2,17 @@ import { CycleCountUpdatedPayload, StoreActivityPayload } from "@/types/websocke
 
 const HIDDEN_ACTIVITY_TYPES = ["POS", "TRANSACTION", "CHECKOUT", "FILL", "STOCK"];
 
+export function isHiddenDashboardActivity(activityType: string): boolean {
+    return HIDDEN_ACTIVITY_TYPES.some((type) => activityType.includes(type));
+}
+
 export function filterDashboardCycleCounts(counts: CycleCountUpdatedPayload[], myTasks: boolean, employeeId?: number) {
     const inProgress = counts.filter((count) => ["IN PROGRESS", "IN_PROGRESS"].includes((count.status || "").toUpperCase()));
     return myTasks ? inProgress.filter((count) => employeeId !== undefined && count.counted_by === employeeId) : inProgress;
 }
 
 export function filterDashboardActivities(activities: StoreActivityPayload[], myTasks: boolean, employeeId?: number) {
-    const filtered = activities.filter((activity) => !HIDDEN_ACTIVITY_TYPES.some((type) => activity.activity_type.includes(type)));
+    const filtered = activities.filter((activity) => !isHiddenDashboardActivity(activity.activity_type));
     const scoped = myTasks ? filtered.filter((activity) => {
         if (employeeId === undefined) return false;
         if (activity.activity_type === "CYCLE_COUNT_UPDATED") return activity.metadata?.counted_by === employeeId;

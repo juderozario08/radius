@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, Animated, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -9,6 +9,7 @@ import BackButton from '@/components/common/BackButton';
 import { globalStyles, SPACING, RADIUS, FONT_SIZE } from '@/constants/styles';
 import { COLORS } from '@/constants/colors';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/useToast';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { callApi } from '@/utils/helpers';
 import { ENDPOINTS } from '@/constants/routes';
@@ -27,17 +28,7 @@ export default function Activities() {
     const [liveActivities, setLiveActivities] = useState<StoreActivityPayload[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const [toastMessage, setToastMessage] = useState<string | null>(null);
-    const toastOpacity = useRef(new Animated.Value(0)).current;
-
-    const showToast = useCallback((msg: string) => {
-        setToastMessage(msg);
-        Animated.sequence([
-            Animated.timing(toastOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
-            Animated.delay(3500),
-            Animated.timing(toastOpacity, { toValue: 0, duration: 350, useNativeDriver: true }),
-        ]).start(() => setToastMessage(null));
-    }, [toastOpacity]);
+    const { toastMessage, toastOpacity, showToast } = useToast();
 
     useWebSocket({
         storeId: activeStoreId,

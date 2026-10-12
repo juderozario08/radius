@@ -78,7 +78,7 @@ func (r *ProductRepo) SearchProducts(
 	b := queryutil.NewBuilder()
 
 	if query != "" {
-		b.AddWithSameArg("(name ILIKE $%d OR sku ILIKE $%d OR COALESCE(description, '') ILIKE $%d)", "%"+query+"%")
+		b.AddWithSameArg("(name ILIKE $%d OR sku ILIKE $%d OR description ILIKE $%d)", "%"+query+"%")
 	}
 
 	if categoryID != nil {

@@ -7,6 +7,8 @@ import { Slot, useRouter, usePathname, useGlobalSearchParams } from "expo-router
 import { useEffect } from "react";
 import { ActivityIndicator, StatusBar, View } from "react-native";
 
+export { RouteErrorBoundary as ErrorBoundary } from "@/components/common/RouteErrorBoundary";
+
 function NavigationHistoryWatcher() {
     const pathname = usePathname();
     const params = useGlobalSearchParams();

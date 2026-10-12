@@ -8,6 +8,8 @@ import { ParamListBase, TabNavigationState } from "@react-navigation/native";
 import { StyleSheet, View } from "react-native";
 import { COLORS } from "@/constants/colors";
 
+export { RouteErrorBoundary as ErrorBoundary } from "@/components/common/RouteErrorBoundary";
+
 const { Navigator } = createMaterialTopTabNavigator();
 
 export const MaterialTopTabs = withLayoutContext<

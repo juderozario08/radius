@@ -12,11 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { callApi } from '@/utils/helpers';
 import { ENDPOINTS } from '@/constants/routes';
-import {
-    OrderCreatedPayload,
-    CycleCountUpdatedPayload,
-    StoreActivityPayload,
-} from '@/types/websocket.types';
+import { StoreActivityPayload } from '@/types/websocket.types';
 import { GetAllOnlineOrdersResponse } from '@/types/order.types';
 import { CycleCountSummary } from '@/types/cyclecount.types';
 import { PurchaseOrderSummary } from '@/types/receiving.types';
@@ -25,12 +21,9 @@ const Tab = createMaterialTopTabNavigator();
 
 export default function Activities() {
     const { user, logout } = useAuth();
-    const isAdmin = user?.role === "ADMIN";
     const activeStoreId = user?.store_id ?? 2;
     const currentEmpId = user?.employee_id;
 
-    const [liveOrders, setLiveOrders] = useState<OrderCreatedPayload[]>([]);
-    const [liveCycleCounts, setLiveCycleCounts] = useState<CycleCountUpdatedPayload[]>([]);
     const [liveActivities, setLiveActivities] = useState<StoreActivityPayload[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -51,10 +44,6 @@ export default function Activities() {
         autoConnect: true,
         maxHistorySize: 100,
         onOrderCreated: (payload) => {
-            setLiveOrders((prev) => {
-                if (prev.some((o) => o.order_id === payload.order_id)) return prev;
-                return [payload, ...prev];
-            });
             showToast(`⚡ New Order #${payload.order_id} Received`);
             setLiveActivities((prev) => {
                 const newAct: StoreActivityPayload = {
@@ -70,31 +59,6 @@ export default function Activities() {
             });
         },
         onOrderStatusUpdated: (payload) => {
-            setLiveOrders((prev) => {
-                const exists = prev.some((o) => o.order_id === payload.order_id);
-                if (exists) {
-                    return prev.map((o) => o.order_id === payload.order_id ? {
-                        ...o,
-                        status: payload.new_status,
-                        assigned_to: payload.assigned_to !== undefined ? payload.assigned_to : o.assigned_to,
-                        assigned_to_name: payload.assigned_to_name !== undefined ? payload.assigned_to_name : o.assigned_to_name,
-                    } : o);
-                }
-                return [{
-                    order_id: payload.order_id,
-                    store_id: payload.store_id,
-                    customer_name: payload.customer_name || "Customer",
-                    customer_email: "",
-                    order_type: payload.order_type,
-                    status: payload.new_status,
-                    total_amount: payload.total_amount || 0,
-                    items_count: 1,
-                    placed_at: new Date().toISOString(),
-                    assigned_to: payload.assigned_to,
-                    assigned_to_name: payload.assigned_to_name,
-                }, ...prev];
-            });
-
             setLiveActivities((prev) => {
                 const newAct: StoreActivityPayload = {
                     activity_id: `act-status-${payload.order_id}-${Date.now()}`,
@@ -109,15 +73,6 @@ export default function Activities() {
             });
         },
         onCycleCountUpdated: (payload) => {
-            setLiveCycleCounts((prev) => {
-                const index = prev.findIndex((c) => c.count_id === payload.count_id);
-                if (index >= 0) {
-                    const updated = [...prev];
-                    updated[index] = payload;
-                    return updated;
-                }
-                return [payload, ...prev];
-            });
             setLiveActivities((prev) => {
                 const newAct: StoreActivityPayload = {
                     activity_id: `act-cycle-${payload.count_id}-${Date.now()}`,
@@ -180,10 +135,6 @@ export default function Activities() {
             assigned_to: o.assigned_to,
             assigned_to_name: o.assigned_to_name,
         }));
-        if (ordersLoaded) {
-            setLiveOrders(mappedOrders);
-        }
-
         mappedOrders.forEach(o => {
             activities.push({
                 activity_id: `act-order-${o.order_id}-${o.status}`,
@@ -202,21 +153,6 @@ export default function Activities() {
         );
         const countsLoaded = Array.isArray(countsRes);
         if (countsLoaded) {
-            setLiveCycleCounts(countsRes.map(c => ({
-                count_id: c.count_id,
-                store_id: c.store_id,
-                category_id: c.category_id,
-                category_name: c.category_name,
-                status: c.status || "",
-                action: "scanned",
-                total_items: c.total_items,
-                counted_items: c.counted_items,
-                total_variance_cost: Number(c.total_variance_cost) || 0,
-                updated_at: c.count_date || new Date().toISOString(),
-                counted_by: c.counted_by,
-                counted_by_name: c.counted_by_name,
-            })));
-
             countsRes.forEach(c => {
                 activities.push({
                     activity_id: `act-cycle-${c.count_id}`,

@@ -16,7 +16,7 @@ import { globalStyles } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { callApi } from "@/utils/helpers";
 import { router } from "expo-router";
-import { CycleCountSummary, CycleCountStatus } from "@/types/cyclecount.types";
+import { CycleCountSummary } from "@/types/cyclecount.types";
 import { getCycleCountStatusStyle } from "./CycleCount";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";

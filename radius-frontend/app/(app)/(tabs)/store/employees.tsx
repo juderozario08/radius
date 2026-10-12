@@ -5,7 +5,7 @@ import { ENDPOINTS } from "@/constants/routes";
 import { globalStyles } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
-import { callApi, capitalize, showToast } from "@/utils/helpers";
+import { callApi, capitalize } from "@/utils/helpers";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { TerminatedBadge } from "@/components/common/TerminatedBadge";
 import { RoleBadge } from "@/components/common/RoleBadge";

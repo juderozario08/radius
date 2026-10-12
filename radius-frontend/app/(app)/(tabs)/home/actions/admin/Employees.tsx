@@ -32,6 +32,7 @@ import PillGroup, { PillOption } from "@/components/common/PillGroup";
 import { CANADIAN_PROVINCES, isCanadianProvince, normalizeCanadianPostalCode } from "@/constants/canada";
 import Pagination from "@/components/common/Pagination";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { useLocalSearchParams } from "expo-router";
 
 const ROLES: EmployeeRole[] = ["SALES", "SERVICE", "MANAGER", "ADMIN"];
 
@@ -472,8 +473,6 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
         </Modal>
     );
 };
-
-import { useLocalSearchParams } from "expo-router";
 
 export default function Employees() {
     const { store_id } = useLocalSearchParams<{ store_id: string }>();

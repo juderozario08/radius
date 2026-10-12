@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { ProductScreenDetails } from "@/types/inventory.types";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
 import { DetailRow } from "@/components/common/DetailRow";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -11,7 +10,7 @@ interface ProductDetailsProps {
 }
 
 export const ProductDetails: React.FC<ProductDetailsProps> = ({ details }) => {
-    const { product, inventory } = details;
+    const { inventory } = details;
 
     const [isAvailableExpanded, setIsAvailableExpanded] = useState(false);
     const [isNonSellableExpanded, setIsNonSellableExpanded] = useState(false);

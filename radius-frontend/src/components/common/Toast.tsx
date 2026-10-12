@@ -1,3 +1,4 @@
+import { View } from "react-native";
 import Toast, { BaseToast, ErrorToast, ToastProps } from "react-native-toast-message";
 
 const config = {
@@ -58,8 +59,6 @@ const config = {
         />
     ),
 };
-
-import { View } from "react-native";
 
 export default function CustomToast() {
     return (

@@ -10,6 +10,7 @@ import {
     ScrollView,
     ActivityIndicator,
     Alert,
+    Platform,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import BackButton from "@/components/common/BackButton";
@@ -350,52 +351,33 @@ export default function Returns() {
         }
     };
 
+    const rejectReturn = async (returnId: number, reason?: string) => {
+        setIsProcessingAction(true);
+        const res = await callApi<{ message: string }>(
+            ENDPOINTS.SALES_FLOOR.RETURNS.reject(returnId),
+            { method: "POST", body: { reason: reason || "Manager rejected" } },
+            logout
+        );
+        setIsProcessingAction(false);
+        if (res) {
+            showToast("success", "Return rejected");
+            fetchReturnDetail(returnId);
+            fetchHistory();
+        }
+    };
+
     const handleRejectReturn = (returnId: number) => {
-        Alert.prompt
-            ? Alert.prompt("Reject Return", "Enter reason for rejection:", [
+        if (Platform.OS === "ios") {
+            Alert.prompt("Reject Return", "Enter reason for rejection:", [
                 { text: "Cancel", style: "cancel" },
-                {
-                    text: "Reject",
-                    style: "destructive",
-                    onPress: async (reason?: string) => {
-                        setIsProcessingAction(true);
-                        const endpoint = ENDPOINTS.SALES_FLOOR.RETURNS.reject(returnId);
-                        const res = await callApi<{ message: string }>(
-                            endpoint,
-                            { method: "POST", body: { reason: reason || "Manager rejected" } },
-                            logout
-                        );
-                        setIsProcessingAction(false);
-                        if (res) {
-                            showToast("success", "Return rejected");
-                            fetchReturnDetail(returnId);
-                            fetchHistory();
-                        }
-                    },
-                },
-            ])
-            : Alert.alert("Reject Return", "Are you sure you want to reject this return?", [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Reject",
-                    style: "destructive",
-                    onPress: async () => {
-                        setIsProcessingAction(true);
-                        const endpoint = ENDPOINTS.SALES_FLOOR.RETURNS.reject(returnId);
-                        const res = await callApi<{ message: string }>(
-                            endpoint,
-                            { method: "POST", body: { reason: "Manager rejected" } },
-                            logout
-                        );
-                        setIsProcessingAction(false);
-                        if (res) {
-                            showToast("success", "Return rejected");
-                            fetchReturnDetail(returnId);
-                            fetchHistory();
-                        }
-                    },
-                },
+                { text: "Reject", style: "destructive", onPress: (reason?: string) => rejectReturn(returnId, reason) },
             ]);
+            return;
+        }
+        Alert.alert("Reject Return", "Are you sure you want to reject this return?", [
+            { text: "Cancel", style: "cancel" },
+            { text: "Reject", style: "destructive", onPress: () => rejectReturn(returnId) },
+        ]);
     };
 
     return (

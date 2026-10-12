@@ -1,4 +1,4 @@
-﻿import BackButton from "@/components/common/BackButton";
+import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { ENDPOINTS } from "@/constants/routes";
 import { globalStyles } from "@/constants/styles";

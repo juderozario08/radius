@@ -1,9 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Modal, Image, LayoutAnimation, Platform, UIManager } from 'react-native';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 import { TopSafeAreaView } from '@/components/common/TopSafeAreaView';
 import HeaderComponent from '@/components/common/HeaderComponent';
 import BackButton from '@/components/common/BackButton';
@@ -15,6 +11,10 @@ import { COLORS } from '@/constants/colors';
 import { router } from 'expo-router';
 import Gate from '@/components/common/Gate';
 import { callApi } from '@/utils/helpers';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function Audit() {
     const { user, logout } = useAuth();

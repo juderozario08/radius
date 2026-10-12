@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ViewProps, ViewStyle } from 'react-native';
+import { View, ViewProps, ViewStyle } from 'react-native';
 import { globalStyles } from '../../constants/styles';
 
 interface CardProps extends ViewProps {

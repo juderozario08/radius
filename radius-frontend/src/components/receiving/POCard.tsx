@@ -27,7 +27,6 @@ export const POCard: React.FC<POCardProps> = ({ po, onPress }) => {
     const isAdmin = user?.role === "ADMIN";
 
     const poNumber = po.po_id.toString().padStart(8, '0');
-    const orderedDate = new Date(po.ordered_at).toLocaleDateString();
     const expectedDate = po.expected_at ? new Date(po.expected_at).toLocaleDateString() : 'N/A';
 
     let isOverdue = false;

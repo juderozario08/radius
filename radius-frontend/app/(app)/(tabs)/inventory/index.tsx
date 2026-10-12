@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
@@ -8,20 +8,18 @@ import HeaderComponent from "@/components/common/HeaderComponent";
 import { BarcodeScanner, BarcodeScannerRef } from "@/components/common/BarcodeScanner";
 import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
 import { LocationInput } from "@/components/common/LocationInput";
-import { ProductDetails } from "@/components/inventory/ProductDetails";
 import { COLORS } from "@/constants/colors";
 import { globalStyles } from "@/constants/styles";
 import { ENDPOINTS } from "@/constants/routes";
 import { callApi } from "@/utils/helpers";
 import { useAuth } from "@/hooks/useAuth";
-import { MimsProductInventory, ScanProductResponse } from "@/types/inventory.types";
+import { ScanProductResponse } from "@/types/inventory.types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 export default function MimsScreen() {
     const { logout } = useAuth();
     const scannerRef = useRef<BarcodeScannerRef>(null);
 
-    const [mimsProduct, setMimsProduct] = useState<MimsProductInventory | null>(null);
     const [isLoadingMims, setIsLoadingMims] = useState(false);
     const [locationId, setLocationId] = useState("");
     const [activeTabIndex, setActiveTabIndex] = useState(0);
@@ -42,7 +40,6 @@ export default function MimsScreen() {
             }, 350);
         } else {
             scannerRef.current?.triggerError();
-            setMimsProduct(null);
             if (response) {
                 Toast.show({ type: "error", text1: "Not Found", text2: "Product not found for this barcode." });
             }
@@ -86,11 +83,6 @@ export default function MimsScreen() {
                 Toast.show({ type: "error", text1: "Invalid Location", text2: "Location ID must be 9 digits." });
             }
         }
-    };
-
-    const handleScanAgain = () => {
-        scannerRef.current?.resetScanner();
-        if (activeTabIndex === 0) setMimsProduct(null);
     };
 
     return (

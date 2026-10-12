@@ -8,10 +8,8 @@ import {
     FlatList,
     ActivityIndicator,
     Image,
-    Animated,
     Modal,
     ScrollView,
-    Keyboard,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";

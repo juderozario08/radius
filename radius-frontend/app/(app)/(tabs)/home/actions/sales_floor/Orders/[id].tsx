@@ -393,7 +393,6 @@ export default function OnlineOrderDetail() {
     const isAssignedToOther = order.assigned_to && order.assigned_to !== user?.employee_id;
     const isManagerOrAdmin = user?.role === "MANAGER" || user?.role === "ADMIN";
 
-    const activeItems = items.filter((i) => i.status !== "CANCELLED" && i.status !== "REMOVED");
     const isAllPicked =
         items.length > 0 &&
         items.every((it) => {

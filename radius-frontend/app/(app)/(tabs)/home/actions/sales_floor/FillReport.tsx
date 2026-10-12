@@ -19,7 +19,6 @@ import { FillReportItem } from '@/components/reports/FillReportItem';
 import { getFillReport } from '@/api/reports.api';
 import {
     FillReportFilterType,
-    FillReportItemDetail,
     FillReportResponse,
     FillReportSortBy,
 } from '@/types/report.types';

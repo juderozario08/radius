@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
     View,
     Text,
@@ -20,10 +20,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { callApi, showToast } from "@/utils/helpers";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import {
-    CycleCount,
     CycleCountItemDetail,
     CycleCountDetailResponse,
-    CycleCountStatus,
 } from "@/types/cyclecount.types";
 import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
 import { getCycleCountStatusStyle } from "./CycleCount";

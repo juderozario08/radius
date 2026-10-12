@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { OnlineOrder } from "@/types/order.types";
 import { type Money, formatMoney } from "@/utils/money";

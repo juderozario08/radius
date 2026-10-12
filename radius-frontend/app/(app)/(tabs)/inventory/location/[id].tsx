@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
+import { View, Text, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import Toast from "react-native-toast-message";
 
@@ -96,11 +96,6 @@ export default function LocationDetailScreen() {
             setProducts(products.map(p => p.product_id === productId ? { ...p, on_hand_qty: newQuantity } : p));
             Toast.show({ type: "success", text1: "Updated", text2: "Quantity updated successfully." });
         }
-    };
-
-    const handleScanAgain = () => {
-        scannerRef.current?.resetScanner();
-        setScannedProduct(null);
     };
 
     return (

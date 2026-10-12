@@ -4,7 +4,6 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { FillReportItemDetail } from '@/types/report.types';
 import { COLORS } from '@/constants/colors';
-import { globalStyles } from '@/constants/styles';
 
 interface FillReportItemProps {
     item: FillReportItemDetail;

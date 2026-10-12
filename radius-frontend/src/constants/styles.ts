@@ -2,7 +2,9 @@ import { StyleSheet } from "react-native";
 import { COLORS } from "./colors";
 
 export const SPACING = {
+    hairline: 1,
     xxs: 2,
+    micro: 3,
     xs: 4,
     xsPlus: 5,
     xsm: 6,
@@ -12,7 +14,9 @@ export const SPACING = {
     mdl: 14,
     mdlPlus: 15,
     lg: 16,
+    lgPlus: 18,
     xl: 20,
+    xlPlus: 22,
     xxl: 24,
     xxlPlus: 30,
     xxxl: 32,
@@ -25,12 +29,14 @@ export const RADIUS = {
     md: 8,
     mdl: 10,
     lg: 12,
+    lgPlus: 14,
     xl: 16,
     xlPlus: 18,
     xxl: 20,
 };
 
 export const FONT_SIZE = {
+    micro: 9,
     xxs: 10,
     xs: 11,
     sm: 12,
@@ -38,9 +44,11 @@ export const FONT_SIZE = {
     md: 14,
     mdl: 15,
     lg: 16,
+    lgPlus: 17,
     xl: 18,
     xxl: 20,
     xxxl: 22,
+    display: 28,
 };
 
 export const globalStyles = StyleSheet.create({

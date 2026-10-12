@@ -15,7 +15,7 @@ import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
 import { ENDPOINTS } from "@/constants/routes";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { callApi } from "@/utils/helpers";
 import { router, useFocusEffect } from "expo-router";
@@ -389,7 +389,7 @@ export default function CycleCountCalendar() {
                                 })}
                             </View>
 
-                            <Text style={[styles.modalFieldLabel, { marginTop: 12 }]}>
+                            <Text style={[styles.modalFieldLabel, { marginTop: SPACING.md }]}>
                                 Select Category:
                             </Text>
                             <ScrollView style={styles.modalScroll}>
@@ -432,7 +432,7 @@ export default function CycleCountCalendar() {
                                 onPress={handleCreateSchedule}
                             >
                                 {isSaving ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
+                                    <ActivityIndicator size="small" color={COLORS.surface} />
                                 ) : (
                                     <Text style={globalStyles.buttonTextPrimary}>Schedule Count</Text>
                                 )}
@@ -451,20 +451,20 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     headerAddBtn: {
-        padding: 4,
+        padding: SPACING.xs,
     },
     listContent: {
-        padding: 16,
-        paddingBottom: 40,
+        padding: SPACING.lg,
+        paddingBottom: SPACING.huge,
     },
     weekGroupCard: {
         backgroundColor: COLORS.surface,
-        borderRadius: 14,
-        padding: 16,
-        marginBottom: 16,
+        borderRadius: RADIUS.lgPlus,
+        padding: SPACING.lg,
+        marginBottom: SPACING.lg,
         borderWidth: 1,
         borderColor: COLORS.border,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 3,
@@ -474,10 +474,10 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingBottom: 12,
+        paddingBottom: SPACING.md,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
-        marginBottom: 10,
+        marginBottom: SPACING.smd,
     },
     weekTitleCol: {
         flex: 1,
@@ -485,37 +485,37 @@ const styles = StyleSheet.create({
     weekIconRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
+        gap: SPACING.xsm,
     },
     weekTitleText: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     currentWeekBadge: {
-        backgroundColor: "#E8F5E9",
-        borderColor: "#A5D6A7",
+        backgroundColor: COLORS.activeBg,
+        borderColor: COLORS.successBorder,
         borderWidth: 1,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 6,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: SPACING.micro,
+        borderRadius: RADIUS.sm,
     },
     currentWeekBadgeText: {
-        fontSize: 10,
+        fontSize: FONT_SIZE.xxs,
         fontWeight: "800",
         color: COLORS.success,
     },
     entriesContainer: {
-        gap: 8,
+        gap: SPACING.sm,
     },
     entryRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        backgroundColor: "#F9FAFB",
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 10,
+        backgroundColor: COLORS.surfaceCool,
+        paddingVertical: SPACING.smd,
+        paddingHorizontal: SPACING.md,
+        borderRadius: RADIUS.mdl,
         borderWidth: 1,
         borderColor: COLORS.border,
     },
@@ -527,53 +527,53 @@ const styles = StyleSheet.create({
     entryIconWrapper: {
         width: 36,
         height: 36,
-        borderRadius: 8,
-        backgroundColor: "#EDE7F6",
+        borderRadius: RADIUS.md,
+        backgroundColor: COLORS.violetBg,
         justifyContent: "center",
         alignItems: "center",
-        marginRight: 10,
+        marginRight: SPACING.smd,
     },
     entryDetails: {
         flex: 1,
     },
     entryCategoryName: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginBottom: 2,
+        marginBottom: SPACING.xxs,
     },
     entrySubtitle: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     entryRight: {
-        marginLeft: 10,
+        marginLeft: SPACING.smd,
     },
     statusChipStarted: {
-        backgroundColor: "#E3F2FD",
-        borderColor: "#90CAF9",
+        backgroundColor: COLORS.infoBg,
+        borderColor: COLORS.infoBorder,
         borderWidth: 1,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 8,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: SPACING.micro,
+        borderRadius: RADIUS.md,
     },
     statusChipStartedText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "700",
-        color: "#1565C0",
+        color: COLORS.info,
         textTransform: "uppercase",
     },
     statusChipReady: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
-        backgroundColor: "#EDE7F6",
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 8,
+        gap: SPACING.xs,
+        backgroundColor: COLORS.violetBg,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.xsPlus,
+        borderRadius: RADIUS.md,
     },
     statusChipReadyText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
         color: COLORS.primary,
     },
@@ -581,48 +581,48 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         paddingVertical: 80,
-        paddingHorizontal: 24,
+        paddingHorizontal: SPACING.xxl,
     },
     emptyTitle: {
-        fontSize: 17,
+        fontSize: FONT_SIZE.lgPlus,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginTop: 12,
+        marginTop: SPACING.md,
     },
     emptySub: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textSecondary,
         textAlign: "center",
-        marginTop: 6,
+        marginTop: SPACING.xsm,
         lineHeight: 20,
     },
     modalFieldLabel: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textSecondary,
-        marginBottom: 6,
+        marginBottom: SPACING.xsm,
     },
     weekPickerContainer: {
-        gap: 6,
-        marginBottom: 6,
+        gap: SPACING.xsm,
+        marginBottom: SPACING.xsm,
     },
     weekOptionPill: {
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 8,
+        paddingVertical: SPACING.sm,
+        paddingHorizontal: SPACING.md,
+        borderRadius: RADIUS.md,
         borderWidth: 1,
         borderColor: COLORS.border,
-        backgroundColor: "#F9FAFB",
+        backgroundColor: COLORS.surfaceCool,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
     },
     weekOptionPillSelected: {
-        backgroundColor: "#EDE7F6",
+        backgroundColor: COLORS.violetBg,
         borderColor: COLORS.primary,
     },
     weekOptionTitle: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
@@ -631,7 +631,7 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     weekOptionSubtitle: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     weekOptionSubtitleSelected: {
@@ -640,25 +640,25 @@ const styles = StyleSheet.create({
     },
     modalScroll: {
         maxHeight: 180,
-        marginBottom: 12,
+        marginBottom: SPACING.md,
     },
     catRow: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 8,
+        paddingVertical: SPACING.smd,
+        paddingHorizontal: SPACING.md,
+        borderRadius: RADIUS.md,
         borderWidth: 1,
         borderColor: COLORS.border,
-        marginBottom: 6,
-        gap: 10,
+        marginBottom: SPACING.xsm,
+        gap: SPACING.smd,
     },
     catRowSelected: {
         borderColor: COLORS.primary,
-        backgroundColor: "#EDE7F6",
+        backgroundColor: COLORS.violetBg,
     },
     catRowText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textPrimary,
     },
     catRowTextSelected: {
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     modalSubmitBtn: {
-        marginTop: 8,
+        marginTop: SPACING.sm,
     },
 });
 

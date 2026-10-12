@@ -4,7 +4,7 @@ import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
 import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { PurchaseOrderSummary, StockTransferSummary } from "@/types/receiving.types";
 import { POCard } from "@/components/receiving/POCard";
 import { TransferCard } from "@/components/receiving/TransferCard";
@@ -135,31 +135,31 @@ export default function Receiving() {
 
 const styles = StyleSheet.create({
     headerTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "bold",
     },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: COLORS.surface,
-        margin: 16,
-        marginBottom: 4,
-        paddingHorizontal: 12,
-        borderRadius: 8,
+        margin: SPACING.lg,
+        marginBottom: SPACING.xs,
+        paddingHorizontal: SPACING.md,
+        borderRadius: RADIUS.md,
         borderWidth: 1,
         borderColor: COLORS.border,
         height: 44,
     },
     searchIcon: {
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     searchInput: {
         flex: 1,
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         color: COLORS.textPrimary,
     },
     emptyContainer: {
-        padding: 40,
+        padding: SPACING.huge,
         alignItems: 'center',
         justifyContent: 'center',
     }

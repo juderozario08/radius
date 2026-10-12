@@ -15,7 +15,7 @@ import BackButton from '@/components/common/BackButton';
 import { getFillReport } from '@/api/reports.api';
 import { FillReportResponse } from '@/types/report.types';
 import { COLORS } from '@/constants/colors';
-import { globalStyles } from '@/constants/styles';
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from '@/constants/styles';
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { useAuth } from '@/hooks/useAuth';
 
@@ -48,7 +48,7 @@ export default function BackRoomFillReportsScreen() {
                 headerLeft={<BackButton />}
                 headerCenter={<Text style={globalStyles.headerTitle}>Restock Overview</Text>}
                 headerRight={
-                    <TouchableOpacity onPress={onRefresh} style={{ marginRight: 15 }}>
+                    <TouchableOpacity onPress={onRefresh} style={{ marginRight: SPACING.mdlPlus }}>
                         <Ionicons name="refresh-outline" size={22} color={COLORS.primary} />
                     </TouchableOpacity>
                 }
@@ -66,7 +66,7 @@ export default function BackRoomFillReportsScreen() {
                     />
                 }
             >
-                <Text style={[globalStyles.sectionTitle, { marginBottom: 12 }]}>
+                <Text style={[globalStyles.sectionTitle, { marginBottom: SPACING.md }]}>
                     Back Room & Floor Restock Status
                 </Text>
 
@@ -78,7 +78,7 @@ export default function BackRoomFillReportsScreen() {
                     <>
                         <View style={styles.heroCard}>
                             <View style={styles.heroHeader}>
-                                <MaterialCommunityIcons name="dolly" size={28} color="#FFFFFF" />
+                                <MaterialCommunityIcons name="dolly" size={28} color={COLORS.surface} />
                                 <View style={styles.heroTextContainer}>
                                     <Text style={styles.heroTitle}>Floor Fill Pipeline</Text>
                                     <Text style={styles.heroSubtitle}>
@@ -96,7 +96,7 @@ export default function BackRoomFillReportsScreen() {
                                 <View style={styles.statDivider} />
 
                                 <View style={styles.statBox}>
-                                    <Text style={[styles.statNumber, { color: '#FFCDD2' }]}>
+                                    <Text style={[styles.statNumber, { color: COLORS.dangerBorderLight }]}>
                                         +{report?.fill_qty_sum ?? 0}
                                     </Text>
                                     <Text style={styles.statLabel}>Total Units</Text>
@@ -105,7 +105,7 @@ export default function BackRoomFillReportsScreen() {
                                 <View style={styles.statDivider} />
 
                                 <View style={styles.statBox}>
-                                    <Text style={[styles.statNumber, { color: '#FFE082' }]}>
+                                    <Text style={[styles.statNumber, { color: COLORS.pendingBorder }]}>
                                         {report?.is4tc_count ?? 0}
                                     </Text>
                                     <Text style={styles.statLabel}>Empty Holes</Text>
@@ -121,7 +121,7 @@ export default function BackRoomFillReportsScreen() {
                                 activeOpacity={0.8}
                                 onPress={() => router.push('/(app)/(tabs)/home/actions/sales_floor/FillReport')}
                             >
-                                <View style={[styles.iconCircle, { backgroundColor: '#FFEBEE' }]}>
+                                <View style={[styles.iconCircle, { backgroundColor: COLORS.inactiveBg }]}>
                                     <Ionicons name="list" size={24} color={COLORS.primary} />
                                 </View>
                                 <View style={styles.actionContent}>
@@ -138,7 +138,7 @@ export default function BackRoomFillReportsScreen() {
                                 activeOpacity={0.8}
                                 onPress={() => router.push('/(app)/(tabs)/home/actions/sales_floor/IS4TC')}
                             >
-                                <View style={[styles.iconCircle, { backgroundColor: '#E3F2FD' }]}>
+                                <View style={[styles.iconCircle, { backgroundColor: COLORS.infoBg }]}>
                                     <Ionicons name="scan" size={24} color={COLORS.accent} />
                                 </View>
                                 <View style={styles.actionContent}>
@@ -155,7 +155,7 @@ export default function BackRoomFillReportsScreen() {
                                 activeOpacity={0.8}
                                 onPress={() => router.push('/(app)/(tabs)/inventory')}
                             >
-                                <View style={[styles.iconCircle, { backgroundColor: '#E8F5E9' }]}>
+                                <View style={[styles.iconCircle, { backgroundColor: COLORS.activeBg }]}>
                                     <Ionicons name="cube-outline" size={24} color={COLORS.success} />
                                 </View>
                                 <View style={styles.actionContent}>
@@ -176,15 +176,15 @@ export default function BackRoomFillReportsScreen() {
 
 const styles = StyleSheet.create({
     container: {
-        padding: 16,
-        paddingBottom: 32,
+        padding: SPACING.lg,
+        paddingBottom: SPACING.xxxl,
     },
     heroCard: {
         backgroundColor: COLORS.primary,
-        borderRadius: 14,
-        padding: 18,
-        marginBottom: 24,
-        shadowColor: '#000',
+        borderRadius: RADIUS.lgPlus,
+        padding: SPACING.lgPlus,
+        marginBottom: SPACING.xxl,
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.15,
         shadowRadius: 6,
@@ -193,27 +193,27 @@ const styles = StyleSheet.create({
     heroHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
-        marginBottom: 16,
+        gap: SPACING.md,
+        marginBottom: SPACING.lg,
     },
     heroTextContainer: {
         flex: 1,
     },
     heroTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: 'bold',
-        color: '#FFFFFF',
+        color: COLORS.surface,
     },
     heroSubtitle: {
-        fontSize: 12,
-        color: 'rgba(255, 255, 255, 0.85)',
-        marginTop: 2,
+        fontSize: FONT_SIZE.sm,
+        color: COLORS.whiteAlpha85,
+        marginTop: SPACING.xxs,
     },
     statsRow: {
         flexDirection: 'row',
-        backgroundColor: 'rgba(0, 0, 0, 0.15)',
-        borderRadius: 10,
-        paddingVertical: 12,
+        backgroundColor: COLORS.blackAlpha15,
+        borderRadius: RADIUS.mdl,
+        paddingVertical: SPACING.md,
         alignItems: 'center',
         justifyContent: 'space-around',
     },
@@ -224,39 +224,39 @@ const styles = StyleSheet.create({
     statDivider: {
         width: 1,
         height: '60%',
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: COLORS.whiteAlpha20,
     },
     statNumber: {
-        fontSize: 20,
+        fontSize: FONT_SIZE.xxl,
         fontWeight: '800',
-        color: '#FFFFFF',
-        marginBottom: 2,
+        color: COLORS.surface,
+        marginBottom: SPACING.xxs,
     },
     statLabel: {
-        fontSize: 10,
-        color: 'rgba(255, 255, 255, 0.85)',
+        fontSize: FONT_SIZE.xxs,
+        color: COLORS.whiteAlpha85,
         textTransform: 'uppercase',
         fontWeight: '600',
     },
     actionsSection: {
-        gap: 12,
+        gap: SPACING.md,
     },
     subHeading: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: 'bold',
         color: COLORS.textPrimary,
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     actionCard: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 16,
-        gap: 14,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.lg,
+        gap: SPACING.mdl,
         borderWidth: 1,
         borderColor: COLORS.border,
-        shadowColor: '#000',
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 3,
@@ -273,13 +273,13 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     actionTitle: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: '700',
         color: COLORS.textPrimary,
-        marginBottom: 2,
+        marginBottom: SPACING.xxs,
     },
     actionDesc: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
         lineHeight: 16,
     },

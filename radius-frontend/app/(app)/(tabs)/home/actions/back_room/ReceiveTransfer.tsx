@@ -4,7 +4,7 @@ import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
 import { SwipeableTopTabs } from "@/components/common/SwipeableTopTabs";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { StockTransferDetailResponse, CheckProductInTransferResponse } from "@/types/receiving.types";
 import { useAuth } from "@/hooks/useAuth";
 import { callApi, showToast } from "@/utils/helpers";
@@ -199,7 +199,7 @@ export default function ReceiveTransfer() {
 
 const styles = StyleSheet.create({
     headerTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "bold",
     },
     scannerContainer: {
@@ -216,18 +216,18 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         color: COLORS.textSecondary,
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
     },
     footer: {
-        padding: 16,
+        padding: SPACING.lg,
         backgroundColor: COLORS.surface,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
     },
     receiveButton: {
-        backgroundColor: '#388E3C',
-        paddingVertical: 14,
-        borderRadius: 8,
+        backgroundColor: COLORS.successAccent,
+        paddingVertical: SPACING.mdl,
+        borderRadius: RADIUS.md,
         alignItems: 'center',
     },
     receiveButtonDisabled: {
@@ -235,20 +235,20 @@ const styles = StyleSheet.create({
     },
     receiveButtonText: {
         color: 'white',
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: 'bold',
     },
     section: {
-        marginTop: 16,
+        marginTop: SPACING.lg,
     },
     listContent: {
-        paddingBottom: 40,
+        paddingBottom: SPACING.huge,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "bold",
-        marginLeft: 16,
-        marginBottom: 8,
+        marginLeft: SPACING.lg,
+        marginBottom: SPACING.sm,
         color: COLORS.textPrimary,
     }
 });

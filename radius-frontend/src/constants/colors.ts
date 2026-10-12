@@ -8,6 +8,7 @@ export const COLORS = {
     primary: "#C70202",
     primaryText: "#FFFFFF",
     primarySurface: "#FFF8F8",
+    primarySurfaceSoft: "#FFF9F9",
     primarySurfaceStrong: "#FFF0F0",
     accent: "#2F5D8A",
     accentText: "#FFFFFF",

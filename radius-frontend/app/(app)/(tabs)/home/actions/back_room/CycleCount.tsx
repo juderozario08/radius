@@ -15,7 +15,7 @@ import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
 import { ENDPOINTS } from "@/constants/routes";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { callApi } from "@/utils/helpers";
 import { router, useFocusEffect } from "expo-router";
@@ -28,16 +28,16 @@ import { formatSignedMoney } from "@/utils/money";
 export const getCycleCountStatusStyle = (status: CycleCountStatus) => {
     switch (status) {
         case "IN PROGRESS":
-            return { bg: "#E3F2FD", text: "#1565C0", border: "#90CAF9" };
+            return { bg: COLORS.infoBg, text: COLORS.info, border: COLORS.infoBorder };
         case "PENDING APPROVAL":
-            return { bg: "#FFF8E1", text: "#F57F17", border: "#FFE082" };
+            return { bg: COLORS.pendingBg, text: COLORS.pending, border: COLORS.pendingBorder };
         case "APPROVED":
-            return { bg: "#E8F5E9", text: "#2E7D32", border: "#A5D6A7" };
+            return { bg: COLORS.activeBg, text: COLORS.success, border: COLORS.successBorder };
         case "COMPLETED":
-            return { bg: "#E8F5E9", text: "#2E7D32", border: "#A5D6A7" };
+            return { bg: COLORS.activeBg, text: COLORS.success, border: COLORS.successBorder };
         case "NOT STARTED":
         default:
-            return { bg: "#F5F5F5", text: "#757575", border: "#E0E0E0" };
+            return { bg: COLORS.background, text: COLORS.textSecondary, border: COLORS.inputBorder };
     }
 };
 
@@ -285,7 +285,7 @@ export default function CycleCountDashboard() {
                     activeOpacity={0.85}
                     onPress={() => setModalVisible(true)}
                 >
-                    <Ionicons name="add" size={24} color="#FFF" />
+                    <Ionicons name="add" size={24} color={COLORS.surface} />
                     <Text style={styles.fabText}>Start New Count</Text>
                 </TouchableOpacity>
             </View>
@@ -351,7 +351,7 @@ export default function CycleCountDashboard() {
                                 onPress={handleStartCount}
                             >
                                 {isStarting ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
+                                    <ActivityIndicator size="small" color={COLORS.surface} />
                                 ) : (
                                     <Text style={globalStyles.buttonTextPrimary}>Start Counting</Text>
                                 )}
@@ -372,36 +372,36 @@ const styles = StyleSheet.create({
     headerRightContainer: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 14,
+        gap: SPACING.mdl,
     },
     headerIconButton: {
-        padding: 4,
+        padding: SPACING.xs,
     },
     sectionHeader: {
-        marginBottom: 12,
-        paddingHorizontal: 4,
+        marginBottom: SPACING.md,
+        paddingHorizontal: SPACING.xs,
     },
     sectionHeaderTitle: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
         color: COLORS.textSecondary,
         letterSpacing: 0.8,
     },
     sectionHeaderSub: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     listContent: {
-        padding: 16,
+        padding: SPACING.lg,
         paddingBottom: 90,
     },
     card: {
         backgroundColor: COLORS.surface,
-        borderRadius: 14,
-        padding: 16,
-        marginBottom: 14,
-        shadowColor: "#000",
+        borderRadius: RADIUS.lgPlus,
+        padding: SPACING.lg,
+        marginBottom: SPACING.mdl,
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 4,
@@ -416,74 +416,74 @@ const styles = StyleSheet.create({
     },
     cardTitleCol: {
         flex: 1,
-        marginRight: 12,
+        marginRight: SPACING.md,
     },
     cardTitle: {
-        fontSize: 17,
+        fontSize: FONT_SIZE.lgPlus,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     cardSubtitle: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
-        marginTop: 3,
+        marginTop: SPACING.micro,
     },
     totalBadge: {
         borderWidth: 1.5,
-        borderColor: "#FFCC80",
-        backgroundColor: "#FFF8E1",
-        borderRadius: 8,
-        paddingVertical: 4,
-        paddingHorizontal: 10,
+        borderColor: COLORS.warningBorder,
+        backgroundColor: COLORS.pendingBg,
+        borderRadius: RADIUS.md,
+        paddingVertical: SPACING.xs,
+        paddingHorizontal: SPACING.smd,
     },
     totalBadgeText: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "700",
-        color: "#E65100",
+        color: COLORS.warning,
     },
     statusAndDateRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginTop: 10,
+        marginTop: SPACING.smd,
     },
     statusPill: {
-        paddingHorizontal: 10,
-        paddingVertical: 3,
-        borderRadius: 12,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.micro,
+        borderRadius: RADIUS.lg,
         borderWidth: 1,
         alignSelf: "flex-start",
     },
     statusPillText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "700",
         textTransform: "uppercase",
     },
     dateText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     progressContainer: {
-        marginTop: 14,
+        marginTop: SPACING.mdl,
     },
     progressLabelRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-        marginBottom: 6,
+        marginBottom: SPACING.xsm,
     },
     progressLabel: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
         fontWeight: "500",
     },
     progressPctText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     progressBarTrack: {
         height: 6,
-        backgroundColor: "#E0E0E0",
+        backgroundColor: COLORS.inputBorder,
         borderRadius: 3,
         overflow: "hidden",
     },
@@ -495,15 +495,15 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "flex-end",
         alignItems: "center",
-        marginTop: 10,
-        gap: 6,
+        marginTop: SPACING.smd,
+        gap: SPACING.xsm,
     },
     varianceSummaryLabel: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     varianceSummaryValue: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "700",
     },
     varianceNegative: {
@@ -519,72 +519,72 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary,
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 14,
-        paddingHorizontal: 22,
+        paddingVertical: SPACING.mdl,
+        paddingHorizontal: SPACING.xlPlus,
         borderRadius: 30,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.25,
         shadowRadius: 6,
         elevation: 6,
-        gap: 8,
+        gap: SPACING.sm,
     },
     fabText: {
-        color: "#FFFFFF",
+        color: COLORS.surface,
         fontWeight: "700",
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
     },
     emptyContainer: {
         alignItems: "center",
         justifyContent: "center",
         paddingVertical: 60,
-        paddingHorizontal: 24,
+        paddingHorizontal: SPACING.xxl,
     },
     emptyTitle: {
-        fontSize: 17,
+        fontSize: FONT_SIZE.lgPlus,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginTop: 12,
+        marginTop: SPACING.md,
     },
     emptySub: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textSecondary,
         textAlign: "center",
-        marginTop: 6,
+        marginTop: SPACING.xsm,
         lineHeight: 20,
     },
     retryButton: {
-        marginTop: 14,
+        marginTop: SPACING.mdl,
         backgroundColor: COLORS.primary,
-        paddingVertical: 8,
-        paddingHorizontal: 18,
-        borderRadius: 8,
+        paddingVertical: SPACING.sm,
+        paddingHorizontal: SPACING.lgPlus,
+        borderRadius: RADIUS.md,
     },
     retryButtonText: {
-        color: "#FFF",
+        color: COLORS.surface,
         fontWeight: "600",
     },
     modalScroll: {
         maxHeight: 260,
-        marginVertical: 12,
+        marginVertical: SPACING.md,
     },
     categoryOption: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        borderRadius: 8,
+        paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.md,
+        borderRadius: RADIUS.md,
         borderWidth: 1,
         borderColor: COLORS.border,
-        marginBottom: 8,
-        gap: 12,
+        marginBottom: SPACING.sm,
+        gap: SPACING.md,
     },
     categoryOptionSelected: {
         borderColor: COLORS.primary,
-        backgroundColor: "#FFEBEE",
+        backgroundColor: COLORS.inactiveBg,
     },
     categoryOptionText: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         color: COLORS.textPrimary,
         fontWeight: "500",
     },
@@ -593,6 +593,6 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     modalActionButton: {
-        marginTop: 8,
+        marginTop: SPACING.sm,
     },
 });

@@ -15,7 +15,7 @@ import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
 import { ENDPOINTS } from "@/constants/routes";
 import { COLORS } from "@/constants/colors";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
 import { callApi, showToast } from "@/utils/helpers";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
@@ -214,18 +214,18 @@ export default function CycleCountDetail() {
         const isMatched = item.counted_qty === item.expected_qty && item.counted_qty > 0;
         const isDiscrepancy = item.counted_qty > 0 && item.variance !== 0;
 
-        let badgeBorder = "#E0E0E0";
-        let badgeBg = "#F5F5F5";
+        let badgeBorder = COLORS.inputBorder;
+        let badgeBg = COLORS.background;
         let badgeText = COLORS.textSecondary;
 
         if (isMatched) {
-            badgeBorder = "#A5D6A7";
-            badgeBg = "#E8F5E9";
+            badgeBorder = COLORS.successBorder;
+            badgeBg = COLORS.activeBg;
             badgeText = COLORS.success;
         } else if (isDiscrepancy) {
-            badgeBorder = item.variance < 0 ? "#EF9A9A" : "#80CBC4";
-            badgeBg = item.variance < 0 ? "#FFEBEE" : "#E0F2F1";
-            badgeText = item.variance < 0 ? COLORS.error : "#00695C";
+            badgeBorder = item.variance < 0 ? COLORS.dangerBorder : COLORS.tealBorder;
+            badgeBg = item.variance < 0 ? COLORS.inactiveBg : COLORS.tealBg;
+            badgeText = item.variance < 0 ? COLORS.error : COLORS.tealDark;
         }
 
         const canEdit =
@@ -337,7 +337,7 @@ export default function CycleCountDetail() {
                 headerLeft={<BackButton />}
                 headerCenter={<Text style={globalStyles.headerTitle}>Cycle Count</Text>}
                 headerRight={
-                    <TouchableOpacity onPress={fetchDetail} style={{ padding: 4 }}>
+                    <TouchableOpacity onPress={fetchDetail} style={{ padding: SPACING.xs }}>
                         <Ionicons name="refresh-outline" size={22} color={COLORS.textPrimary} />
                     </TouchableOpacity>
                 }
@@ -497,7 +497,7 @@ export default function CycleCountDetail() {
                                     })
                                 }
                             >
-                                <Ionicons name="barcode-outline" size={20} color="#FFF" />
+                                <Ionicons name="barcode-outline" size={20} color={COLORS.surface} />
                                 <Text style={globalStyles.buttonTextPrimary}>Count / Scan</Text>
                             </TouchableOpacity>
 
@@ -519,10 +519,10 @@ export default function CycleCountDetail() {
                                 onPress={handleApproveCount}
                             >
                                 {isActionLoading ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
+                                    <ActivityIndicator size="small" color={COLORS.surface} />
                                 ) : (
                                     <>
-                                        <Ionicons name="checkmark-circle-outline" size={20} color="#FFF" />
+                                        <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.surface} />
                                         <Text style={styles.approveButtonText}>
                                             Approve & Reconcile Inventory
                                         </Text>
@@ -531,7 +531,7 @@ export default function CycleCountDetail() {
                             </TouchableOpacity>
                         ) : (
                             <View style={styles.pendingInfoBanner}>
-                                <Ionicons name="time-outline" size={20} color="#F57F17" />
+                                <Ionicons name="time-outline" size={20} color={COLORS.pending} />
                                 <Text style={styles.pendingInfoText}>
                                     Submitted for manager review & approval
                                 </Text>
@@ -558,7 +558,7 @@ export default function CycleCountDetail() {
                     <View style={globalStyles.modalContentWrapper}>
                         <View style={globalStyles.modalCardContainer}>
                             <View style={globalStyles.modalHeader}>
-                                <View style={{ flex: 1, marginRight: 12 }}>
+                                <View style={{ flex: 1, marginRight: SPACING.md }}>
                                     <Text style={globalStyles.modalTitle} numberOfLines={2}>
                                         {editingItem?.product_name}
                                     </Text>
@@ -612,7 +612,7 @@ export default function CycleCountDetail() {
                                 onPress={handleSaveItemQty}
                             >
                                 {isActionLoading ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
+                                    <ActivityIndicator size="small" color={COLORS.surface} />
                                 ) : (
                                     <Text style={globalStyles.buttonTextPrimary}>Save Count</Text>
                                 )}
@@ -665,7 +665,7 @@ export default function CycleCountDetail() {
                                 onPress={handleSubmitForApproval}
                             >
                                 {isActionLoading ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
+                                    <ActivityIndicator size="small" color={COLORS.surface} />
                                 ) : (
                                     <Text style={globalStyles.buttonTextPrimary}>Submit Count</Text>
                                 )}
@@ -699,12 +699,12 @@ export default function CycleCountDetail() {
                             </View>
 
                             {isLoadingEmployees ? (
-                                <View style={{ paddingVertical: 30, alignItems: "center" }}>
+                                <View style={{ paddingVertical: SPACING.xxlPlus, alignItems: "center" }}>
                                     <ActivityIndicator size="small" color={COLORS.primary} />
                                 </View>
                             ) : (
                                 <FlatList
-                                    style={{ maxHeight: 280, marginVertical: 10 }}
+                                    style={{ maxHeight: 280, marginVertical: SPACING.smd }}
                                     data={employees}
                                     keyExtractor={(emp) => String(emp.employee_id)}
                                     extraData={selectedEmployeeId}
@@ -723,7 +723,7 @@ export default function CycleCountDetail() {
                                                     size={20}
                                                     color={isSelected ? COLORS.primary : COLORS.textSecondary}
                                                 />
-                                                <View style={{ marginLeft: 12, flex: 1 }}>
+                                                <View style={{ marginLeft: SPACING.md, flex: 1 }}>
                                                     <Text
                                                         style={[
                                                             styles.empSelectName,
@@ -752,7 +752,7 @@ export default function CycleCountDetail() {
                                 onPress={handleTransferOwnership}
                             >
                                 {isTransferring ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
+                                    <ActivityIndicator size="small" color={COLORS.surface} />
                                 ) : (
                                     <Text style={globalStyles.buttonTextPrimary}>
                                         {detail?.count.counted_by ? "Confirm Transfer" : "Confirm Assignment"}
@@ -774,10 +774,10 @@ const styles = StyleSheet.create({
     },
     summaryCard: {
         backgroundColor: COLORS.surface,
-        margin: 16,
-        marginBottom: 8,
-        borderRadius: 12,
-        padding: 16,
+        margin: SPACING.lg,
+        marginBottom: SPACING.sm,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.lg,
         borderWidth: 1,
         borderColor: COLORS.border,
     },
@@ -787,61 +787,61 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     batchTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     totalBadge: {
         borderWidth: 1.5,
-        borderColor: "#FFCC80",
-        backgroundColor: "#FFF8E1",
-        borderRadius: 8,
-        paddingVertical: 4,
-        paddingHorizontal: 10,
+        borderColor: COLORS.warningBorder,
+        backgroundColor: COLORS.pendingBg,
+        borderRadius: RADIUS.md,
+        paddingVertical: SPACING.xs,
+        paddingHorizontal: SPACING.smd,
     },
     totalBadgeText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "700",
-        color: "#E65100",
+        color: COLORS.warning,
     },
     categorySub: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textSecondary,
-        marginTop: 6,
+        marginTop: SPACING.xsm,
     },
     assigneeRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginTop: 8,
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        backgroundColor: "#F9FAFB",
-        borderRadius: 8,
+        marginTop: SPACING.sm,
+        paddingVertical: SPACING.xsm,
+        paddingHorizontal: SPACING.smd,
+        backgroundColor: COLORS.surfaceCool,
+        borderRadius: RADIUS.md,
         borderWidth: 1,
         borderColor: COLORS.border,
     },
     assigneeInfo: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
+        gap: SPACING.xsm,
         flex: 1,
     },
     assigneeText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
     },
     reassignBtn: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderRadius: 6,
-        backgroundColor: "#EDE7F6",
+        gap: SPACING.xs,
+        paddingVertical: SPACING.xs,
+        paddingHorizontal: SPACING.sm,
+        borderRadius: RADIUS.sm,
+        backgroundColor: COLORS.violetBg,
     },
     reassignBtnText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
         color: COLORS.primary,
     },
@@ -849,16 +849,16 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginTop: 10,
+        marginTop: SPACING.smd,
     },
     statusPill: {
-        paddingHorizontal: 10,
-        paddingVertical: 3,
-        borderRadius: 12,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.micro,
+        borderRadius: RADIUS.lg,
         borderWidth: 1,
     },
     statusPillText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: "700",
         textTransform: "uppercase",
     },
@@ -867,24 +867,24 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     dateSub: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
     },
     varianceRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginTop: 10,
-        paddingTop: 8,
+        marginTop: SPACING.smd,
+        paddingTop: SPACING.sm,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
     },
     varianceLabel: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
     },
     varianceAmount: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "700",
     },
     varNegative: {
@@ -896,72 +896,72 @@ const styles = StyleSheet.create({
     tabBar: {
         flexDirection: "row",
         backgroundColor: COLORS.surface,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
-        gap: 8,
+        gap: SPACING.sm,
     },
     tabButton: {
         flex: 1,
-        paddingVertical: 8,
-        borderRadius: 20,
-        backgroundColor: "#F0F0F0",
+        paddingVertical: SPACING.sm,
+        borderRadius: RADIUS.xxl,
+        backgroundColor: COLORS.neutralBg,
         alignItems: "center",
         justifyContent: "center",
     },
     tabButtonActive: {
-        backgroundColor: "#212121",
+        backgroundColor: COLORS.neutralDark,
     },
     tabButtonText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "600",
         color: COLORS.textSecondary,
     },
     tabButtonTextActive: {
-        color: "#FFFFFF",
+        color: COLORS.surface,
     },
     listContent: {
-        paddingVertical: 8,
+        paddingVertical: SPACING.sm,
         paddingBottom: 90,
     },
     itemRow: {
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: COLORS.surface,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.lg,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
     productIconWrapper: {
         width: 38,
         height: 38,
-        borderRadius: 8,
-        backgroundColor: "#F5F5F5",
+        borderRadius: RADIUS.md,
+        backgroundColor: COLORS.background,
         justifyContent: "center",
         alignItems: "center",
-        marginRight: 10,
+        marginRight: SPACING.smd,
     },
     itemDetails: {
         flex: 1,
-        marginRight: 10,
+        marginRight: SPACING.smd,
     },
     itemTitle: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "600",
         color: COLORS.textPrimary,
-        marginBottom: 2,
+        marginBottom: SPACING.xxs,
     },
     itemSub: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     reasonText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         color: COLORS.error,
         fontStyle: "italic",
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     metricsCol: {
         alignItems: "flex-end",
@@ -969,30 +969,30 @@ const styles = StyleSheet.create({
     metricPairRow: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#F9FAFB",
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderRadius: 8,
+        backgroundColor: COLORS.surfaceCool,
+        paddingVertical: SPACING.xs,
+        paddingHorizontal: SPACING.sm,
+        borderRadius: RADIUS.md,
         borderWidth: 1,
         borderColor: COLORS.border,
-        gap: 8,
+        gap: SPACING.sm,
     },
     metricBox: {
         alignItems: "center",
     },
     metricLabel: {
-        fontSize: 9,
+        fontSize: FONT_SIZE.micro,
         fontWeight: "600",
         textTransform: "uppercase",
         color: COLORS.textSecondary,
     },
     metricValExpected: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     metricValScanned: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "800",
     },
     metricDivider: {
@@ -1001,37 +1001,37 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.border,
     },
     diffPill: {
-        marginTop: 4,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 6,
+        marginTop: SPACING.xs,
+        paddingHorizontal: SPACING.xsm,
+        paddingVertical: SPACING.xxs,
+        borderRadius: RADIUS.sm,
         borderWidth: 1,
     },
     diffPillText: {
-        fontSize: 10,
+        fontSize: FONT_SIZE.xxs,
         fontWeight: "700",
     },
     uncountedPill: {
-        marginTop: 4,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 6,
-        backgroundColor: "#F5F5F5",
+        marginTop: SPACING.xs,
+        paddingHorizontal: SPACING.xsm,
+        paddingVertical: SPACING.xxs,
+        borderRadius: RADIUS.sm,
+        backgroundColor: COLORS.background,
         borderWidth: 1,
-        borderColor: "#E0E0E0",
+        borderColor: COLORS.inputBorder,
     },
     uncountedPillText: {
-        fontSize: 10,
+        fontSize: FONT_SIZE.xxs,
         fontWeight: "600",
         color: COLORS.textSecondary,
     },
     emptyItems: {
-        paddingVertical: 40,
+        paddingVertical: SPACING.huge,
         alignItems: "center",
     },
     emptyItemsText: {
         color: COLORS.textSecondary,
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
     },
     bottomBar: {
         position: "absolute",
@@ -1039,73 +1039,73 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         backgroundColor: COLORS.surface,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.lg,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
     },
     actionRow: {
         flexDirection: "row",
-        gap: 10,
+        gap: SPACING.smd,
     },
     countButton: {
         flex: 1,
         flexDirection: "row",
-        gap: 8,
+        gap: SPACING.sm,
         justifyContent: "center",
     },
     submitButton: {
         flex: 1,
-        backgroundColor: "#424242",
-        borderRadius: 8,
-        paddingVertical: 14,
+        backgroundColor: COLORS.neutralDarkMuted,
+        borderRadius: RADIUS.md,
+        paddingVertical: SPACING.mdl,
         alignItems: "center",
         justifyContent: "center",
     },
     submitButtonText: {
-        color: "#FFFFFF",
+        color: COLORS.surface,
         fontWeight: "700",
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
     },
     approveButton: {
         backgroundColor: COLORS.success,
-        borderRadius: 8,
-        paddingVertical: 14,
+        borderRadius: RADIUS.md,
+        paddingVertical: SPACING.mdl,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        gap: 8,
+        gap: SPACING.sm,
     },
     approveButtonText: {
-        color: "#FFFFFF",
+        color: COLORS.surface,
         fontWeight: "700",
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
     },
     pendingInfoBanner: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#FFF8E1",
-        paddingVertical: 12,
-        borderRadius: 8,
-        gap: 8,
+        backgroundColor: COLORS.pendingBg,
+        paddingVertical: SPACING.md,
+        borderRadius: RADIUS.md,
+        gap: SPACING.sm,
     },
     pendingInfoText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
-        color: "#F57F17",
+        color: COLORS.pending,
     },
     approvedBanner: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#E8F5E9",
-        paddingVertical: 12,
-        borderRadius: 8,
-        gap: 8,
+        backgroundColor: COLORS.activeBg,
+        paddingVertical: SPACING.md,
+        borderRadius: RADIUS.md,
+        gap: SPACING.sm,
     },
     approvedBannerText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.success,
     },
@@ -1113,14 +1113,14 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        marginVertical: 18,
-        gap: 20,
+        marginVertical: SPACING.lgPlus,
+        gap: SPACING.xl,
     },
     stepperButton: {
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: "#E0E0E0",
+        backgroundColor: COLORS.inputBorder,
         justifyContent: "center",
         alignItems: "center",
     },
@@ -1129,40 +1129,40 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     stepperValueText: {
-        fontSize: 28,
+        fontSize: FONT_SIZE.display,
         fontWeight: "800",
         color: COLORS.textPrimary,
     },
     reasonInputContainer: {
-        marginTop: 10,
-        marginBottom: 14,
+        marginTop: SPACING.smd,
+        marginBottom: SPACING.mdl,
     },
     reasonLabel: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textSecondary,
-        marginBottom: 6,
+        marginBottom: SPACING.xsm,
     },
     modalSaveButton: {
-        marginTop: 8,
+        marginTop: SPACING.sm,
     },
     empSelectItem: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        marginBottom: 6,
-        backgroundColor: "#F9FAFB",
+        paddingVertical: SPACING.smd,
+        paddingHorizontal: SPACING.md,
+        borderRadius: RADIUS.md,
+        marginBottom: SPACING.xsm,
+        backgroundColor: COLORS.surfaceCool,
         borderWidth: 1,
         borderColor: COLORS.border,
     },
     empSelectItemActive: {
-        backgroundColor: "#EDE7F6",
+        backgroundColor: COLORS.violetBg,
         borderColor: COLORS.primary,
     },
     empSelectName: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
@@ -1171,8 +1171,8 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     empSelectRole: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
 });

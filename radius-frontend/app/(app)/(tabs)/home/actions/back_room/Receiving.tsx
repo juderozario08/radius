@@ -45,10 +45,7 @@ export default function Receiving() {
 
     const handleQuickReceive = async (transferId: number) => {
         setIsQuickReceiving(prev => ({ ...prev, [transferId]: true }));
-        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.quickReceiveTransfer(transferId), {
-            method: "POST",
-            body: { transfer_id: transferId }
-        }, logout);
+        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.quickReceiveTransfer(transferId), { method: "POST" }, logout);
 
         if (res) {
             showToast("success", res.message);

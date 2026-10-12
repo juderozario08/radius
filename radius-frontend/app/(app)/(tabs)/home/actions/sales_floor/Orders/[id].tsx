@@ -149,7 +149,6 @@ export default function OnlineOrderDetail() {
                 {
                     method: "PUT",
                     body: JSON.stringify({
-                        order_id: order.order_id,
                         employee_id: selectedEmployeeId,
                     }),
                 },
@@ -195,7 +194,6 @@ export default function OnlineOrderDetail() {
                     {
                         method: "PUT",
                         body: JSON.stringify({
-                            order_id: data.online_order.order_id,
                             employee_id: user.employee_id,
                         }),
                     },
@@ -260,8 +258,6 @@ export default function OnlineOrderDetail() {
                 {
                     method: "PUT",
                     body: JSON.stringify({
-                        order_id: order.order_id,
-                        order_item_id: scannedItem.item.order_item_id,
                         picked_qty: scannedItem.tempPickedQty,
                         status: "ACTIVE",
                     }),
@@ -296,8 +292,6 @@ export default function OnlineOrderDetail() {
                 {
                     method: "PUT",
                     body: JSON.stringify({
-                        order_id: order.order_id,
-                        order_item_id: selectedItemForAction.order_item_id,
                         picked_qty: finalPickedQty,
                         status: status,
                         reason: reason || null,
@@ -329,12 +323,7 @@ export default function OnlineOrderDetail() {
         try {
             const res = await callApi<{ online_order: OnlineOrder }>(
                 ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.completePick(order.order_id),
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        order_id: order.order_id,
-                    }),
-                },
+                { method: "POST" },
                 logout
             );
 
@@ -361,7 +350,6 @@ export default function OnlineOrderDetail() {
                 {
                     method: "POST",
                     body: JSON.stringify({
-                        order_id: order.order_id,
                         reason: selectedCancelOrderReason,
                     }),
                 },

@@ -82,7 +82,7 @@ export default function ReceiveTransfer() {
 
         const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.receiveTransfer(transfer.transfer_id), {
             method: "POST",
-            body: { transfer_id: transfer.transfer_id, items }
+            body: { items }
         }, logout);
 
         if (res) {

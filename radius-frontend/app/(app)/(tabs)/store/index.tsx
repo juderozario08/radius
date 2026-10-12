@@ -84,11 +84,7 @@ const StoreDetailModal: React.FC<{
             ? ENDPOINTS.ADMIN.STORES.deactivate(store.store_id)
             : ENDPOINTS.ADMIN.STORES.activate(store.store_id);
 
-        const result = await callApi(
-            endpoint,
-            { method: "POST", body: { store_id: store.store_id } },
-            logout
-        );
+        const result = await callApi(endpoint, { method: "POST" }, logout);
         setIsUpdatingStatus(false);
 
         if (result) {
@@ -211,9 +207,6 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ visible, mode, store, o
             ...formValues,
             postal_code: normalizeCanadianPostalCode(formValues.postal_code),
         };
-        if (isEditMode && store) {
-            payload.store_id = store.store_id;
-        }
 
         setIsSubmitting(true);
         const endpoint = isEditMode && store ? ENDPOINTS.ADMIN.STORES.update(store.store_id) : ENDPOINTS.ADMIN.STORES.create;

@@ -146,7 +146,6 @@ export default function TransfersScreen() {
         const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.TRANSFERS.dispatch(dispatchTargetId), {
             method: "POST",
             body: {
-                transfer_id: dispatchTargetId,
                 carrier: carrier.trim() ? carrier.trim() : null,
                 tracking_number: trackingNumber.trim() ? trackingNumber.trim() : null,
             },
@@ -173,10 +172,7 @@ export default function TransfersScreen() {
                     text: "Yes, Cancel",
                     style: "destructive",
                     onPress: async () => {
-                        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.TRANSFERS.cancel(transferId), {
-                            method: "POST",
-                            body: { transfer_id: transferId },
-                        }, logout);
+                        const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.TRANSFERS.cancel(transferId), { method: "POST" }, logout);
                         if (res) {
                             showToast("success", res.message);
                             if (isDetailModalVisible) {

@@ -52,7 +52,7 @@ export default function ReceivePO() {
         if (barcode.length === 20) {
             const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.receiveLpr(po.po_id), {
                 method: "POST",
-                body: { po_id: po.po_id, lpr_barcode: barcode }
+                body: { lpr_barcode: barcode }
             }, logout);
             if (res) {
                 showToast("success", res.message);
@@ -106,7 +106,7 @@ export default function ReceivePO() {
 
         const res = await callApi<{ message: string }>(ENDPOINTS.SALES_FLOOR.RECEIVING.receivePo(po.po_id), {
             method: "POST",
-            body: { po_id: po.po_id, items }
+            body: { items }
         }, logout);
 
         if (res) {

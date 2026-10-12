@@ -535,7 +535,6 @@ export default function RealTimeDashboard() {
                     {
                         method: "PUT",
                         body: JSON.stringify({
-                            order_id: order.order_id,
                             employee_id: currentEmpId,
                         }),
                     },

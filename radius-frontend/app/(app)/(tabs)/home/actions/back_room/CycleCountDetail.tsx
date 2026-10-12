@@ -126,7 +126,7 @@ export default function CycleCountDetail() {
                 ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.transfer(countId),
                 {
                     method: "POST",
-                    body: JSON.stringify({ count_id: countId, employee_id: selectedEmployeeId }),
+                    body: JSON.stringify({ employee_id: selectedEmployeeId }),
                 },
                 logout
             );
@@ -170,7 +170,6 @@ export default function CycleCountDetail() {
                 {
                     method: "POST",
                     body: JSON.stringify({
-                        count_id: countId,
                         product_id: editingItem.product_id,
                         counted_qty: editQty,
                         reason_code: editReason.trim() || undefined,
@@ -195,7 +194,6 @@ export default function CycleCountDetail() {
                 {
                     method: "POST",
                     body: JSON.stringify({
-                        count_id: countId,
                         notes: submitNotes.trim() || undefined,
                     }),
                 },
@@ -225,10 +223,7 @@ export default function CycleCountDetail() {
                         try {
                             await callApi(
                                 ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.approve(countId),
-                                {
-                                    method: "POST",
-                                    body: JSON.stringify({ count_id: countId }),
-                                },
+                                { method: "POST" },
                                 logout
                             );
                             fetchDetail();

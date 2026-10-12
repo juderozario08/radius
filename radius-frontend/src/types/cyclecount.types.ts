@@ -88,7 +88,6 @@ export interface StartCycleCountRequest {
 }
 
 export interface RecordScanRequest {
-    count_id: number;
     product_id?: number;
     barcode?: string;
     counted_qty?: number;
@@ -96,16 +95,10 @@ export interface RecordScanRequest {
 }
 
 export interface SubmitCycleCountRequest {
-    count_id: number;
     notes?: string;
 }
 
-export interface ApproveCycleCountRequest {
-    count_id: number;
-}
-
 export interface TransferCycleCountOwnershipRequest {
-    count_id: number;
     employee_id: number;
 }
 

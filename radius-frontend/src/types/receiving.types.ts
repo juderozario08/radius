@@ -153,13 +153,8 @@ export interface CreateTransferRequest {
 }
 
 export interface DispatchTransferRequest {
-    transfer_id: number;
     carrier?: string | null;
     tracking_number?: string | null;
-}
-
-export interface CancelTransferRequest {
-    transfer_id: number;
 }
 
 export interface DestinationStore {

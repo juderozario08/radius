@@ -88,7 +88,6 @@ export default function CycleCountScanner() {
                 {
                     method: "POST",
                     body: JSON.stringify({
-                        count_id: countId,
                         barcode: query,
                     }),
                 },
@@ -159,7 +158,6 @@ export default function CycleCountScanner() {
                 {
                     method: "POST",
                     body: JSON.stringify({
-                        count_id: countId,
                         product_id: item.product_id,
                         counted_qty: newQty,
                     }),

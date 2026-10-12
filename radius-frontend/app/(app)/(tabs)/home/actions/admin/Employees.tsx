@@ -120,7 +120,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
         setIsTerminating(true);
         const result = await callApi(
             ENDPOINTS.ADMIN.EMPLOYEES.terminate(employee.employee_id),
-            { method: "POST", body: { employee_id: employee.employee_id } },
+            { method: "POST" },
             logout
         );
         setIsTerminating(false);
@@ -136,7 +136,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ employee, vis
         setIsActivating(true);
         const result = await callApi(
             ENDPOINTS.ADMIN.EMPLOYEES.activate(employee.employee_id),
-            { method: "POST", body: { employee_id: employee.employee_id } },
+            { method: "POST" },
             logout
         );
         setIsActivating(false);
@@ -304,8 +304,7 @@ const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({ visible, mode, em
             postal_code: normalizeCanadianPostalCode(formValues.postal_code),
         };
 
-        if (isEditMode && employee) {
-            payload.employee_id = employee.employee_id;
+        if (isEditMode) {
             delete payload.password;
         }
 

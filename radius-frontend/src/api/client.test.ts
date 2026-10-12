@@ -76,6 +76,65 @@ describe("apiFetch", () => {
             controller.abort();
             await assertion;
         });
+
+        it("rejects with a TimeoutError when reading response body times out", async () => {
+            global.fetch = jest.fn((_url: string, init: RequestInit) => Promise.resolve({
+                status: 200,
+                ok: true,
+                headers: { get: () => null },
+                json: () => new Promise((_resolve, reject) => {
+                    init.signal?.addEventListener("abort", () => reject(Object.assign(new Error("Aborted"), { name: "AbortError" })));
+                }),
+            })) as unknown as typeof fetch;
+
+            const result = apiFetch("/slow-body", { cachePolicy: "no-store" });
+            const assertion = expect(result).rejects.toBeInstanceOf(TimeoutError);
+            await jest.advanceTimersByTimeAsync(15000);
+            await assertion;
+        });
+    });
+
+    describe("deduplication with AbortSignal", () => {
+        it("does not abort other callers when one caller cancels", async () => {
+            let resolveFetch: (res: Response) => void;
+            global.fetch = jest.fn(() => new Promise<Response>((resolve) => {
+                resolveFetch = resolve;
+            })) as unknown as typeof fetch;
+
+            const controller1 = new AbortController();
+            const caller1 = apiFetch<{ name: string }>("/shared", { signal: controller1.signal });
+            const caller2 = apiFetch<{ name: string }>("/shared");
+
+            controller1.abort();
+
+            await expect(caller1).rejects.toMatchObject({ name: "AbortError" });
+
+            resolveFetch!(mockResponse(200, { name: "item" }));
+            await expect(caller2).resolves.toEqual({ name: "item" });
+        });
+
+        it("aborts underlying fetch when all subscribed callers cancel", async () => {
+            let aborted = false;
+            global.fetch = jest.fn((_url: string, init: RequestInit) => new Promise<Response>((_resolve, reject) => {
+                init.signal?.addEventListener("abort", () => {
+                    aborted = true;
+                    reject(Object.assign(new Error("Aborted"), { name: "AbortError" }));
+                });
+            })) as unknown as typeof fetch;
+
+            const controller1 = new AbortController();
+            const controller2 = new AbortController();
+            const caller1 = apiFetch("/shared-all", { signal: controller1.signal });
+            const caller2 = apiFetch("/shared-all", { signal: controller2.signal });
+
+            controller1.abort();
+            await expect(caller1).rejects.toMatchObject({ name: "AbortError" });
+            expect(aborted).toBe(false);
+
+            controller2.abort();
+            await expect(caller2).rejects.toMatchObject({ name: "AbortError" });
+            expect(aborted).toBe(true);
+        });
     });
 
     it("rejects when a refreshed token is also unauthorized", async () => {

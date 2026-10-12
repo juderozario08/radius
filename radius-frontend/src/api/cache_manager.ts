@@ -45,10 +45,15 @@ export function buildCacheKey(method: string, path: string): string {
     return `${method.toUpperCase()}:${url.pathname}:${normalizedQuery}:${storeScope}:${userScope}`;
 }
 
+export interface InFlightRequest<T = unknown> {
+    sharedPromise: Promise<T>;
+    subscribe: (signal?: AbortSignal | null) => Promise<T>;
+}
+
 export const MAX_CACHE_ENTRIES = 100;
 export const swrCache = new Map<string, CacheEntry>();
 export const etagStore = new Map<string, ETagEntry>();
-export const inFlightRequests = new Map<string, Promise<unknown>>();
+export const inFlightRequests = new Map<string, InFlightRequest<unknown>>();
 
 const cacheSubscribers = new Map<string, Set<(data: unknown) => void>>();
 

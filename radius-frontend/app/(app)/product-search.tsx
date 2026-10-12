@@ -2,275 +2,28 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
     View,
     Text,
-    StyleSheet,
     TextInput,
     TouchableOpacity,
     FlatList,
     ActivityIndicator,
     Image,
-    Modal,
-    ScrollView,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
 import { COLORS } from "@/constants/colors";
-import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
-import { ENDPOINTS } from "@/constants/routes";
-import { callApi } from "@/utils/helpers";
+import { globalStyles, SPACING } from "@/constants/styles";
+import { productSearchStyles as styles } from "@/components/products/productSearchStyles";
+import { ProductFilterPanel } from "@/components/products/ProductFilterPanel";
+import { ProductSearchCard } from "@/components/products/ProductSearchCard";
+import { getProductBrands, getProductCategories, searchCatalogProducts } from "@/api/products.api";
 import { useAuth } from "@/hooks/useAuth";
 import { router } from "expo-router";
-import { Product, SearchProductsResponse, Category, SearchFilters } from "@/types/inventory.types";
+import { Product, Category, SearchFilters } from "@/types/inventory.types";
 import { Ionicons } from "@expo/vector-icons";
-import { StatusBadge } from "@/components/common/StatusBadge";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const PAGE_SIZE = 25;
-
-function FilterPanel({
-    visible,
-    onClose,
-    filters,
-    onApply,
-    categories,
-    brands,
-}: {
-    visible: boolean;
-    onClose: () => void;
-    filters: SearchFilters;
-    onApply: (filters: SearchFilters) => void;
-    categories: Category[];
-    brands: string[];
-}) {
-    const [localFilters, setLocalFilters] = useState<SearchFilters>(filters);
-    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-    const [showBrandPicker, setShowBrandPicker] = useState(false);
-    const [brandSearch, setBrandSearch] = useState("");
-
-    useEffect(() => {
-        if (visible) setLocalFilters(filters);
-    }, [visible, filters]);
-
-    const selectedCategory = categories.find(c => c.category_id === localFilters.category_id);
-
-    const filteredBrands = brandSearch
-        ? brands.filter(b => b.toLowerCase().includes(brandSearch.toLowerCase()))
-        : brands;
-
-    const activeFilterCount = [
-        localFilters.category_id,
-        localFilters.brand,
-        localFilters.is_active !== undefined ? true : undefined,
-        localFilters.unit_of_measure,
-    ].filter(Boolean).length;
-
-    return (
-        <Modal visible={visible} animationType="slide" transparent>
-            <View style={filterStyles.overlay}>
-                <View style={filterStyles.container}>
-                    <View style={filterStyles.header}>
-                        <Text style={filterStyles.title}>Filters</Text>
-                        <TouchableOpacity onPress={onClose}>
-                            <Ionicons name="close" size={24} color={COLORS.textPrimary} />
-                        </TouchableOpacity>
-                    </View>
-
-                    <ScrollView style={filterStyles.body} showsVerticalScrollIndicator={false}>
-                        <Text style={filterStyles.label}>Category</Text>
-                        <TouchableOpacity
-                            style={filterStyles.pickerButton}
-                            onPress={() => setShowCategoryPicker(!showCategoryPicker)}
-                        >
-                            <Text style={[
-                                filterStyles.pickerText,
-                                !selectedCategory && { color: COLORS.placeholder },
-                            ]}>
-                                {selectedCategory ? selectedCategory.name : "All Categories"}
-                            </Text>
-                            <Ionicons
-                                name={showCategoryPicker ? "chevron-up" : "chevron-down"}
-                                size={18}
-                                color={COLORS.textSecondary}
-                            />
-                        </TouchableOpacity>
-                        {showCategoryPicker && (
-                            <View style={filterStyles.pickerList}>
-                                <TouchableOpacity
-                                    style={[filterStyles.pickerItem, !localFilters.category_id && filterStyles.pickerItemSelected]}
-                                    onPress={() => {
-                                        setLocalFilters(f => ({ ...f, category_id: undefined }));
-                                        setShowCategoryPicker(false);
-                                    }}
-                                >
-                                    <Text style={[filterStyles.pickerItemText, !localFilters.category_id && filterStyles.pickerItemTextSelected]}>All Categories</Text>
-                                </TouchableOpacity>
-                                {categories.map(cat => (
-                                    <TouchableOpacity
-                                        key={cat.category_id}
-                                        style={[filterStyles.pickerItem, localFilters.category_id === cat.category_id && filterStyles.pickerItemSelected]}
-                                        onPress={() => {
-                                            setLocalFilters(f => ({ ...f, category_id: cat.category_id }));
-                                            setShowCategoryPicker(false);
-                                        }}
-                                    >
-                                        <Text style={[filterStyles.pickerItemText, localFilters.category_id === cat.category_id && filterStyles.pickerItemTextSelected]}>
-                                            {cat.name}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        )}
-
-                        <Text style={[filterStyles.label, { marginTop: SPACING.xl }]}>Brand</Text>
-                        <TouchableOpacity
-                            style={filterStyles.pickerButton}
-                            onPress={() => setShowBrandPicker(!showBrandPicker)}
-                        >
-                            <Text style={[
-                                filterStyles.pickerText,
-                                !localFilters.brand && { color: COLORS.placeholder },
-                            ]}>
-                                {localFilters.brand || "All Brands"}
-                            </Text>
-                            <Ionicons
-                                name={showBrandPicker ? "chevron-up" : "chevron-down"}
-                                size={18}
-                                color={COLORS.textSecondary}
-                            />
-                        </TouchableOpacity>
-                        {showBrandPicker && (
-                            <View style={filterStyles.pickerList}>
-                                <TextInput
-                                    style={filterStyles.brandSearchInput}
-                                    placeholder="Search brands..."
-                                    placeholderTextColor={COLORS.placeholder}
-                                    value={brandSearch}
-                                    onChangeText={setBrandSearch}
-                                />
-                                <TouchableOpacity
-                                    style={[filterStyles.pickerItem, !localFilters.brand && filterStyles.pickerItemSelected]}
-                                    onPress={() => {
-                                        setLocalFilters(f => ({ ...f, brand: undefined }));
-                                        setShowBrandPicker(false);
-                                        setBrandSearch("");
-                                    }}
-                                >
-                                    <Text style={[filterStyles.pickerItemText, !localFilters.brand && filterStyles.pickerItemTextSelected]}>All Brands</Text>
-                                </TouchableOpacity>
-                                <ScrollView style={{ maxHeight: 160 }} nestedScrollEnabled>
-                                    {filteredBrands.map(b => (
-                                        <TouchableOpacity
-                                            key={b}
-                                            style={[filterStyles.pickerItem, localFilters.brand === b && filterStyles.pickerItemSelected]}
-                                            onPress={() => {
-                                                setLocalFilters(f => ({ ...f, brand: b }));
-                                                setShowBrandPicker(false);
-                                                setBrandSearch("");
-                                            }}
-                                        >
-                                            <Text style={[filterStyles.pickerItemText, localFilters.brand === b && filterStyles.pickerItemTextSelected]}>{b}</Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
-                            </View>
-                        )}
-
-                        <Text style={[filterStyles.label, { marginTop: SPACING.xl }]}>Status</Text>
-                        <View style={filterStyles.chipRow}>
-                            <TouchableOpacity
-                                style={[filterStyles.chip, localFilters.is_active === undefined && filterStyles.chipActive]}
-                                onPress={() => setLocalFilters(f => ({ ...f, is_active: undefined }))}
-                            >
-                                <Text style={[filterStyles.chipText, localFilters.is_active === undefined && filterStyles.chipTextActive]}>All</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[filterStyles.chip, localFilters.is_active === true && filterStyles.chipActive]}
-                                onPress={() => setLocalFilters(f => ({ ...f, is_active: true }))}
-                            >
-                                <Text style={[filterStyles.chipText, localFilters.is_active === true && filterStyles.chipTextActive]}>Active</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[filterStyles.chip, localFilters.is_active === false && filterStyles.chipActive]}
-                                onPress={() => setLocalFilters(f => ({ ...f, is_active: false }))}
-                            >
-                                <Text style={[filterStyles.chipText, localFilters.is_active === false && filterStyles.chipTextActive]}>Inactive</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <Text style={[filterStyles.label, { marginTop: SPACING.xl }]}>Unit of Measure</Text>
-                        <View style={filterStyles.chipRow}>
-                            {[undefined, "EACH", "CASE", "PACK"].map((uom) => (
-                                <TouchableOpacity
-                                    key={uom ?? "all"}
-                                    style={[filterStyles.chip, localFilters.unit_of_measure === uom && filterStyles.chipActive]}
-                                    onPress={() => setLocalFilters(f => ({ ...f, unit_of_measure: uom }))}
-                                >
-                                    <Text style={[filterStyles.chipText, localFilters.unit_of_measure === uom && filterStyles.chipTextActive]}>
-                                        {uom ?? "All"}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </ScrollView>
-
-                    <View style={filterStyles.footer}>
-                        <TouchableOpacity
-                            style={filterStyles.clearButton}
-                            onPress={() => setLocalFilters({})}
-                        >
-                            <Text style={filterStyles.clearButtonText}>Clear All</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={filterStyles.applyButton}
-                            onPress={() => {
-                                onApply(localFilters);
-                                onClose();
-                            }}
-                        >
-                            <Text style={filterStyles.applyButtonText}>
-                                Apply{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </View>
-        </Modal>
-    );
-}
-
-function ProductCard({ product, onPress }: { product: Product; onPress: () => void }) {
-    return (
-        <TouchableOpacity style={[globalStyles.card, { marginBottom: SPACING.smd, borderWidth: 1, borderColor: COLORS.border, shadowOpacity: 0.05, elevation: 1 }]} onPress={onPress} activeOpacity={0.7}>
-            <View style={globalStyles.cardHeader}>
-                <View style={{ flex: 1, marginRight: SPACING.sm }}>
-                    <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
-                    <Text style={styles.productBrand}>{product.brand}</Text>
-                </View>
-                <StatusBadge isActive={product.is_active} />
-            </View>
-            <View style={styles.productMeta}>
-                <View style={styles.metaItem}>
-                    <Text style={styles.metaLabel}>SKU</Text>
-                    <Text style={styles.metaValue}>{product.sku}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                    <Text style={styles.metaLabel}>UPC</Text>
-                    <Text style={styles.metaValue}>{product.upc}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                    <Text style={styles.metaLabel}>Unit</Text>
-                    <Text style={styles.metaValue}>{product.unit_of_measure}</Text>
-                </View>
-            </View>
-            {product.description ? (
-                <Text style={styles.productDescription} numberOfLines={2}>{product.description}</Text>
-            ) : null}
-            <View style={styles.cardArrow}>
-                <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
-            </View>
-        </TouchableOpacity>
-    );
-}
 
 export default function ProductSearchScreen() {
     const { logout } = useAuth();
@@ -294,8 +47,8 @@ export default function ProductSearchScreen() {
 
     const loadFilterOptions = useCallback(async () => {
         const [cats, brnds] = await Promise.all([
-            callApi<Category[]>(ENDPOINTS.SALES_FLOOR.PRODUCTS.categories, { method: "GET", swr: true }, logout),
-            callApi<string[]>(ENDPOINTS.SALES_FLOOR.PRODUCTS.brands, { method: "GET", swr: true }, logout),
+            getProductCategories(logout),
+            getProductBrands(logout),
         ]);
         if (cats) setCategories(cats);
         if (brnds) setBrands(brnds);
@@ -324,17 +77,7 @@ export default function ProductSearchScreen() {
         const controller = abortControllerRef.current;
         const currentSeq = ++searchSeqRef.current;
 
-        const params = new URLSearchParams();
-        if (query) params.append("q", query);
-        if (activeFilters.category_id) params.append("category_id", String(activeFilters.category_id));
-        if (activeFilters.brand) params.append("brand", activeFilters.brand);
-        if (activeFilters.is_active !== undefined) params.append("is_active", String(activeFilters.is_active));
-        if (activeFilters.unit_of_measure) params.append("unit_of_measure", activeFilters.unit_of_measure);
-        params.append("limit", String(PAGE_SIZE));
-        params.append("offset", String(pageOffset));
-
-        const endpoint = `${ENDPOINTS.SALES_FLOOR.PRODUCTS.search}?${params.toString()}`;
-        const data = await callApi<SearchProductsResponse>(endpoint, { method: "GET", signal: controller?.signal }, logout);
+        const data = await searchCatalogProducts(query, activeFilters, PAGE_SIZE, pageOffset, controller?.signal, logout);
 
         if (controller?.signal.aborted || currentSeq !== searchSeqRef.current) {
             return;
@@ -393,7 +136,7 @@ export default function ProductSearchScreen() {
     ].filter(Boolean).length;
 
     const renderProduct = ({ item }: { item: Product }) => (
-        <ProductCard
+        <ProductSearchCard
             product={item}
             onPress={() => router.push(`/(app)/product/${item.product_id}`)}
         />
@@ -499,7 +242,7 @@ export default function ProductSearchScreen() {
                 />
             )}
 
-            <FilterPanel
+            <ProductFilterPanel
                 visible={showFilters}
                 onClose={() => setShowFilters(false)}
                 filters={filters}
@@ -510,320 +253,3 @@ export default function ProductSearchScreen() {
         </TopSafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    searchBarContainer: {
-        flexDirection: "row",
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.md,
-        gap: SPACING.smd,
-        backgroundColor: COLORS.headerBackground,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    searchInputWrapper: {
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: COLORS.inputBg,
-        borderRadius: RADIUS.mdl,
-        borderWidth: 1,
-        borderColor: COLORS.inputBorder,
-        paddingHorizontal: SPACING.md,
-    },
-    searchIcon: {
-        marginRight: SPACING.sm,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: FONT_SIZE.mdl,
-        color: COLORS.textPrimary,
-        height: 44,
-    },
-    clearIcon: {
-        padding: SPACING.xs,
-    },
-    filterButton: {
-        width: 46,
-        height: 46,
-        borderRadius: RADIUS.mdl,
-        backgroundColor: COLORS.inputBg,
-        borderWidth: 1,
-        borderColor: COLORS.inputBorder,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    filterButtonActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    filterBadge: {
-        position: "absolute",
-        top: -4,
-        right: -4,
-        backgroundColor: COLORS.primary,
-        borderRadius: RADIUS.mdl,
-        minWidth: 18,
-        height: 18,
-        justifyContent: "center",
-        alignItems: "center",
-        borderWidth: 2,
-        borderColor: COLORS.headerBackground,
-    },
-    filterBadgeText: {
-        color: "white",
-        fontSize: FONT_SIZE.xxs,
-        fontWeight: "700",
-    },
-    resultsHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.sm,
-        backgroundColor: COLORS.background,
-    },
-    resultsCount: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-        fontWeight: "600",
-    },
-    clearFiltersText: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.primary,
-        fontWeight: "600",
-    },
-    listContent: {
-        paddingHorizontal: SPACING.lg,
-        paddingTop: SPACING.sm,
-        paddingBottom: SPACING.xl,
-        flexGrow: 1,
-    },
-
-    productCardHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: SPACING.smd,
-    },
-    productName: {
-        fontSize: FONT_SIZE.lg,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-        lineHeight: 22,
-    },
-    productBrand: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-    productMeta: {
-        flexDirection: "row",
-        gap: SPACING.lg,
-        marginBottom: SPACING.sm,
-    },
-    metaItem: {
-        flexDirection: "column",
-    },
-    metaLabel: {
-        fontSize: FONT_SIZE.xs,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-        textTransform: "uppercase",
-        letterSpacing: 0.5,
-    },
-    metaValue: {
-        fontSize: FONT_SIZE.md,
-        color: COLORS.textPrimary,
-        fontWeight: "500",
-        marginTop: SPACING.xxs,
-    },
-    productDescription: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-        lineHeight: 18,
-        marginTop: SPACING.xs,
-    },
-    cardArrow: {
-        position: "absolute",
-        right: 12,
-        top: "50%",
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        paddingTop: 60,
-    },
-    emptyTitle: {
-        fontSize: FONT_SIZE.xl,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-        marginTop: SPACING.lg,
-    },
-    emptySubtitle: {
-        fontSize: FONT_SIZE.md,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xsm,
-        textAlign: "center",
-    },
-    loadingMore: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-        paddingVertical: SPACING.lg,
-        gap: SPACING.sm,
-    },
-    loadingMoreText: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-    },
-});
-
-const filterStyles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: COLORS.overlay,
-        justifyContent: "flex-end",
-    },
-    container: {
-        backgroundColor: COLORS.surface,
-        borderTopLeftRadius: RADIUS.xxl,
-        borderTopRightRadius: RADIUS.xxl,
-        maxHeight: "80%",
-        paddingBottom: SPACING.xxlPlus,
-    },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: SPACING.xl,
-        paddingTop: SPACING.xl,
-        paddingBottom: SPACING.md,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    title: {
-        fontSize: FONT_SIZE.xxl,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    body: {
-        paddingHorizontal: SPACING.xl,
-        paddingTop: SPACING.lg,
-    },
-    label: {
-        fontSize: FONT_SIZE.md,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-        marginBottom: SPACING.sm,
-        textTransform: "uppercase",
-        letterSpacing: 0.5,
-    },
-    pickerButton: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        backgroundColor: COLORS.inputBg,
-        borderWidth: 1,
-        borderColor: COLORS.inputBorder,
-        borderRadius: RADIUS.mdl,
-        paddingHorizontal: SPACING.mdl,
-        paddingVertical: SPACING.md,
-    },
-    pickerText: {
-        fontSize: FONT_SIZE.mdl,
-        color: COLORS.textPrimary,
-    },
-    pickerList: {
-        borderWidth: 1,
-        borderColor: COLORS.inputBorder,
-        borderRadius: RADIUS.mdl,
-        marginTop: SPACING.xsm,
-        maxHeight: 200,
-        backgroundColor: COLORS.inputBg,
-    },
-    pickerItem: {
-        paddingHorizontal: SPACING.mdl,
-        paddingVertical: 11,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    pickerItemSelected: {
-        backgroundColor: COLORS.primarySurfaceStrong,
-    },
-    pickerItemText: {
-        fontSize: FONT_SIZE.md,
-        color: COLORS.textPrimary,
-    },
-    pickerItemTextSelected: {
-        color: COLORS.primary,
-        fontWeight: "600",
-    },
-    brandSearchInput: {
-        paddingHorizontal: SPACING.mdl,
-        paddingVertical: SPACING.smd,
-        fontSize: FONT_SIZE.md,
-        color: COLORS.textPrimary,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    chipRow: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: SPACING.sm,
-    },
-    chip: {
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.sm,
-        borderRadius: RADIUS.xxl,
-        backgroundColor: COLORS.inputBg,
-        borderWidth: 1,
-        borderColor: COLORS.inputBorder,
-    },
-    chipActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    chipText: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    chipTextActive: {
-        color: "white",
-    },
-    footer: {
-        flexDirection: "row",
-        paddingHorizontal: SPACING.xl,
-        paddingTop: SPACING.lg,
-        gap: SPACING.md,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-    },
-    clearButton: {
-        flex: 1,
-        paddingVertical: SPACING.mdl,
-        borderRadius: RADIUS.mdl,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        alignItems: "center",
-    },
-    clearButtonText: {
-        fontSize: FONT_SIZE.mdl,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-    },
-    applyButton: {
-        flex: 2,
-        paddingVertical: SPACING.mdl,
-        borderRadius: RADIUS.mdl,
-        backgroundColor: COLORS.primary,
-        alignItems: "center",
-    },
-    applyButtonText: {
-        fontSize: FONT_SIZE.mdl,
-        fontWeight: "700",
-        color: "white",
-    },
-});

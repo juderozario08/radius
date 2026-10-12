@@ -201,3 +201,172 @@ The API builds its `DATABASE_URL` and `REDIS_URL` from the values in `.env`, so 
 
 - **Store 1**: **Head Office** (Stores inventory and MIMS warehouse bins, but has zero sales floor transactions, customer orders, POs, or stock transfers).
 - **Stores 2–7**: **Active Retail Store Locations** (Full sales floor, receiving dock, POS registers, BOPIS/STS fulfillment, and cycle counting operations).
+
+---
+
+## 📡 REST API Reference
+
+The Radius backend exposes 92 endpoints structured across public access, administrative oversight, manager workflows, and mobile sales-floor operations. Role-based access control enforces four hierarchical roles: `ADMIN` > `MANAGER` > `SERVICE` > `SALES`.
+
+### 1. Authentication & System Health
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/health` | Public | System health check and uptime probe |
+| `POST` | `/login` | Public | Employee login returning access and refresh JWT pair |
+| `POST` | `/api/refresh_token` | Public | Rotates access and refresh tokens with 30s grace replay window |
+| `POST` | `/api/verify_token` | `SALES` | Validates session token and active employee status |
+| `POST` | `/api/logout` | `SALES` | Invalidates current token session |
+
+### 2. WebSocket & Live Store Events
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `POST` | `/api/v1/ws/ticket` | `SALES` | Generates a single-use authentication ticket for WebSocket streaming |
+| `GET` | `/api/v1/ws` | Ticket | Real-time bi-directional store activity WebSocket stream (`?ticket=...`) |
+
+### 3. Administrator Endpoints
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/admin/employees` | `ADMIN` | List all employees across all stores |
+| `POST` | `/api/admin/employees` | `ADMIN` | Create a new employee account |
+| `PUT` | `/api/admin/employees/:id` | `ADMIN` | Update employee profile, role, or store assignment |
+| `POST` | `/api/admin/employees/:id/activate` | `ADMIN` | Activate an inactive employee account |
+| `POST` | `/api/admin/employees/:id/terminate` | `ADMIN` | Terminate an employee account and revoke active sessions |
+| `GET` | `/api/admin/metrics` | `ADMIN` | System-wide sales, order, and inventory performance metrics |
+| `GET` | `/api/admin/sessions` | `ADMIN` | List all active employee sessions |
+| `DELETE` | `/api/admin/sessions/:id` | `ADMIN` | Remotely terminate a specific session |
+| `GET` | `/api/admin/stores` | `ADMIN` | List all store facilities |
+| `POST` | `/api/admin/stores` | `ADMIN` | Create a new store facility |
+| `GET` | `/api/admin/stores/:id` | `ADMIN` | Retrieve single store details |
+| `PUT` | `/api/admin/stores/:id` | `ADMIN` | Update store metadata |
+| `POST` | `/api/admin/stores/:id/activate` | `ADMIN` | Mark a store active |
+| `POST` | `/api/admin/stores/:id/deactivate` | `ADMIN` | Deactivate store operations |
+| `GET` | `/api/admin/stores/operations` | `ADMIN` | Multi-store operational overview |
+
+### 4. Store Manager Operations
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/manager/employees` | `MANAGER` | List employees assigned to manager's store |
+| `GET` | `/api/manager/store/:id` | `MANAGER` | View store management telemetry |
+
+### 5. Products & Catalog
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/sales_floor/products/search` | `SALES` | Search catalog by text query, barcode, SKU, or category |
+| `GET` | `/api/sales_floor/products/categories` | `SALES` | List product categories |
+| `GET` | `/api/sales_floor/products/brands` | `SALES` | List product brands |
+| `GET` | `/api/sales_floor/products/audit` | `SALES` | Audit product information by barcode |
+| `GET` | `/api/sales_floor/products/:id` | `SALES` | Retrieve complete product specifications |
+
+### 6. Mobile Inventory Management (MIMS) & Bin Locations
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/sales_floor/inventory/product` | `SALES` | Query store inventory levels for product |
+| `GET` | `/api/sales_floor/inventory/products/:id` | `SALES` | Detailed sub-inventory breakdown across 11 buckets |
+| `POST` | `/api/sales_floor/inventory/quantity` | `SALES` | Update sub-inventory quantity bucket |
+| `POST` | `/api/sales_floor/inventory/bin` | `SALES` | Assign product stock to warehouse bin location |
+| `POST` | `/api/sales_floor/inventory/locations` | `SALES` | Create or update bin location |
+| `GET` | `/api/sales_floor/inventory/locations/:id` | `SALES` | Retrieve inventory held within specific bin |
+| `PUT` | `/api/sales_floor/inventory/locations/sync` | `SALES` | Synchronize bin locations batch |
+| `GET` | `/api/sales_floor/inventory/adjustments` | `SALES` | List inventory variance adjustment requests |
+| `POST` | `/api/sales_floor/inventory/adjustments` | `SALES` | Submit inventory adjustment request |
+| `POST` | `/api/sales_floor/inventory/adjustments/review` | `MANAGER` | Approve or reject inventory adjustment |
+
+### 7. Cycle Counting & Audits
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/sales_floor/cycle_counts` | `SALES` | List active and historical cycle counts |
+| `POST` | `/api/sales_floor/cycle_counts` | `SALES` | Create a new cycle count audit |
+| `GET` | `/api/sales_floor/cycle_counts/:id` | `SALES` | Retrieve cycle count summary and status |
+| `GET` | `/api/sales_floor/cycle_counts/:id/items` | `SALES` | List expected and counted items in count |
+| `POST` | `/api/sales_floor/cycle_counts/:id/scans` | `SALES` | Record barcode scan and item quantity count |
+| `POST` | `/api/sales_floor/cycle_counts/:id/submit` | `SALES` | Submit completed count for review |
+| `POST` | `/api/sales_floor/cycle_counts/:id/approve` | `MANAGER` | Approve cycle count and post variance ledger |
+| `POST` | `/api/sales_floor/cycle_counts/:id/transfer_ownership` | `MANAGER` | Transfer count assignment to another employee |
+| `GET` | `/api/sales_floor/cycle_counts/schedule` | `SALES` | View weekly cycle count schedule calendar |
+| `POST` | `/api/sales_floor/cycle_counts/schedule` | `MANAGER` | Update store counting schedules |
+| `GET` | `/api/sales_floor/cycle_counts/search` | `SALES` | Search past cycle counts by category or date |
+
+### 8. Shelf Replenishment & Fill Reports (IS4TC)
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/sales_floor/fill_reports` | `SALES` | Retrieve replenishment pick lists |
+| `POST` | `/api/sales_floor/fill_reports/empty_hole` | `SALES` | Record scanned empty shelf position |
+| `GET` | `/api/sales_floor/is4tc/session` | `SALES` | Retrieve store's active collaborative scan session |
+| `POST` | `/api/sales_floor/is4tc/session/add` | `SALES` | Add scanned product to active session |
+| `DELETE` | `/api/sales_floor/is4tc/session/clear` | `SALES` | Clear store replenishment scan session |
+
+### 9. Inbound Receiving & Purchase Orders
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/sales_floor/receiving/purchase_orders` | `SALES` | List open inbound purchase orders |
+| `GET` | `/api/sales_floor/receiving/purchase_orders/:id` | `SALES` | Retrieve PO items and received quantities |
+| `GET` | `/api/sales_floor/receiving/purchase_orders/:id/check_product` | `SALES` | Verify scanned barcode matches PO manifest |
+| `POST` | `/api/sales_floor/receiving/purchase_orders/:id/receive` | `SALES` | Receive line item units against purchase order |
+| `POST` | `/api/sales_floor/receiving/purchase_orders/:id/receive_lpr` | `SALES` | High-speed master carton receive via 20-digit LPR |
+| `GET` | `/api/sales_floor/receiving/transfers` | `SALES` | List incoming inter-store stock transfers |
+| `GET` | `/api/sales_floor/receiving/transfers/:id` | `SALES` | Retrieve transfer manifest |
+| `GET` | `/api/sales_floor/receiving/transfers/:id/check_product` | `SALES` | Verify product on incoming transfer |
+| `POST` | `/api/sales_floor/receiving/transfers/:id/quick_receive` | `SALES` | One-tap quick receive of sealed transfer |
+| `POST` | `/api/sales_floor/receiving/transfers/:id/receive` | `SALES` | Item-by-item manual receive of transfer |
+
+### 10. Inter-Store Stock Transfers
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/sales_floor/transfers` | `SALES` | List store-to-store transfer requests |
+| `POST` | `/api/sales_floor/transfers` | `MANAGER` | Create outbound stock transfer request |
+| `GET` | `/api/sales_floor/transfers/:id` | `SALES` | Retrieve transfer details and items |
+| `POST` | `/api/sales_floor/transfers/:id/dispatch` | `MANAGER` | Dispatch and ship transfer to destination |
+| `POST` | `/api/sales_floor/transfers/:id/cancel` | `MANAGER` | Cancel pending transfer and release reserved stock |
+| `GET` | `/api/sales_floor/transfers/stores` | `SALES` | List available destination stores |
+
+### 11. Omnichannel Digital Order Fulfillment (BOPIS / STS)
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/sales_floor/orders/online` | `SALES` | View BOPIS and Ship-to-Store order queue |
+| `POST` | `/api/sales_floor/orders/online` | `SALES` | Create new customer digital order |
+| `GET` | `/api/sales_floor/orders/online/:id` | `SALES` | Retrieve order details and fulfillment stage |
+| `PUT` | `/api/sales_floor/orders/online/:id/assign` | `SALES` | Assign order to current staff member for picking |
+| `PUT` | `/api/sales_floor/orders/online/:id/items/:item_id` | `SALES` | Update pick status of individual item |
+| `POST` | `/api/sales_floor/orders/online/:id/complete_pick` | `SALES` | Mark all items picked and stage for pickup |
+| `POST` | `/api/sales_floor/orders/online/:id/cancel` | `SALES` | Cancel digital order and restore allocated inventory |
+
+### 12. Commercial Print Center Orders
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/sales_floor/orders/print` | `SALES` | List custom print shop jobs |
+| `GET` | `/api/sales_floor/orders/print/:id` | `SALES` | Retrieve print order job specifications |
+| `PUT` | `/api/sales_floor/orders/print/:id/status` | `SERVICE` | Transition print job production state |
+
+### 13. Customer Returns & RTV Processing
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/sales_floor/returns` | `SALES` | Query historical customer returns |
+| `POST` | `/api/sales_floor/returns` | `SALES` | Process customer return and issue refund/credit |
+| `GET` | `/api/sales_floor/returns/:id` | `SALES` | View return receipt details and item dispositions |
+| `POST` | `/api/sales_floor/returns/:id/approve` | `MANAGER` | Approve returns exceeding value threshold |
+| `POST` | `/api/sales_floor/returns/:id/reject` | `MANAGER` | Reject customer return |
+| `GET` | `/api/sales_floor/returns/lookup/:id` | `SALES` | Lookup original transaction and returnable items |
+| `GET` | `/api/sales_floor/returns/search_by_product` | `SALES` | Search past transactions by product barcode |
+| `GET` | `/api/sales_floor/returns/rtv` | `SALES` | View Return-To-Vendor quarantine queue |
+
+### 14. Transactions & Ledger Audit
+
+| Method | Endpoint | Min Role | Description |
+|---|---|---|---|
+| `GET` | `/api/sales_floor/transactions` | `SALES` | View completed retail sales transactions |
+| `POST` | `/api/sales_floor/transactions` | `ADMIN` | Record POS transaction with Canadian tax rules |
+| `GET` | `/api/sales_floor/transactions/:id` | `SALES` | Retrieve transaction receipt and item lines |
+

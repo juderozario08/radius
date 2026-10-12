@@ -192,6 +192,20 @@ CATEGORIES_LIST = [
     "Presentation & Boards",
 ]
 
+TECH_CATEGORIES = [
+    "Technology & Electronics",
+    "Printers & Scanners",
+    "Audio & Headphones",
+    "Cables & Adapters",
+    "Computer Peripherals",
+]
+TECH_CATEGORY_IDS = {CATEGORIES_LIST.index(name) + 1 for name in TECH_CATEGORIES}
+
+
+def product_category_id(product_id: int) -> int:
+    return ((product_id - 1) % NUM_CATEGORIES) + 1
+
+
 CATEGORY_PRODUCTS = {
     1: [  # Office Supplies
         ("Standard Heavy Duty Stapler", "All-metal construction stapler up to 30 sheets", "Staples", 0.45, 14.99),

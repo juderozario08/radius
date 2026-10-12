@@ -18,6 +18,7 @@ from common import (
     escape_sql,
     write_sql_file,
     build_batched_inserts,
+    product_category_id,
 )
 
 CYCLE_STATUSES = [
@@ -40,7 +41,7 @@ def generate_sql(num_counts: int = NUM_CYCLE_COUNTS) -> str:
     # Pre-index products by category to avoid redundant scans
     category_products = {cat: [] for cat in range(1, NUM_CATEGORIES + 1)}
     for prod_id in range(1, NUM_PRODUCTS + 1):
-        cat = ((prod_id - 1) % NUM_CATEGORIES) + 1
+        cat = product_category_id(prod_id)
         category_products[cat].append(prod_id)
 
     count_rows = []

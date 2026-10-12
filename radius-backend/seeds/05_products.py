@@ -18,6 +18,7 @@ from common import (
     write_sql_file,
     build_batched_inserts,
     fake,
+    product_category_id,
 )
 
 
@@ -31,7 +32,7 @@ def generate_sql(num_products: int = NUM_PRODUCTS) -> str:
         upc = f"001000{product_idx:08d}"
         
         # Determine category (1-indexed, distributed across available categories)
-        cat_id = (i % NUM_CATEGORIES) + 1
+        cat_id = product_category_id(product_idx)
         
         # Get product pool for this category
         cat_pool = CATEGORY_PRODUCTS.get(cat_id, [])

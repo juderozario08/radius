@@ -13,6 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (
     NUM_PRODUCTS,
     ALL_STORE_IDS,
+    TECH_CATEGORY_IDS,
+    product_category_id,
     escape_sql,
     write_sql_file,
     build_batched_inserts,
@@ -57,7 +59,8 @@ def generate_sql(num_products: int = NUM_PRODUCTS, store_ids: list = None) -> st
             reorder_qty = random.choice([10, 15, 20, 24, 30])
             aisle = AISLES[(product_idx - 1) % len(AISLES)]
 
-            open_box_qty = random.choice([0, 0, 0, 0, 1])
+            is_tech = product_category_id(product_idx) in TECH_CATEGORY_IDS
+            open_box_qty = random.choice([0, 0, 0, 0, 1]) if is_tech else 0
             # Generates realistic active stock between 8 and 45
             new_qty = random.randint(8, 45)
             rtv_qty = 0

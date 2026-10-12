@@ -171,6 +171,19 @@ The API builds its `DATABASE_URL` and `REDIS_URL` from the values in `.env`, so 
 
 ---
 
+### Production Health Check
+
+`./prod-check.sh` signs in to the live API and runs a read-only sweep of every major area, then prints a summary (wake-up time, latency median/p95/max, barcode scan cache effect, failures, and for admins the database pool and Redis stats). It prompts for your email and password; the password is never echoed or stored, and the script signs out when it finishes. If the account is already signed in elsewhere, it asks before taking over that session.
+
+```bash
+./prod-check.sh                                   # checks https://radius-2563.onrender.com
+./prod-check.sh http://localhost:8080             # or any other base URL (also via RADIUS_API_URL)
+```
+
+It needs only `curl` and `python3`, and exits non-zero if any request fails with a 5xx, 401 or network error.
+
+---
+
 ### Frontend Setup
 
 1. **Navigate to the frontend directory**:

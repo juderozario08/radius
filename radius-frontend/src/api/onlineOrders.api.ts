@@ -1,5 +1,4 @@
 import { ENDPOINTS } from "@/constants/routes";
-import { GetAllEmployeeResponse } from "@/types/admin.types";
 import { GetOnlineOrderByIDResponse, OnlineOrder, OrderItemStatus } from "@/types/order.types";
 import { callApi } from "@/utils/helpers";
 
@@ -7,14 +6,6 @@ type Logout = () => Promise<void>;
 
 export function getOnlineOrder(id: string, logout: Logout) {
     return callApi<GetOnlineOrderByIDResponse>(ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.get(id), { method: "GET" }, logout);
-}
-
-export function getAssignableEmployees(role: string | undefined, storeId: number | undefined, logout: Logout) {
-    const storeParam = storeId ? `&store_id=${storeId}` : "";
-    const endpoint = role === "ADMIN"
-        ? `${ENDPOINTS.ADMIN.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`
-        : `${ENDPOINTS.MANAGER.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`;
-    return callApi<GetAllEmployeeResponse>(endpoint, { method: "GET" }, logout);
 }
 
 export function assignOnlineOrder(orderId: number, employeeId: number, logout: Logout) {

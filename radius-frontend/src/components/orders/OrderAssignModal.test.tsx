@@ -1,13 +1,14 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
-import { assignOnlineOrder, getAssignableEmployees } from "@/api/onlineOrders.api";
+import { assignOnlineOrder } from "@/api/onlineOrders.api";
+import { getAssignableEmployees } from "@/api/employees.api";
 import { OnlineOrder } from "@/types/order.types";
 import { OrderAssignModal } from "./OrderAssignModal";
 
 jest.mock("@/api/onlineOrders.api", () => ({
     assignOnlineOrder: jest.fn(),
-    getAssignableEmployees: jest.fn(),
 }));
+jest.mock("@/api/employees.api", () => ({ getAssignableEmployees: jest.fn() }));
 
 const order: OnlineOrder = {
     order_id: 12,

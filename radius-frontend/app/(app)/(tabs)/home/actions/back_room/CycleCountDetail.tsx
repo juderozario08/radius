@@ -2,28 +2,29 @@ import React, { useState, useCallback } from "react";
 import {
     View,
     Text,
-    StyleSheet,
     FlatList,
     TouchableOpacity,
     ActivityIndicator,
     Alert,
-    Modal,
-    TextInput,
 } from "react-native";
 import { TopSafeAreaView } from "@/components/common/TopSafeAreaView";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import BackButton from "@/components/common/BackButton";
-import { ENDPOINTS } from "@/constants/routes";
 import { COLORS } from "@/constants/colors";
-import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
+import { globalStyles, SPACING } from "@/constants/styles";
+import { cycleCountDetailStyles as styles } from "@/components/cycleCount/cycleCountDetailStyles";
+import { CycleCountItemCard } from "@/components/cycleCount/CycleCountItemCard";
+import { AssignCycleCountModal, EditCountItemModal, SubmitCycleCountModal } from "@/components/cycleCount/CycleCountDetailModals";
 import { useAuth } from "@/hooks/useAuth";
-import { callApi, showToast } from "@/utils/helpers";
+import { showToast } from "@/utils/helpers";
+import { getAssignableEmployees } from "@/api/employees.api";
+import { approveCycleCount, getCycleCountDetail, scanCycleCountItem, submitCycleCount, transferCycleCount } from "@/api/cycleCounts.api";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import {
     CycleCountItemDetail,
     CycleCountDetailResponse,
 } from "@/types/cyclecount.types";
-import { Employee, GetAllEmployeeResponse } from "@/types/admin.types";
+import { Employee } from "@/types/admin.types";
 import { getCycleCountStatusStyle } from "./CycleCount";
 import { Ionicons } from "@expo/vector-icons";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
@@ -35,11 +36,12 @@ type FilterTab = "FULL" | "PARTIAL" | "NO_COUNT";
 export default function CycleCountDetail() {
     const { logout, user } = useAuth();
     const params = useLocalSearchParams();
-    const countId = Number(params.id);
+    const countId = typeof params.id === "string" ? Number(params.id) : NaN;
+    const validCountId = Number.isInteger(countId) && countId > 0;
 
     const [detail, setDetail] = useState<CycleCountDetailResponse | null>(null);
     const [activeTab, setActiveTab] = useState<FilterTab>("FULL");
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(validCountId);
     const [isActionLoading, setIsActionLoading] = useState(false);
 
     const [editingItem, setEditingItem] = useState<CycleCountItemDetail | null>(null);
@@ -59,17 +61,16 @@ export default function CycleCountDetail() {
         user?.role === "MANAGER" || user?.role === "ADMIN";
 
     const fetchDetail = useCallback(async () => {
-        if (!countId) return;
-        const data = await callApi<CycleCountDetailResponse>(
-            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getDetail(countId),
-            { method: "GET" },
-            logout
-        );
+        if (!validCountId) {
+            setIsLoading(false);
+            return;
+        }
+        const data = await getCycleCountDetail(countId, logout);
         if (data) {
             setDetail(data);
         }
         setIsLoading(false);
-    }, [countId, logout]);
+    }, [countId, validCountId, logout]);
 
     const retryInitialLoad = () => {
         setIsLoading(true);
@@ -86,15 +87,7 @@ export default function CycleCountDetail() {
         setReassignModalVisible(true);
         setSelectedEmployeeId(detail?.count.counted_by || null);
         setIsLoadingEmployees(true);
-        const storeParam = detail?.count.store_id ? `&store_id=${detail.count.store_id}` : "";
-        const endpoint = user?.role === "ADMIN"
-            ? `${ENDPOINTS.ADMIN.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`
-            : `${ENDPOINTS.MANAGER.EMPLOYEES.getAll}?page_size=100&page_number=1${storeParam}`;
-        const data = await callApi<GetAllEmployeeResponse>(
-            endpoint,
-            { method: "GET" },
-            logout
-        );
+        const data = await getAssignableEmployees(user?.role, detail?.count.store_id, logout);
         if (data && data.employees) {
             setEmployees(data.employees.filter((e) => !e.is_terminated && e.role !== "ADMIN"));
         }
@@ -107,14 +100,7 @@ export default function CycleCountDetail() {
             return;
         }
         setIsTransferring(true);
-        const res = await callApi(
-            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.transfer(countId),
-            {
-                method: "POST",
-                body: JSON.stringify({ employee_id: selectedEmployeeId }),
-            },
-            logout
-        );
+        const res = await transferCycleCount(countId, selectedEmployeeId, logout);
         setIsTransferring(false);
         if (res !== null) {
             showToast("success", "Cycle count transferred successfully");
@@ -147,18 +133,7 @@ export default function CycleCountDetail() {
     const handleSaveItemQty = async () => {
         if (!editingItem) return;
         setIsActionLoading(true);
-        const res = await callApi(
-            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan(countId),
-            {
-                method: "POST",
-                body: JSON.stringify({
-                    product_id: editingItem.product_id,
-                    counted_qty: editQty,
-                    reason_code: editReason.trim() || undefined,
-                }),
-            },
-            logout
-        );
+        const res = await scanCycleCountItem(countId, editingItem.product_id, editQty, editReason.trim() || undefined, logout);
         setIsActionLoading(false);
         if (res === null) return;
         setEditingItem(null);
@@ -167,16 +142,7 @@ export default function CycleCountDetail() {
 
     const handleSubmitForApproval = async () => {
         setIsActionLoading(true);
-        const res = await callApi(
-            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.submit(countId),
-            {
-                method: "POST",
-                body: JSON.stringify({
-                    notes: submitNotes.trim() || undefined,
-                }),
-            },
-            logout
-        );
+        const res = await submitCycleCount(countId, submitNotes.trim() || undefined, logout);
         setIsActionLoading(false);
         if (res === null) return;
         setSubmitModalVisible(false);
@@ -195,11 +161,7 @@ export default function CycleCountDetail() {
                     style: "default",
                     onPress: async () => {
                         setIsActionLoading(true);
-                        const res = await callApi(
-                            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.approve(countId),
-                            { method: "POST" },
-                            logout
-                        );
+                        const res = await approveCycleCount(countId, logout);
                         setIsActionLoading(false);
                         if (res === null) return;
                         fetchDetail();
@@ -210,93 +172,10 @@ export default function CycleCountDetail() {
         );
     };
 
-    const renderItem = ({ item }: { item: CycleCountItemDetail }) => {
-        const isMatched = item.counted_qty === item.expected_qty && item.counted_qty > 0;
-        const isDiscrepancy = item.counted_qty > 0 && item.variance !== 0;
-
-        let badgeBorder = COLORS.inputBorder;
-        let badgeBg = COLORS.background;
-        let badgeText = COLORS.textSecondary;
-
-        if (isMatched) {
-            badgeBorder = COLORS.successBorder;
-            badgeBg = COLORS.activeBg;
-            badgeText = COLORS.success;
-        } else if (isDiscrepancy) {
-            badgeBorder = item.variance < 0 ? COLORS.dangerBorder : COLORS.tealBorder;
-            badgeBg = item.variance < 0 ? COLORS.inactiveBg : COLORS.tealBg;
-            badgeText = item.variance < 0 ? COLORS.error : COLORS.tealDark;
-        }
-
-        const canEdit =
-            detail?.count.status === "IN PROGRESS" || detail?.count.status === "NOT STARTED";
-
-        return (
-            <TouchableOpacity
-                style={styles.itemRow}
-                activeOpacity={canEdit ? 0.7 : 1}
-                onPress={() => {
-                    if (canEdit) {
-                        setEditingItem(item);
-                        setEditQty(item.counted_qty);
-                        setEditReason(item.reason_code || "");
-                    }
-                }}
-            >
-                <View style={styles.productIconWrapper}>
-                    <Ionicons name="cube-outline" size={22} color={COLORS.textSecondary} />
-                </View>
-
-                <View style={styles.itemDetails}>
-                    <Text style={styles.itemTitle} numberOfLines={2}>
-                        {item.product_name}
-                    </Text>
-                    <Text style={styles.itemSub}>
-                        SKU: {item.sku}  UPC: {item.upc}
-                    </Text>
-                    {item.reason_code && (
-                        <Text style={styles.reasonText}>Reason: {item.reason_code}</Text>
-                    )}
-                </View>
-
-                <View style={styles.metricsCol}>
-                    <View style={styles.metricPairRow}>
-                        <View style={styles.metricBox}>
-                            <Text style={styles.metricLabel}>Expected</Text>
-                            <Text style={styles.metricValExpected}>{item.expected_qty}</Text>
-                        </View>
-                        <View style={styles.metricDivider} />
-                        <View style={styles.metricBox}>
-                            <Text style={styles.metricLabel}>Scanned</Text>
-                            <Text style={[styles.metricValScanned, { color: badgeText }]}>
-                                {item.counted_qty}
-                            </Text>
-                        </View>
-                    </View>
-
-                    {item.counted_qty > 0 ? (
-                        <View
-                            style={[
-                                styles.diffPill,
-                                { backgroundColor: badgeBg, borderColor: badgeBorder },
-                            ]}
-                        >
-                            <Text style={[styles.diffPillText, { color: badgeText }]}>
-                                {isMatched
-                                    ? "Matched"
-                                    : item.variance > 0
-                                    ? `+${item.variance} over`
-                                    : `${item.variance} short`}
-                            </Text>
-                        </View>
-                    ) : (
-                        <View style={styles.uncountedPill}>
-                            <Text style={styles.uncountedPillText}>Not Counted</Text>
-                        </View>
-                    )}
-                </View>
-            </TouchableOpacity>
-        );
+    const handleEditItem = (item: CycleCountItemDetail) => {
+        setEditingItem(item);
+        setEditQty(item.counted_qty);
+        setEditReason(item.reason_code || "");
     };
 
     if (isLoading) {
@@ -321,7 +200,10 @@ export default function CycleCountDetail() {
                     headerCenter={<Text style={globalStyles.headerTitle}>Cycle Count</Text>}
                 />
                 <View style={globalStyles.centerElement}>
-                    <ErrorMessage message="Couldn't load this cycle count." onRetry={retryInitialLoad} />
+                    <ErrorMessage
+                        message={validCountId ? "Couldn't load this cycle count." : "Invalid cycle count ID."}
+                        onRetry={validCountId ? retryInitialLoad : undefined}
+                    />
                 </View>
             </TopSafeAreaView>
         );
@@ -474,7 +356,13 @@ export default function CycleCountDetail() {
                 <FlatList
                     data={filteredItems}
                     keyExtractor={(item) => item.count_item_id.toString()}
-                    renderItem={renderItem}
+                    renderItem={({ item }) => (
+                        <CycleCountItemCard
+                            item={item}
+                            canEdit={count.status === "IN PROGRESS" || count.status === "NOT STARTED"}
+                            onEdit={handleEditItem}
+                        />
+                    )}
                     contentContainerStyle={styles.listContent}
                     ListEmptyComponent={
                         <View style={styles.emptyItems}>
@@ -548,631 +436,11 @@ export default function CycleCountDetail() {
                 </View>
             </View>
 
-            <Modal
-                visible={!!editingItem}
-                animationType="fade"
-                transparent={true}
-                onRequestClose={() => setEditingItem(null)}
-            >
-                <View style={globalStyles.modalOverlay}>
-                    <View style={globalStyles.modalContentWrapper}>
-                        <View style={globalStyles.modalCardContainer}>
-                            <View style={globalStyles.modalHeader}>
-                                <View style={{ flex: 1, marginRight: SPACING.md }}>
-                                    <Text style={globalStyles.modalTitle} numberOfLines={2}>
-                                        {editingItem?.product_name}
-                                    </Text>
-                                    <Text style={globalStyles.modalSubtitle}>
-                                        Expected in Store: {editingItem?.expected_qty} units
-                                    </Text>
-                                </View>
-                                <TouchableOpacity onPress={() => setEditingItem(null)}>
-                                    <Ionicons name="close" size={24} color={COLORS.textSecondary} />
-                                </TouchableOpacity>
-                            </View>
+            <EditCountItemModal editingItem={editingItem} setEditingItem={setEditingItem} editQty={editQty} setEditQty={setEditQty} editReason={editReason} setEditReason={setEditReason} isActionLoading={isActionLoading} handleSaveItemQty={handleSaveItemQty} />
 
-                            <View style={styles.stepperContainer}>
-                                <TouchableOpacity
-                                    style={styles.stepperButton}
-                                    onPress={() => setEditQty((prev) => Math.max(0, prev - 1))}
-                                >
-                                    <Ionicons name="remove" size={24} color={COLORS.textPrimary} />
-                                </TouchableOpacity>
-                                <View style={styles.stepperValueBox}>
-                                    <Text style={styles.stepperValueText}>{editQty}</Text>
-                                </View>
-                                <TouchableOpacity
-                                    style={styles.stepperButton}
-                                    onPress={() => setEditQty((prev) => prev + 1)}
-                                >
-                                    <Ionicons name="add" size={24} color={COLORS.textPrimary} />
-                                </TouchableOpacity>
-                            </View>
+            <SubmitCycleCountModal submitModalVisible={submitModalVisible} setSubmitModalVisible={setSubmitModalVisible} submitNotes={submitNotes} setSubmitNotes={setSubmitNotes} isActionLoading={isActionLoading} handleSubmitForApproval={handleSubmitForApproval} />
 
-                            {editQty !== editingItem?.expected_qty && (
-                                <View style={styles.reasonInputContainer}>
-                                    <Text style={styles.reasonLabel}>Discrepancy Reason (Optional):</Text>
-                                    <TextInput
-                                        style={globalStyles.textInput}
-                                        placeholder="e.g. Damaged stock, Misplaced, Overstock"
-                                        placeholderTextColor={COLORS.placeholder}
-                                        value={editReason}
-                                        onChangeText={setEditReason}
-                                    />
-                                </View>
-                            )}
-
-                            <TouchableOpacity
-                                style={[
-                                    globalStyles.buttonPrimary,
-                                    styles.modalSaveButton,
-                                    isActionLoading && { opacity: 0.6 },
-                                ]}
-                                disabled={isActionLoading}
-                                onPress={handleSaveItemQty}
-                            >
-                                {isActionLoading ? (
-                                    <ActivityIndicator size="small" color={COLORS.surface} />
-                                ) : (
-                                    <Text style={globalStyles.buttonTextPrimary}>Save Count</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
-
-            <Modal
-                visible={submitModalVisible}
-                animationType="fade"
-                transparent={true}
-                onRequestClose={() => setSubmitModalVisible(false)}
-            >
-                <View style={globalStyles.modalOverlay}>
-                    <View style={globalStyles.modalContentWrapper}>
-                        <View style={globalStyles.modalCardContainer}>
-                            <View style={globalStyles.modalHeader}>
-                                <View>
-                                    <Text style={globalStyles.modalTitle}>Submit for Approval</Text>
-                                    <Text style={globalStyles.modalSubtitle}>
-                                        Send count to store manager for review
-                                    </Text>
-                                </View>
-                                <TouchableOpacity onPress={() => setSubmitModalVisible(false)}>
-                                    <Ionicons name="close" size={24} color={COLORS.textSecondary} />
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={styles.reasonInputContainer}>
-                                <Text style={styles.reasonLabel}>Notes for Manager (Optional):</Text>
-                                <TextInput
-                                    style={[globalStyles.textInput, { height: 80, textAlignVertical: "top" }]}
-                                    placeholder="e.g. All sections scanned, variance noted on cables"
-                                    placeholderTextColor={COLORS.placeholder}
-                                    multiline
-                                    value={submitNotes}
-                                    onChangeText={setSubmitNotes}
-                                />
-                            </View>
-
-                            <TouchableOpacity
-                                style={[
-                                    globalStyles.buttonPrimary,
-                                    styles.modalSaveButton,
-                                    isActionLoading && { opacity: 0.6 },
-                                ]}
-                                disabled={isActionLoading}
-                                onPress={handleSubmitForApproval}
-                            >
-                                {isActionLoading ? (
-                                    <ActivityIndicator size="small" color={COLORS.surface} />
-                                ) : (
-                                    <Text style={globalStyles.buttonTextPrimary}>Submit Count</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
-
-            <Modal
-                visible={reassignModalVisible}
-                animationType="fade"
-                transparent={true}
-                onRequestClose={() => setReassignModalVisible(false)}
-            >
-                <View style={globalStyles.modalOverlay}>
-                    <View style={[globalStyles.modalContentWrapper, { maxHeight: "80%" }]}>
-                        <View style={globalStyles.modalCardContainer}>
-                            <View style={globalStyles.modalHeader}>
-                                <View>
-                                    <Text style={globalStyles.modalTitle}>
-                                        {detail?.count.counted_by ? "Transfer Ownership" : "Assign Ownership"}
-                                    </Text>
-                                    <Text style={globalStyles.modalSubtitle}>
-                                        Assign this cycle count to a store employee
-                                    </Text>
-                                </View>
-                                <TouchableOpacity onPress={() => setReassignModalVisible(false)}>
-                                    <Ionicons name="close" size={24} color={COLORS.textSecondary} />
-                                </TouchableOpacity>
-                            </View>
-
-                            {isLoadingEmployees ? (
-                                <View style={{ paddingVertical: SPACING.xxlPlus, alignItems: "center" }}>
-                                    <ActivityIndicator size="small" color={COLORS.primary} />
-                                </View>
-                            ) : (
-                                <FlatList
-                                    style={{ maxHeight: 280, marginVertical: SPACING.smd }}
-                                    data={employees}
-                                    keyExtractor={(emp) => String(emp.employee_id)}
-                                    extraData={selectedEmployeeId}
-                                    renderItem={({ item: emp }) => {
-                                        const isSelected = selectedEmployeeId === emp.employee_id;
-                                        return (
-                                            <TouchableOpacity
-                                                style={[
-                                                    styles.empSelectItem,
-                                                    isSelected && styles.empSelectItemActive,
-                                                ]}
-                                                onPress={() => setSelectedEmployeeId(emp.employee_id)}
-                                            >
-                                                <Ionicons
-                                                    name={isSelected ? "radio-button-on" : "radio-button-off"}
-                                                    size={20}
-                                                    color={isSelected ? COLORS.primary : COLORS.textSecondary}
-                                                />
-                                                <View style={{ marginLeft: SPACING.md, flex: 1 }}>
-                                                    <Text
-                                                        style={[
-                                                            styles.empSelectName,
-                                                            isSelected && styles.empSelectNameActive,
-                                                        ]}
-                                                    >
-                                                        {emp.first_name} {emp.last_name}
-                                                    </Text>
-                                                    <Text style={styles.empSelectRole}>
-                                                        {emp.role} • {emp.email}
-                                                    </Text>
-                                                </View>
-                                            </TouchableOpacity>
-                                        );
-                                    }}
-                                />
-                            )}
-
-                            <TouchableOpacity
-                                style={[
-                                    globalStyles.buttonPrimary,
-                                    styles.modalSaveButton,
-                                    isTransferring && { opacity: 0.6 },
-                                ]}
-                                disabled={isTransferring}
-                                onPress={handleTransferOwnership}
-                            >
-                                {isTransferring ? (
-                                    <ActivityIndicator size="small" color={COLORS.surface} />
-                                ) : (
-                                    <Text style={globalStyles.buttonTextPrimary}>
-                                        {detail?.count.counted_by ? "Confirm Transfer" : "Confirm Assignment"}
-                                    </Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+            <AssignCycleCountModal reassignModalVisible={reassignModalVisible} setReassignModalVisible={setReassignModalVisible} hasOwner={!!detail?.count.counted_by} employees={employees} isLoadingEmployees={isLoadingEmployees} selectedEmployeeId={selectedEmployeeId} setSelectedEmployeeId={setSelectedEmployeeId} isTransferring={isTransferring} handleTransferOwnership={handleTransferOwnership} />
         </TopSafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.background,
-    },
-    summaryCard: {
-        backgroundColor: COLORS.surface,
-        margin: SPACING.lg,
-        marginBottom: SPACING.sm,
-        borderRadius: RADIUS.lg,
-        padding: SPACING.lg,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    summaryTopRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-    },
-    batchTitle: {
-        fontSize: FONT_SIZE.xl,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    totalBadge: {
-        borderWidth: 1.5,
-        borderColor: COLORS.warningBorder,
-        backgroundColor: COLORS.pendingBg,
-        borderRadius: RADIUS.md,
-        paddingVertical: SPACING.xs,
-        paddingHorizontal: SPACING.smd,
-    },
-    totalBadgeText: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "700",
-        color: COLORS.warning,
-    },
-    categorySub: {
-        fontSize: FONT_SIZE.md,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xsm,
-    },
-    assigneeRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: SPACING.sm,
-        paddingVertical: SPACING.xsm,
-        paddingHorizontal: SPACING.smd,
-        backgroundColor: COLORS.surfaceCool,
-        borderRadius: RADIUS.md,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    assigneeInfo: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.xsm,
-        flex: 1,
-    },
-    assigneeText: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-    },
-    reassignBtn: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.xs,
-        paddingVertical: SPACING.xs,
-        paddingHorizontal: SPACING.sm,
-        borderRadius: RADIUS.sm,
-        backgroundColor: COLORS.violetBg,
-    },
-    reassignBtnText: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "700",
-        color: COLORS.primary,
-    },
-    statusRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: SPACING.smd,
-    },
-    statusPill: {
-        paddingHorizontal: SPACING.smd,
-        paddingVertical: SPACING.micro,
-        borderRadius: RADIUS.lg,
-        borderWidth: 1,
-    },
-    statusPillText: {
-        fontSize: FONT_SIZE.xs,
-        fontWeight: "700",
-        textTransform: "uppercase",
-    },
-    dateCol: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    dateSub: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-    },
-    varianceRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: SPACING.smd,
-        paddingTop: SPACING.sm,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-    },
-    varianceLabel: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-    },
-    varianceAmount: {
-        fontSize: FONT_SIZE.md,
-        fontWeight: "700",
-    },
-    varNegative: {
-        color: COLORS.error,
-    },
-    varPositive: {
-        color: COLORS.success,
-    },
-    tabBar: {
-        flexDirection: "row",
-        backgroundColor: COLORS.surface,
-        paddingHorizontal: SPACING.md,
-        paddingVertical: SPACING.sm,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-        gap: SPACING.sm,
-    },
-    tabButton: {
-        flex: 1,
-        paddingVertical: SPACING.sm,
-        borderRadius: RADIUS.xxl,
-        backgroundColor: COLORS.neutralBg,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    tabButtonActive: {
-        backgroundColor: COLORS.neutralDark,
-    },
-    tabButtonText: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-    },
-    tabButtonTextActive: {
-        color: COLORS.surface,
-    },
-    listContent: {
-        paddingVertical: SPACING.sm,
-        paddingBottom: 90,
-    },
-    itemRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: COLORS.surface,
-        paddingVertical: SPACING.md,
-        paddingHorizontal: SPACING.lg,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    productIconWrapper: {
-        width: 38,
-        height: 38,
-        borderRadius: RADIUS.md,
-        backgroundColor: COLORS.background,
-        justifyContent: "center",
-        alignItems: "center",
-        marginRight: SPACING.smd,
-    },
-    itemDetails: {
-        flex: 1,
-        marginRight: SPACING.smd,
-    },
-    itemTitle: {
-        fontSize: FONT_SIZE.md,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-        marginBottom: SPACING.xxs,
-    },
-    itemSub: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-    },
-    reasonText: {
-        fontSize: FONT_SIZE.xs,
-        color: COLORS.error,
-        fontStyle: "italic",
-        marginTop: SPACING.xxs,
-    },
-    metricsCol: {
-        alignItems: "flex-end",
-    },
-    metricPairRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: COLORS.surfaceCool,
-        paddingVertical: SPACING.xs,
-        paddingHorizontal: SPACING.sm,
-        borderRadius: RADIUS.md,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        gap: SPACING.sm,
-    },
-    metricBox: {
-        alignItems: "center",
-    },
-    metricLabel: {
-        fontSize: FONT_SIZE.micro,
-        fontWeight: "600",
-        textTransform: "uppercase",
-        color: COLORS.textSecondary,
-    },
-    metricValExpected: {
-        fontSize: FONT_SIZE.md,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    metricValScanned: {
-        fontSize: FONT_SIZE.md,
-        fontWeight: "800",
-    },
-    metricDivider: {
-        width: 1,
-        height: 20,
-        backgroundColor: COLORS.border,
-    },
-    diffPill: {
-        marginTop: SPACING.xs,
-        paddingHorizontal: SPACING.xsm,
-        paddingVertical: SPACING.xxs,
-        borderRadius: RADIUS.sm,
-        borderWidth: 1,
-    },
-    diffPillText: {
-        fontSize: FONT_SIZE.xxs,
-        fontWeight: "700",
-    },
-    uncountedPill: {
-        marginTop: SPACING.xs,
-        paddingHorizontal: SPACING.xsm,
-        paddingVertical: SPACING.xxs,
-        borderRadius: RADIUS.sm,
-        backgroundColor: COLORS.background,
-        borderWidth: 1,
-        borderColor: COLORS.inputBorder,
-    },
-    uncountedPillText: {
-        fontSize: FONT_SIZE.xxs,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-    },
-    emptyItems: {
-        paddingVertical: SPACING.huge,
-        alignItems: "center",
-    },
-    emptyItemsText: {
-        color: COLORS.textSecondary,
-        fontSize: FONT_SIZE.md,
-    },
-    bottomBar: {
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: COLORS.surface,
-        paddingVertical: SPACING.md,
-        paddingHorizontal: SPACING.lg,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-    },
-    actionRow: {
-        flexDirection: "row",
-        gap: SPACING.smd,
-    },
-    countButton: {
-        flex: 1,
-        flexDirection: "row",
-        gap: SPACING.sm,
-        justifyContent: "center",
-    },
-    submitButton: {
-        flex: 1,
-        backgroundColor: COLORS.neutralDarkMuted,
-        borderRadius: RADIUS.md,
-        paddingVertical: SPACING.mdl,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    submitButtonText: {
-        color: COLORS.surface,
-        fontWeight: "700",
-        fontSize: FONT_SIZE.mdl,
-    },
-    approveButton: {
-        backgroundColor: COLORS.success,
-        borderRadius: RADIUS.md,
-        paddingVertical: SPACING.mdl,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: SPACING.sm,
-    },
-    approveButtonText: {
-        color: COLORS.surface,
-        fontWeight: "700",
-        fontSize: FONT_SIZE.mdl,
-    },
-    pendingInfoBanner: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: COLORS.pendingBg,
-        paddingVertical: SPACING.md,
-        borderRadius: RADIUS.md,
-        gap: SPACING.sm,
-    },
-    pendingInfoText: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        color: COLORS.pending,
-    },
-    approvedBanner: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: COLORS.activeBg,
-        paddingVertical: SPACING.md,
-        borderRadius: RADIUS.md,
-        gap: SPACING.sm,
-    },
-    approvedBannerText: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        color: COLORS.success,
-    },
-    stepperContainer: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-        marginVertical: SPACING.lgPlus,
-        gap: SPACING.xl,
-    },
-    stepperButton: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: COLORS.inputBorder,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    stepperValueBox: {
-        minWidth: 60,
-        alignItems: "center",
-    },
-    stepperValueText: {
-        fontSize: FONT_SIZE.display,
-        fontWeight: "800",
-        color: COLORS.textPrimary,
-    },
-    reasonInputContainer: {
-        marginTop: SPACING.smd,
-        marginBottom: SPACING.mdl,
-    },
-    reasonLabel: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-        marginBottom: SPACING.xsm,
-    },
-    modalSaveButton: {
-        marginTop: SPACING.sm,
-    },
-    empSelectItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: SPACING.smd,
-        paddingHorizontal: SPACING.md,
-        borderRadius: RADIUS.md,
-        marginBottom: SPACING.xsm,
-        backgroundColor: COLORS.surfaceCool,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    empSelectItemActive: {
-        backgroundColor: COLORS.violetBg,
-        borderColor: COLORS.primary,
-    },
-    empSelectName: {
-        fontSize: FONT_SIZE.md,
-        fontWeight: "600",
-        color: COLORS.textPrimary,
-    },
-    empSelectNameActive: {
-        color: COLORS.primary,
-        fontWeight: "700",
-    },
-    empSelectRole: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-});

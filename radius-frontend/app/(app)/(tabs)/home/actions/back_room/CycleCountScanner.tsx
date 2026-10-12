@@ -33,19 +33,23 @@ type ScannerTab = "SCANNER" | "LIST";
 export default function CycleCountScanner() {
     const { logout } = useAuth();
     const params = useLocalSearchParams();
-    const countId = Number(params.id);
+    const countId = typeof params.id === "string" ? Number(params.id) : NaN;
+    const validCountId = Number.isInteger(countId) && countId > 0;
 
     const scannerRef = useRef<BarcodeScannerRef>(null);
 
     const [detail, setDetail] = useState<CycleCountDetailResponse | null>(null);
     const [activeTab, setActiveTab] = useState<ScannerTab>("SCANNER");
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(validCountId);
     const [isSaving, setIsSaving] = useState(false);
     const [manualBarcode, setManualBarcode] = useState("");
     const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
     const fetchDetail = useCallback(async () => {
-        if (!countId) return;
+        if (!validCountId) {
+            setIsLoading(false);
+            return;
+        }
         const data = await callApi<CycleCountDetailResponse>(
             ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getDetail(countId),
             { method: "GET" },
@@ -55,7 +59,7 @@ export default function CycleCountScanner() {
             setDetail(data);
         }
         setIsLoading(false);
-    }, [countId, logout]);
+    }, [countId, validCountId, logout]);
 
     const retryInitialLoad = () => {
         setIsLoading(true);
@@ -247,7 +251,10 @@ export default function CycleCountScanner() {
                     {isLoading ? (
                         <LoadingSpinner />
                     ) : (
-                        <ErrorMessage message="Couldn't load this cycle count." onRetry={retryInitialLoad} />
+                        <ErrorMessage
+                            message={validCountId ? "Couldn't load this cycle count." : "Invalid cycle count ID."}
+                            onRetry={validCountId ? retryInitialLoad : undefined}
+                        />
                     )}
                 </View>
             </TopSafeAreaView>

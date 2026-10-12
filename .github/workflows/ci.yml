@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_DB: radius_ci
           POSTGRES_USER: radius_ci
@@ -94,8 +94,9 @@ jobs:
         working-directory: radius-backend
         run: |
           go run ./cmd/migrate
-          go run -tags 'postgres file' github.com/golang-migrate/migrate/v4/cmd/migrate -path migrations -database "$DATABASE_URL" down 1
-          go run -tags 'postgres file' github.com/golang-migrate/migrate/v4/cmd/migrate -path migrations -database "$DATABASE_URL" up 1
+          PGX_URL="pgx5://${DATABASE_URL#postgres://}"
+          go run -tags 'pgx5 file' github.com/golang-migrate/migrate/v4/cmd/migrate -path migrations -database "$PGX_URL" down 1
+          go run -tags 'pgx5 file' github.com/golang-migrate/migrate/v4/cmd/migrate -path migrations -database "$PGX_URL" up 1
 
       - name: Run Go Tests & Migration Validation
         working-directory: radius-backend

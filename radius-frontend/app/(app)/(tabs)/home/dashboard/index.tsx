@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
-    StyleSheet,
     View,
     Text,
     ScrollView,
@@ -17,24 +16,24 @@ import LogoutComponent from "@/components/common/Logout";
 import NotificationIconComponent from "@/components/common/NotificationIcon";
 import { ConnectionStatusBadge } from "@/components/common/ConnectionStatusBadge";
 import { OrderCard } from "@/components/orders/OrderCard";
-import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
+import { globalStyles } from "@/constants/styles";
+import { dashboardStyles as styles } from "@/components/dashboard/dashboardStyles";
+import { DashboardActivityCard, DashboardCycleCountCard } from "@/components/dashboard/DashboardFeedCards";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { callApi } from "@/utils/helpers";
-import { ENDPOINTS } from "@/constants/routes";
+import { getCancelledDashboardOrders, getDashboardCycleCounts, getDashboardOrders, getDashboardPurchaseOrders, getDashboardStoreOperations } from "@/api/dashboard.api";
+import { assignOnlineOrder } from "@/api/onlineOrders.api";
 import {
     OrderCreatedPayload,
     CycleCountUpdatedPayload,
     StoreActivityPayload,
 } from "@/types/websocket.types";
-import { GetAllOnlineOrdersResponse } from "@/types/order.types";
-import { CycleCountSummary } from "@/types/cyclecount.types";
-import { PurchaseOrderSummary } from "@/types/receiving.types";
 import { StoreOperationsCard } from "@/components/store/StoreOperationsCard";
 import { StoreOperationSummary } from "@/types/admin.types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { formatMoney } from "@/utils/money";
+import { filterDashboardActivities, filterDashboardCycleCounts, mergeDashboardActivities } from "@/utils/dashboardActivities";
 
 type TabView = "overview" | "orders" | "cycle_counts" | "activities";
 type ScopeView = "my_tasks" | "store_wide";
@@ -78,11 +77,7 @@ export default function RealTimeDashboard() {
     const loadStoreOperations = useCallback(async () => {
         if (!isAdmin) return;
         setLoadingStores(true);
-        const res = await callApi<StoreOperationSummary[]>(
-            ENDPOINTS.ADMIN.STORES.operations,
-            { method: "GET" },
-            logout
-        );
+        const res = await getDashboardStoreOperations(logout);
         if (res && Array.isArray(res)) {
             setStoreOperations(res);
         }
@@ -93,6 +88,7 @@ export default function RealTimeDashboard() {
     const [newOrderIds, setNewOrderIds] = useState<Set<number>>(new Set());
     const [liveCycleCounts, setLiveCycleCounts] = useState<CycleCountUpdatedPayload[]>([]);
     const [liveActivities, setLiveActivities] = useState<StoreActivityPayload[]>([]);
+    const websocketActivityIds = useRef(new Set<string>());
 
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -153,6 +149,7 @@ export default function RealTimeDashboard() {
                         assigned_to: payload.assigned_to,
                     },
                 };
+                websocketActivityIds.current.add(newAct.activity_id);
                 return [newAct, ...prev.filter((a) => a.activity_id !== newAct.activity_id)];
             });
         },
@@ -225,6 +222,7 @@ export default function RealTimeDashboard() {
                         assigned_to_name: payload.assigned_to_name,
                     },
                 };
+                websocketActivityIds.current.add(newAct.activity_id);
                 return [newAct, ...prev.filter((a) => a.activity_id !== newAct.activity_id)];
             });
         },
@@ -260,8 +258,9 @@ export default function RealTimeDashboard() {
                     title: `Cycle Count #${payload.count_id} - ${payload.category_name}`,
                     description: `Action: ${payload.action} | Progress: ${payload.counted_items}/${payload.total_items} items`,
                     timestamp: payload.updated_at || new Date().toISOString(),
-                    metadata: { count_id: payload.count_id },
+                    metadata: { count_id: payload.count_id, counted_by: payload.counted_by },
                 };
+                websocketActivityIds.current.add(newAct.activity_id);
                 return [newAct, ...prev.filter((a) => a.activity_id !== newAct.activity_id)];
             });
         },
@@ -278,10 +277,8 @@ export default function RealTimeDashboard() {
             ) {
                 return;
             }
-            setLiveActivities((prev) => [
-                payload,
-                ...prev.filter((a) => a.activity_id !== payload.activity_id),
-            ]);
+            websocketActivityIds.current.add(payload.activity_id);
+            setLiveActivities((prev) => [payload, ...prev.filter((a) => a.activity_id !== payload.activity_id)]);
             showToast(`🔔 Store Activity: ${payload.title}`);
         },
     });
@@ -291,14 +288,7 @@ export default function RealTimeDashboard() {
         const effectiveStoreId = storeIdOverride !== undefined
             ? storeIdOverride
             : (isAdmin && selectedStore ? selectedStore.store_id : user?.store_id);
-        const storeParam = effectiveStoreId ? `&store_id=${effectiveStoreId}` : "";
-        const storeQueryOnly = effectiveStoreId ? `?store_id=${effectiveStoreId}` : "";
-
-        const ordersRes = await callApi<GetAllOnlineOrdersResponse>(
-            `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=40&dashboard_only=true${storeParam}`,
-            { method: "GET" },
-            logout
-        );
+        const ordersRes = await getDashboardOrders(effectiveStoreId, logout);
         if (ordersRes && ordersRes.online_orders && Array.isArray(ordersRes.online_orders)) {
             const eligible = ordersRes.online_orders.filter(isDashboardEligibleOrder);
             const mapped: OrderCreatedPayload[] = eligible.map((o) => ({
@@ -349,11 +339,7 @@ export default function RealTimeDashboard() {
             }
         }
 
-        const cancelRes = await callApi<GetAllOnlineOrdersResponse>(
-            `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=10&status=CANCELLED${storeParam}`,
-            { method: "GET" },
-            logout
-        );
+        const cancelRes = await getCancelledDashboardOrders(effectiveStoreId, logout);
         if (cancelRes && cancelRes.online_orders && Array.isArray(cancelRes.online_orders)) {
             for (const o of cancelRes.online_orders) {
                 activities.push({
@@ -371,11 +357,7 @@ export default function RealTimeDashboard() {
             }
         }
 
-        const countsRes = await callApi<CycleCountSummary[]>(
-            `${ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly}${storeQueryOnly}`,
-            { method: "GET" },
-            logout
-        );
+        const countsRes = await getDashboardCycleCounts(effectiveStoreId, logout);
         if (countsRes && Array.isArray(countsRes)) {
             const inProgressCounts = countsRes.filter((c) => {
                 const s = (c.status || "").toUpperCase();
@@ -408,16 +390,12 @@ export default function RealTimeDashboard() {
                     title: `Cycle Count #${c.count_id} - ${c.category_name}`,
                     description: `Progress: ${c.counted_items}/${c.total_items} items counted${c.counted_by_name ? ` by ${c.counted_by_name}` : ""}`,
                     timestamp: c.count_date || new Date().toISOString(),
-                    metadata: { count_id: c.count_id },
+                    metadata: { count_id: c.count_id, counted_by: c.counted_by },
                 });
             }
         }
 
-        const posRes = await callApi<PurchaseOrderSummary[]>(
-            `${ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrders}${storeQueryOnly}`,
-            { method: "GET" },
-            logout
-        );
+        const posRes = await getDashboardPurchaseOrders(effectiveStoreId, logout);
         if (posRes && Array.isArray(posRes)) {
             const pendingPOs = posRes.filter(
                 (po) => po.status !== "RECEIVED" && po.status !== "CANCELLED"
@@ -442,7 +420,7 @@ export default function RealTimeDashboard() {
             seen.add(a.activity_id);
             return true;
         });
-        setLiveActivities(uniqueActivities);
+        setLiveActivities((previous) => mergeDashboardActivities(uniqueActivities, previous, websocketActivityIds.current, effectiveStoreId));
 
         setInitialLoading(false);
     }, [isAdmin, selectedStore, user?.store_id, logout]);
@@ -501,7 +479,7 @@ export default function RealTimeDashboard() {
             }
         }
 
-        if (!order.assigned_to) {
+        if (!order.assigned_to && currentEmpId) {
             const empName = user?.last_name ? `Associate ${user.last_name}` : "You";
             showToast(`⚡ Claiming Order #${order.order_id} for you...`);
 
@@ -513,16 +491,7 @@ export default function RealTimeDashboard() {
                 )
             );
 
-            const claimed = await callApi(
-                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign(order.order_id),
-                {
-                    method: "PUT",
-                    body: JSON.stringify({
-                        employee_id: currentEmpId,
-                    }),
-                },
-                logout
-            );
+            const claimed = await assignOnlineOrder(order.order_id, currentEmpId, logout);
             if (claimed === null) {
                 setLiveOrders((prev) =>
                     prev.map((o) =>
@@ -611,45 +580,15 @@ export default function RealTimeDashboard() {
         [viewScope, myOrders, liveOrders]
     );
 
-    const displayedCycleCounts = useMemo(() => {
-        const inProgress = liveCycleCounts.filter((c) => {
-            const s = (c.status || "").toUpperCase();
-            return s === "IN PROGRESS" || s === "IN_PROGRESS";
-        });
-        return viewScope === "my_tasks"
-            ? inProgress.filter(
-                (c) =>
-                    (c.counted_by && c.counted_by === currentEmpId) ||
-                    !c.counted_by_name
-            )
-            : inProgress;
-    }, [viewScope, liveCycleCounts, currentEmpId]);
+    const displayedCycleCounts = useMemo(
+        () => filterDashboardCycleCounts(liveCycleCounts, viewScope === "my_tasks", currentEmpId),
+        [viewScope, liveCycleCounts, currentEmpId]
+    );
 
-    const displayedActivities = useMemo(() => {
-        const filtered = liveActivities.filter(
-            (a) =>
-                !a.activity_type.includes("POS") &&
-                !a.activity_type.includes("TRANSACTION") &&
-                !a.activity_type.includes("CHECKOUT") &&
-                !a.activity_type.includes("FILL") &&
-                !a.activity_type.includes("STOCK")
-        );
-        const scoped = viewScope === "my_tasks"
-            ? filtered.filter(
-                (a) =>
-                    a.metadata?.employee_id === currentEmpId ||
-                    a.metadata?.assigned_to === currentEmpId ||
-                    !a.metadata?.assigned_to
-            )
-            : filtered;
-
-        const seen = new Set<string>();
-        return scoped.filter((a) => {
-            if (seen.has(a.activity_id)) return false;
-            seen.add(a.activity_id);
-            return true;
-        });
-    }, [viewScope, liveActivities, currentEmpId]);
+    const displayedActivities = useMemo(
+        () => filterDashboardActivities(liveActivities, viewScope === "my_tasks", currentEmpId),
+        [viewScope, liveActivities, currentEmpId]
+    );
 
     return (
         <TopSafeAreaView>
@@ -1088,61 +1027,9 @@ export default function RealTimeDashboard() {
                                             <Text style={styles.emptyCardText}>No cycle counts in progress</Text>
                                         </View>
                                     ) : (
-                                        displayedCycleCounts.slice(0, activeTab === "overview" ? 3 : 20).map((count) => {
-                                            const progress = count.total_items > 0 ? count.counted_items / count.total_items : 0;
-                                            return (
-                                                <TouchableOpacity
-                                                    key={`cycle-${count.count_id}`}
-                                                    activeOpacity={0.7}
-                                                    onPress={() => handleCycleCountPress(count)}
-                                                    style={[globalStyles.card, styles.cycleCountCard]}
-                                                >
-                                                    <View style={styles.cycleCardHeader}>
-                                                        <View style={styles.cycleInfoColumn}>
-                                                            <Text style={styles.cycleCategory}>{count.category_name}</Text>
-                                                            <Text style={styles.cycleSubtext}>
-                                                                Count #{count.count_id} • Action: {count.action}
-                                                            </Text>
-                                                        </View>
-                                                        <View style={styles.cycleBadgeRow}>
-                                                            <View style={styles.cycleBadge}>
-                                                                <Text style={styles.cycleBadgeText}>{count.status}</Text>
-                                                            </View>
-                                                            <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
-                                                        </View>
-                                                    </View>
-
-                                                    <View style={styles.progressBarBackground}>
-                                                        <View
-                                                            style={[
-                                                                styles.progressBarFill,
-                                                                { width: `${Math.min(100, Math.round(progress * 100))}%` },
-                                                            ]}
-                                                        />
-                                                    </View>
-
-                                                    <View style={styles.cycleStatsRow}>
-                                                        <Text style={styles.cycleStatLabel}>
-                                                            Counted:{" "}
-                                                            <Text style={styles.cycleStatBold}>
-                                                                {count.counted_items} / {count.total_items}
-                                                            </Text>{" "}
-                                                            ({Math.round(progress * 100)}%)
-                                                        </Text>
-                                                        <Text
-                                                            style={[
-                                                                styles.cycleStatLabel,
-                                                                count.total_variance_cost < 0
-                                                                    ? styles.varianceNeg
-                                                                    : styles.variancePos,
-                                                            ]}
-                                                        >
-                                                            Variance: {formatMoney(count.total_variance_cost)}
-                                                        </Text>
-                                                    </View>
-                                                </TouchableOpacity>
-                                            );
-                                        })
+                                        displayedCycleCounts.slice(0, activeTab === "overview" ? 3 : 20).map((count) => (
+                                            <DashboardCycleCountCard key={`cycle-${count.count_id}`} count={count} onPress={() => handleCycleCountPress(count)} />
+                                        ))
                                     )}
                                 </View>
                             )}
@@ -1170,46 +1057,8 @@ export default function RealTimeDashboard() {
                                             <Text style={styles.emptyCardText}>No activity recorded yet</Text>
                                         </View>
                                     ) : (
-                                        displayedActivities.slice(0, activeTab === "overview" ? 4 : 30).map((act, index) => (
-                                            <TouchableOpacity
-                                                key={`${act.activity_id}-${index}`}
-                                                activeOpacity={0.7}
-                                                onPress={() => handleActivityPress(act)}
-                                                style={[globalStyles.card, styles.activityCard]}
-                                            >
-                                                <View style={styles.activityIconCircle}>
-                                                    <Ionicons
-                                                        name={
-                                                            act.activity_type.includes("TIMEOUT") || act.activity_type.includes("CANCEL")
-                                                                ? "time-outline"
-                                                                : act.activity_type.includes("ORDER")
-                                                                    ? "cart"
-                                                                    : act.activity_type.includes("CYCLE")
-                                                                        ? "barcode"
-                                                                        : act.activity_type.includes("RECEIVING") || act.activity_type.includes("PO")
-                                                                            ? "cube"
-                                                                            : "notifications-outline"
-                                                        }
-                                                        size={16}
-                                                        color={COLORS.primary}
-                                                    />
-                                                </View>
-                                                <View style={styles.activityContent}>
-                                                    <View style={styles.activityHeaderRow}>
-                                                        <Text style={styles.activityTitle}>{act.title}</Text>
-                                                        <View style={styles.activityTimeGroup}>
-                                                            <Text style={styles.activityTime}>
-                                                                {new Date(act.timestamp).toLocaleTimeString([], {
-                                                                    hour: "2-digit",
-                                                                    minute: "2-digit",
-                                                                })}
-                                                            </Text>
-                                                            <Ionicons name="chevron-forward" size={14} color={COLORS.textSecondary} />
-                                                        </View>
-                                                    </View>
-                                                    <Text style={styles.activityDescription}>{act.description}</Text>
-                                                </View>
-                                            </TouchableOpacity>
+                                        displayedActivities.slice(0, activeTab === "overview" ? 4 : 30).map((act) => (
+                                            <DashboardActivityCard key={act.activity_id} activity={act} onPress={() => handleActivityPress(act)} />
                                         ))
                                     )}
                                 </View>
@@ -1221,491 +1070,3 @@ export default function RealTimeDashboard() {
         </TopSafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    scrollContent: {
-        paddingBottom: SPACING.huge,
-    },
-    toastBanner: {
-        position: "absolute",
-        top: 60,
-        left: 16,
-        right: 16,
-        zIndex: 999,
-        backgroundColor: COLORS.successDark,
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: SPACING.smd,
-        paddingHorizontal: SPACING.mdl,
-        borderRadius: RADIUS.md,
-        gap: SPACING.sm,
-        shadowColor: COLORS.black,
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 5,
-        elevation: 6,
-    },
-    toastText: {
-        color: COLORS.surface,
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "600",
-        flex: 1,
-    },
-    dashboardHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: SPACING.lg,
-        paddingTop: SPACING.lg,
-        paddingBottom: SPACING.smd,
-    },
-    titleColumn: {
-        flex: 1,
-    },
-    statusColumn: {
-        marginLeft: SPACING.smd,
-    },
-    welcomeText: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-        fontWeight: "500",
-        textTransform: "uppercase",
-        letterSpacing: 0.5,
-    },
-    headerTitle: {
-        fontSize: FONT_SIZE.xxxl,
-        fontWeight: "800",
-        color: COLORS.textPrimary,
-        marginTop: SPACING.xxs,
-    },
-    scopeSwitcherContainer: {
-        flexDirection: "row",
-        paddingHorizontal: SPACING.lg,
-        gap: SPACING.smd,
-        marginBottom: SPACING.md,
-    },
-    scopeButton: {
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.mdl,
-        paddingVertical: 9,
-        paddingHorizontal: SPACING.md,
-        borderWidth: 1.5,
-        borderColor: COLORS.border,
-        gap: SPACING.xsm,
-    },
-    scopeButtonActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    scopeText: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "700",
-        color: COLORS.textSecondary,
-    },
-    scopeTextActive: {
-        color: COLORS.primaryText,
-    },
-    scopeCountBadge: {
-        backgroundColor: COLORS.surface,
-        paddingHorizontal: SPACING.xsm,
-        paddingVertical: SPACING.hairline,
-        borderRadius: RADIUS.mdl,
-    },
-    scopeCountText: {
-        fontSize: FONT_SIZE.xs,
-        fontWeight: "800",
-        color: COLORS.primary,
-    },
-    metricsRow: {
-        flexDirection: "row",
-        paddingHorizontal: SPACING.lg,
-        gap: SPACING.smd,
-        marginBottom: SPACING.mdl,
-    },
-    metricCard: {
-        flex: 1,
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.lg,
-        padding: SPACING.md,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        shadowColor: COLORS.black,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 1,
-    },
-    metricCardActive: {
-        borderColor: COLORS.primary,
-        backgroundColor: COLORS.primarySurfaceTint,
-    },
-    metricIconRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: SPACING.xs,
-    },
-    metricValue: {
-        fontSize: FONT_SIZE.xxl,
-        fontWeight: "800",
-        color: COLORS.textPrimary,
-    },
-    metricLabelRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-    },
-    metricLabel: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-    },
-    tabsContainer: {
-        flexDirection: "row",
-        paddingHorizontal: SPACING.lg,
-        gap: SPACING.sm,
-        marginBottom: SPACING.lg,
-    },
-    tabButton: {
-        paddingVertical: 7,
-        paddingHorizontal: SPACING.md,
-        borderRadius: RADIUS.xxl,
-        backgroundColor: COLORS.surface,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    tabButtonActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    tabText: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-    },
-    tabTextActive: {
-        color: COLORS.primaryText,
-    },
-    loadingContainer: {
-        paddingVertical: SPACING.huge,
-        alignItems: "center",
-        gap: SPACING.md,
-    },
-    loadingText: {
-        fontSize: FONT_SIZE.md,
-        color: COLORS.textSecondary,
-    },
-    sectionContainer: {
-        paddingHorizontal: SPACING.lg,
-        marginBottom: SPACING.xl,
-    },
-    sectionHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: SPACING.smd,
-    },
-    sectionTitleRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.xsm,
-    },
-    sectionHeading: {
-        fontSize: FONT_SIZE.lg,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    headerActionBtn: {
-        paddingVertical: SPACING.xs,
-        paddingHorizontal: SPACING.sm,
-    },
-    headerActionText: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "700",
-        color: COLORS.primary,
-    },
-    cardSpacing: {
-        marginBottom: SPACING.smd,
-    },
-    emptyCard: {
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.lg,
-        padding: SPACING.xxl,
-        alignItems: "center",
-        justifyContent: "center",
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        gap: SPACING.sm,
-    },
-    emptyCardText: {
-        fontSize: FONT_SIZE.smd,
-        color: COLORS.textSecondary,
-        fontWeight: "500",
-        textAlign: "center",
-    },
-    emptyCardAction: {
-        marginTop: SPACING.xsm,
-        paddingVertical: SPACING.xsm,
-        paddingHorizontal: SPACING.md,
-        backgroundColor: COLORS.primarySurfaceTint,
-        borderRadius: RADIUS.md,
-        borderWidth: 1,
-        borderColor: COLORS.primary,
-    },
-    emptyCardActionText: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "700",
-        color: COLORS.primary,
-    },
-    cycleCountCard: {
-        marginBottom: SPACING.smd,
-        borderLeftWidth: 4,
-        borderLeftColor: COLORS.accent,
-    },
-    cycleCardHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: SPACING.smd,
-    },
-    cycleInfoColumn: {
-        flex: 1,
-    },
-    cycleCategory: {
-        fontSize: FONT_SIZE.mdl,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    cycleSubtext: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-    cycleBadgeRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.xsm,
-    },
-    cycleBadge: {
-        backgroundColor: COLORS.infoBg,
-        paddingHorizontal: SPACING.sm,
-        paddingVertical: SPACING.micro,
-        borderRadius: RADIUS.sm,
-    },
-    cycleBadgeText: {
-        fontSize: FONT_SIZE.xs,
-        fontWeight: "700",
-        color: COLORS.info,
-    },
-    progressBarBackground: {
-        height: 6,
-        backgroundColor: COLORS.inputBorder,
-        borderRadius: 3,
-        overflow: "hidden",
-        marginBottom: SPACING.sm,
-    },
-    progressBarFill: {
-        height: "100%",
-        backgroundColor: COLORS.accent,
-        borderRadius: 3,
-    },
-    cycleStatsRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-    },
-    cycleStatLabel: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-    },
-    cycleStatBold: {
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    varianceNeg: {
-        color: COLORS.danger,
-        fontWeight: "600",
-    },
-    variancePos: {
-        color: COLORS.success,
-        fontWeight: "600",
-    },
-    activityCard: {
-        flexDirection: "row",
-        alignItems: "center",
-        padding: SPACING.md,
-        marginBottom: SPACING.sm,
-        borderLeftWidth: 3,
-        borderLeftColor: COLORS.success,
-        gap: SPACING.md,
-    },
-    activityIconCircle: {
-        width: 32,
-        height: 32,
-        borderRadius: RADIUS.xl,
-        backgroundColor: COLORS.activeBg,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    activityContent: {
-        flex: 1,
-    },
-    activityHeaderRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: SPACING.xxs,
-    },
-    activityTitle: {
-        fontSize: FONT_SIZE.smd,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    activityTimeGroup: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.xs,
-    },
-    activityTime: {
-        fontSize: FONT_SIZE.xs,
-        color: COLORS.textSecondary,
-    },
-    activityDescription: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-    },
-    networkStatsRow: {
-        flexDirection: "row",
-        gap: SPACING.sm,
-        marginHorizontal: SPACING.lg,
-        marginTop: SPACING.smd,
-        marginBottom: SPACING.mdl,
-    },
-    networkStatCard: {
-        flex: 1,
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.mdl,
-        padding: SPACING.smd,
-        alignItems: "center",
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        shadowColor: COLORS.black,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04,
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    networkStatIconCircle: {
-        width: 28,
-        height: 28,
-        borderRadius: RADIUS.lgPlus,
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: SPACING.xsm,
-    },
-    networkStatValue: {
-        fontSize: FONT_SIZE.lg,
-        fontWeight: "800",
-        color: COLORS.textPrimary,
-        marginBottom: SPACING.xxs,
-    },
-    networkStatLabel: {
-        fontSize: FONT_SIZE.xxs,
-        fontWeight: "600",
-        color: COLORS.textSecondary,
-        textAlign: "center",
-    },
-    hubInstructionBanner: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: COLORS.indigoBg,
-        borderRadius: RADIUS.md,
-        padding: SPACING.smd,
-        marginHorizontal: SPACING.lg,
-        marginBottom: SPACING.lg,
-        gap: SPACING.sm,
-    },
-    hubInstructionText: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.indigo,
-        flex: 1,
-        lineHeight: 16,
-    },
-    storeListContainer: {
-        paddingHorizontal: SPACING.lg,
-    },
-    sectionHeaderRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: SPACING.lg,
-        marginBottom: SPACING.md,
-    },
-    sectionSubtext: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-    },
-    storeSelectedBanner: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        backgroundColor: COLORS.primarySurface,
-        borderWidth: 1,
-        borderColor: COLORS.dangerBorderLight,
-        borderRadius: RADIUS.mdl,
-        padding: SPACING.md,
-        marginHorizontal: SPACING.lg,
-        marginTop: SPACING.smd,
-        marginBottom: SPACING.mdl,
-    },
-    storeSelectedInfo: {
-        flex: 1,
-        marginRight: SPACING.sm,
-    },
-    storeSelectedTitleRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: SPACING.xsm,
-    },
-    storeSelectedName: {
-        fontSize: FONT_SIZE.mdl,
-        fontWeight: "700",
-        color: COLORS.textPrimary,
-    },
-    storeSelectedSub: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.textSecondary,
-        marginTop: SPACING.xxs,
-    },
-    hqBadge: {
-        backgroundColor: COLORS.violetBg,
-        paddingHorizontal: SPACING.xsm,
-        paddingVertical: SPACING.hairline,
-        borderRadius: RADIUS.xs,
-    },
-    hqText: {
-        fontSize: FONT_SIZE.xxs,
-        fontWeight: "700",
-        color: COLORS.violet,
-    },
-    allStoresButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: COLORS.surface,
-        borderWidth: 1,
-        borderColor: COLORS.primary,
-        paddingHorizontal: SPACING.smd,
-        paddingVertical: SPACING.xsm,
-        borderRadius: RADIUS.md,
-        gap: SPACING.xs,
-    },
-    allStoresButtonText: {
-        fontSize: FONT_SIZE.sm,
-        fontWeight: "700",
-        color: COLORS.primary,
-    },
-});

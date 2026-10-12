@@ -17,7 +17,7 @@ export interface Transaction {
     total_amount: Money;
     payment_method: TransactionPaymentMethod | null;
     card_type?: string;
-    card_number?: string;
+    card_last4?: string;
     status: TransactionStatus;
     preferred_member_id: number | null;
     payment_reference: string | null;

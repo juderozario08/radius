@@ -103,8 +103,8 @@ export default function TransactionDetail() {
                             {transaction.payment_method === 'CARD' && transaction.card_type && (
                                 <DetailRow label="Card Type:" value={transaction.card_type} />
                             )}
-                            {transaction.payment_method === 'CARD' && transaction.card_number && (
-                                <DetailRow label="Card Number:" value={`**** **** **** ${transaction.card_number}`} />
+                            {transaction.payment_method === 'CARD' && transaction.card_last4 && (
+                                <DetailRow label="Card Number:" value={`**** **** **** ${transaction.card_last4}`} />
                             )}
                             {transaction.payment_reference && (
                                 <DetailRow label="Payment Ref:" value={transaction.payment_reference} />

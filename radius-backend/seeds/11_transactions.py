@@ -65,7 +65,7 @@ def generate_sql(num_transactions: int = NUM_TRANSACTIONS) -> str:
             f"'COMPLETED', {escape_sql(card_type)}, {escape_sql(card_last4)})"
         )
 
-    tx_columns = "store_id, register_id, employee_id, subtotal, tax_amount, total_amount, transaction_type, payment_method, status, card_type, card_number"
+    tx_columns = "store_id, register_id, employee_id, subtotal, tax_amount, total_amount, transaction_type, payment_method, status, card_type, payment_card_last4"
     tx_inserts = build_batched_inserts("transactions", tx_columns, tx_rows)
 
     item_columns = "transaction_id, product_id, quantity, unit_price, unit_cost"

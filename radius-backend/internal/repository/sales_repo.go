@@ -84,7 +84,7 @@ func (r *SalesRepo) CreateTransaction(ctx context.Context, storeID int, employee
 	createdTx.TotalAmount = req.TotalAmount
 	createdTx.PaymentMethod = req.PaymentMethod
 	createdTx.CardType = req.CardType
-	createdTx.CardNumber = req.CardNumber
+	createdTx.CardLast4 = req.CardLast4
 	createdTx.Status = status
 	createdTx.PreferredMemberId = req.PreferredMemberId
 	createdTx.PaymentReference = req.PaymentReference
@@ -92,7 +92,7 @@ func (r *SalesRepo) CreateTransaction(ctx context.Context, storeID int, employee
 	insertTxQuery := `
 		INSERT INTO transactions (
 			store_id, register_id, employee_id, transaction_type, subtotal, tax_amount,
-			discount_total, cost_total, total_amount, payment_method, card_type, card_number,
+			discount_total, cost_total, total_amount, payment_method, card_type, payment_card_last4,
 			status, preferred_member_id, payment_reference, created_at
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
@@ -113,7 +113,7 @@ func (r *SalesRepo) CreateTransaction(ctx context.Context, storeID int, employee
 		req.TotalAmount,
 		req.PaymentMethod,
 		req.CardType,
-		req.CardNumber,
+		req.CardLast4,
 		status,
 		req.PreferredMemberId,
 		req.PaymentReference,
@@ -226,7 +226,7 @@ func (r *SalesRepo) GetAllTransactions(ctx context.Context, limit, offset int, s
 			WHERE store_id = $1
 		`
 		query = `
-			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, status, preferred_member_id, payment_reference, created_at
+			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, card_type, payment_card_last4, status, preferred_member_id, payment_reference, created_at
 			FROM transactions
 			WHERE store_id = $1
 			ORDER BY transaction_id ASC
@@ -240,7 +240,7 @@ func (r *SalesRepo) GetAllTransactions(ctx context.Context, limit, offset int, s
 			FROM transactions
 		`
 		query = `
-			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at
+			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, card_type, payment_card_last4, status, preferred_member_id, payment_reference, created_at
 			FROM transactions
 			ORDER BY transaction_id ASC
 			LIMIT $1 OFFSET $2
@@ -265,7 +265,7 @@ func (r *SalesRepo) GetAllTransactions(ctx context.Context, limit, offset int, s
 		var t models.Transaction
 		if err := rows.Scan(
 			&t.TransactionId, &t.StoreId, &t.RegisterId, &t.EmployeeId, &t.TransactionType,
-			&t.Subtotal, &t.TaxAmount, &t.DiscountTotal, &t.CostTotal, &t.TotalAmount, &t.PaymentMethod, &t.CardType, &t.CardNumber, &t.Status, &t.PreferredMemberId, &t.PaymentReference, &t.CreatedAt,
+			&t.Subtotal, &t.TaxAmount, &t.DiscountTotal, &t.CostTotal, &t.TotalAmount, &t.PaymentMethod, &t.CardType, &t.CardLast4, &t.Status, &t.PreferredMemberId, &t.PaymentReference, &t.CreatedAt,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -289,13 +289,13 @@ func (r *SalesRepo) GetTransactionByID(ctx context.Context, id int, storeID *int
 
 	if storeID != nil {
 		query = `
-			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at
+			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, card_type, payment_card_last4, status, preferred_member_id, payment_reference, created_at
 			FROM transactions WHERE transaction_id = $1 AND store_id = $2
 		`
 		args = []any{id, *storeID}
 	} else {
 		query = `
-			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, card_type, card_number, status, preferred_member_id, payment_reference, created_at FROM transactions WHERE transaction_id = $1
+			SELECT transaction_id, store_id, register_id, employee_id, transaction_type, subtotal, tax_amount, COALESCE(discount_total, 0) as discount_total, COALESCE(cost_total, 0) as cost_total, total_amount, payment_method, card_type, payment_card_last4, status, preferred_member_id, payment_reference, created_at FROM transactions WHERE transaction_id = $1
 		`
 		args = []any{id}
 	}
@@ -303,7 +303,7 @@ func (r *SalesRepo) GetTransactionByID(ctx context.Context, id int, storeID *int
 	var t models.Transaction
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(
 		&t.TransactionId, &t.StoreId, &t.RegisterId, &t.EmployeeId, &t.TransactionType,
-		&t.Subtotal, &t.TaxAmount, &t.DiscountTotal, &t.CostTotal, &t.TotalAmount, &t.PaymentMethod, &t.CardType, &t.CardNumber, &t.Status, &t.PreferredMemberId, &t.PaymentReference, &t.CreatedAt,
+		&t.Subtotal, &t.TaxAmount, &t.DiscountTotal, &t.CostTotal, &t.TotalAmount, &t.PaymentMethod, &t.CardType, &t.CardLast4, &t.Status, &t.PreferredMemberId, &t.PaymentReference, &t.CreatedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {

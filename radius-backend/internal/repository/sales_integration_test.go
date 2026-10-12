@@ -102,3 +102,65 @@ func TestSalesRepositoryCreateTransactionRejectsZeroTotalIntegration(t *testing.
 		})
 	}
 }
+
+func TestSalesRepositoryCreateTransactionCardLast4Integration(t *testing.T) {
+	db := integrationDB(t)
+	f := newInventoryFixture(t, db)
+	ctx := context.Background()
+	store := newTaxedStore(t, db, "Ontario")
+	if _, err := db.ExecContext(ctx, `UPDATE products SET retail_price=25.00 WHERE product_id=$1`, f.product); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, `INSERT INTO inventory (store_id,product_id,new_qty) VALUES ($1,$2,10)`, store, f.product); err != nil {
+		t.Fatal(err)
+	}
+
+	cardType := "VISA"
+	last4 := "4321"
+	payMethod := models.TransactionPaymentMethodCard
+	created, _, err := NewSalesRepo(db).CreateTransaction(ctx, store, &f.employee, models.CreateTransactionRequest{
+		RegisterId:    "REG-CARD",
+		PaymentMethod: &payMethod,
+		CardType:      &cardType,
+		CardLast4:     &last4,
+		Items:         []models.CreateTransactionItemRequest{{ProductId: f.product, Quantity: 1}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.CardLast4 == nil || *created.CardLast4 != "4321" {
+		t.Fatalf("expected created CardLast4 '4321', got %v", created.CardLast4)
+	}
+
+	var storedLast4 *string
+	if err := db.QueryRowContext(ctx, `SELECT payment_card_last4 FROM transactions WHERE transaction_id=$1`, created.TransactionId).Scan(&storedLast4); err != nil {
+		t.Fatal(err)
+	}
+	if storedLast4 == nil || *storedLast4 != "4321" {
+		t.Fatalf("expected DB payment_card_last4 '4321', got %v", storedLast4)
+	}
+
+	fetched, _, err := NewSalesRepo(db).GetTransactionByID(ctx, created.TransactionId, &store)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fetched == nil || fetched.CardLast4 == nil || *fetched.CardLast4 != "4321" {
+		t.Fatalf("expected GetTransactionByID CardLast4 '4321', got %+v", fetched)
+	}
+
+	list, _, err := NewSalesRepo(db).GetAllTransactions(ctx, 10, 0, &store)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 1 || list[0].CardLast4 == nil || *list[0].CardLast4 != "4321" {
+		t.Fatalf("expected GetAllTransactions with store CardLast4 '4321', got %+v", list)
+	}
+
+	listAll, _, err := NewSalesRepo(db).GetAllTransactions(ctx, 10, 0, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listAll) == 0 {
+		t.Fatalf("expected GetAllTransactions without store to return transactions")
+	}
+}

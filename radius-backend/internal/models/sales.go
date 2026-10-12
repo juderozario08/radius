@@ -48,7 +48,7 @@ type Transaction struct {
 	TotalAmount       Money                     `json:"total_amount"`
 	PaymentMethod     *TransactionPaymentMethod `json:"payment_method"`
 	CardType          *string                   `json:"card_type"`
-	CardNumber        *string                   `json:"card_number"`
+	CardLast4         *string                   `json:"card_last4"`
 	Status            TransactionStatus         `json:"status"`
 	PreferredMemberId *int                      `json:"preferred_member_id"`
 	PaymentReference  *string                   `json:"payment_reference"`
@@ -99,7 +99,7 @@ type CreateTransactionRequest struct {
 	TotalAmount       Money                          `json:"-"`
 	PaymentMethod     *TransactionPaymentMethod      `json:"payment_method"`
 	CardType          *string                        `json:"card_type"`
-	CardNumber        *string                        `json:"card_number"`
+	CardLast4         *string                        `json:"card_last4"`
 	PreferredMemberId *int                           `json:"preferred_member_id"`
 	PaymentReference  *string                        `json:"payment_reference"`
 	Items             []CreateTransactionItemRequest `json:"items" binding:"required,min=1"`

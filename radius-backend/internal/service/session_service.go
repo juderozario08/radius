@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -165,6 +166,17 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 	session, err := s.sessionRepo.GetSessionByRefreshTokenHash(ctx, refreshTokenHash)
 	if err != nil || session == nil {
 		if s.redisClient != nil {
+			graceKey := "radius:auth:grace-refresh:" + refreshTokenHash
+			if graceJSON, graceErr := s.redisClient.Get(ctx, graceKey).Result(); graceErr == nil && graceJSON != "" {
+				var graceTokens struct {
+					AccessToken  string `json:"access_token"`
+					RefreshToken string `json:"refresh_token"`
+				}
+				if jsonErr := json.Unmarshal([]byte(graceJSON), &graceTokens); jsonErr == nil && graceTokens.AccessToken != "" && graceTokens.RefreshToken != "" {
+					return graceTokens.AccessToken, graceTokens.RefreshToken, nil
+				}
+			}
+
 			sessionID, markerErr := s.redisClient.Get(ctx, "radius:auth:used-refresh:"+refreshTokenHash).Int()
 			if markerErr == nil && sessionID > 0 {
 				_, _ = s.TerminateSessionById(ctx, sessionID)
@@ -227,24 +239,38 @@ func (s *SessionService) RefreshAccessToken(ctx context.Context, refreshTokenStr
 	}
 	newAccessHash := utils.HashTokenForDB(newAccessToken)
 	newRefreshHash := utils.HashTokenForDB(newRefreshToken)
-	rotated, err := s.sessionRepo.RotateSessionTokens(ctx, session.SessionId, refreshTokenHash, newAccessHash, newRefreshHash, time.Now().Add(utils.SessionInactivityTimeout))
-	if err != nil {
-		return "", "", fmt.Errorf("rotate session tokens: %w", err)
-	}
-	if !rotated {
-		_, _ = s.TerminateSessionById(ctx, session.SessionId)
-		return "", "", fmt.Errorf("%w: refresh token already used", ErrUnauthorized)
-	}
-	if s.redisClient == nil || s.redisClient.Set(ctx, "radius:auth:used-refresh:"+refreshTokenHash, session.SessionId, utils.MaxSessionLifetime).Err() != nil {
+
+	if s.redisClient == nil {
 		_, _ = s.TerminateSessionById(ctx, session.SessionId)
 		return "", "", errors.New("failed to record refresh token rotation")
 	}
-	if s.redisClient != nil {
-		if session.AccessTokenHash != "" {
-			_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash)).Err()
-		}
-		_ = s.redisClient.Set(ctx, cache.AuthTokenKey(newAccessHash), session.SessionId, utils.SessionInactivityTimeout).Err()
+	if err := s.redisClient.Set(ctx, "radius:auth:used-refresh:"+refreshTokenHash, session.SessionId, utils.MaxSessionLifetime).Err(); err != nil {
+		return "", "", fmt.Errorf("record refresh token rotation: %w", err)
 	}
+
+	rotated, err := s.sessionRepo.RotateSessionTokens(ctx, session.SessionId, refreshTokenHash, newAccessHash, newRefreshHash, time.Now().Add(utils.SessionInactivityTimeout))
+	if err != nil {
+		_ = s.redisClient.Del(ctx, "radius:auth:used-refresh:"+refreshTokenHash).Err()
+		return "", "", fmt.Errorf("rotate session tokens: %w", err)
+	}
+	if !rotated {
+		_ = s.redisClient.Del(ctx, "radius:auth:used-refresh:"+refreshTokenHash).Err()
+		_, _ = s.TerminateSessionById(ctx, session.SessionId)
+		return "", "", fmt.Errorf("%w: refresh token already used", ErrUnauthorized)
+	}
+
+	gracePayload, err := json.Marshal(map[string]string{
+		"access_token":  newAccessToken,
+		"refresh_token": newRefreshToken,
+	})
+	if err == nil {
+		_ = s.redisClient.Set(ctx, "radius:auth:grace-refresh:"+refreshTokenHash, gracePayload, 30*time.Second).Err()
+	}
+
+	if session.AccessTokenHash != "" {
+		_ = s.redisClient.Del(ctx, cache.AuthTokenKey(session.AccessTokenHash)).Err()
+	}
+	_ = s.redisClient.Set(ctx, cache.AuthTokenKey(newAccessHash), session.SessionId, utils.SessionInactivityTimeout).Err()
 	return newAccessToken, newRefreshToken, nil
 }
 

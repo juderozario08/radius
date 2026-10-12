@@ -188,8 +188,22 @@ func TestRefreshAccessToken_RotatesAndRevokesOnReuse(t *testing.T) {
 	if newAccess == oldAccess || newRefresh == oldRefresh || currentRefreshHash != utils.HashTokenForDB(newRefresh) {
 		t.Fatal("tokens were not rotated")
 	}
+
+	graceAccess, graceRefresh, err := svc.RefreshAccessToken(ctx, oldRefresh)
+	if err != nil {
+		t.Fatalf("expected retry within grace window to succeed, got %v", err)
+	}
+	if graceAccess != newAccess || graceRefresh != newRefresh {
+		t.Fatalf("expected identical rotated tokens in grace window, got (%q, %q)", graceAccess, graceRefresh)
+	}
+	if terminated {
+		t.Fatal("session should not be terminated within grace window")
+	}
+
+	_ = redisClient.Del(ctx, "radius:auth:grace-refresh:"+utils.HashTokenForDB(oldRefresh)).Err()
+
 	if _, _, err := svc.RefreshAccessToken(ctx, oldRefresh); err == nil || !terminated {
-		t.Fatalf("reused refresh token must revoke the session, got %v", err)
+		t.Fatalf("reused refresh token after grace window must revoke the session, got %v", err)
 	}
 	if err := svc.ValidateSession(ctx, newAccess); err == nil {
 		t.Fatal("access token remained valid after replay revocation")
@@ -222,6 +236,36 @@ func TestRefreshAccessToken_RevokesIfReuseTrackingUnavailable(t *testing.T) {
 	svc := NewSessionService(repo, secret, nil)
 	if _, _, err := svc.RefreshAccessToken(context.Background(), refresh); err == nil || !revoked {
 		t.Fatalf("refresh must fail closed without reuse tracking: error=%v revoked=%v", err, revoked)
+	}
+}
+
+func TestRefreshAccessToken_RedisFailureDoesNotTerminateSession(t *testing.T) {
+	secret := []byte("testsecret")
+	refresh, err := utils.GenerateRefreshToken(7, "staff@example.com", models.RoleSales, 2, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	active := true
+	terminatedEmployee := false
+	revoked := false
+	repo := &MockSessionRepo{}
+	repo.GetSessionByRefreshTokenHashFunc = func(context.Context, string) (*models.GetSessionByHashedToken, error) {
+		return &models.GetSessionByHashedToken{SessionId: 42, StoreId: 2, ExpiresAt: time.Now().Add(time.Hour), IsActive: &active, IsTerminated: &terminatedEmployee}, nil
+	}
+	repo.TerminateSessionByIdFunc = func(context.Context, int) error {
+		revoked = true
+		return nil
+	}
+
+	deadRedis := redis.NewClient(&redis.Options{Addr: "127.0.0.1:0", MaxRetries: -1})
+	defer deadRedis.Close()
+
+	svc := NewSessionService(repo, secret, deadRedis)
+	if _, _, err := svc.RefreshAccessToken(context.Background(), refresh); err == nil {
+		t.Fatal("expected error on failed redis write")
+	}
+	if revoked {
+		t.Fatal("session must not be terminated when redis marker write fails before rotation")
 	}
 }
 

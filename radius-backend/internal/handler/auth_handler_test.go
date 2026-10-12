@@ -143,8 +143,6 @@ func TestAuthHandler_RefreshToken(t *testing.T) {
 			setup: func(repo *mocks.MockSessionRepository, mr *miniredis.Miniredis) {
 				mr.Close()
 				repo.EXPECT().GetSessionByRefreshTokenHash(gomock.Any(), refreshHash).Return(session(time.Hour, &yes, &no), nil)
-				repo.EXPECT().RotateSessionTokens(gomock.Any(), 42, refreshHash, gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
-				expectTerminate(repo)
 			},
 			want: http.StatusInternalServerError,
 		},

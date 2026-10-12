@@ -23,7 +23,7 @@ import {
     FillReportSortBy,
 } from '@/types/report.types';
 import { COLORS } from '@/constants/colors';
-import { globalStyles } from '@/constants/styles';
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from '@/constants/styles';
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { useAuth } from '@/hooks/useAuth';
 
@@ -171,7 +171,7 @@ export default function FillReportScreen() {
                                 <Ionicons
                                     name={tab.icon}
                                     size={14}
-                                    color={isSelected ? '#FFFFFF' : COLORS.textSecondary}
+                                    color={isSelected ? COLORS.surface : COLORS.textSecondary}
                                 />
                                 <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
                                     {tab.label}
@@ -219,7 +219,7 @@ export default function FillReportScreen() {
                     renderItem={({ item }) => <FillReportItem item={item} />}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
-                            <MaterialCommunityIcons name="clipboard-check-outline" size={56} color="#BDBDBD" />
+                            <MaterialCommunityIcons name="clipboard-check-outline" size={56} color={COLORS.iconMuted} />
                             <Text style={styles.emptyTitle}>No Products to Fill</Text>
                             <Text style={styles.emptySubtitle}>
                                 {searchQuery || activeFilter !== 'ALL'
@@ -230,7 +230,7 @@ export default function FillReportScreen() {
                                 style={styles.scanHolesBtn}
                                 onPress={() => router.push('/(app)/(tabs)/home/actions/sales_floor/IS4TC')}
                             >
-                                <Ionicons name="barcode-outline" size={18} color="#FFFFFF" />
+                                <Ionicons name="barcode-outline" size={18} color={COLORS.surface} />
                                 <Text style={styles.scanHolesBtnText}>Scan Empty Holes (IS4TC)</Text>
                             </TouchableOpacity>
                         </View>
@@ -244,7 +244,7 @@ export default function FillReportScreen() {
                     activeOpacity={1}
                     onPress={() => setSortModalVisible(false)}
                 >
-                    <View style={[globalStyles.modalContentWrapper, { padding: 20 }]}>
+                    <View style={[globalStyles.modalContentWrapper, { padding: SPACING.xl }]}>
                         <View style={styles.sortModalHeader}>
                             <Text style={globalStyles.modalName}>Sort Fill Report</Text>
                             <TouchableOpacity onPress={() => setSortModalVisible(false)}>
@@ -289,24 +289,24 @@ export default function FillReportScreen() {
 const styles = StyleSheet.create({
     headerActions: {
         flexDirection: 'row',
-        gap: 10,
-        marginRight: 15,
+        gap: SPACING.smd,
+        marginRight: SPACING.mdlPlus,
     },
     iconBtn: {
-        padding: 4,
+        padding: SPACING.xs,
     },
     metricsBar: {
         flexDirection: 'row',
         backgroundColor: COLORS.surface,
-        marginHorizontal: 12,
-        marginTop: 10,
-        marginBottom: 8,
-        borderRadius: 12,
-        paddingVertical: 12,
-        paddingHorizontal: 8,
+        marginHorizontal: SPACING.md,
+        marginTop: SPACING.smd,
+        marginBottom: SPACING.sm,
+        borderRadius: RADIUS.lg,
+        paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.sm,
         alignItems: 'center',
         justifyContent: 'space-around',
-        shadowColor: '#000',
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 3,
@@ -322,14 +322,14 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.border,
     },
     metricLabel: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         fontWeight: '600',
         color: COLORS.textSecondary,
         textTransform: 'uppercase',
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     metricValue: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: '800',
         color: COLORS.textPrimary,
     },
@@ -337,41 +337,41 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: COLORS.surface,
-        marginHorizontal: 12,
-        marginBottom: 8,
-        borderRadius: 10,
-        paddingHorizontal: 12,
+        marginHorizontal: SPACING.md,
+        marginBottom: SPACING.sm,
+        borderRadius: RADIUS.mdl,
+        paddingHorizontal: SPACING.md,
         borderWidth: 1,
         borderColor: COLORS.inputBorder,
         height: 42,
     },
     searchIcon: {
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     searchInput: {
         flex: 1,
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textPrimary,
         height: '100%',
     },
     clearBtn: {
-        padding: 4,
+        padding: SPACING.xs,
     },
     filtersWrapper: {
-        marginBottom: 6,
+        marginBottom: SPACING.xsm,
     },
     filtersScroll: {
-        paddingHorizontal: 12,
-        gap: 8,
+        paddingHorizontal: SPACING.md,
+        gap: SPACING.sm,
     },
     filterChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 5,
+        gap: SPACING.xsPlus,
         backgroundColor: COLORS.surface,
-        paddingHorizontal: 12,
+        paddingHorizontal: SPACING.md,
         paddingVertical: 7,
-        borderRadius: 20,
+        borderRadius: RADIUS.xxl,
         borderWidth: 1,
         borderColor: COLORS.border,
     },
@@ -380,23 +380,23 @@ const styles = StyleSheet.create({
         borderColor: COLORS.primary,
     },
     filterChipText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: '600',
         color: COLORS.textSecondary,
     },
     filterChipTextActive: {
-        color: '#FFFFFF',
+        color: COLORS.surface,
     },
     activeSortRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 4,
-        marginBottom: 4,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.xs,
+        marginBottom: SPACING.xs,
     },
     activeSortText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     activeSortBold: {
@@ -406,82 +406,82 @@ const styles = StyleSheet.create({
     sortChangeBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 2,
+        gap: SPACING.xxs,
     },
     sortChangeText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: '600',
         color: COLORS.primary,
     },
     listContent: {
-        paddingHorizontal: 12,
-        paddingBottom: 24,
+        paddingHorizontal: SPACING.md,
+        paddingBottom: SPACING.xxl,
     },
     loadingText: {
-        marginTop: 12,
-        fontSize: 14,
+        marginTop: SPACING.md,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textSecondary,
     },
     emptyState: {
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 60,
-        paddingHorizontal: 24,
+        paddingHorizontal: SPACING.xxl,
     },
     emptyTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: 'bold',
         color: COLORS.textPrimary,
-        marginTop: 16,
-        marginBottom: 6,
+        marginTop: SPACING.lg,
+        marginBottom: SPACING.xsm,
     },
     emptySubtitle: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
         textAlign: 'center',
         lineHeight: 18,
-        marginBottom: 20,
+        marginBottom: SPACING.xl,
     },
     scanHolesBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: SPACING.sm,
         backgroundColor: COLORS.primary,
         paddingHorizontal: 18,
-        paddingVertical: 10,
-        borderRadius: 8,
+        paddingVertical: SPACING.smd,
+        borderRadius: RADIUS.md,
     },
     scanHolesBtnText: {
-        color: '#FFFFFF',
-        fontSize: 14,
+        color: COLORS.surface,
+        fontSize: FONT_SIZE.md,
         fontWeight: '600',
     },
     sortModalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: SPACING.lg,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
-        paddingBottom: 10,
+        paddingBottom: SPACING.smd,
     },
     sortOptionsList: {
-        gap: 6,
+        gap: SPACING.xsm,
     },
     sortOptionItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        backgroundColor: '#FAFAFA',
+        paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.md,
+        borderRadius: RADIUS.md,
+        backgroundColor: COLORS.surfaceMuted,
     },
     sortOptionItemActive: {
-        backgroundColor: '#FFEBEE',
+        backgroundColor: COLORS.inactiveBg,
     },
     sortOptionText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textPrimary,
         fontWeight: '500',
     },

@@ -1,7 +1,7 @@
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { ENDPOINTS } from "@/constants/routes";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -132,13 +132,13 @@ export default function TransactionsList() {
 const styles = StyleSheet.create({
     card: {
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.lg,
+        marginBottom: SPACING.lg,
         borderWidth: 1,
         borderColor: COLORS.border,
         elevation: 2,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -148,13 +148,13 @@ const styles = StyleSheet.create({
         paddingBottom: 0,
     },
     name: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary,
         flex: 1,
-        marginRight: 8
+        marginRight: SPACING.sm
     },
     detailsContainer: {
-        gap: 6
+        gap: SPACING.xsm
     },
 });

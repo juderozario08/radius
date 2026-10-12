@@ -6,7 +6,7 @@ import BackButton from '@/components/common/BackButton';
 import { ENDPOINTS } from '@/constants/routes';
 import { AuditTrailResponse, AuditTrailEntry } from '@/types/inventory.types';
 import { useAuth } from '@/hooks/useAuth';
-import { globalStyles } from '@/constants/styles';
+import { globalStyles, SPACING, FONT_SIZE } from '@/constants/styles';
 import { COLORS } from '@/constants/colors';
 import { router } from 'expo-router';
 import Gate from '@/components/common/Gate';
@@ -124,8 +124,8 @@ export default function Audit() {
                 case 'PO':
                     return (
                         <Gate permission="view_back_room">
-                            <TouchableOpacity 
-                                style={[globalStyles.buttonSecondary, { marginTop: 10, paddingVertical: 8, paddingHorizontal: 12, alignSelf: 'flex-start' }]}
+                            <TouchableOpacity
+                                style={[globalStyles.buttonSecondary, { marginTop: SPACING.smd, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, alignSelf: 'flex-start' }]}
                                 onPress={() => router.push({ pathname: '/(app)/(tabs)/home/actions/back_room/ReceivePO', params: { po_id: refInfo.id } })}
                             >
                                 <Text style={globalStyles.buttonTextSecondary}>View Purchase Order</Text>
@@ -135,8 +135,8 @@ export default function Audit() {
                 case 'TRANSFER':
                     return (
                         <Gate permission="view_back_room">
-                            <TouchableOpacity 
-                                style={[globalStyles.buttonSecondary, { marginTop: 10, paddingVertical: 8, paddingHorizontal: 12, alignSelf: 'flex-start' }]}
+                            <TouchableOpacity
+                                style={[globalStyles.buttonSecondary, { marginTop: SPACING.smd, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, alignSelf: 'flex-start' }]}
                                 onPress={() => router.push({ pathname: '/(app)/(tabs)/home/actions/back_room/ReceiveTransfer', params: { transfer_id: refInfo.id } })}
                             >
                                 <Text style={globalStyles.buttonTextSecondary}>View Transfer</Text>
@@ -146,8 +146,8 @@ export default function Audit() {
                 case 'SALE':
                 case 'TRANSACTION':
                     return (
-                        <TouchableOpacity 
-                            style={[globalStyles.buttonSecondary, { marginTop: 10, paddingVertical: 8, paddingHorizontal: 12, alignSelf: 'flex-start' }]}
+                        <TouchableOpacity
+                            style={[globalStyles.buttonSecondary, { marginTop: SPACING.smd, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, alignSelf: 'flex-start' }]}
                             onPress={() => router.push(`/(app)/(tabs)/home/actions/sales_floor/Transactions/${refInfo.id}`)}
                         >
                             <Text style={globalStyles.buttonTextSecondary}>View Transaction</Text>
@@ -159,14 +159,14 @@ export default function Audit() {
         };
 
         return (
-            <TouchableOpacity 
-                style={[globalStyles.card, { marginBottom: 10 }]} 
+            <TouchableOpacity
+                style={[globalStyles.card, { marginBottom: SPACING.smd }]}
                 onPress={toggleExpand}
                 activeOpacity={0.8}
             >
                 <View style={globalStyles.row}>
                     <Text style={[globalStyles.sectionTitle, { flex: 2, marginBottom: 0 }]}>{item.transaction_type}</Text>
-                    <Text style={{ fontSize: 12, flex: 2, textAlign: 'center', color: COLORS.textSecondary }}>
+                    <Text style={{ fontSize: FONT_SIZE.sm, flex: 2, textAlign: 'center', color: COLORS.textSecondary }}>
                         {new Date(item.created_at).toLocaleDateString()}
                     </Text>
                     <Text style={[{ fontWeight: 'bold', flex: 1, textAlign: 'right' }, { color }]}>
@@ -175,13 +175,13 @@ export default function Audit() {
                 </View>
 
                 {expanded && (
-                    <View style={{ marginTop: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border }}>
-                        <Text style={{ fontSize: 12 }}>Time: {new Date(item.created_at).toLocaleTimeString()}</Text>
-                        {item.employee_name && <Text style={{ fontSize: 12, marginTop: 4 }}>Employee: {item.employee_name}</Text>}
-                        {refInfo && <Text style={{ fontSize: 12, marginTop: 4 }}>Reference: {refInfo.label}</Text>}
-                        {item.reason_code && <Text style={{ fontSize: 12, marginTop: 4 }}>Reason: {item.reason_code}</Text>}
-                        {item.from_store_name && <Text style={{ fontSize: 12, marginTop: 4 }}>From: {item.from_store_name}</Text>}
-                        {item.to_store_name && <Text style={{ fontSize: 12, marginTop: 4 }}>To: {item.to_store_name}</Text>}
+                    <View style={{ marginTop: SPACING.mdlPlus, paddingTop: SPACING.smd, borderTopWidth: 1, borderTopColor: COLORS.border }}>
+                        <Text style={{ fontSize: FONT_SIZE.sm }}>Time: {new Date(item.created_at).toLocaleTimeString()}</Text>
+                        {item.employee_name && <Text style={{ fontSize: FONT_SIZE.sm, marginTop: SPACING.xs }}>Employee: {item.employee_name}</Text>}
+                        {refInfo && <Text style={{ fontSize: FONT_SIZE.sm, marginTop: SPACING.xs }}>Reference: {refInfo.label}</Text>}
+                        {item.reason_code && <Text style={{ fontSize: FONT_SIZE.sm, marginTop: SPACING.xs }}>Reason: {item.reason_code}</Text>}
+                        {item.from_store_name && <Text style={{ fontSize: FONT_SIZE.sm, marginTop: SPACING.xs }}>From: {item.from_store_name}</Text>}
+                        {item.to_store_name && <Text style={{ fontSize: FONT_SIZE.sm, marginTop: SPACING.xs }}>To: {item.to_store_name}</Text>}
 
                         {renderActionButton()}
                     </View>
@@ -201,10 +201,10 @@ export default function Audit() {
                 )}
             />
 
-            <View style={[globalStyles.container, { padding: 15 }]}>
-                <View style={{ marginBottom: 20 }}>
+            <View style={[globalStyles.container, { padding: SPACING.mdlPlus }]}>
+                <View style={{ marginBottom: SPACING.xl }}>
                     <Text style={globalStyles.modalInputLabel}>Search Product (SKU / UPC)</Text>
-                    <View style={[globalStyles.row, { gap: 10 }]}>
+                    <View style={[globalStyles.row, { gap: SPACING.smd }]}>
                         <TextInput
                             style={[globalStyles.textInput, { flex: 1, marginBottom: 0 }]}
                             value={barcode}
@@ -220,28 +220,28 @@ export default function Audit() {
                 </View>
 
                 {data && (
-                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 15, gap: 10 }}>
-                        <TouchableOpacity 
-                            style={[globalStyles.buttonSecondary, { paddingVertical: 6, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6 }]}
+                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: SPACING.mdlPlus, gap: SPACING.smd }}>
+                        <TouchableOpacity
+                            style={[globalStyles.buttonSecondary, { paddingVertical: SPACING.xsm, paddingHorizontal: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: SPACING.xsm }]}
                             onPress={() => setShowFilterModal(true)}
                         >
-                            <Image 
-                                source={require('@/assets/images/filter.png')} 
-                                style={{ width: 14, height: 14, tintColor: filterTxnType ? COLORS.primary : COLORS.textPrimary }} 
+                            <Image
+                                source={require('@/assets/images/filter.png')}
+                                style={{ width: 14, height: 14, tintColor: filterTxnType ? COLORS.primary : COLORS.textPrimary }}
                             />
-                            <Text style={[globalStyles.buttonTextSecondary, { fontSize: 12 }]}>
+                            <Text style={[globalStyles.buttonTextSecondary, { fontSize: FONT_SIZE.sm }]}>
                                 {filterTxnType ? TRANSACTION_TYPES.find(t => t.value === filterTxnType)?.label : 'Filter'}
                             </Text>
                         </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={[globalStyles.buttonSecondary, { paddingVertical: 6, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6 }]}
+                        <TouchableOpacity
+                            style={[globalStyles.buttonSecondary, { paddingVertical: SPACING.xsm, paddingHorizontal: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: SPACING.xsm }]}
                             onPress={() => setShowSortModal(true)}
                         >
-                            <Image 
-                                source={require('@/assets/images/sort.png')} 
-                                style={{ width: 14, height: 14, tintColor: COLORS.textPrimary }} 
+                            <Image
+                                source={require('@/assets/images/sort.png')}
+                                style={{ width: 14, height: 14, tintColor: COLORS.textPrimary }}
                             />
-                            <Text style={[globalStyles.buttonTextSecondary, { fontSize: 12 }]}>
+                            <Text style={[globalStyles.buttonTextSecondary, { fontSize: FONT_SIZE.sm }]}>
                                 {sortOrder === 'DESC' ? 'Newest' : 'Oldest'}
                             </Text>
                         </TouchableOpacity>
@@ -250,12 +250,12 @@ export default function Audit() {
 
                 {data && (
                     <View style={{ flex: 1 }}>
-                        <View style={[globalStyles.card, { marginBottom: 20 }]}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{data.product.name}</Text>
-                            <Text style={{ fontSize: 12, color: COLORS.textSecondary }}>SKU: {data.product.sku} | UPC: {data.product.upc}</Text>
+                        <View style={[globalStyles.card, { marginBottom: SPACING.xl }]}>
+                            <Text style={{ fontSize: FONT_SIZE.xl, fontWeight: 'bold' }}>{data.product.name}</Text>
+                            <Text style={{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary }}>SKU: {data.product.sku} | UPC: {data.product.upc}</Text>
                         </View>
 
-                        <Text style={[globalStyles.sectionTitle, { marginBottom: 10 }]}>Event Timeline</Text>
+                        <Text style={[globalStyles.sectionTitle, { marginBottom: SPACING.smd }]}>Event Timeline</Text>
                         <FlatList
                             data={data.events}
                             keyExtractor={(item) => item.transaction_id.toString()}
@@ -263,11 +263,11 @@ export default function Audit() {
                             onEndReached={loadMore}
                             onEndReachedThreshold={0.5}
                             ListEmptyComponent={() => (
-                                <Text style={[{ fontSize: 12, color: COLORS.textSecondary }, { textAlign: 'center', marginTop: 20 }]}>
+                                <Text style={[{ fontSize: FONT_SIZE.sm, color: COLORS.textSecondary }, { textAlign: 'center', marginTop: SPACING.xl }]}>
                                     No audit history found for this product.
                                 </Text>
                             )}
-                            ListFooterComponent={() => loading ? <ActivityIndicator style={{ margin: 20 }} color={COLORS.primary} /> : null}
+                            ListFooterComponent={() => loading ? <ActivityIndicator style={{ margin: SPACING.xl }} color={COLORS.primary} /> : null}
                         />
                     </View>
                 )}
@@ -280,25 +280,25 @@ export default function Audit() {
                             <Text style={globalStyles.modalTitle}>Sort By Date</Text>
                             <View style={globalStyles.divider} />
 
-                            <TouchableOpacity 
-                                style={{ paddingVertical: 12 }} 
+                            <TouchableOpacity
+                                style={{ paddingVertical: SPACING.md }}
                                 onPress={() => { setSortOrder('DESC'); setShowSortModal(false); }}
                             >
-                                <Text style={{ fontSize: 16, color: sortOrder === 'DESC' ? COLORS.primary : COLORS.textPrimary, fontWeight: sortOrder === 'DESC' ? 'bold' : 'normal' }}>
+                                <Text style={{ fontSize: FONT_SIZE.lg, color: sortOrder === 'DESC' ? COLORS.primary : COLORS.textPrimary, fontWeight: sortOrder === 'DESC' ? 'bold' : 'normal' }}>
                                     Newest First
                                 </Text>
                             </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={{ paddingVertical: 12 }} 
+                            <TouchableOpacity
+                                style={{ paddingVertical: SPACING.md }}
                                 onPress={() => { setSortOrder('ASC'); setShowSortModal(false); }}
                             >
-                                <Text style={{ fontSize: 16, color: sortOrder === 'ASC' ? COLORS.primary : COLORS.textPrimary, fontWeight: sortOrder === 'ASC' ? 'bold' : 'normal' }}>
+                                <Text style={{ fontSize: FONT_SIZE.lg, color: sortOrder === 'ASC' ? COLORS.primary : COLORS.textPrimary, fontWeight: sortOrder === 'ASC' ? 'bold' : 'normal' }}>
                                     Oldest First
                                 </Text>
                             </TouchableOpacity>
 
-                            <View style={[globalStyles.divider, { marginTop: 10 }]} />
-                            <TouchableOpacity style={[globalStyles.buttonSecondary, { marginTop: 10 }]} onPress={() => setShowSortModal(false)}>
+                            <View style={[globalStyles.divider, { marginTop: SPACING.smd }]} />
+                            <TouchableOpacity style={[globalStyles.buttonSecondary, { marginTop: SPACING.smd }]} onPress={() => setShowSortModal(false)}>
                                 <Text style={globalStyles.buttonTextSecondary}>Cancel</Text>
                             </TouchableOpacity>
                         </View>
@@ -314,10 +314,10 @@ export default function Audit() {
                             <View style={globalStyles.divider} />
 
                             {user?.role === 'ADMIN' && (
-                                <View style={{ marginBottom: 15 }}>
-                                    <Text style={[globalStyles.modalInputLabel, { marginBottom: 4 }]}>Store ID (Admin Only)</Text>
-                                    <TextInput 
-                                        style={[globalStyles.textInput, { paddingVertical: 8, paddingHorizontal: 10 }]}
+                                <View style={{ marginBottom: SPACING.mdlPlus }}>
+                                    <Text style={[globalStyles.modalInputLabel, { marginBottom: SPACING.xs }]}>Store ID (Admin Only)</Text>
+                                    <TextInput
+                                        style={[globalStyles.textInput, { paddingVertical: SPACING.sm, paddingHorizontal: SPACING.smd }]}
                                         placeholder="Leave empty for all stores"
                                         value={filterStoreId}
                                         onChangeText={setFilterStoreId}
@@ -327,23 +327,23 @@ export default function Audit() {
                             )}
 
                             {TRANSACTION_TYPES.map((type) => (
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     key={type.value}
-                                    style={{ paddingVertical: 10 }} 
+                                    style={{ paddingVertical: SPACING.smd }}
                                     onPress={() => { setFilterTxnType(type.value); setShowFilterModal(false); }}
                                 >
-                                    <Text style={{ 
-                                        fontSize: 16, 
-                                        color: filterTxnType === type.value ? COLORS.primary : COLORS.textPrimary, 
-                                        fontWeight: filterTxnType === type.value ? 'bold' : 'normal' 
+                                    <Text style={{
+                                        fontSize: FONT_SIZE.lg,
+                                        color: filterTxnType === type.value ? COLORS.primary : COLORS.textPrimary,
+                                        fontWeight: filterTxnType === type.value ? 'bold' : 'normal'
                                     }}>
                                         {type.label}
                                     </Text>
                                 </TouchableOpacity>
                             ))}
 
-                            <View style={[globalStyles.divider, { marginTop: 10 }]} />
-                            <TouchableOpacity style={[globalStyles.buttonSecondary, { marginTop: 10 }]} onPress={() => setShowFilterModal(false)}>
+                            <View style={[globalStyles.divider, { marginTop: SPACING.smd }]} />
+                            <TouchableOpacity style={[globalStyles.buttonSecondary, { marginTop: SPACING.smd }]} onPress={() => setShowFilterModal(false)}>
                                 <Text style={globalStyles.buttonTextSecondary}>Close</Text>
                             </TouchableOpacity>
                         </View>

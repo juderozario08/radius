@@ -7,7 +7,7 @@ import { ENDPOINTS } from "@/constants/routes";
 import { callApi, showToast } from "@/utils/helpers";
 import { useAuth } from "@/hooks/useAuth";
 import { COLORS } from "@/constants/colors";
-import { globalStyles as STYLES } from "@/constants/styles";
+import { globalStyles as STYLES, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { Ionicons } from "@expo/vector-icons";
 
 type AdjustmentStatus = "PENDING" | "APPROVED" | "REJECTED" | "WRITE_OFF";
@@ -200,13 +200,13 @@ export default function ItemAdjust() {
                 </View>
 
                 <View style={styles.actionsRow}>
-                    <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 8, backgroundColor: COLORS.success }]} onPress={() => processSingle(item.adjustment_id, "APPROVED")}>
+                    <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: SPACING.mdlPlus, paddingVertical: SPACING.sm, backgroundColor: COLORS.success }]} onPress={() => processSingle(item.adjustment_id, "APPROVED")}>
                         <Text style={STYLES.buttonTextPrimary}>Approve</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 8, backgroundColor: COLORS.accent }]} onPress={() => processSingle(item.adjustment_id, "WRITE_OFF")}>
+                    <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: SPACING.mdlPlus, paddingVertical: SPACING.sm, backgroundColor: COLORS.accent }]} onPress={() => processSingle(item.adjustment_id, "WRITE_OFF")}>
                         <Text style={STYLES.buttonTextPrimary}>Write-off</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 8, backgroundColor: COLORS.error }]} onPress={() => processSingle(item.adjustment_id, "REJECTED")}>
+                    <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: SPACING.mdlPlus, paddingVertical: SPACING.sm, backgroundColor: COLORS.error }]} onPress={() => processSingle(item.adjustment_id, "REJECTED")}>
                         <Text style={STYLES.buttonTextPrimary}>Deny</Text>
                     </TouchableOpacity>
                 </View>
@@ -224,7 +224,7 @@ export default function ItemAdjust() {
                     </View>
                 )}
                 headerRight={(
-                    <TouchableOpacity onPress={selectAll} style={{ paddingRight: 15 }}>
+                    <TouchableOpacity onPress={selectAll} style={{ paddingRight: SPACING.mdlPlus }}>
                         <Text style={{ color: COLORS.primary, fontWeight: 'bold' }}>
                             {selectedIds.size === adjustments.length && adjustments.length > 0 ? "Deselect All" : "Select All"}
                         </Text>
@@ -251,13 +251,13 @@ export default function ItemAdjust() {
                 <View style={[styles.bulkFooter, STYLES.shadowLight]}>
                     <Text style={styles.bulkCount}>{selectedIds.size} Selected</Text>
                     <View style={styles.bulkActions}>
-                        <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 10, backgroundColor: COLORS.success }]} onPress={() => processBulk("APPROVED")}>
+                        <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: SPACING.mdlPlus, paddingVertical: SPACING.smd, backgroundColor: COLORS.success }]} onPress={() => processBulk("APPROVED")}>
                             <Text style={STYLES.buttonTextPrimary}>Approve</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 10, backgroundColor: COLORS.accent }]} onPress={() => processBulk("WRITE_OFF")}>
+                        <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: SPACING.mdlPlus, paddingVertical: SPACING.smd, backgroundColor: COLORS.accent }]} onPress={() => processBulk("WRITE_OFF")}>
                             <Text style={STYLES.buttonTextPrimary}>Write-off</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: 15, paddingVertical: 10, backgroundColor: COLORS.error }]} onPress={() => processBulk("REJECTED")}>
+                        <TouchableOpacity style={[STYLES.buttonPrimary, { paddingHorizontal: SPACING.mdlPlus, paddingVertical: SPACING.smd, backgroundColor: COLORS.error }]} onPress={() => processBulk("REJECTED")}>
                             <Text style={STYLES.buttonTextPrimary}>Deny</Text>
                         </TouchableOpacity>
                     </View>
@@ -273,55 +273,55 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     listContent: {
-        padding: 15,
+        padding: SPACING.mdlPlus,
         paddingBottom: 100,
-        gap: 15,
+        gap: SPACING.mdlPlus,
     },
     emptyText: {
         textAlign: 'center',
         marginTop: 50,
         color: COLORS.textSecondary,
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
     },
     cardSelected: {
         borderColor: COLORS.primary,
         borderWidth: 2,
     },
     checkbox: {
-        marginRight: 10,
-        marginTop: 2,
+        marginRight: SPACING.smd,
+        marginTop: SPACING.xxs,
     },
     productInfo: {
         flex: 1,
     },
     productName: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: 'bold',
         color: COLORS.textPrimary,
     },
     productSub: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
-        marginTop: 4,
+        marginTop: SPACING.xs,
     },
     requestedBy: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.primary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
         fontStyle: 'italic',
     },
     editRow: {
         flexDirection: 'row',
-        marginBottom: 15,
+        marginBottom: SPACING.mdlPlus,
     },
     qtyContainer: {
         flex: 1,
-        marginRight: 15,
+        marginRight: SPACING.mdlPlus,
     },
     label: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
-        marginBottom: 5,
+        marginBottom: SPACING.xsPlus,
         fontWeight: '600',
     },
     stepper: {
@@ -329,11 +329,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: COLORS.border,
-        borderRadius: 8,
+        borderRadius: RADIUS.md,
         overflow: 'hidden',
     },
     stepBtn: {
-        padding: 10,
+        padding: SPACING.smd,
         backgroundColor: COLORS.background,
         justifyContent: 'center',
         alignItems: 'center',
@@ -341,17 +341,17 @@ const styles = StyleSheet.create({
     qtyInput: {
         flex: 1,
         textAlign: 'center',
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: 'bold',
-        paddingVertical: 8,
+        paddingVertical: SPACING.sm,
         borderLeftWidth: 1,
         borderRightWidth: 1,
         borderColor: COLORS.border,
     },
     previousQty: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         color: COLORS.textSecondary,
-        marginTop: 5,
+        marginTop: SPACING.xsPlus,
         textAlign: 'center'
     },
     reasonContainer: {
@@ -360,11 +360,11 @@ const styles = StyleSheet.create({
     reasonScrollWrapper: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 6,
+        gap: SPACING.xsm,
     },
     reasonBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 5,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.xsPlus,
         borderRadius: 15,
         backgroundColor: COLORS.neutralBg,
         borderWidth: 1,
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
         borderColor: COLORS.primary,
     },
     reasonText: {
-        fontSize: 11,
+        fontSize: FONT_SIZE.xs,
         color: COLORS.textSecondary,
     },
     reasonTextSelected: {
@@ -385,11 +385,11 @@ const styles = StyleSheet.create({
     actionsRow: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        gap: 10,
-        marginTop: 10,
+        gap: SPACING.smd,
+        marginTop: SPACING.smd,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
-        paddingTop: 15,
+        paddingTop: SPACING.mdlPlus,
     },
     bulkFooter: {
         position: 'absolute',
@@ -397,25 +397,25 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         backgroundColor: COLORS.surface,
-        padding: 15,
+        padding: SPACING.mdlPlus,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.05,
         shadowRadius: 4,
         elevation: 10,
     },
     bulkCount: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: 'bold',
         color: COLORS.textPrimary,
     },
     bulkActions: {
         flexDirection: 'row',
-        gap: 10,
+        gap: SPACING.smd,
     }
 });

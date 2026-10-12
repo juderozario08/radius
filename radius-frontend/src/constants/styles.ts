@@ -4,14 +4,17 @@ import { COLORS } from "./colors";
 export const SPACING = {
     xxs: 2,
     xs: 4,
+    xsPlus: 5,
     xsm: 6,
     sm: 8,
     smd: 10,
     md: 12,
     mdl: 14,
+    mdlPlus: 15,
     lg: 16,
     xl: 20,
     xxl: 24,
+    xxlPlus: 30,
     xxxl: 32,
     huge: 40,
 };
@@ -23,6 +26,7 @@ export const RADIUS = {
     mdl: 10,
     lg: 12,
     xl: 16,
+    xlPlus: 18,
     xxl: 20,
 };
 

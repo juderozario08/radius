@@ -1,7 +1,7 @@
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { ENDPOINTS } from "@/constants/routes";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { DetailRow } from "@/components/common/DetailRow";
@@ -26,18 +26,18 @@ import { formatMoney } from "@/utils/money";
 const getStatusColor = (status: string) => {
     switch (status) {
         case "READY FOR PICKUP":
-            return { bg: "#FFF3E0", text: "#E65100" };
+            return { bg: COLORS.warningBg, text: COLORS.warning };
         case "AWAITING PICKUP":
-            return { bg: "#FFF8E1", text: "#F57F17" };
+            return { bg: COLORS.pendingBg, text: COLORS.pending };
         case "RELEASED":
         case "DELIVERED":
-            return { bg: "#E8F5E9", text: "#2E7D32" };
+            return { bg: COLORS.activeBg, text: COLORS.success };
         case "WORK IN PROGRESS":
-            return { bg: "#E3F2FD", text: "#1565C0" };
+            return { bg: COLORS.infoBg, text: COLORS.info };
         case "SHIPPED":
-            return { bg: "#F3E5F5", text: "#6A1B9A" };
+            return { bg: COLORS.purpleBg, text: COLORS.purple };
         case "DELIVERING":
-            return { bg: "#E0F7FA", text: "#006064" };
+            return { bg: COLORS.cyanBg, text: COLORS.cyan };
         default:
             return { bg: COLORS.surface, text: COLORS.textSecondary };
     }
@@ -201,10 +201,10 @@ export default function OnlineOrdersList() {
                 headerCenter={<Text style={globalStyles.headerTitle}>Online Orders</Text>}
                 headerRight={
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        <TouchableOpacity onPress={() => loadAll()} style={{ padding: 8 }}>
+                        <TouchableOpacity onPress={() => loadAll()} style={{ padding: SPACING.sm }}>
                             <Ionicons name="refresh" size={24} color={COLORS.textPrimary} />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.push(`/(app)/(tabs)/home/actions/sales_floor/Orders/search?active_tab=${filter}&order_type=${searchParams.order_type}&order_id=${searchParams.order_id}&customer_first_name=${searchParams.customer_first_name}&customer_last_name=${searchParams.customer_last_name}&customer_email=${searchParams.customer_email}&sku=${searchParams.sku}&billing_phone=${searchParams.billing_phone}&payment_card=${searchParams.payment_card}&status=${searchParams.status}`)} style={{ padding: 8 }}>
+                        <TouchableOpacity onPress={() => router.push(`/(app)/(tabs)/home/actions/sales_floor/Orders/search?active_tab=${filter}&order_type=${searchParams.order_type}&order_id=${searchParams.order_id}&customer_first_name=${searchParams.customer_first_name}&customer_last_name=${searchParams.customer_last_name}&customer_email=${searchParams.customer_email}&sku=${searchParams.sku}&billing_phone=${searchParams.billing_phone}&payment_card=${searchParams.payment_card}&status=${searchParams.status}`)} style={{ padding: SPACING.sm }}>
                             <Ionicons name="search" size={24} color={COLORS.textPrimary} />
                         </TouchableOpacity>
                     </View>
@@ -236,13 +236,13 @@ export default function OnlineOrdersList() {
 const styles = StyleSheet.create({
     card: {
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.lg,
+        marginBottom: SPACING.lg,
         borderWidth: 1,
         borderColor: COLORS.border,
         elevation: 2,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -252,37 +252,37 @@ const styles = StyleSheet.create({
         paddingBottom: 0,
     },
     name: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary,
         flex: 1,
-        marginRight: 8
+        marginRight: SPACING.sm
     },
     detailsContainer: {
-        gap: 6
+        gap: SPACING.xsm
     },
     filterBtn: {
         backgroundColor: COLORS.surface,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.xsm,
+        borderRadius: RADIUS.xl,
         borderWidth: 1,
         borderColor: COLORS.primary,
     },
     filterBtnText: {
         color: COLORS.primary,
         fontWeight: "600",
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
     },
     orderStatusBadge: {
         borderWidth: 1,
         borderColor: "transparent",
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.xs,
+        borderRadius: RADIUS.lg,
     },
     orderStatusText: {
-        fontSize: 10,
+        fontSize: FONT_SIZE.xxs,
         fontWeight: "700",
         textTransform: "uppercase"
     }

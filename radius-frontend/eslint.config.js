@@ -28,7 +28,7 @@ module.exports = defineConfig([
     },
   },
   {
-    files: ['src/components/**/*.{ts,tsx}'],
+    files: ['src/components/**/*.{ts,tsx}', 'app/(app)/(tabs)/home/actions/sales_floor/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-syntax': ['error', {
         selector: 'Literal[value=/^#[0-9a-fA-F]{3,8}$/]',

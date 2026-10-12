@@ -6,7 +6,7 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { TopSafeAreaView } from '@/components/common/TopSafeAreaView';
 import HeaderComponent from '@/components/common/HeaderComponent';
 import BackButton from '@/components/common/BackButton';
-import { globalStyles } from '@/constants/styles';
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from '@/constants/styles';
 import { COLORS } from '@/constants/colors';
 import { useAuth } from '@/hooks/useAuth';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -292,7 +292,7 @@ export default function Activities() {
             />
             {toastMessage && (
                 <Animated.View style={[styles.toastBanner, { opacity: toastOpacity, zIndex: 999 }]}>
-                    <Ionicons name="flash" size={16} color="#FFFFFF" />
+                    <Ionicons name="flash" size={16} color={COLORS.surface} />
                     <Text style={styles.toastText} numberOfLines={2}>{toastMessage}</Text>
                 </Animated.View>
             )}
@@ -348,23 +348,23 @@ export default function Activities() {
 
 const styles = StyleSheet.create({
     listContent: {
-        padding: 16,
-        paddingBottom: 40,
+        padding: SPACING.lg,
+        paddingBottom: SPACING.huge,
     },
     activityCard: {
         flexDirection: "row",
         alignItems: "center",
-        padding: 16,
-        marginBottom: 12,
+        padding: SPACING.lg,
+        marginBottom: SPACING.md,
     },
     activityIconCircle: {
         width: 36,
         height: 36,
-        borderRadius: 18,
-        backgroundColor: "#E8EAF6",
+        borderRadius: RADIUS.xlPlus,
+        backgroundColor: COLORS.indigoBg,
         justifyContent: "center",
         alignItems: "center",
-        marginRight: 12,
+        marginRight: SPACING.md,
     },
     activityContent: {
         flex: 1,
@@ -373,41 +373,41 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "flex-start",
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     activityTitle: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "600",
         color: COLORS.textPrimary,
         flex: 1,
-        marginRight: 8,
+        marginRight: SPACING.sm,
     },
     activityTimeGroup: {
         flexDirection: "row",
         alignItems: "center",
     },
     activityTime: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
-        marginRight: 4,
+        marginRight: SPACING.xs,
     },
     activityDescription: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
         lineHeight: 18,
     },
     emptyCard: {
-        padding: 40,
+        padding: SPACING.huge,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        marginTop: 20,
+        borderRadius: RADIUS.lg,
+        marginTop: SPACING.xl,
     },
     emptyCardText: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         color: COLORS.textSecondary,
-        marginTop: 12,
+        marginTop: SPACING.md,
     },
     toastBanner: {
         position: "absolute",
@@ -415,22 +415,22 @@ const styles = StyleSheet.create({
         left: 16,
         right: 16,
         backgroundColor: COLORS.success,
-        borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        borderRadius: RADIUS.md,
+        paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.lg,
         flexDirection: "row",
         alignItems: "center",
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
         shadowRadius: 8,
         elevation: 5,
     },
     toastText: {
-        color: "#FFFFFF",
-        fontSize: 14,
+        color: COLORS.surface,
+        fontSize: FONT_SIZE.md,
         fontWeight: "600",
-        marginLeft: 8,
+        marginLeft: SPACING.sm,
         flex: 1,
     },
 });

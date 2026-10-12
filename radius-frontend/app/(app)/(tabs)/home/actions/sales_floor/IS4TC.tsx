@@ -8,7 +8,7 @@ import HeaderComponent from '@/components/common/HeaderComponent';
 import BackButton from '@/components/common/BackButton';
 import { BarcodeScanner, BarcodeScannerRef } from '@/components/common/BarcodeScanner';
 import { COLORS } from '@/constants/colors';
-import { globalStyles } from '@/constants/styles';
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from '@/constants/styles';
 import { ENDPOINTS } from '@/constants/routes';
 import { callApi } from '@/utils/helpers';
 import { useAuth } from '@/hooks/useAuth';
@@ -109,7 +109,7 @@ export default function IS4TCScanScreen() {
         headerLeft={<BackButton />}
         headerCenter={<Text style={globalStyles.headerTitle}>IS4TC Scan</Text>}
         headerRight={
-          <View style={{ flexDirection: 'row', gap: 15, marginRight: 15 }}>
+          <View style={{ flexDirection: 'row', gap: SPACING.mdlPlus, marginRight: SPACING.mdlPlus }}>
             <TouchableOpacity onPress={clearSession}>
               <MaterialCommunityIcons name="delete-sweep-outline" size={28} color={COLORS.danger} />
             </TouchableOpacity>
@@ -132,7 +132,7 @@ export default function IS4TCScanScreen() {
       )}
 
       <View style={styles.listSection}>
-        <Text style={[globalStyles.sectionTitle, { marginBottom: 10 }]}>
+        <Text style={[globalStyles.sectionTitle, { marginBottom: SPACING.smd }]}>
           Scanned Empty Holes ({scannedItems.length})
         </Text>
         <FlatList
@@ -154,14 +154,14 @@ export default function IS4TCScanScreen() {
             </TouchableOpacity>
           )}
           ListEmptyComponent={
-            <Text style={[globalStyles.emptyText, { marginTop: 40 }]}>No items scanned yet.</Text>
+            <Text style={[globalStyles.emptyText, { marginTop: SPACING.huge }]}>No items scanned yet.</Text>
           }
         />
       </View>
 
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={globalStyles.modalOverlay}>
-          <View style={[globalStyles.modalContentWrapper, { padding: 20 }]}>
+          <View style={[globalStyles.modalContentWrapper, { padding: SPACING.xl }]}>
             <Text style={globalStyles.modalName}>Enter SKU or UPC</Text>
             <TextInput
               style={styles.input}
@@ -189,41 +189,41 @@ export default function IS4TCScanScreen() {
 const styles = StyleSheet.create({
   processingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: COLORS.overlayLight,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
   processingText: {
-    color: '#fff',
-    marginTop: 10,
+    color: COLORS.surface,
+    marginTop: SPACING.smd,
     fontWeight: 'bold',
   },
   listSection: {
     flex: 1,
-    padding: 16,
+    padding: SPACING.lg,
     backgroundColor: COLORS.background,
   },
   listContent: {
-    paddingBottom: 20,
-    gap: 12,
+    paddingBottom: SPACING.xl,
+    gap: SPACING.md,
   },
   cardHeader: {
-    marginBottom: 8,
+    marginBottom: SPACING.sm,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    paddingBottom: 8,
+    paddingBottom: SPACING.sm,
   },
   productName: {
-    fontSize: 16,
+    fontSize: FONT_SIZE.lg,
     fontWeight: 'bold',
     color: COLORS.textPrimary,
   },
   cardBody: {
-    gap: 4,
+    gap: SPACING.xs,
   },
   detailText: {
-    fontSize: 14,
+    fontSize: FONT_SIZE.md,
     color: COLORS.textSecondary,
   },
   qtyText: {
@@ -234,30 +234,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.inputBorder,
     backgroundColor: COLORS.inputBg,
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 10,
-    fontSize: 16,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginTop: SPACING.smd,
+    fontSize: FONT_SIZE.lg,
     color: COLORS.textPrimary,
   },
   modalActions: {
-    flexDirection: 'row', 
-    justifyContent: 'flex-end', 
-    marginTop: 20, 
-    gap: 20 
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: SPACING.xl,
+    gap: SPACING.xl
   },
   modalButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
   },
   cancelText: {
-    color: COLORS.textSecondary, 
-    fontSize: 16, 
+    color: COLORS.textSecondary,
+    fontSize: FONT_SIZE.lg,
     fontWeight: '600'
   },
   addText: {
-    color: COLORS.primary, 
-    fontSize: 16, 
+    color: COLORS.primary,
+    fontSize: FONT_SIZE.lg,
     fontWeight: '600'
   }
 });

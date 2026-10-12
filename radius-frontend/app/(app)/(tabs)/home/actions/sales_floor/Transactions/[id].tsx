@@ -1,7 +1,7 @@
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { ENDPOINTS } from "@/constants/routes";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -112,7 +112,7 @@ export default function TransactionDetail() {
                         </View>
 
                         <View style={styles.card}>
-                            <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Financials</Text>
+                            <Text style={[styles.sectionTitle, { marginBottom: SPACING.md }]}>Financials</Text>
                             <DetailRow label="Subtotal:" value={formatMoney(transaction.subtotal)} />
                             <DetailRow label="Tax:" value={formatMoney(transaction.tax_amount)} />
                             <DetailRow label="Discount:" value={formatMoney(transaction.discount_total)} />
@@ -124,7 +124,7 @@ export default function TransactionDetail() {
                         </View>
 
                         <View style={globalStyles.listCardTop}>
-                            <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Items ({items.length})</Text>
+                            <Text style={[styles.sectionTitle, { marginBottom: SPACING.md }]}>Items ({items.length})</Text>
                         </View>
                     </>
                 }
@@ -162,19 +162,19 @@ export default function TransactionDetail() {
 const styles = StyleSheet.create({
     card: {
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.lg,
+        marginBottom: SPACING.lg,
         borderWidth: 1,
         borderColor: COLORS.border,
         elevation: 2,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 12,
+        paddingVertical: SPACING.md,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
@@ -193,17 +193,17 @@ const styles = StyleSheet.create({
         marginBottom: 56,
     },
     itemText: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: '600',
         color: COLORS.textPrimary,
-        marginBottom: 4,
+        marginBottom: SPACING.xs,
     },
     itemSubText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textSecondary,
     },
     itemTotal: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: '700',
         color: COLORS.primary,
     }

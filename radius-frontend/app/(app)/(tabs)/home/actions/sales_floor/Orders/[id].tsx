@@ -1,7 +1,7 @@
 import BackButton from "@/components/common/BackButton";
 import HeaderComponent from "@/components/common/HeaderComponent";
 import { ENDPOINTS } from "@/constants/routes";
-import { globalStyles } from "@/constants/styles";
+import { globalStyles, SPACING, RADIUS, FONT_SIZE } from "@/constants/styles";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { DetailRow } from "@/components/common/DetailRow";
@@ -59,22 +59,22 @@ const getStatusColor = (status: string) => {
     switch (status) {
         case "READY FOR PICKUP":
         case "READY_FOR_PICKUP":
-            return { bg: "#FFF3E0", text: "#E65100" };
+            return { bg: COLORS.warningBg, text: COLORS.warning };
         case "AWAITING PICKUP":
         case "WAITING FOR CUSTOMER PICKUP":
-            return { bg: "#FFF8E1", text: "#F57F17" };
+            return { bg: COLORS.pendingBg, text: COLORS.pending };
         case "RELEASED":
         case "DELIVERED":
         case "COMPLETED":
-            return { bg: "#E8F5E9", text: "#2E7D32" };
+            return { bg: COLORS.activeBg, text: COLORS.success };
         case "WORK IN PROGRESS":
-            return { bg: "#E3F2FD", text: "#1565C0" };
+            return { bg: COLORS.infoBg, text: COLORS.info };
         case "SHIPPED":
-            return { bg: "#F3E5F5", text: "#6A1B9A" };
+            return { bg: COLORS.purpleBg, text: COLORS.purple };
         case "DELIVERING":
-            return { bg: "#E0F7FA", text: "#006064" };
+            return { bg: COLORS.cyanBg, text: COLORS.cyan };
         case "CANCELLED":
-            return { bg: "#FFEBEE", text: "#C70202" };
+            return { bg: COLORS.inactiveBg, text: COLORS.primary };
         default:
             return { bg: COLORS.surface, text: COLORS.textSecondary };
     }
@@ -428,7 +428,7 @@ export default function OnlineOrderDetail() {
             <View style={globalStyles.container}>
                 {isAssignedToOther && !isManagerOrAdmin && (
                     <View style={styles.warningBanner}>
-                        <Ionicons name="alert-circle" size={18} color="#C62828" />
+                        <Ionicons name="alert-circle" size={18} color={COLORS.dangerDark} />
                         <Text style={styles.warningBannerText}>
                             Notice: Worked on by {order.assigned_to_name || "another associate"}.
                         </Text>
@@ -482,7 +482,7 @@ export default function OnlineOrderDetail() {
 
                     {order.status === "CANCELLED" && order.cancellation_reason && (
                         <View style={styles.cancellationBanner}>
-                            <Ionicons name="close-circle-outline" size={16} color="#C70202" />
+                            <Ionicons name="close-circle-outline" size={16} color={COLORS.primary} />
                             <Text style={styles.cancellationText}>
                                 Cancellation Reason: {order.cancellation_reason}
                             </Text>
@@ -502,7 +502,7 @@ export default function OnlineOrderDetail() {
                             name="barcode-outline"
                             size={18}
                             color={activeTab === "SCANNER" ? COLORS.primary : COLORS.textSecondary}
-                            style={{ marginRight: 6 }}
+                            style={{ marginRight: SPACING.xsm }}
                         />
                         <Text style={[styles.tabText, activeTab === "SCANNER" && styles.tabTextActive]}>
                             Scanner
@@ -517,7 +517,7 @@ export default function OnlineOrderDetail() {
                             name="cube-outline"
                             size={18}
                             color={activeTab === "PRODUCTS" ? COLORS.primary : COLORS.textSecondary}
-                            style={{ marginRight: 6 }}
+                            style={{ marginRight: SPACING.xsm }}
                         />
                         <Text style={[styles.tabText, activeTab === "PRODUCTS" && styles.tabTextActive]}>
                             Products ({items.length})
@@ -535,7 +535,7 @@ export default function OnlineOrderDetail() {
                         <Ionicons
                             name={scanBanner.type === "error" ? "alert-circle" : "checkmark-circle"}
                             size={18}
-                            color={scanBanner.type === "error" ? "#C70202" : "#2E7D32"}
+                            color={scanBanner.type === "error" ? COLORS.primary : COLORS.success}
                         />
                         <Text
                             style={[
@@ -594,7 +594,7 @@ export default function OnlineOrderDetail() {
                                             }
                                         }}
                                     >
-                                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                        <View style={{ flexDirection: "row", alignItems: "center", gap: SPACING.xsm }}>
                                             <Text style={styles.scannedCardTitle}>
                                                 SKU: {scannedItem.item.product_sku || "N/A"}
                                             </Text>
@@ -654,12 +654,12 @@ export default function OnlineOrderDetail() {
                                 </View>
 
                                 <TouchableOpacity
-                                    style={[globalStyles.buttonPrimary, { marginTop: 12 }]}
+                                    style={[globalStyles.buttonPrimary, { marginTop: SPACING.md }]}
                                     disabled={isSaving}
                                     onPress={handleSaveScannedQuantity}
                                 >
                                     {isSaving ? (
-                                        <ActivityIndicator size="small" color="#FFF" />
+                                        <ActivityIndicator size="small" color={COLORS.surface} />
                                     ) : (
                                         <Text style={globalStyles.buttonTextPrimary}>Update Picked Quantity</Text>
                                     )}
@@ -703,7 +703,7 @@ export default function OnlineOrderDetail() {
                                                     }
                                                 }}
                                             >
-                                                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                                <View style={{ flexDirection: "row", alignItems: "center", gap: SPACING.sm }}>
                                                     <Text style={styles.productSku}>SKU: {item.product_sku || "N/A"}</Text>
                                                     <Ionicons name="chevron-forward" size={14} color={COLORS.textSecondary} />
                                                     {item.status && item.status !== "ACTIVE" && (
@@ -712,7 +712,7 @@ export default function OnlineOrderDetail() {
                                                                 styles.itemStatusBadge,
                                                                 {
                                                                     backgroundColor:
-                                                                        item.status === "CANCELLED" ? "#FFEBEE" : "#FFF3E0",
+                                                                        item.status === "CANCELLED" ? COLORS.inactiveBg : COLORS.warningBg,
                                                                 },
                                                             ]}
                                                         >
@@ -722,8 +722,8 @@ export default function OnlineOrderDetail() {
                                                                     {
                                                                         color:
                                                                             item.status === "CANCELLED"
-                                                                                ? "#C70202"
-                                                                                : "#E65100",
+                                                                                ? COLORS.primary
+                                                                                : COLORS.warning,
                                                                     },
                                                                 ]}
                                                             >
@@ -772,7 +772,7 @@ export default function OnlineOrderDetail() {
                                                                 )}%`,
                                                                 backgroundColor:
                                                                     item.picked_qty >= item.quantity
-                                                                        ? "#2E7D32"
+                                                                        ? COLORS.success
                                                                         : COLORS.primary,
                                                             },
                                                         ]}
@@ -804,7 +804,7 @@ export default function OnlineOrderDetail() {
                                 activeOpacity={0.85}
                             >
                                 {isSaving ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
+                                    <ActivityIndicator size="small" color={COLORS.surface} />
                                 ) : (
                                     <Text
                                         style={[
@@ -874,13 +874,13 @@ export default function OnlineOrderDetail() {
                                         setIsCancelOrderModalVisible(true);
                                     }}
                                 >
-                                    <Ionicons name="close-circle-outline" size={20} color="#C70202" />
-                                    <Text style={[styles.menuItemText, { color: "#C70202" }]}>Cancel Entire Order</Text>
+                                    <Ionicons name="close-circle-outline" size={20} color={COLORS.primary} />
+                                    <Text style={[styles.menuItemText, { color: COLORS.primary }]}>Cancel Entire Order</Text>
                                 </TouchableOpacity>
                             )}
 
                             <TouchableOpacity
-                                style={[styles.menuItem, { borderBottomWidth: 0, marginTop: 8 }]}
+                                style={[styles.menuItem, { borderBottomWidth: 0, marginTop: SPACING.sm }]}
                                 onPress={() => setIsOrderMenuVisible(false)}
                             >
                                 <Text style={[styles.menuItemText, { color: COLORS.textSecondary, textAlign: "center", width: "100%" }]}>
@@ -939,12 +939,12 @@ export default function OnlineOrderDetail() {
                                     <Text style={globalStyles.buttonTextSecondary}>Keep Order</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={[globalStyles.buttonPrimary, { flex: 1, backgroundColor: "#C70202" }]}
+                                    style={[globalStyles.buttonPrimary, { flex: 1, backgroundColor: COLORS.primary }]}
                                     onPress={handleCancelOrderSubmit}
                                     disabled={isSaving}
                                 >
                                     {isSaving ? (
-                                        <ActivityIndicator size="small" color="#FFF" />
+                                        <ActivityIndicator size="small" color={COLORS.surface} />
                                     ) : (
                                         <Text style={globalStyles.buttonTextPrimary}>Cancel Order</Text>
                                     )}
@@ -973,7 +973,7 @@ export default function OnlineOrderDetail() {
 
                             <ScrollView showsVerticalScrollIndicator={false}>
                                 {order.shipping_address ? (
-                                    <View style={{ marginBottom: 16 }}>
+                                    <View style={{ marginBottom: SPACING.lg }}>
                                         <Text style={styles.detailSectionTitle}>Shipping</Text>
                                         <DetailRow label="Address:" value={order.shipping_address} />
                                         <DetailRow label="Carrier:" value={order.carrier || "Standard"} />
@@ -991,7 +991,7 @@ export default function OnlineOrderDetail() {
                             </ScrollView>
 
                             <TouchableOpacity
-                                style={[globalStyles.buttonSecondary, { marginTop: 16 }]}
+                                style={[globalStyles.buttonSecondary, { marginTop: SPACING.lg }]}
                                 onPress={() => setIsFinancialsModalVisible(false)}
                             >
                                 <Text style={globalStyles.buttonTextSecondary}>Close</Text>
@@ -1032,7 +1032,7 @@ export default function OnlineOrderDetail() {
                                             }}
                                         >
                                             <Ionicons name="information-circle-outline" size={20} color={COLORS.primary} />
-                                            <View style={{ marginLeft: 8 }}>
+                                            <View style={{ marginLeft: SPACING.sm }}>
                                                 <Text style={[styles.menuItemText, { color: COLORS.primary }]}>View Product Details</Text>
                                                 <Text style={styles.menuItemSubText}>Check inventory, locations, or pricing</Text>
                                             </View>
@@ -1045,9 +1045,9 @@ export default function OnlineOrderDetail() {
                                                 setItemActionType("CANCEL");
                                             }}
                                         >
-                                            <Ionicons name="close-circle-outline" size={20} color="#C70202" />
-                                            <View style={{ marginLeft: 8 }}>
-                                                <Text style={[styles.menuItemText, { color: "#C70202" }]}>Cancel Item</Text>
+                                            <Ionicons name="close-circle-outline" size={20} color={COLORS.primary} />
+                                            <View style={{ marginLeft: SPACING.sm }}>
+                                                <Text style={[styles.menuItemText, { color: COLORS.primary }]}>Cancel Item</Text>
                                                 <Text style={styles.menuItemSubText}>Store out of stock or damaged</Text>
                                             </View>
                                         </TouchableOpacity>
@@ -1059,9 +1059,9 @@ export default function OnlineOrderDetail() {
                                                 setItemActionType("REMOVE");
                                             }}
                                         >
-                                            <Ionicons name="trash-outline" size={20} color="#E65100" />
-                                            <View style={{ marginLeft: 8 }}>
-                                                <Text style={[styles.menuItemText, { color: "#E65100" }]}>Remove Item from Order</Text>
+                                            <Ionicons name="trash-outline" size={20} color={COLORS.warning} />
+                                            <View style={{ marginLeft: SPACING.sm }}>
+                                                <Text style={[styles.menuItemText, { color: COLORS.warning }]}>Remove Item from Order</Text>
                                                 <Text style={styles.menuItemSubText}>Customer requested removal</Text>
                                             </View>
                                         </TouchableOpacity>
@@ -1075,7 +1075,7 @@ export default function OnlineOrderDetail() {
                                             }}
                                         >
                                             <Ionicons name="alert-circle-outline" size={20} color={COLORS.accent} />
-                                            <View style={{ marginLeft: 8 }}>
+                                            <View style={{ marginLeft: SPACING.sm }}>
                                                 <Text style={[styles.menuItemText, { color: COLORS.accent }]}>Invalid Quantity</Text>
                                                 <Text style={styles.menuItemSubText}>Ordered more than available stock</Text>
                                             </View>
@@ -1086,16 +1086,16 @@ export default function OnlineOrderDetail() {
                                                 style={styles.menuItem}
                                                 onPress={() => handleItemExceptionSubmit("ACTIVE", "", 0)}
                                             >
-                                                <Ionicons name="refresh-outline" size={20} color="#2E7D32" />
-                                                <View style={{ marginLeft: 8 }}>
-                                                    <Text style={[styles.menuItemText, { color: "#2E7D32" }]}>Restore Item to Active</Text>
+                                                <Ionicons name="refresh-outline" size={20} color={COLORS.success} />
+                                                <View style={{ marginLeft: SPACING.sm }}>
+                                                    <Text style={[styles.menuItemText, { color: COLORS.success }]}>Restore Item to Active</Text>
                                                     <Text style={styles.menuItemSubText}>Undo item cancellation</Text>
                                                 </View>
                                             </TouchableOpacity>
                                         )}
 
                                         <TouchableOpacity
-                                            style={[styles.menuItem, { borderBottomWidth: 0, marginTop: 8 }]}
+                                            style={[styles.menuItem, { borderBottomWidth: 0, marginTop: SPACING.sm }]}
                                             onPress={() => {
                                                 setItemActionType(null);
                                                 setSelectedItemForAction(null);
@@ -1138,7 +1138,7 @@ export default function OnlineOrderDetail() {
                                                 <Text style={globalStyles.buttonTextSecondary}>Back</Text>
                                             </TouchableOpacity>
                                             <TouchableOpacity
-                                                style={[globalStyles.buttonPrimary, { flex: 1, backgroundColor: "#C70202" }]}
+                                                style={[globalStyles.buttonPrimary, { flex: 1, backgroundColor: COLORS.primary }]}
                                                 onPress={() => handleItemExceptionSubmit("CANCELLED", selectedItemReason, 0)}
                                                 disabled={isSaving}
                                             >
@@ -1178,7 +1178,7 @@ export default function OnlineOrderDetail() {
                                                 <Text style={globalStyles.buttonTextSecondary}>Back</Text>
                                             </TouchableOpacity>
                                             <TouchableOpacity
-                                                style={[globalStyles.buttonPrimary, { flex: 1, backgroundColor: "#E65100" }]}
+                                                style={[globalStyles.buttonPrimary, { flex: 1, backgroundColor: COLORS.warning }]}
                                                 onPress={() => handleItemExceptionSubmit("REMOVED", selectedItemReason, 0)}
                                                 disabled={isSaving}
                                             >
@@ -1218,7 +1218,7 @@ export default function OnlineOrderDetail() {
                                             </View>
                                         </View>
 
-                                        <Text style={[styles.modalSubtitle, { marginTop: 12 }]}>Reason:</Text>
+                                        <Text style={[styles.modalSubtitle, { marginTop: SPACING.md }]}>Reason:</Text>
                                         {INVALID_QTY_REASONS.map((r) => (
                                             <TouchableOpacity
                                                 key={r}
@@ -1283,12 +1283,12 @@ export default function OnlineOrderDetail() {
                             </View>
 
                             {isLoadingEmployees ? (
-                                <View style={{ paddingVertical: 30, alignItems: "center" }}>
+                                <View style={{ paddingVertical: SPACING.xxlPlus, alignItems: "center" }}>
                                     <ActivityIndicator size="small" color={COLORS.primary} />
                                 </View>
                             ) : (
                                 <FlatList
-                                    style={{ maxHeight: 280, marginVertical: 10 }}
+                                    style={{ maxHeight: 280, marginVertical: SPACING.smd }}
                                     data={employees}
                                     keyExtractor={(emp) => String(emp.employee_id)}
                                     extraData={selectedEmployeeId}
@@ -1307,7 +1307,7 @@ export default function OnlineOrderDetail() {
                                                     size={20}
                                                     color={isSelected ? COLORS.primary : COLORS.textSecondary}
                                                 />
-                                                <View style={{ marginLeft: 12, flex: 1 }}>
+                                                <View style={{ marginLeft: SPACING.md, flex: 1 }}>
                                                     <Text
                                                         style={[
                                                             styles.empSelectName,
@@ -1324,7 +1324,7 @@ export default function OnlineOrderDetail() {
                                         );
                                     }}
                                     ListEmptyComponent={
-                                        <View style={{ paddingVertical: 20, alignItems: "center" }}>
+                                        <View style={{ paddingVertical: SPACING.xl, alignItems: "center" }}>
                                             <Text style={globalStyles.emptyText}>No available employees in this store</Text>
                                         </View>
                                     }
@@ -1348,7 +1348,7 @@ export default function OnlineOrderDetail() {
                                     onPress={handleAssignOrder}
                                 >
                                     {isAssigning ? (
-                                        <ActivityIndicator size="small" color="#FFF" />
+                                        <ActivityIndicator size="small" color={COLORS.surface} />
                                     ) : (
                                         <Text style={globalStyles.buttonTextPrimary}>
                                             {order.assigned_to ? "Reassign" : "Assign"}
@@ -1366,12 +1366,12 @@ export default function OnlineOrderDetail() {
 
 const styles = StyleSheet.create({
     headerMenuBtn: {
-        padding: 6,
+        padding: SPACING.xsm,
     },
     customerInfoCard: {
         backgroundColor: COLORS.surface,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.md,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
@@ -1381,73 +1381,73 @@ const styles = StyleSheet.create({
         alignItems: "flex-start",
     },
     customerName: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginBottom: 2,
+        marginBottom: SPACING.xxs,
     },
     customerContact: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
     },
     metaRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 10,
-        marginTop: 8,
+        gap: SPACING.smd,
+        marginTop: SPACING.sm,
     },
     metaBadge: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
         color: COLORS.accent,
-        backgroundColor: "#EBF3FA",
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 6,
+        backgroundColor: COLORS.accentSurface,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: SPACING.xxs,
+        borderRadius: RADIUS.sm,
     },
     metaText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
     },
     statusBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: SPACING.smd,
+        paddingVertical: SPACING.xs,
+        borderRadius: RADIUS.lg,
     },
     statusText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
     },
     warningBanner: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
-        backgroundColor: "#FFEBEE",
+        gap: SPACING.sm,
+        backgroundColor: COLORS.inactiveBg,
         borderWidth: 1,
-        borderColor: "#FFCDD2",
-        borderRadius: 8,
-        marginHorizontal: 16,
-        marginTop: 12,
-        padding: 10,
+        borderColor: COLORS.dangerBorderLight,
+        borderRadius: RADIUS.md,
+        marginHorizontal: SPACING.lg,
+        marginTop: SPACING.md,
+        padding: SPACING.smd,
     },
     warningBannerText: {
         flex: 1,
-        fontSize: 13,
-        color: "#C62828",
+        fontSize: FONT_SIZE.smd,
+        color: COLORS.dangerDark,
         fontWeight: "600",
     },
     cancellationBanner: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
-        marginTop: 8,
-        backgroundColor: "#FFEBEE",
-        padding: 6,
-        borderRadius: 6,
+        gap: SPACING.xsm,
+        marginTop: SPACING.sm,
+        backgroundColor: COLORS.inactiveBg,
+        padding: SPACING.xsm,
+        borderRadius: RADIUS.sm,
     },
     cancellationText: {
-        fontSize: 12,
-        color: "#C70202",
+        fontSize: FONT_SIZE.sm,
+        color: COLORS.primary,
         fontWeight: "600",
     },
 
@@ -1462,7 +1462,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 12,
+        paddingVertical: SPACING.md,
         borderBottomWidth: 2,
         borderBottomColor: "transparent",
     },
@@ -1470,7 +1470,7 @@ const styles = StyleSheet.create({
         borderBottomColor: COLORS.primary,
     },
     tabText: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "600",
         color: COLORS.textSecondary,
     },
@@ -1481,50 +1481,50 @@ const styles = StyleSheet.create({
     bannerContainer: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
+        gap: SPACING.sm,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.smd,
     },
     bannerError: {
-        backgroundColor: "#FFEBEE",
+        backgroundColor: COLORS.inactiveBg,
         borderBottomWidth: 1,
-        borderBottomColor: "#FFCDD2",
+        borderBottomColor: COLORS.dangerBorderLight,
     },
     bannerSuccess: {
-        backgroundColor: "#E8F5E9",
+        backgroundColor: COLORS.activeBg,
         borderBottomWidth: 1,
-        borderBottomColor: "#C8E6C9",
+        borderBottomColor: COLORS.successBorderLight,
     },
     bannerText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "600",
     },
     bannerTextError: {
-        color: "#C70202",
+        color: COLORS.primary,
     },
     bannerTextSuccess: {
-        color: "#2E7D32",
+        color: COLORS.success,
     },
 
     scannerTabContent: {
         flex: 1,
     },
     manualEntrySection: {
-        paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.smd,
         backgroundColor: COLORS.surface,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
     manualEntryLabel: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "600",
         color: COLORS.textSecondary,
-        marginBottom: 6,
+        marginBottom: SPACING.xsm,
     },
     manualInputRow: {
         flexDirection: "row",
-        gap: 8,
+        gap: SPACING.sm,
     },
     manualInput: {
         flex: 1,
@@ -1533,26 +1533,26 @@ const styles = StyleSheet.create({
     },
     manualAddBtn: {
         backgroundColor: COLORS.primary,
-        paddingHorizontal: 16,
-        borderRadius: 8,
+        paddingHorizontal: SPACING.lg,
+        borderRadius: RADIUS.md,
         justifyContent: "center",
         alignItems: "center",
     },
     manualAddBtnText: {
-        color: "#FFF",
+        color: COLORS.surface,
         fontWeight: "700",
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
     },
 
     scannedCardPopup: {
-        margin: 16,
+        margin: SPACING.lg,
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 16,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.lg,
         borderWidth: 1,
         borderColor: COLORS.primary,
         elevation: 4,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
         shadowRadius: 6,
@@ -1561,27 +1561,27 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "flex-start",
-        marginBottom: 12,
+        marginBottom: SPACING.md,
     },
     scannedCardTitle: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     scannedCardSub: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     stepperSection: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginTop: 4,
-        paddingVertical: 6,
+        marginTop: SPACING.xs,
+        paddingVertical: SPACING.xsm,
     },
     stepperLabel: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
@@ -1589,16 +1589,16 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: COLORS.neutralBg,
-        borderRadius: 8,
+        borderRadius: RADIUS.md,
         borderWidth: 1,
         borderColor: COLORS.border,
     },
     stepperBtn: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
     },
     stepperValue: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
         color: COLORS.textPrimary,
         minWidth: 32,
@@ -1609,39 +1609,39 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        padding: 24,
+        padding: SPACING.xxl,
     },
     emptyScannerText: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textSecondary,
         textAlign: "center",
-        marginTop: 12,
+        marginTop: SPACING.md,
         lineHeight: 20,
     },
 
     productsList: {
-        padding: 16,
-        gap: 12,
+        padding: SPACING.lg,
+        gap: SPACING.md,
         paddingBottom: 90,
     },
     productCard: {
         backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        padding: 14,
+        borderRadius: RADIUS.lg,
+        padding: SPACING.mdl,
         borderWidth: 1,
         borderColor: COLORS.border,
         elevation: 1,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 3,
     },
     productCardDimmed: {
         opacity: 0.6,
-        backgroundColor: "#FAFAFA",
+        backgroundColor: COLORS.surfaceMuted,
     },
     productCardComplete: {
-        borderColor: "#C8E6C9",
+        borderColor: COLORS.successBorderLight,
     },
     productCardHeader: {
         flexDirection: "row",
@@ -1649,39 +1649,39 @@ const styles = StyleSheet.create({
         alignItems: "flex-start",
     },
     productSku: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     productPrice: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     itemStatusBadge: {
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
+        paddingHorizontal: SPACING.xsm,
+        paddingVertical: SPACING.xxs,
+        borderRadius: RADIUS.xs,
     },
     itemStatusText: {
-        fontSize: 10,
+        fontSize: FONT_SIZE.xxs,
         fontWeight: "700",
     },
     itemActionBtn: {
-        padding: 4,
+        padding: SPACING.xs,
     },
     progressRow: {
-        marginTop: 12,
+        marginTop: SPACING.md,
     },
     progressLabel: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         fontWeight: "600",
         color: COLORS.textPrimary,
-        marginBottom: 6,
+        marginBottom: SPACING.xsm,
     },
     progressBarBg: {
         height: 6,
-        backgroundColor: "#E0E0E0",
+        backgroundColor: COLORS.inputBorder,
         borderRadius: 3,
         overflow: "hidden",
     },
@@ -1692,11 +1692,11 @@ const styles = StyleSheet.create({
     itemReasonRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
-        marginTop: 8,
+        gap: SPACING.xs,
+        marginTop: SPACING.sm,
     },
     itemReasonText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
         fontStyle: "italic",
     },
@@ -1709,17 +1709,17 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.surface,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.md,
         elevation: 8,
-        shadowColor: "#000",
+        shadowColor: COLORS.black,
         shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
     },
     confirmButton: {
         height: 50,
-        borderRadius: 8,
+        borderRadius: RADIUS.md,
         justifyContent: "center",
         alignItems: "center",
     },
@@ -1727,72 +1727,72 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary,
     },
     confirmButtonDisabled: {
-        backgroundColor: "#E0E0E0",
+        backgroundColor: COLORS.inputBorder,
     },
     confirmButtonText: {
-        fontSize: 16,
+        fontSize: FONT_SIZE.lg,
         fontWeight: "700",
     },
     confirmButtonTextActive: {
-        color: "#FFFFFF",
+        color: COLORS.surface,
     },
     confirmButtonTextDisabled: {
-        color: "#8E8E8E",
+        color: COLORS.inactiveTint,
     },
 
     modalBody: {
-        padding: 20,
+        padding: SPACING.xl,
     },
     modalHeaderRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 12,
+        marginBottom: SPACING.md,
     },
     modalTitle: {
-        fontSize: 18,
+        fontSize: FONT_SIZE.xl,
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
     modalSubtitle: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
-        marginTop: 2,
-        marginBottom: 12,
+        marginTop: SPACING.xxs,
+        marginBottom: SPACING.md,
     },
     menuItem: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 12,
+        paddingVertical: SPACING.md,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
     menuItemText: {
-        fontSize: 15,
+        fontSize: FONT_SIZE.mdl,
         fontWeight: "600",
         color: COLORS.textPrimary,
-        marginLeft: 8,
+        marginLeft: SPACING.sm,
     },
     menuItemSubText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
     radioRow: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 10,
-        paddingHorizontal: 8,
-        borderRadius: 6,
-        marginVertical: 2,
+        paddingVertical: SPACING.smd,
+        paddingHorizontal: SPACING.sm,
+        borderRadius: RADIUS.sm,
+        marginVertical: SPACING.xxs,
     },
     radioRowSelected: {
-        backgroundColor: "#FFEBEE",
+        backgroundColor: COLORS.inactiveBg,
     },
     radioLabel: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         color: COLORS.textPrimary,
-        marginLeft: 10,
+        marginLeft: SPACING.smd,
     },
     radioLabelSelected: {
         fontWeight: "600",
@@ -1800,66 +1800,66 @@ const styles = StyleSheet.create({
     },
     modalBtnRow: {
         flexDirection: "row",
-        gap: 12,
-        marginTop: 16,
+        gap: SPACING.md,
+        marginTop: SPACING.lg,
     },
     detailSectionTitle: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "700",
         color: COLORS.textPrimary,
-        marginTop: 10,
-        marginBottom: 6,
+        marginTop: SPACING.smd,
+        marginBottom: SPACING.xsm,
     },
     assigneeRow: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginTop: 10,
-        paddingTop: 10,
+        marginTop: SPACING.smd,
+        paddingTop: SPACING.smd,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
     },
     assigneeInfo: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
+        gap: SPACING.xsm,
         flex: 1,
     },
     assigneeText: {
-        fontSize: 13,
+        fontSize: FONT_SIZE.smd,
         color: COLORS.textSecondary,
     },
     reassignBtn: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
-        paddingVertical: 5,
-        paddingHorizontal: 10,
-        borderRadius: 6,
-        backgroundColor: "#EDE7F6",
+        gap: SPACING.xs,
+        paddingVertical: SPACING.xsPlus,
+        paddingHorizontal: SPACING.smd,
+        borderRadius: RADIUS.sm,
+        backgroundColor: COLORS.violetBg,
     },
     reassignBtnText: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         fontWeight: "700",
         color: COLORS.primary,
     },
     empSelectItem: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        marginBottom: 6,
-        backgroundColor: "#F9FAFB",
+        paddingVertical: SPACING.smd,
+        paddingHorizontal: SPACING.md,
+        borderRadius: RADIUS.md,
+        marginBottom: SPACING.xsm,
+        backgroundColor: COLORS.surfaceCool,
         borderWidth: 1,
         borderColor: COLORS.border,
     },
     empSelectItemActive: {
-        backgroundColor: "#EDE7F6",
+        backgroundColor: COLORS.violetBg,
         borderColor: COLORS.primary,
     },
     empSelectName: {
-        fontSize: 14,
+        fontSize: FONT_SIZE.md,
         fontWeight: "600",
         color: COLORS.textPrimary,
     },
@@ -1868,8 +1868,8 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     empSelectRole: {
-        fontSize: 12,
+        fontSize: FONT_SIZE.sm,
         color: COLORS.textSecondary,
-        marginTop: 2,
+        marginTop: SPACING.xxs,
     },
 });

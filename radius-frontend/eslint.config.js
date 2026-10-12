@@ -7,4 +7,17 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*'],
   },
+  {
+    files: ['app/**', 'src/components/**'],
+    ignores: ['app/(auth)/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [{
+          name: '@/api/client',
+          importNames: ['apiFetch', 'apiFetchSWR'],
+          message: 'Screens call the API through callApi from @/utils/helpers.',
+        }],
+      }],
+    },
+  },
 ]);

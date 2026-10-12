@@ -25,19 +25,14 @@ export default function ProductScreen() {
         if (!productId || typeof productId !== "string") return;
         setIsLoading(true);
         setError(null);
-        try {
-            const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails(productId);
-            const data = await callApi<ProductScreenDetails>(endpoint, { method: "GET" }, logout);
-            if (data) {
-                setProductDetails(data);
-            } else {
-                setError("Product not found");
-            }
-        } catch (err: any) {
-            setError(err.message || "Failed to load product");
-        } finally {
-            setIsLoading(false);
+        const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails(productId);
+        const data = await callApi<ProductScreenDetails>(endpoint, { method: "GET" }, logout);
+        if (data) {
+            setProductDetails(data);
+        } else {
+            setError("Product not found");
         }
+        setIsLoading(false);
     }, [productId, logout]);
 
     useEffect(() => {

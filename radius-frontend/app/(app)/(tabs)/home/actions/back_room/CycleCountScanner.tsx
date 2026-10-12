@@ -7,7 +7,6 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     TextInput,
-    Alert,
     KeyboardAvoidingView,
     Platform,
 } from "react-native";
@@ -46,31 +45,19 @@ export default function CycleCountScanner() {
 
     const fetchDetail = useCallback(async () => {
         if (!countId) return;
-        try {
-            const data = await callApi<CycleCountDetailResponse>(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getDetail(countId),
-                { method: "GET" },
-                logout
-            );
-            if (data) {
-                setDetail(data);
-            } else {
-                if (params.from === "dashboard") {
-                    router.replace("/(app)/(tabs)/home/dashboard" as any);
-                } else {
-                    router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
-                }
-            }
-        } catch (err: any) {
-            Alert.alert("Error", err.message || "Failed to load count data");
-            if (params.from === "dashboard") {
-                router.replace("/(app)/(tabs)/home/dashboard" as any);
-            } else {
-                router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
-            }
-        } finally {
-            setIsLoading(false);
+        const data = await callApi<CycleCountDetailResponse>(
+            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getDetail(countId),
+            { method: "GET" },
+            logout
+        );
+        if (data) {
+            setDetail(data);
+        } else if (params.from === "dashboard") {
+            router.replace("/(app)/(tabs)/home/dashboard" as any);
+        } else {
+            router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
         }
+        setIsLoading(false);
     }, [countId, logout, params.from]);
 
     useEffect(() => {
@@ -82,69 +69,60 @@ export default function CycleCountScanner() {
         if (!query || !detail || isSaving) return;
 
         setIsSaving(true);
-        try {
-            const updatedItem = await callApi<CycleCountItemDetail>(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan(countId),
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        barcode: query,
-                    }),
-                },
-                logout
-            );
+        const updatedItem = await callApi<CycleCountItemDetail>(
+            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan(countId),
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    barcode: query,
+                }),
+            },
+            logout
+        );
 
-            if (updatedItem) {
-                scannerRef.current?.triggerSuccess();
-                setDetail((prev) => {
-                    if (!prev) return prev;
-                    const exists = prev.items.some((i) => i.product_id === updatedItem.product_id);
-                    let newItems: CycleCountItemDetail[];
-                    if (exists) {
-                        newItems = prev.items.map((i) =>
-                            i.product_id === updatedItem.product_id ? updatedItem : i
-                        );
-                    } else {
-                        newItems = [updatedItem, ...prev.items];
-                    }
-                    return {
-                        ...prev,
-                        count: {
-                            ...prev.count,
-                            total_items: exists ? prev.count.total_items : prev.count.total_items + 1,
-                            counted_items: newItems.filter((i) => i.counted_qty > 0).length,
-                        },
-                        items: newItems,
-                    };
-                });
-
-                const isNew = !detail.items.some((i) => i.product_id === updatedItem.product_id);
-                if (isNew) {
-                    setSuccessBanner(
-                        `✓ Discovered Product: ${updatedItem.product_name} | Scanned: ${updatedItem.counted_qty} (Expected: ${updatedItem.expected_qty})`
+        if (updatedItem) {
+            scannerRef.current?.triggerSuccess();
+            setDetail((prev) => {
+                if (!prev) return prev;
+                const exists = prev.items.some((i) => i.product_id === updatedItem.product_id);
+                let newItems: CycleCountItemDetail[];
+                if (exists) {
+                    newItems = prev.items.map((i) =>
+                        i.product_id === updatedItem.product_id ? updatedItem : i
                     );
                 } else {
-                    setSuccessBanner(
-                        `✓ Scanned: ${updatedItem.product_name} | Scanned: ${updatedItem.counted_qty} / Expected: ${updatedItem.expected_qty}`
-                    );
+                    newItems = [updatedItem, ...prev.items];
                 }
-                setManualBarcode("");
+                return {
+                    ...prev,
+                    count: {
+                        ...prev.count,
+                        total_items: exists ? prev.count.total_items : prev.count.total_items + 1,
+                        counted_items: newItems.filter((i) => i.counted_qty > 0).length,
+                    },
+                    items: newItems,
+                };
+            });
 
-                setTimeout(() => {
-                    setSuccessBanner(null);
-                }, 4000);
+            const isNew = !detail.items.some((i) => i.product_id === updatedItem.product_id);
+            if (isNew) {
+                setSuccessBanner(
+                    `✓ Discovered Product: ${updatedItem.product_name} | Scanned: ${updatedItem.counted_qty} (Expected: ${updatedItem.expected_qty})`
+                );
+            } else {
+                setSuccessBanner(
+                    `✓ Scanned: ${updatedItem.product_name} | Scanned: ${updatedItem.counted_qty} / Expected: ${updatedItem.expected_qty}`
+                );
             }
-        } catch (err: any) {
+            setManualBarcode("");
+
+            setTimeout(() => {
+                setSuccessBanner(null);
+            }, 4000);
+        } else {
             scannerRef.current?.triggerError();
-            Alert.alert("Product Lookup / Scan Error", err.message || "Failed to record scan", [
-                {
-                    text: "OK",
-                    onPress: () => scannerRef.current?.resetScanner(),
-                },
-            ]);
-        } finally {
-            setIsSaving(false);
         }
+        setIsSaving(false);
     };
 
     const handleStepperAdjust = async (item: CycleCountItemDetail, delta: number) => {
@@ -152,33 +130,29 @@ export default function CycleCountScanner() {
         if (newQty === item.counted_qty) return;
 
         setIsSaving(true);
-        try {
-            await callApi(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan(countId),
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        product_id: item.product_id,
-                        counted_qty: newQty,
-                    }),
-                },
-                logout
-            );
+        const res = await callApi(
+            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan(countId),
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    product_id: item.product_id,
+                    counted_qty: newQty,
+                }),
+            },
+            logout
+        );
+        setIsSaving(false);
+        if (res === null) return;
 
-            setDetail((prev) => {
-                if (!prev) return prev;
-                const updatedItems = prev.items.map((i) =>
-                    i.product_id === item.product_id
-                        ? { ...i, counted_qty: newQty, variance: newQty - i.expected_qty }
-                        : i
-                );
-                return { ...prev, items: updatedItems };
-            });
-        } catch (err: any) {
-            Alert.alert("Update Error", err.message || "Failed to update quantity");
-        } finally {
-            setIsSaving(false);
-        }
+        setDetail((prev) => {
+            if (!prev) return prev;
+            const updatedItems = prev.items.map((i) =>
+                i.product_id === item.product_id
+                    ? { ...i, counted_qty: newQty, variance: newQty - i.expected_qty }
+                    : i
+            );
+            return { ...prev, items: updatedItems };
+        });
     };
 
     const renderListItem = ({ item }: { item: CycleCountItemDetail }) => {

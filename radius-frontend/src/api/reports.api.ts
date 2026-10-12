@@ -1,8 +1,8 @@
-import { apiFetch } from "@/api/client";
 import { ENDPOINTS } from "@/constants/routes";
 import { FillReportFilter, FillReportResponse } from "@/types/report.types";
+import { callApi } from "@/utils/helpers";
 
-export async function getFillReport(filter?: FillReportFilter): Promise<FillReportResponse> {
+export async function getFillReport(logout: () => Promise<void>, filter?: FillReportFilter): Promise<FillReportResponse | null> {
     const params = new URLSearchParams();
 
     if (filter?.query) {
@@ -26,15 +26,5 @@ export async function getFillReport(filter?: FillReportFilter): Promise<FillRepo
         ? `${ENDPOINTS.SALES_FLOOR.FILL_REPORT.get}?${queryString}`
         : ENDPOINTS.SALES_FLOOR.FILL_REPORT.get;
 
-    return apiFetch<FillReportResponse>(path, { method: "GET" });
-}
-
-export async function logEmptyHole(productId: number): Promise<{ status: string; message: string }> {
-    return apiFetch<{ status: string; message: string }>(
-        ENDPOINTS.SALES_FLOOR.FILL_REPORT.emptyHole,
-        {
-            method: "POST",
-            body: JSON.stringify({ product_id: productId }),
-        }
-    );
+    return callApi<FillReportResponse>(path, { method: "GET" }, logout);
 }

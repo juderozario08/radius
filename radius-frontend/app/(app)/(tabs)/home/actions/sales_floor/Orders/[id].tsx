@@ -143,37 +143,32 @@ export default function OnlineOrderDetail() {
             return;
         }
         setIsAssigning(true);
-        try {
-            const res = await callApi<{ message?: string; online_order?: OnlineOrder; assigned_to?: number; assigned_to_name?: string }>(
-                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign(order.order_id),
-                {
-                    method: "PUT",
-                    body: JSON.stringify({
-                        employee_id: selectedEmployeeId,
-                    }),
-                },
-                logout
+        const res = await callApi<{ message?: string; online_order?: OnlineOrder; assigned_to?: number; assigned_to_name?: string }>(
+            ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign(order.order_id),
+            {
+                method: "PUT",
+                body: JSON.stringify({
+                    employee_id: selectedEmployeeId,
+                }),
+            },
+            logout
+        );
+        if (res) {
+            const selectedEmp = employees.find((e) => e.employee_id === selectedEmployeeId);
+            const assigneeName = res.assigned_to_name || (selectedEmp ? `${selectedEmp.first_name} ${selectedEmp.last_name}` : "Associate");
+            setOrder((prev) =>
+                prev
+                    ? {
+                          ...prev,
+                          assigned_to: selectedEmployeeId,
+                          assigned_to_name: assigneeName,
+                      }
+                    : prev
             );
-            if (res) {
-                const selectedEmp = employees.find((e) => e.employee_id === selectedEmployeeId);
-                const assigneeName = res.assigned_to_name || (selectedEmp ? `${selectedEmp.first_name} ${selectedEmp.last_name}` : "Associate");
-                setOrder((prev) =>
-                    prev
-                        ? {
-                              ...prev,
-                              assigned_to: selectedEmployeeId,
-                              assigned_to_name: assigneeName,
-                          }
-                        : prev
-                );
-                setIsAssignModalVisible(false);
-                Alert.alert("Success", `Order #${order.order_id} assigned to ${assigneeName}.`);
-            }
-        } catch (err: any) {
-            Alert.alert("Assignment Failed", err.message || "Failed to assign order");
-        } finally {
-            setIsAssigning(false);
+            setIsAssignModalVisible(false);
+            Alert.alert("Success", `Order #${order.order_id} assigned to ${assigneeName}.`);
         }
+        setIsAssigning(false);
     };
 
     const fetchOrderDetails = useCallback(async () => {
@@ -202,7 +197,7 @@ export default function OnlineOrderDetail() {
                     if (res && res.online_order) {
                         setOrder(res.online_order);
                     }
-                }).catch(() => {});
+                });
             }
         } else {
             setError("Could not load order details. Please try again.");
@@ -252,123 +247,119 @@ export default function OnlineOrderDetail() {
     const handleSaveScannedQuantity = async () => {
         if (!scannedItem || !order) return;
         setIsSaving(true);
-        try {
-            await callApi(
-                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.updateItem(order.order_id, scannedItem.item.order_item_id),
-                {
-                    method: "PUT",
-                    body: JSON.stringify({
-                        picked_qty: scannedItem.tempPickedQty,
-                        status: "ACTIVE",
-                    }),
-                },
-                logout
-            );
-
-            setItems((prev) =>
-                prev.map((i) =>
-                    i.order_item_id === scannedItem.item.order_item_id
-                        ? { ...i, picked_qty: scannedItem.tempPickedQty, status: "ACTIVE" }
-                        : i
-                )
-            );
-
-            setScannedItem(null);
-            scannerRef.current?.resetScanner();
-        } catch (err: any) {
-            Alert.alert("Update Error", err.message || "Failed to update item quantity");
-        } finally {
+        const updated = await callApi(
+            ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.updateItem(order.order_id, scannedItem.item.order_item_id),
+            {
+                method: "PUT",
+                body: JSON.stringify({
+                    picked_qty: scannedItem.tempPickedQty,
+                    status: "ACTIVE",
+                }),
+            },
+            logout
+        );
+        if (updated === null) {
             setIsSaving(false);
+            return;
         }
+
+        setItems((prev) =>
+            prev.map((i) =>
+                i.order_item_id === scannedItem.item.order_item_id
+                    ? { ...i, picked_qty: scannedItem.tempPickedQty, status: "ACTIVE" }
+                    : i
+            )
+        );
+
+        setScannedItem(null);
+        scannerRef.current?.resetScanner();
+        setIsSaving(false);
     };
 
     const handleItemExceptionSubmit = async (status: OrderItemStatus, reason: string, pickedQty?: number) => {
         if (!selectedItemForAction || !order) return;
         setIsSaving(true);
-        try {
-            const finalPickedQty = pickedQty !== undefined ? pickedQty : selectedItemForAction.picked_qty;
-            await callApi(
-                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.updateItem(order.order_id, selectedItemForAction.order_item_id),
-                {
-                    method: "PUT",
-                    body: JSON.stringify({
-                        picked_qty: finalPickedQty,
-                        status: status,
-                        reason: reason || null,
-                    }),
-                },
-                logout
-            );
-
-            setItems((prev) =>
-                prev.map((i) =>
-                    i.order_item_id === selectedItemForAction.order_item_id
-                        ? { ...i, status: status, reason: reason || null, picked_qty: finalPickedQty }
-                        : i
-                )
-            );
-
-            setItemActionType(null);
-            setSelectedItemForAction(null);
-        } catch (err: any) {
-            Alert.alert("Error", err.message || "Failed to update item exception");
-        } finally {
+        const finalPickedQty = pickedQty !== undefined ? pickedQty : selectedItemForAction.picked_qty;
+        const updated = await callApi(
+            ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.updateItem(order.order_id, selectedItemForAction.order_item_id),
+            {
+                method: "PUT",
+                body: JSON.stringify({
+                    picked_qty: finalPickedQty,
+                    status: status,
+                    reason: reason || null,
+                }),
+            },
+            logout
+        );
+        if (updated === null) {
             setIsSaving(false);
+            return;
         }
+
+        setItems((prev) =>
+            prev.map((i) =>
+                i.order_item_id === selectedItemForAction.order_item_id
+                    ? { ...i, status: status, reason: reason || null, picked_qty: finalPickedQty }
+                    : i
+            )
+        );
+
+        setItemActionType(null);
+        setSelectedItemForAction(null);
+        setIsSaving(false);
     };
 
     const handleConfirmOrderPickedUp = async () => {
         if (!order) return;
         setIsSaving(true);
-        try {
-            const res = await callApi<{ online_order: OnlineOrder }>(
-                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.completePick(order.order_id),
-                { method: "POST" },
-                logout
-            );
-
-            if (res && res.online_order) {
-                setOrder(res.online_order);
-            } else {
-                setOrder((prev) => prev ? { ...prev, status: "AWAITING PICKUP" } : prev);
-            }
-
-            Alert.alert("Success", "Order picking confirmed! Status updated to waiting for customer pickup.");
-        } catch (err: any) {
-            Alert.alert("Error", err.message || "Failed to complete order picking");
-        } finally {
+        const res = await callApi<{ online_order: OnlineOrder }>(
+            ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.completePick(order.order_id),
+            { method: "POST" },
+            logout
+        );
+        if (res === null) {
             setIsSaving(false);
+            return;
         }
+
+        if (res.online_order) {
+            setOrder(res.online_order);
+        } else {
+            setOrder((prev) => prev ? { ...prev, status: "AWAITING PICKUP" } : prev);
+        }
+
+        Alert.alert("Success", "Order picking confirmed! Status updated to waiting for customer pickup.");
+        setIsSaving(false);
     };
 
     const handleCancelOrderSubmit = async () => {
         if (!order) return;
         setIsSaving(true);
-        try {
-            const res = await callApi<{ online_order: OnlineOrder }>(
-                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.cancel(order.order_id),
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        reason: selectedCancelOrderReason,
-                    }),
-                },
-                logout
-            );
-
-            if (res && res.online_order) {
-                setOrder(res.online_order);
-            } else {
-                setOrder((prev) => prev ? { ...prev, status: "CANCELLED", cancellation_reason: selectedCancelOrderReason } : prev);
-            }
-
-            setIsCancelOrderModalVisible(false);
-            Alert.alert("Order Cancelled", `Order #${order.order_id} has been cancelled.`);
-        } catch (err: any) {
-            Alert.alert("Error", err.message || "Failed to cancel order");
-        } finally {
+        const res = await callApi<{ online_order: OnlineOrder }>(
+            ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.cancel(order.order_id),
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    reason: selectedCancelOrderReason,
+                }),
+            },
+            logout
+        );
+        if (res === null) {
             setIsSaving(false);
+            return;
         }
+
+        if (res.online_order) {
+            setOrder(res.online_order);
+        } else {
+            setOrder((prev) => prev ? { ...prev, status: "CANCELLED", cancellation_reason: selectedCancelOrderReason } : prev);
+        }
+
+        setIsCancelOrderModalVisible(false);
+        Alert.alert("Order Cancelled", `Order #${order.order_id} has been cancelled.`);
+        setIsSaving(false);
     };
 
     if (isLoading) {

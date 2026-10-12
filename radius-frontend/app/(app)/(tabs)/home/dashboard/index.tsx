@@ -78,19 +78,15 @@ export default function RealTimeDashboard() {
     const loadStoreOperations = useCallback(async () => {
         if (!isAdmin) return;
         setLoadingStores(true);
-        try {
-            const res = await callApi<StoreOperationSummary[]>(
-                ENDPOINTS.ADMIN.STORES.operations,
-                { method: "GET" },
-                logout
-            );
-            if (res && Array.isArray(res)) {
-                setStoreOperations(res);
-            }
-        } catch {
-        } finally {
-            setLoadingStores(false);
+        const res = await callApi<StoreOperationSummary[]>(
+            ENDPOINTS.ADMIN.STORES.operations,
+            { method: "GET" },
+            logout
+        );
+        if (res && Array.isArray(res)) {
+            setStoreOperations(res);
         }
+        setLoadingStores(false);
     }, [isAdmin, logout]);
 
     const [liveOrders, setLiveOrders] = useState<OrderCreatedPayload[]>([]);
@@ -298,79 +294,52 @@ export default function RealTimeDashboard() {
         const storeParam = effectiveStoreId ? `&store_id=${effectiveStoreId}` : "";
         const storeQueryOnly = effectiveStoreId ? `?store_id=${effectiveStoreId}` : "";
 
-        try {
-            const ordersRes = await callApi<GetAllOnlineOrdersResponse>(
-                `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=40&dashboard_only=true${storeParam}`,
-                { method: "GET" },
-                logout
-            );
-            if (ordersRes && ordersRes.online_orders && Array.isArray(ordersRes.online_orders)) {
-                const eligible = ordersRes.online_orders.filter(isDashboardEligibleOrder);
-                const mapped: OrderCreatedPayload[] = eligible.map((o) => ({
-                    order_id: o.order_id,
-                    store_id: o.store_id,
-                    customer_name: o.customer_name || "Customer",
-                    customer_email: o.customer_email || "",
-                    order_type: o.order_type || "BOPIS",
-                    status: o.status || "PENDING",
-                    total_amount: Number(o.total_amount) || 0,
-                    items_count: 1,
-                    placed_at: o.placed_at || new Date().toISOString(),
-                    assigned_to: o.assigned_to,
-                    assigned_to_name: o.assigned_to_name,
-                }));
-                setLiveOrders(mapped);
+        const ordersRes = await callApi<GetAllOnlineOrdersResponse>(
+            `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=40&dashboard_only=true${storeParam}`,
+            { method: "GET" },
+            logout
+        );
+        if (ordersRes && ordersRes.online_orders && Array.isArray(ordersRes.online_orders)) {
+            const eligible = ordersRes.online_orders.filter(isDashboardEligibleOrder);
+            const mapped: OrderCreatedPayload[] = eligible.map((o) => ({
+                order_id: o.order_id,
+                store_id: o.store_id,
+                customer_name: o.customer_name || "Customer",
+                customer_email: o.customer_email || "",
+                order_type: o.order_type || "BOPIS",
+                status: o.status || "PENDING",
+                total_amount: Number(o.total_amount) || 0,
+                items_count: 1,
+                placed_at: o.placed_at || new Date().toISOString(),
+                assigned_to: o.assigned_to,
+                assigned_to_name: o.assigned_to_name,
+            }));
+            setLiveOrders(mapped);
 
-                for (const o of eligible) {
-                    if (o.order_type === "BOPIS") {
-                        activities.push({
-                            activity_id: `act-bopis-${o.order_id}`,
-                            store_id: o.store_id,
-                            activity_type: "ORDER_PLACED",
-                            title: `BOPIS Order #${o.order_id}`,
-                            description: `${o.customer_name} placed order (${o.status}) • ${o.assigned_to_name ? `Assigned to ${o.assigned_to_name}` : "Unassigned"}`,
-                            timestamp: o.placed_at || new Date().toISOString(),
-                            metadata: {
-                                order_id: o.order_id,
-                                order_type: o.order_type,
-                                assigned_to: o.assigned_to,
-                                assigned_to_name: o.assigned_to_name,
-                            },
-                        });
-                    } else if (o.order_type === "STS") {
-                        activities.push({
-                            activity_id: `act-sts-${o.order_id}`,
-                            store_id: o.store_id,
-                            activity_type: "ORDER_STATUS_CHANGED",
-                            title: `STS Order #${o.order_id} In Transit`,
-                            description: `Ship-to-Store package (${o.status}) for ${o.customer_name}`,
-                            timestamp: o.placed_at || new Date().toISOString(),
-                            metadata: {
-                                order_id: o.order_id,
-                                order_type: o.order_type,
-                            },
-                        });
-                    }
-                }
-            }
-        } catch {
-        }
-
-        try {
-            const cancelRes = await callApi<GetAllOnlineOrdersResponse>(
-                `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=10&status=CANCELLED${storeParam}`,
-                { method: "GET" },
-                logout
-            );
-            if (cancelRes && cancelRes.online_orders && Array.isArray(cancelRes.online_orders)) {
-                for (const o of cancelRes.online_orders) {
+            for (const o of eligible) {
+                if (o.order_type === "BOPIS") {
                     activities.push({
-                        activity_id: `act-cancel-${o.order_id}`,
+                        activity_id: `act-bopis-${o.order_id}`,
                         store_id: o.store_id,
-                        activity_type: "ORDER_TIMEOUT",
-                        title: `BOPIS Order #${o.order_id} Timed Out`,
-                        description: `Pickup expired • Auto-cancelled for ${o.customer_name}`,
-                        timestamp: o.fulfilled_at || o.placed_at || new Date().toISOString(),
+                        activity_type: "ORDER_PLACED",
+                        title: `BOPIS Order #${o.order_id}`,
+                        description: `${o.customer_name} placed order (${o.status}) • ${o.assigned_to_name ? `Assigned to ${o.assigned_to_name}` : "Unassigned"}`,
+                        timestamp: o.placed_at || new Date().toISOString(),
+                        metadata: {
+                            order_id: o.order_id,
+                            order_type: o.order_type,
+                            assigned_to: o.assigned_to,
+                            assigned_to_name: o.assigned_to_name,
+                        },
+                    });
+                } else if (o.order_type === "STS") {
+                    activities.push({
+                        activity_id: `act-sts-${o.order_id}`,
+                        store_id: o.store_id,
+                        activity_type: "ORDER_STATUS_CHANGED",
+                        title: `STS Order #${o.order_id} In Transit`,
+                        description: `Ship-to-Store package (${o.status}) for ${o.customer_name}`,
+                        timestamp: o.placed_at || new Date().toISOString(),
                         metadata: {
                             order_id: o.order_id,
                             order_type: o.order_type,
@@ -378,77 +347,92 @@ export default function RealTimeDashboard() {
                     });
                 }
             }
-        } catch {
         }
 
-        try {
-            const countsRes = await callApi<CycleCountSummary[]>(
-                `${ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly}${storeQueryOnly}`,
-                { method: "GET" },
-                logout
-            );
-            if (countsRes && Array.isArray(countsRes)) {
-                const inProgressCounts = countsRes.filter((c) => {
-                    const s = (c.status || "").toUpperCase();
-                    return s === "IN PROGRESS" || s === "IN_PROGRESS";
+        const cancelRes = await callApi<GetAllOnlineOrdersResponse>(
+            `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=10&status=CANCELLED${storeParam}`,
+            { method: "GET" },
+            logout
+        );
+        if (cancelRes && cancelRes.online_orders && Array.isArray(cancelRes.online_orders)) {
+            for (const o of cancelRes.online_orders) {
+                activities.push({
+                    activity_id: `act-cancel-${o.order_id}`,
+                    store_id: o.store_id,
+                    activity_type: "ORDER_TIMEOUT",
+                    title: `BOPIS Order #${o.order_id} Timed Out`,
+                    description: `Pickup expired • Auto-cancelled for ${o.customer_name}`,
+                    timestamp: o.fulfilled_at || o.placed_at || new Date().toISOString(),
+                    metadata: {
+                        order_id: o.order_id,
+                        order_type: o.order_type,
+                    },
                 });
-
-                const mappedCounts: CycleCountUpdatedPayload[] = inProgressCounts
-                    .slice(0, 10)
-                    .map((c) => ({
-                        count_id: c.count_id,
-                        store_id: c.store_id,
-                        category_id: c.category_id,
-                        category_name: c.category_name,
-                        status: "IN PROGRESS",
-                        action: "scanned",
-                        total_items: c.total_items,
-                        counted_items: c.counted_items,
-                        total_variance_cost: Number(c.total_variance_cost) || 0,
-                        updated_at: c.count_date || new Date().toISOString(),
-                        counted_by: (c as any).counted_by,
-                        counted_by_name: c.counted_by_name,
-                    }));
-                setLiveCycleCounts(mappedCounts);
-
-                for (const c of inProgressCounts) {
-                    activities.push({
-                        activity_id: `act-cycle-${c.count_id}`,
-                        store_id: c.store_id,
-                        activity_type: "CYCLE_COUNT_UPDATED",
-                        title: `Cycle Count #${c.count_id} - ${c.category_name}`,
-                        description: `Progress: ${c.counted_items}/${c.total_items} items counted${c.counted_by_name ? ` by ${c.counted_by_name}` : ""}`,
-                        timestamp: c.count_date || new Date().toISOString(),
-                        metadata: { count_id: c.count_id },
-                    });
-                }
             }
-        } catch {
         }
 
-        try {
-            const posRes = await callApi<PurchaseOrderSummary[]>(
-                `${ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrders}${storeQueryOnly}`,
-                { method: "GET" },
-                logout
-            );
-            if (posRes && Array.isArray(posRes)) {
-                const pendingPOs = posRes.filter(
-                    (po) => po.status !== "RECEIVED" && po.status !== "CANCELLED"
-                );
-                for (const po of pendingPOs) {
-                    activities.push({
-                        activity_id: `act-po-${po.po_id}`,
-                        store_id: po.store_id,
-                        activity_type: "RECEIVING_DOCK",
-                        title: `PO #${po.po_id} (${po.supplier_name})`,
-                        description: `${po.item_count} item(s) • Status: ${po.status}${po.has_lprs ? " (LPR Pallet)" : ""}`,
-                        timestamp: po.arrived_at || po.expected_at || po.ordered_at || new Date().toISOString(),
-                        metadata: { po_id: po.po_id },
-                    });
-                }
+        const countsRes = await callApi<CycleCountSummary[]>(
+            `${ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly}${storeQueryOnly}`,
+            { method: "GET" },
+            logout
+        );
+        if (countsRes && Array.isArray(countsRes)) {
+            const inProgressCounts = countsRes.filter((c) => {
+                const s = (c.status || "").toUpperCase();
+                return s === "IN PROGRESS" || s === "IN_PROGRESS";
+            });
+
+            const mappedCounts: CycleCountUpdatedPayload[] = inProgressCounts
+                .slice(0, 10)
+                .map((c) => ({
+                    count_id: c.count_id,
+                    store_id: c.store_id,
+                    category_id: c.category_id,
+                    category_name: c.category_name,
+                    status: "IN PROGRESS",
+                    action: "scanned",
+                    total_items: c.total_items,
+                    counted_items: c.counted_items,
+                    total_variance_cost: Number(c.total_variance_cost) || 0,
+                    updated_at: c.count_date || new Date().toISOString(),
+                    counted_by: (c as any).counted_by,
+                    counted_by_name: c.counted_by_name,
+                }));
+            setLiveCycleCounts(mappedCounts);
+
+            for (const c of inProgressCounts) {
+                activities.push({
+                    activity_id: `act-cycle-${c.count_id}`,
+                    store_id: c.store_id,
+                    activity_type: "CYCLE_COUNT_UPDATED",
+                    title: `Cycle Count #${c.count_id} - ${c.category_name}`,
+                    description: `Progress: ${c.counted_items}/${c.total_items} items counted${c.counted_by_name ? ` by ${c.counted_by_name}` : ""}`,
+                    timestamp: c.count_date || new Date().toISOString(),
+                    metadata: { count_id: c.count_id },
+                });
             }
-        } catch {
+        }
+
+        const posRes = await callApi<PurchaseOrderSummary[]>(
+            `${ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrders}${storeQueryOnly}`,
+            { method: "GET" },
+            logout
+        );
+        if (posRes && Array.isArray(posRes)) {
+            const pendingPOs = posRes.filter(
+                (po) => po.status !== "RECEIVED" && po.status !== "CANCELLED"
+            );
+            for (const po of pendingPOs) {
+                activities.push({
+                    activity_id: `act-po-${po.po_id}`,
+                    store_id: po.store_id,
+                    activity_type: "RECEIVING_DOCK",
+                    title: `PO #${po.po_id} (${po.supplier_name})`,
+                    description: `${po.item_count} item(s) • Status: ${po.status}${po.has_lprs ? " (LPR Pallet)" : ""}`,
+                    timestamp: po.arrived_at || po.expected_at || po.ordered_at || new Date().toISOString(),
+                    metadata: { po_id: po.po_id },
+                });
+            }
         }
 
         activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -529,29 +513,25 @@ export default function RealTimeDashboard() {
                 )
             );
 
-            try {
-                await callApi(
-                    ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign(order.order_id),
-                    {
-                        method: "PUT",
-                        body: JSON.stringify({
-                            employee_id: currentEmpId,
-                        }),
-                    },
-                    logout
+            const claimed = await callApi(
+                ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.assign(order.order_id),
+                {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        employee_id: currentEmpId,
+                    }),
+                },
+                logout
+            );
+            if (claimed === null) {
+                setLiveOrders((prev) =>
+                    prev.map((o) =>
+                        o.order_id === order.order_id
+                            ? { ...o, assigned_to: order.assigned_to, assigned_to_name: order.assigned_to_name }
+                            : o
+                    )
                 );
-            } catch (err: any) {
-                if (err?.assigned_to && err.assigned_to !== currentEmpId) {
-                    showToast(`⚠️ Order #${order.order_id} was just claimed by ${err.assigned_to_name || "another associate"}!`);
-                    setLiveOrders((prev) =>
-                        prev.map((o) =>
-                            o.order_id === order.order_id
-                                ? { ...o, assigned_to: err.assigned_to, assigned_to_name: err.assigned_to_name }
-                                : o
-                        )
-                    );
-                    return;
-                }
+                return;
             }
         }
 

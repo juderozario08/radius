@@ -74,21 +74,18 @@ export default function CycleCountCalendar() {
     const isManagerOrAdmin = user?.role === "MANAGER" || user?.role === "ADMIN";
 
     const fetchSchedule = useCallback(async () => {
-        try {
-            setError(null);
-            const data = await callApi<CycleCountScheduleEntry[]>(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.schedule,
-                { method: "GET" },
-                logout
-            );
-            if (data) {
-                setSchedule(data);
-            }
-        } catch (err: any) {
-            setError(err.message || "Failed to load schedule");
-        } finally {
-            setIsLoading(false);
+        setError(null);
+        const data = await callApi<CycleCountScheduleEntry[]>(
+            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.schedule,
+            { method: "GET" },
+            logout
+        );
+        if (data) {
+            setSchedule(data);
+        } else {
+            setError("Failed to load schedule");
         }
+        setIsLoading(false);
     }, [logout]);
 
     const fetchCategories = useCallback(async () => {
@@ -121,28 +118,24 @@ export default function CycleCountCalendar() {
         const scheduledDateStr = baseMonday.toISOString().split("T")[0];
 
         setIsSaving(true);
-        try {
-            await callApi(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.schedule,
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        category_id: selectedCatId,
-                        scheduled_date: scheduledDateStr,
-                    }),
-                },
-                logout
-            );
-            setModalVisible(false);
-            setSelectedCatId(null);
-            setSelectedWeekOffset(0);
-            fetchSchedule();
-            Alert.alert("Success", "Cycle count scheduled for the selected week!");
-        } catch (err: any) {
-            Alert.alert("Error", err.message || "Failed to schedule count");
-        } finally {
-            setIsSaving(false);
-        }
+        const res = await callApi(
+            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.schedule,
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    category_id: selectedCatId,
+                    scheduled_date: scheduledDateStr,
+                }),
+            },
+            logout
+        );
+        setIsSaving(false);
+        if (res === null) return;
+        setModalVisible(false);
+        setSelectedCatId(null);
+        setSelectedWeekOffset(0);
+        fetchSchedule();
+        Alert.alert("Success", "Cycle count scheduled for the selected week!");
     };
 
     const currentWeekMonday = getMondayOfWeek(new Date()).toISOString().split("T")[0];
@@ -227,30 +220,26 @@ export default function CycleCountCalendar() {
                                                 {
                                                     text: "Start Count",
                                                     onPress: async () => {
-                                                        try {
-                                                            const res = await callApi<{
-                                                                count_id: number;
-                                                            }>(
-                                                                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT
-                                                                    .start,
-                                                                {
-                                                                    method: "POST",
-                                                                    body: JSON.stringify({
-                                                                        category_id:
-                                                                            entry.category_id,
-                                                                    }),
-                                                                },
-                                                                logout
-                                                            );
-                                                            if (res?.count_id) {
-                                                                router.push({
-                                                                    pathname:
-                                                                        "/(app)/(tabs)/home/actions/back_room/CycleCountDetail",
-                                                                    params: { id: res.count_id },
-                                                                });
-                                                            }
-                                                        } catch (e: any) {
-                                                            Alert.alert("Error", e.message);
+                                                        const res = await callApi<{
+                                                            count_id: number;
+                                                        }>(
+                                                            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT
+                                                                .start,
+                                                            {
+                                                                method: "POST",
+                                                                body: JSON.stringify({
+                                                                    category_id:
+                                                                        entry.category_id,
+                                                                }),
+                                                            },
+                                                            logout
+                                                        );
+                                                        if (res?.count_id) {
+                                                            router.push({
+                                                                pathname:
+                                                                    "/(app)/(tabs)/home/actions/back_room/CycleCountDetail",
+                                                                params: { id: res.count_id },
+                                                            });
                                                         }
                                                     },
                                                 },

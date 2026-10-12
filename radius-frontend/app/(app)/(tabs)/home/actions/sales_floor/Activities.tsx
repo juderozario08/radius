@@ -147,108 +147,102 @@ export default function Activities() {
         const storeParam = activeStoreId ? `&store_id=${activeStoreId}` : "";
         const storeQueryOnly = activeStoreId ? `?store_id=${activeStoreId}` : "";
 
-        try {
-            const activeRes = await callApi<GetAllOnlineOrdersResponse>(
-                `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=40&dashboard_only=true${storeParam}`,
-                { method: "GET" }, logout
-            );
-            const releasedRes = await callApi<GetAllOnlineOrdersResponse>(
-                `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=20&status=RELEASED${storeParam}`,
-                { method: "GET" }, logout
-            );
-            const cancelledRes = await callApi<GetAllOnlineOrdersResponse>(
-                `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=10&status=CANCELLED${storeParam}`,
-                { method: "GET" }, logout
-            );
+        const activeRes = await callApi<GetAllOnlineOrdersResponse>(
+            `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=40&dashboard_only=true${storeParam}`,
+            { method: "GET" }, logout
+        );
+        const releasedRes = await callApi<GetAllOnlineOrdersResponse>(
+            `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=20&status=RELEASED${storeParam}`,
+            { method: "GET" }, logout
+        );
+        const cancelledRes = await callApi<GetAllOnlineOrdersResponse>(
+            `${ENDPOINTS.SALES_FLOOR.ORDERS.ONLINE.getAll}?page=1&page_size=10&status=CANCELLED${storeParam}`,
+            { method: "GET" }, logout
+        );
 
-            const allFetchedOrders = [
-                ...(activeRes?.online_orders || []),
-                ...(releasedRes?.online_orders || []),
-                ...(cancelledRes?.online_orders || []),
-            ];
+        const allFetchedOrders = [
+            ...(activeRes?.online_orders || []),
+            ...(releasedRes?.online_orders || []),
+            ...(cancelledRes?.online_orders || []),
+        ];
 
-            const mappedOrders = allFetchedOrders.map(o => ({
-                order_id: o.order_id,
+        const mappedOrders = allFetchedOrders.map(o => ({
+            order_id: o.order_id,
+            store_id: o.store_id,
+            customer_name: o.customer_name || "Customer",
+            customer_email: o.customer_email || "",
+            order_type: o.order_type || "BOPIS",
+            status: o.status || "PENDING",
+            total_amount: Number(o.total_amount) || 0,
+            items_count: 1,
+            placed_at: o.placed_at || new Date().toISOString(),
+            assigned_to: o.assigned_to,
+            assigned_to_name: o.assigned_to_name,
+        }));
+        setLiveOrders(mappedOrders);
+
+        mappedOrders.forEach(o => {
+            activities.push({
+                activity_id: `act-order-${o.order_id}-${o.status}`,
                 store_id: o.store_id,
-                customer_name: o.customer_name || "Customer",
-                customer_email: o.customer_email || "",
-                order_type: o.order_type || "BOPIS",
-                status: o.status || "PENDING",
-                total_amount: Number(o.total_amount) || 0,
-                items_count: 1,
-                placed_at: o.placed_at || new Date().toISOString(),
-                assigned_to: o.assigned_to,
-                assigned_to_name: o.assigned_to_name,
-            }));
-            setLiveOrders(mappedOrders);
+                activity_type: "ORDER_PLACED",
+                title: `${o.order_type} Order #${o.order_id}`,
+                description: `${o.customer_name} • Status: ${o.status}${o.assigned_to_name ? ` • Assigned to ${o.assigned_to_name}` : ""}`,
+                timestamp: o.placed_at,
+                metadata: { order_id: o.order_id, assigned_to: o.assigned_to },
+            });
+        });
 
-            mappedOrders.forEach(o => {
+        const countsRes = await callApi<CycleCountSummary[]>(
+            `${ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly}${storeQueryOnly}`,
+            { method: "GET" }, logout
+        );
+        if (countsRes && Array.isArray(countsRes)) {
+            setLiveCycleCounts(countsRes.map(c => ({
+                count_id: c.count_id,
+                store_id: c.store_id,
+                category_id: c.category_id,
+                category_name: c.category_name,
+                status: c.status || "",
+                action: "scanned",
+                total_items: c.total_items,
+                counted_items: c.counted_items,
+                total_variance_cost: Number(c.total_variance_cost) || 0,
+                updated_at: c.count_date || new Date().toISOString(),
+                counted_by: (c as any).counted_by,
+                counted_by_name: c.counted_by_name,
+            })));
+
+            countsRes.forEach(c => {
                 activities.push({
-                    activity_id: `act-order-${o.order_id}-${o.status}`,
-                    store_id: o.store_id,
-                    activity_type: "ORDER_PLACED",
-                    title: `${o.order_type} Order #${o.order_id}`,
-                    description: `${o.customer_name} • Status: ${o.status}${o.assigned_to_name ? ` • Assigned to ${o.assigned_to_name}` : ""}`,
-                    timestamp: o.placed_at,
-                    metadata: { order_id: o.order_id, assigned_to: o.assigned_to },
+                    activity_id: `act-cycle-${c.count_id}`,
+                    store_id: c.store_id,
+                    activity_type: "CYCLE_COUNT_UPDATED",
+                    title: `Cycle Count #${c.count_id} - ${c.category_name}`,
+                    description: `Status: ${c.status} • Progress: ${c.counted_items}/${c.total_items}`,
+                    timestamp: c.count_date || new Date().toISOString(),
+                    metadata: { count_id: c.count_id, counted_by: (c as any).counted_by },
                 });
             });
-        } catch {}
+        }
 
-        try {
-            const countsRes = await callApi<CycleCountSummary[]>(
-                `${ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly}${storeQueryOnly}`,
-                { method: "GET" }, logout
-            );
-            if (countsRes && Array.isArray(countsRes)) {
-                setLiveCycleCounts(countsRes.map(c => ({
-                    count_id: c.count_id,
-                    store_id: c.store_id,
-                    category_id: c.category_id,
-                    category_name: c.category_name,
-                    status: c.status || "",
-                    action: "scanned",
-                    total_items: c.total_items,
-                    counted_items: c.counted_items,
-                    total_variance_cost: Number(c.total_variance_cost) || 0,
-                    updated_at: c.count_date || new Date().toISOString(),
-                    counted_by: (c as any).counted_by,
-                    counted_by_name: c.counted_by_name,
-                })));
-
-                countsRes.forEach(c => {
-                    activities.push({
-                        activity_id: `act-cycle-${c.count_id}`,
-                        store_id: c.store_id,
-                        activity_type: "CYCLE_COUNT_UPDATED",
-                        title: `Cycle Count #${c.count_id} - ${c.category_name}`,
-                        description: `Status: ${c.status} • Progress: ${c.counted_items}/${c.total_items}`,
-                        timestamp: c.count_date || new Date().toISOString(),
-                        metadata: { count_id: c.count_id, counted_by: (c as any).counted_by },
-                    });
+        const posRes = await callApi<PurchaseOrderSummary[]>(
+            `${ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrders}${storeQueryOnly}`,
+            { method: "GET" }, logout
+        );
+        if (posRes && Array.isArray(posRes)) {
+            posRes.forEach(po => {
+                activities.push({
+                    activity_id: `act-po-${po.po_id}`,
+                    store_id: po.store_id,
+                    activity_type: "RECEIVING_DOCK",
+                    title: `PO #${po.po_id} (${po.supplier_name})`,
+                    description: `${po.item_count} item(s) • Status: ${po.status}`,
+                    timestamp: po.arrived_at || po.expected_at || po.ordered_at || new Date().toISOString(),
+                    metadata: { po_id: po.po_id },
                 });
-            }
-        } catch {}
-
-        try {
-            const posRes = await callApi<PurchaseOrderSummary[]>(
-                `${ENDPOINTS.SALES_FLOOR.RECEIVING.purchaseOrders}${storeQueryOnly}`,
-                { method: "GET" }, logout
-            );
-            if (posRes && Array.isArray(posRes)) {
-                posRes.forEach(po => {
-                    activities.push({
-                        activity_id: `act-po-${po.po_id}`,
-                        store_id: po.store_id,
-                        activity_type: "RECEIVING_DOCK",
-                        title: `PO #${po.po_id} (${po.supplier_name})`,
-                        description: `${po.item_count} item(s) • Status: ${po.status}`,
-                        timestamp: po.arrived_at || po.expected_at || po.ordered_at || new Date().toISOString(),
-                        metadata: { po_id: po.po_id },
-                    });
-                });
-            }
-        } catch {}
+            });
+        }
 
         activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         setLiveActivities(activities);

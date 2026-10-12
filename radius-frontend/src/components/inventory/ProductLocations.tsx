@@ -124,28 +124,24 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
             return;
         }
 
-        try {
-            await callApi(ENDPOINTS.SALES_FLOOR.INVENTORY.createLocation, {
-                method: "POST",
-                body: { location_id: formattedId },
-            }, logout);
+        const res = await callApi(ENDPOINTS.SALES_FLOOR.INVENTORY.createLocation, {
+            method: "POST",
+            body: { location_id: formattedId },
+        }, logout);
+        setIsModalVisible(false);
+        setNewLocationId("");
+        if (res === null) return;
 
-            const newLoc: MimsLocationItem = {
-                mims_location_id: formattedId,
-                store_id: locsState.length > 0 ? locsState[0].store_id : 0,
-                inventory_id: locsState.length > 0 ? locsState[0].inventory_id : 0,
-                quantity: 0,
-                location_type: 'OVERSTOCK'
-            };
+        const newLoc: MimsLocationItem = {
+            mims_location_id: formattedId,
+            store_id: locsState.length > 0 ? locsState[0].store_id : 0,
+            inventory_id: locsState.length > 0 ? locsState[0].inventory_id : 0,
+            quantity: 0,
+            location_type: 'OVERSTOCK'
+        };
 
-            setLocsState(prev => [...prev, newLoc]);
-            Toast.show({ type: "success", text1: "Location added" });
-        } catch (err: any) {
-            Toast.show({ type: "error", text1: "Failed to create location", text2: err.message });
-        } finally {
-            setIsModalVisible(false);
-            setNewLocationId("");
-        }
+        setLocsState(prev => [...prev, newLoc]);
+        Toast.show({ type: "success", text1: "Location added" });
     };
 
     const handleAdjustSubmit = async () => {
@@ -154,23 +150,20 @@ export const ProductLocations: React.FC<ProductLocationsProps> = ({
             return;
         }
 
-        try {
-            await callApi(ENDPOINTS.SALES_FLOOR.INVENTORY.adjustments, {
-                method: "POST",
-                body: {
-                    inventory_id: inventoryId,
-                    product_id: productId,
-                    previous_qty: onHandQty,
-                    adjusted_qty: adjustedQty,
-                    reason: "",
-                },
-            }, logout);
+        const res = await callApi(ENDPOINTS.SALES_FLOOR.INVENTORY.adjustments, {
+            method: "POST",
+            body: {
+                inventory_id: inventoryId,
+                product_id: productId,
+                previous_qty: onHandQty,
+                adjusted_qty: adjustedQty,
+                reason: "",
+            },
+        }, logout);
+        if (res === null) return;
 
-            Toast.show({ type: "success", text1: "Adjustment submitted for review" });
-            setIsAdjusting(false);
-        } catch (err: any) {
-            Toast.show({ type: "error", text1: "Failed to submit adjustment", text2: err.message });
-        }
+        Toast.show({ type: "success", text1: "Adjustment submitted for review" });
+        setIsAdjusting(false);
     };
 
     const handleAdjustCancel = () => {

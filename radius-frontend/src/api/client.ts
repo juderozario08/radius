@@ -47,6 +47,13 @@ export class UnauthorizedError extends Error {
     }
 }
 
+export class TimeoutError extends Error {
+    constructor() {
+        super("Request timed out. Check your connection and try again.");
+        this.name = "TimeoutError";
+    }
+}
+
 export interface FetchOptions extends RequestInit {
     cachePolicy?: CachePolicy;
 }
@@ -55,13 +62,20 @@ let refreshPromise: Promise<string | null> | null = null;
 
 async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+    }, 15000);
     const callerSignal = options.signal;
     const abortCaller = () => controller.abort();
     if (callerSignal?.aborted) controller.abort();
     callerSignal?.addEventListener("abort", abortCaller, { once: true });
     try {
         return await fetch(url, { ...options, signal: controller.signal });
+    } catch (err) {
+        if (timedOut) throw new TimeoutError();
+        throw err;
     } finally {
         clearTimeout(timeout);
         callerSignal?.removeEventListener("abort", abortCaller);

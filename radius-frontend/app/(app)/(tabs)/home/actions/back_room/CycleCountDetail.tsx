@@ -42,7 +42,6 @@ export default function CycleCountDetail() {
     const [activeTab, setActiveTab] = useState<FilterTab>("FULL");
     const [isLoading, setIsLoading] = useState(true);
     const [isActionLoading, setIsActionLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const [editingItem, setEditingItem] = useState<CycleCountItemDetail | null>(null);
     const [editQty, setEditQty] = useState<number>(0);
@@ -62,32 +61,19 @@ export default function CycleCountDetail() {
 
     const fetchDetail = useCallback(async () => {
         if (!countId) return;
-        try {
-            setError(null);
-            const data = await callApi<CycleCountDetailResponse>(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getDetail(countId),
-                { method: "GET" },
-                logout
-            );
-            if (data) {
-                setDetail(data);
-            } else {
-                if (params.from === "dashboard") {
-                    router.replace("/(app)/(tabs)/home/dashboard" as any);
-                } else {
-                    router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
-                }
-            }
-        } catch (err: any) {
-            setError(err.message || "Failed to load cycle count details");
-            if (params.from === "dashboard") {
-                router.replace("/(app)/(tabs)/home/dashboard" as any);
-            } else {
-                router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
-            }
-        } finally {
-            setIsLoading(false);
+        const data = await callApi<CycleCountDetailResponse>(
+            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getDetail(countId),
+            { method: "GET" },
+            logout
+        );
+        if (data) {
+            setDetail(data);
+        } else if (params.from === "dashboard") {
+            router.replace("/(app)/(tabs)/home/dashboard" as any);
+        } else {
+            router.replace("/(app)/(tabs)/home/actions/back_room/CycleCount" as any);
         }
+        setIsLoading(false);
     }, [countId, logout, params.from]);
 
     useFocusEffect(
@@ -121,22 +107,19 @@ export default function CycleCountDetail() {
             return;
         }
         setIsTransferring(true);
-        try {
-            const res = await callApi(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.transfer(countId),
-                {
-                    method: "POST",
-                    body: JSON.stringify({ employee_id: selectedEmployeeId }),
-                },
-                logout
-            );
-            if (res !== null) {
-                showToast("success", "Cycle count transferred successfully");
-                setReassignModalVisible(false);
-                fetchDetail();
-            }
-        } finally {
-            setIsTransferring(false);
+        const res = await callApi(
+            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.transfer(countId),
+            {
+                method: "POST",
+                body: JSON.stringify({ employee_id: selectedEmployeeId }),
+            },
+            logout
+        );
+        setIsTransferring(false);
+        if (res !== null) {
+            showToast("success", "Cycle count transferred successfully");
+            setReassignModalVisible(false);
+            fetchDetail();
         }
     };
 
@@ -164,49 +147,41 @@ export default function CycleCountDetail() {
     const handleSaveItemQty = async () => {
         if (!editingItem) return;
         setIsActionLoading(true);
-        try {
-            await callApi(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan(countId),
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        product_id: editingItem.product_id,
-                        counted_qty: editQty,
-                        reason_code: editReason.trim() || undefined,
-                    }),
-                },
-                logout
-            );
-            setEditingItem(null);
-            fetchDetail();
-        } catch (err: any) {
-            Alert.alert("Error", err.message || "Failed to update item quantity");
-        } finally {
-            setIsActionLoading(false);
-        }
+        const res = await callApi(
+            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.scan(countId),
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    product_id: editingItem.product_id,
+                    counted_qty: editQty,
+                    reason_code: editReason.trim() || undefined,
+                }),
+            },
+            logout
+        );
+        setIsActionLoading(false);
+        if (res === null) return;
+        setEditingItem(null);
+        fetchDetail();
     };
 
     const handleSubmitForApproval = async () => {
         setIsActionLoading(true);
-        try {
-            await callApi(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.submit(countId),
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        notes: submitNotes.trim() || undefined,
-                    }),
-                },
-                logout
-            );
-            setSubmitModalVisible(false);
-            fetchDetail();
-            Alert.alert("Submitted", "Cycle count submitted for manager approval.");
-        } catch (err: any) {
-            Alert.alert("Error", err.message || "Failed to submit count");
-        } finally {
-            setIsActionLoading(false);
-        }
+        const res = await callApi(
+            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.submit(countId),
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    notes: submitNotes.trim() || undefined,
+                }),
+            },
+            logout
+        );
+        setIsActionLoading(false);
+        if (res === null) return;
+        setSubmitModalVisible(false);
+        fetchDetail();
+        Alert.alert("Submitted", "Cycle count submitted for manager approval.");
     };
 
     const handleApproveCount = () => {
@@ -220,19 +195,15 @@ export default function CycleCountDetail() {
                     style: "default",
                     onPress: async () => {
                         setIsActionLoading(true);
-                        try {
-                            await callApi(
-                                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.approve(countId),
-                                { method: "POST" },
-                                logout
-                            );
-                            fetchDetail();
-                            Alert.alert("Approved", "Cycle count approved and inventory updated!");
-                        } catch (err: any) {
-                            Alert.alert("Error", err.message || "Failed to approve count");
-                        } finally {
-                            setIsActionLoading(false);
-                        }
+                        const res = await callApi(
+                            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.approve(countId),
+                            { method: "POST" },
+                            logout
+                        );
+                        setIsActionLoading(false);
+                        if (res === null) return;
+                        fetchDetail();
+                        Alert.alert("Approved", "Cycle count approved and inventory updated!");
                     },
                 },
             ]
@@ -342,7 +313,7 @@ export default function CycleCountDetail() {
         );
     }
 
-    if (error || !detail) {
+    if (!detail) {
         return (
             <TopSafeAreaView>
                 <HeaderComponent
@@ -350,7 +321,7 @@ export default function CycleCountDetail() {
                     headerCenter={<Text style={globalStyles.headerTitle}>Cycle Count</Text>}
                 />
                 <View style={globalStyles.centerElement}>
-                    <Text style={globalStyles.errorText}>{error || "Not found"}</Text>
+                    <Text style={globalStyles.errorText}>Not found</Text>
                 </View>
             </TopSafeAreaView>
         );

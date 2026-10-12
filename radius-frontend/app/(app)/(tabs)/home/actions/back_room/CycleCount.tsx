@@ -54,22 +54,19 @@ export default function CycleCountDashboard() {
     const [isStarting, setIsStarting] = useState(false);
 
     const fetchWeeklyCounts = useCallback(async () => {
-        try {
-            setError(null);
-            const data = await callApi<CycleCountSummary[]>(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly,
-                { method: "GET" },
-                logout
-            );
-            if (data) {
-                setCounts(data);
-            }
-        } catch (err: any) {
-            setError(err.message || "Failed to load cycle counts");
-        } finally {
-            setIsLoading(false);
-            setIsRefreshing(false);
+        setError(null);
+        const data = await callApi<CycleCountSummary[]>(
+            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.getWeekly,
+            { method: "GET" },
+            logout
+        );
+        if (data) {
+            setCounts(data);
+        } else {
+            setError("Failed to load cycle counts");
         }
+        setIsLoading(false);
+        setIsRefreshing(false);
     }, [logout]);
 
     const fetchCategories = useCallback(async () => {
@@ -98,29 +95,25 @@ export default function CycleCountDashboard() {
     const handleStartCount = async () => {
         if (!selectedCategoryId) return;
         setIsStarting(true);
-        try {
-            const res = await callApi<{ count_id: number }>(
-                ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.start,
-                {
-                    method: "POST",
-                    body: JSON.stringify({ category_id: selectedCategoryId }),
-                },
-                logout
-            );
-            setModalVisible(false);
-            setSelectedCategoryId(null);
-            if (res && res.count_id) {
-                router.push({
-                    pathname: "/(app)/(tabs)/home/actions/back_room/CycleCountDetail",
-                    params: { id: res.count_id },
-                });
-            } else {
-                fetchWeeklyCounts();
-            }
-        } catch (err: any) {
-            alert(err.message || "Failed to start count");
-        } finally {
-            setIsStarting(false);
+        const res = await callApi<{ count_id: number }>(
+            ENDPOINTS.SALES_FLOOR.CYCLE_COUNT.start,
+            {
+                method: "POST",
+                body: JSON.stringify({ category_id: selectedCategoryId }),
+            },
+            logout
+        );
+        setIsStarting(false);
+        if (res === null) return;
+        setModalVisible(false);
+        setSelectedCategoryId(null);
+        if (res.count_id) {
+            router.push({
+                pathname: "/(app)/(tabs)/home/actions/back_room/CycleCountDetail",
+                params: { id: res.count_id },
+            });
+        } else {
+            fetchWeeklyCounts();
         }
     };
 

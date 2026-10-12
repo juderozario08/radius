@@ -14,14 +14,13 @@ import { globalStyles } from '@/constants/styles';
 import { COLORS } from '@/constants/colors';
 import { router } from 'expo-router';
 import Gate from '@/components/common/Gate';
-import { apiFetch } from '@/api/client';
+import { callApi } from '@/utils/helpers';
 
 export default function Audit() {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [barcode, setBarcode] = useState('');
     const [data, setData] = useState<AuditTrailResponse | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
@@ -50,34 +49,28 @@ export default function Audit() {
         if (!barcode.trim()) return;
 
         setLoading(true);
-        setError(null);
         const currentOffset = reset ? 0 : offset;
 
-        try {
-            const params = new URLSearchParams({ barcode: barcode.trim(), limit: String(LIMIT), offset: String(currentOffset), sort_order: sortOrder });
-            if (filterTxnType) params.set('transaction_type', filterTxnType);
-            if (user?.role === 'ADMIN' && filterStoreId.trim()) {
-                params.set('store_id', filterStoreId.trim());
-            }
-            const result = await apiFetch<AuditTrailResponse>(ENDPOINTS.SALES_FLOOR.PRODUCTS.audit(params.toString()));
-            {
-                if (reset) {
-                    setData(result);
-                } else if (data) {
-                    setData({
-                        ...result,
-                        events: [...data.events, ...result.events]
-                    });
-                }
-                setHasMore(result.events.length === LIMIT);
-                setOffset(currentOffset + LIMIT);
-            }
-        } catch (e: any) {
-            setError(e.message);
-        } finally {
-            setLoading(false);
+        const params = new URLSearchParams({ barcode: barcode.trim(), limit: String(LIMIT), offset: String(currentOffset), sort_order: sortOrder });
+        if (filterTxnType) params.set('transaction_type', filterTxnType);
+        if (user?.role === 'ADMIN' && filterStoreId.trim()) {
+            params.set('store_id', filterStoreId.trim());
         }
-    }, [barcode, offset, sortOrder, filterTxnType, filterStoreId, user?.role, data]);
+        const result = await callApi<AuditTrailResponse>(ENDPOINTS.SALES_FLOOR.PRODUCTS.audit(params.toString()), { method: "GET" }, logout);
+        if (result) {
+            if (reset) {
+                setData(result);
+            } else if (data) {
+                setData({
+                    ...result,
+                    events: [...data.events, ...result.events]
+                });
+            }
+            setHasMore(result.events.length === LIMIT);
+            setOffset(currentOffset + LIMIT);
+        }
+        setLoading(false);
+    }, [barcode, offset, sortOrder, filterTxnType, filterStoreId, user?.role, data, logout]);
 
     const handleSearch = () => {
         fetchAuditTrail(true);
@@ -254,8 +247,6 @@ export default function Audit() {
                         </TouchableOpacity>
                     </View>
                 )}
-
-                {error && <Text style={globalStyles.errorText}>{error}</Text>}
 
                 {data && (
                     <View style={{ flex: 1 }}>

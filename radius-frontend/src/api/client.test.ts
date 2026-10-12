@@ -1,4 +1,4 @@
-import { apiFetch, ConflictError, UnauthorizedError } from "./client";
+import { apiFetch, ConflictError, TimeoutError, UnauthorizedError } from "./client";
 import { getToken, getRefreshToken, saveToken, saveRefreshToken } from "@/utils/token";
 
 jest.mock("@/utils/token", () => ({
@@ -48,6 +48,33 @@ describe("apiFetch", () => {
             .mockResolvedValueOnce(mockResponse(304));
         await expect(apiFetch("/etag-test", { cachePolicy: "network-first" })).resolves.toEqual({ value: 1 });
         await expect(apiFetch("/etag-test", { cachePolicy: "network-first" })).resolves.toEqual({ value: 1 });
+    });
+
+    describe("timeouts", () => {
+        const hangingFetch = () => jest.fn((_url: string, init: RequestInit) => new Promise<Response>((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () => reject(Object.assign(new Error("Aborted"), { name: "AbortError" })));
+        }));
+
+        beforeEach(() => jest.useFakeTimers());
+        afterEach(() => jest.useRealTimers());
+
+        it("rejects with a TimeoutError after 15 seconds", async () => {
+            global.fetch = hangingFetch() as unknown as typeof fetch;
+            const result = apiFetch("/slow", { cachePolicy: "no-store" });
+            const assertion = expect(result).rejects.toBeInstanceOf(TimeoutError);
+            await jest.advanceTimersByTimeAsync(15000);
+            await assertion;
+        });
+
+        it("keeps the AbortError when the caller cancels", async () => {
+            global.fetch = hangingFetch() as unknown as typeof fetch;
+            const controller = new AbortController();
+            const result = apiFetch("/slow", { cachePolicy: "no-store", signal: controller.signal });
+            const assertion = expect(result).rejects.toMatchObject({ name: "AbortError" });
+            await jest.advanceTimersByTimeAsync(0);
+            controller.abort();
+            await assertion;
+        });
     });
 
     it("rejects when a refreshed token is also unauthorized", async () => {

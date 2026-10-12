@@ -1,33 +1,14 @@
-import { apiFetch, UnauthorizedError } from "@/api/client";
-import { ENDPOINTS } from "@/constants/routes";
 import { globalStyles } from "@/constants/styles";
 import { useAuth } from "@/hooks/useAuth";
-import { LogoutResponse } from "@/types/auth.types";
-import { TouchableOpacity, Image, Alert } from "react-native"
-import Toast from "react-native-toast-message";
+import { showToast } from "@/utils/helpers";
+import { TouchableOpacity, Image } from "react-native"
 
 const LogoutComponent = () => {
     const { logout } = useAuth();
 
     async function submitLogout() {
-        try {
-            const res = await apiFetch<LogoutResponse>(ENDPOINTS.AUTH.logout, {
-                method: "POST",
-            });
-            await logout();
-            Toast.show({
-                type: "success",
-                text1: res.message,
-                visibilityTime: 3000,
-                autoHide: true,
-                position: "bottom",
-            });
-        } catch (err) {
-            Alert.alert("An error occured", String(err));
-            if (err instanceof UnauthorizedError) {
-                await logout();
-            }
-        }
+        await logout();
+        showToast("success", "Successfully logged out");
     }
 
     return (

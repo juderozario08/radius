@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import Toast from 'react-native-toast-message';
 import { TopSafeAreaView } from '@/components/common/TopSafeAreaView';
 import HeaderComponent from '@/components/common/HeaderComponent';
 import BackButton from '@/components/common/BackButton';
@@ -27,6 +26,7 @@ import {
 import { COLORS } from '@/constants/colors';
 import { globalStyles } from '@/constants/styles';
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { useAuth } from '@/hooks/useAuth';
 
 const FILTER_TABS: { id: FillReportFilterType; label: string; icon: string }[] = [
     { id: 'ALL', label: 'All Items', icon: 'grid-outline' },
@@ -47,6 +47,7 @@ const SORT_OPTIONS: { id: FillReportSortBy; label: string; defaultOrder: 'ASC' |
 
 export default function FillReportScreen() {
     const router = useRouter();
+    const { logout } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -60,25 +61,16 @@ export default function FillReportScreen() {
 
     const loadFillReport = useCallback(async (isRefresh = false) => {
         if (!isRefresh) setLoading(true);
-        try {
-            const resp = await getFillReport({
-                query: searchQuery.trim() || undefined,
-                filter_type: activeFilter !== 'ALL' ? activeFilter : undefined,
-                sort_by: activeSort,
-                sort_order: sortOrder,
-            });
-            setReportData(resp);
-        } catch (err: any) {
-            Toast.show({
-                type: 'error',
-                text1: 'Error Loading Report',
-                text2: err?.message || 'Could not retrieve store fill report.',
-            });
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, [searchQuery, activeFilter, activeSort, sortOrder]);
+        const resp = await getFillReport(logout, {
+            query: searchQuery.trim() || undefined,
+            filter_type: activeFilter !== 'ALL' ? activeFilter : undefined,
+            sort_by: activeSort,
+            sort_order: sortOrder,
+        });
+        if (resp) setReportData(resp);
+        setLoading(false);
+        setRefreshing(false);
+    }, [logout, searchQuery, activeFilter, activeSort, sortOrder]);
 
     useEffect(() => {
         loadFillReport();

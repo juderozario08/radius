@@ -31,6 +31,26 @@ describe("callApi", () => {
         expect(clearSWRCache).toHaveBeenCalledWith("/inventory");
     });
 
+    it("returns data from a plain GET without touching caches", async () => {
+        (apiFetch as jest.Mock).mockResolvedValue({ value: 1 });
+        await expect(callApi("/inventory", undefined, logout)).resolves.toEqual({ value: 1 });
+        expect(apiFetchSWR).not.toHaveBeenCalled();
+        expect(clearSWRCache).not.toHaveBeenCalled();
+        expect(Toast.show).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ["an HTTP error", new Error("Insufficient stock")],
+        ["a network failure", new TypeError("Network request failed")],
+        ["a timeout", Object.assign(new Error("Request timed out. Check your connection and try again."), { name: "TimeoutError" })],
+    ])("toasts the message and returns null for %s", async (_, error) => {
+        (apiFetch as jest.Mock).mockRejectedValue(error);
+        await expect(callApi("/transfers/1", { method: "POST" }, logout)).resolves.toBeNull();
+        expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: "error", text1: error.message }));
+        expect(logout).not.toHaveBeenCalled();
+        expect(clearSWRCache).not.toHaveBeenCalled();
+    });
+
     it("logs out after unauthorized responses", async () => {
         (apiFetch as jest.Mock).mockRejectedValue(new UnauthorizedError("expired"));
         await expect(callApi("/inventory", {}, logout)).resolves.toBeNull();
@@ -45,6 +65,12 @@ describe("callApi", () => {
         await expect(callApi("/inventory", { signal: controller.signal }, logout)).resolves.toBeNull();
         expect(Toast.show).not.toHaveBeenCalled();
         expect(logout).not.toHaveBeenCalled();
+    });
+
+    it("stays silent when a shared request was aborted by another caller", async () => {
+        (apiFetch as jest.Mock).mockRejectedValue(Object.assign(new Error("Aborted"), { name: "AbortError" }));
+        await expect(callApi("/inventory", {}, logout)).resolves.toBeNull();
+        expect(Toast.show).not.toHaveBeenCalled();
     });
 });
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -17,29 +17,25 @@ import { FillReportResponse } from '@/types/report.types';
 import { COLORS } from '@/constants/colors';
 import { globalStyles } from '@/constants/styles';
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { showToast } from '@/utils/helpers';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function BackRoomFillReportsScreen() {
     const router = useRouter();
+    const { logout } = useAuth();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [report, setReport] = useState<FillReportResponse | null>(null);
 
-    const loadData = async () => {
-        try {
-            const data = await getFillReport();
-            setReport(data);
-        } catch (err: any) {
-            showToast('error', err?.message || 'Could not load store fill status.');
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
+    const loadData = useCallback(async () => {
+        const data = await getFillReport(logout);
+        if (data) setReport(data);
+        setLoading(false);
+        setRefreshing(false);
+    }, [logout]);
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [loadData]);
 
     const onRefresh = () => {
         setRefreshing(true);

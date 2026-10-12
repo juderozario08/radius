@@ -31,19 +31,14 @@ export default function ProductScreen() {
         if (!productId || typeof productId !== "string") return;
         setIsLoading(true);
         setError(null);
-        try {
-            const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails(productId);
-            const data = await callApi<ProductScreenDetails>(endpoint, { method: "GET" }, logout);
-            if (data) {
-                setDetails(data);
-            } else {
-                setError("Product not found");
-            }
-        } catch (err: any) {
-            setError(err.message || "Failed to load product");
-        } finally {
-            setIsLoading(false);
+        const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.productDetails(productId);
+        const data = await callApi<ProductScreenDetails>(endpoint, { method: "GET" }, logout);
+        if (data) {
+            setDetails(data);
+        } else {
+            setError("Product not found");
         }
+        setIsLoading(false);
     }, [productId, logout]);
 
     useEffect(() => {
@@ -53,22 +48,20 @@ export default function ProductScreen() {
     const handleSaveLocations = async (updatedLocations: MimsLocationItem[]) => {
         if (!details) return;
         setIsLoading(true);
-        try {
-            const endpoint = ENDPOINTS.SALES_FLOOR.INVENTORY.syncLocations;
-            await callApi(endpoint, {
-                method: "PUT",
-                body: {
-                    inventory_id: details.inventory.inventory_id,
-                    locations: updatedLocations,
-                }
-            }, logout);
-
-            Toast.show({ type: "success", text1: "Locations updated successfully!" });
-            await fetchProductDetails();
-        } catch (err: any) {
-            Toast.show({ type: "error", text1: "Failed to sync locations", text2: err.message });
+        const res = await callApi(ENDPOINTS.SALES_FLOOR.INVENTORY.syncLocations, {
+            method: "PUT",
+            body: {
+                inventory_id: details.inventory.inventory_id,
+                locations: updatedLocations,
+            }
+        }, logout);
+        if (res === null) {
             setIsLoading(false);
+            return;
         }
+
+        Toast.show({ type: "success", text1: "Locations updated successfully!" });
+        await fetchProductDetails();
     };
 
     const renderTabContent = () => {

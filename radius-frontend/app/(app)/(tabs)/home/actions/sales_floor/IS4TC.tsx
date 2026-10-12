@@ -44,18 +44,15 @@ export default function IS4TCScanScreen() {
       { text: "Cancel", style: "cancel" },
       { text: "Clear", style: "destructive", onPress: async () => {
           setIsProcessing(true);
-          try {
-            const url = user?.store_id
-              ? `${ENDPOINTS.SALES_FLOOR.IS4TC.clearSession}?store_id=${user.store_id}`
-              : ENDPOINTS.SALES_FLOOR.IS4TC.clearSession;
-            await callApi(url, { method: "DELETE" }, logout);
+          const url = user?.store_id
+            ? `${ENDPOINTS.SALES_FLOOR.IS4TC.clearSession}?store_id=${user.store_id}`
+            : ENDPOINTS.SALES_FLOOR.IS4TC.clearSession;
+          const result = await callApi(url, { method: "DELETE" }, logout);
+          if (result !== null) {
             setScannedItems([]);
             Toast.show({ type: "success", text1: "Cleared", text2: "IS4TC session cleared." });
-          } catch (error) {
-            Toast.show({ type: "error", text1: "Error", text2: "Failed to clear session." });
-          } finally {
-            setIsProcessing(false);
           }
+          setIsProcessing(false);
       }}
     ]);
   };
@@ -68,34 +65,28 @@ export default function IS4TCScanScreen() {
 
     if (isProcessing) return;
     setIsProcessing(true);
-    try {
-      const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.scanProduct}?barcode=${encodeURIComponent(barcode)}`;
-      const response = await callApi<ScanProductResponse>(endpoint, { method: "GET" }, logout);
+    const endpoint = `${ENDPOINTS.SALES_FLOOR.INVENTORY.scanProduct}?barcode=${encodeURIComponent(barcode)}`;
+    const response = await callApi<ScanProductResponse>(endpoint, { method: "GET" }, logout);
 
-      if (response?.product) {
-        const addUrl = user?.store_id
-          ? `${ENDPOINTS.SALES_FLOOR.IS4TC.addToSession}?store_id=${user.store_id}`
-          : ENDPOINTS.SALES_FLOOR.IS4TC.addToSession;
-        const addResp = await callApi<{status: string, items: MimsProductInventory[]}>(addUrl, {
-          method: "POST",
-          body: { product: response.product }
-        }, logout);
+    if (response?.product) {
+      const addUrl = user?.store_id
+        ? `${ENDPOINTS.SALES_FLOOR.IS4TC.addToSession}?store_id=${user.store_id}`
+        : ENDPOINTS.SALES_FLOOR.IS4TC.addToSession;
+      const addResp = await callApi<{status: string, items: MimsProductInventory[]}>(addUrl, {
+        method: "POST",
+        body: { product: response.product }
+      }, logout);
 
-        if (addResp?.items) {
-          scannerRef.current?.triggerSuccess();
-          setScannedItems(addResp.items);
-          Toast.show({ type: "success", text1: "Added to List", text2: response.product.name });
-        }
-      } else {
-        scannerRef.current?.triggerError();
-        Toast.show({ type: "error", text1: "Not Found", text2: "Product not found in inventory." });
+      if (addResp?.items) {
+        scannerRef.current?.triggerSuccess();
+        setScannedItems(addResp.items);
+        Toast.show({ type: "success", text1: "Added to List", text2: response.product.name });
       }
-    } catch (err) {
+    } else {
       scannerRef.current?.triggerError();
-      Toast.show({ type: "error", text1: "Error", text2: "Failed to process scan." });
-    } finally {
-      setIsProcessing(false);
+      Toast.show({ type: "error", text1: "Not Found", text2: "Product not found in inventory." });
     }
+    setIsProcessing(false);
   };
 
   const handleBarcodeScanned = (barcode: string) => {

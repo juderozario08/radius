@@ -19,15 +19,35 @@ func NewCycleCountRepo(db *sql.DB) *CycleCountRepo {
 	return &CycleCountRepo{db: db}
 }
 
-func (r *CycleCountRepo) GetWeeklyCycleCounts(ctx context.Context, storeID int) ([]models.CycleCountSummary, error) {
-	query := `
+const cycleCountSummarySelect = `
 		SELECT 
-			cc.count_id, cc.store_id, c.name AS category_name, cc.category_id, cc.status,
+			cc.count_id, cc.store_id, c.name AS category_name, cc.category_id, cc.status, cc.counted_by,
 			CASE WHEN e.employee_id IS NOT NULL THEN e.first_name || ' ' || e.last_name ELSE NULL END AS counted_by_name,
 			cc.total_items, cc.counted_items, cc.count_date, cc.total_variance_cost
 		FROM cycle_counts cc
 		JOIN categories c ON cc.category_id = c.category_id
 		LEFT JOIN employees e ON cc.counted_by = e.employee_id
+`
+
+func scanCycleCountSummaries(rows *sql.Rows) ([]models.CycleCountSummary, error) {
+	defer rows.Close()
+
+	summaries := []models.CycleCountSummary{}
+	for rows.Next() {
+		var s models.CycleCountSummary
+		if err := rows.Scan(
+			&s.CountId, &s.StoreId, &s.CategoryName, &s.CategoryId, &s.Status, &s.CountedBy,
+			&s.CountedByName, &s.TotalItems, &s.CountedItems, &s.CountDate, &s.TotalVarianceCost,
+		); err != nil {
+			return nil, err
+		}
+		summaries = append(summaries, s)
+	}
+	return summaries, rows.Err()
+}
+
+func (r *CycleCountRepo) GetWeeklyCycleCounts(ctx context.Context, storeID int) ([]models.CycleCountSummary, error) {
+	query := cycleCountSummarySelect + `
 		WHERE ($1 <= 0 OR cc.store_id = $1)
 		ORDER BY 
 			CASE cc.status 
@@ -45,25 +65,7 @@ func (r *CycleCountRepo) GetWeeklyCycleCounts(ctx context.Context, storeID int) 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	var summaries []models.CycleCountSummary
-	for rows.Next() {
-		var s models.CycleCountSummary
-		if err := rows.Scan(
-			&s.CountId, &s.StoreId, &s.CategoryName, &s.CategoryId, &s.Status,
-			&s.CountedByName, &s.TotalItems, &s.CountedItems, &s.CountDate, &s.TotalVarianceCost,
-		); err != nil {
-			return nil, err
-		}
-		summaries = append(summaries, s)
-	}
-
-	if summaries == nil {
-		summaries = []models.CycleCountSummary{}
-	}
-
-	return summaries, rows.Err()
+	return scanCycleCountSummaries(rows)
 }
 
 func (r *CycleCountRepo) GetCycleCountByID(ctx context.Context, countID int, storeID int) (*models.CycleCount, error) {
@@ -562,14 +564,7 @@ func (r *CycleCountRepo) SearchCycleCounts(ctx context.Context, storeID int, cri
 		b.Add("cc.count_date <= $%d::date", *criteria.DateTo)
 	}
 
-	baseQuery := fmt.Sprintf(`
-		SELECT 
-			cc.count_id, cc.store_id, c.name AS category_name, cc.category_id, cc.status,
-			CASE WHEN e.employee_id IS NOT NULL THEN e.first_name || ' ' || e.last_name ELSE NULL END AS counted_by_name,
-			cc.total_items, cc.counted_items, cc.count_date, cc.total_variance_cost
-		FROM cycle_counts cc
-		JOIN categories c ON cc.category_id = c.category_id
-		LEFT JOIN employees e ON cc.counted_by = e.employee_id
+	baseQuery := fmt.Sprintf(cycleCountSummarySelect+`
 		%s
 		ORDER BY cc.count_date DESC, cc.count_id DESC LIMIT 100
 	`, b.WhereClause())
@@ -578,25 +573,7 @@ func (r *CycleCountRepo) SearchCycleCounts(ctx context.Context, storeID int, cri
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	var summaries []models.CycleCountSummary
-	for rows.Next() {
-		var s models.CycleCountSummary
-		if err := rows.Scan(
-			&s.CountId, &s.StoreId, &s.CategoryName, &s.CategoryId, &s.Status,
-			&s.CountedByName, &s.TotalItems, &s.CountedItems, &s.CountDate, &s.TotalVarianceCost,
-		); err != nil {
-			return nil, err
-		}
-		summaries = append(summaries, s)
-	}
-
-	if summaries == nil {
-		summaries = []models.CycleCountSummary{}
-	}
-
-	return summaries, rows.Err()
+	return scanCycleCountSummaries(rows)
 }
 
 func (r *CycleCountRepo) GetSchedule(ctx context.Context, storeID int, fromDate time.Time, toDate time.Time) ([]models.CycleCountScheduleEntry, error) {

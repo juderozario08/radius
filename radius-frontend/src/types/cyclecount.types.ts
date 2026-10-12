@@ -33,6 +33,7 @@ export interface CycleCountSummary {
     category_name: string;
     category_id: number;
     status: CycleCountStatus;
+    counted_by: number | null;
     counted_by_name: string | null;
     total_items: number;
     counted_items: number;

@@ -13,13 +13,18 @@ jest.mock("@/hooks/useAuth", () => {
 });
 jest.mock("@/components/common/BackButton", () => () => null);
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
+let mockVisibleTab = "Tasks";
 jest.mock("@react-navigation/material-top-tabs", () => ({
     createMaterialTopTabNavigator: () => ({
         Navigator: ({ children }: { children: React.ReactNode }) => children,
         Screen: ({ name, children }: { name: string; children: () => React.ReactNode }) =>
-            name === "Tasks" ? children() : null,
+            name === mockVisibleTab ? children() : null,
     }),
 }));
+
+beforeEach(() => {
+    mockVisibleTab = "Tasks";
+});
 
 const order = {
     order_id: 41,
@@ -30,7 +35,7 @@ const order = {
     total_amount: 1000,
     placed_at: "2026-10-10T10:00:00Z",
 };
-const count = (status: string) => ({
+const count = (status: string, overrides: Record<string, unknown> = {}) => ({
     count_id: 9,
     store_id: 3,
     category_id: 1,
@@ -40,6 +45,9 @@ const count = (status: string) => ({
     counted_items: 1,
     total_variance_cost: 0,
     count_date: "2026-10-09T10:00:00Z",
+    counted_by: null,
+    counted_by_name: null,
+    ...overrides,
 });
 
 function mockResponses({ orders, counts }: { orders: unknown; counts: unknown }) {
@@ -62,4 +70,21 @@ it("keeps the last orders when every order fetch fails on refresh", async () => 
 
     await waitFor(() => expect(screen.getByText("Status: NOT STARTED • Progress: 1/4")).toBeTruthy());
     expect(screen.getByText("BOPIS Order #41")).toBeTruthy();
+});
+
+it("lists cycle counts assigned to the current employee under Assigned", async () => {
+    mockVisibleTab = "Assigned";
+    mockResponses({
+        orders: { online_orders: [] },
+        counts: [
+            count("IN PROGRESS", { counted_by: 7, counted_by_name: "Test Me" }),
+            count("IN PROGRESS", { count_id: 10, category_name: "Paint", counted_by: 8, counted_by_name: "Someone Else" }),
+            count("IN PROGRESS", { count_id: 11, category_name: "Garden" }),
+        ],
+    });
+    await render(<Activities />);
+
+    await screen.findByText("Cycle Count #9 - Tools");
+    expect(screen.queryByText("Cycle Count #10 - Paint")).toBeNull();
+    expect(screen.queryByText("Cycle Count #11 - Garden")).toBeNull();
 });

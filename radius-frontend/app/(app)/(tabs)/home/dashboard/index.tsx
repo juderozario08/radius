@@ -395,6 +395,7 @@ export default function RealTimeDashboard() {
                     counted_items: c.counted_items,
                     total_variance_cost: Number(c.total_variance_cost) || 0,
                     updated_at: c.count_date || new Date().toISOString(),
+                    counted_by: c.counted_by,
                     counted_by_name: c.counted_by_name,
                 }));
             setLiveCycleCounts(mappedCounts);

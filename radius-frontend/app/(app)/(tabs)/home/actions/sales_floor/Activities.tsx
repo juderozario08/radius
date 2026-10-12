@@ -213,6 +213,7 @@ export default function Activities() {
                 counted_items: c.counted_items,
                 total_variance_cost: Number(c.total_variance_cost) || 0,
                 updated_at: c.count_date || new Date().toISOString(),
+                counted_by: c.counted_by,
                 counted_by_name: c.counted_by_name,
             })));
 
@@ -224,7 +225,7 @@ export default function Activities() {
                     title: `Cycle Count #${c.count_id} - ${c.category_name}`,
                     description: `Status: ${c.status} • Progress: ${c.counted_items}/${c.total_items}`,
                     timestamp: c.count_date || new Date().toISOString(),
-                    metadata: { count_id: c.count_id },
+                    metadata: { count_id: c.count_id, counted_by: c.counted_by },
                 });
             });
         }

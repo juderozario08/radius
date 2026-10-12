@@ -199,6 +199,38 @@ func TestCycleCountRepositoryIntegration(t *testing.T) {
 	}
 }
 
+func TestCycleCountSummariesIncludeCountedByIntegration(t *testing.T) {
+	db := integrationDB(t)
+	f := newInventoryFixture(t, db)
+	ctx := context.Background()
+	category := insertID(t, db, `INSERT INTO categories (name) VALUES ('Summary Category') RETURNING category_id`)
+	assigned := insertID(t, db, `INSERT INTO cycle_counts (store_id,count_date,category_id,counted_by) VALUES ($1,CURRENT_DATE,$2,$3) RETURNING count_id`, f.fromStore, category, f.employee)
+	unassigned := insertID(t, db, `INSERT INTO cycle_counts (store_id,count_date,category_id) VALUES ($1,CURRENT_DATE,$2) RETURNING count_id`, f.fromStore, category)
+	repo := NewCycleCountRepo(db)
+
+	weekly, err := repo.GetWeeklyCycleCounts(ctx, f.fromStore)
+	if err != nil {
+		t.Fatal(err)
+	}
+	searched, err := repo.SearchCycleCounts(ctx, f.fromStore, models.CycleCountSearchCriteria{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for name, summaries := range map[string][]models.CycleCountSummary{"weekly": weekly, "search": searched} {
+		byID := map[int]models.CycleCountSummary{}
+		for _, s := range summaries {
+			byID[s.CountId] = s
+		}
+		if s, ok := byID[assigned]; !ok || s.CountedBy == nil || *s.CountedBy != f.employee || s.CountedByName == nil || *s.CountedByName != "Test Employee" {
+			t.Fatalf("%s assigned summary = %+v, found %v", name, s, ok)
+		}
+		if s, ok := byID[unassigned]; !ok || s.CountedBy != nil || s.CountedByName != nil {
+			t.Fatalf("%s unassigned summary = %+v, found %v", name, s, ok)
+		}
+	}
+}
+
 func TestReturnsRepositoryIntegration(t *testing.T) {
 	db := integrationDB(t)
 	f := newInventoryFixture(t, db)

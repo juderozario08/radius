@@ -165,6 +165,7 @@ type CycleCountSummary struct {
 	CategoryName      string           `json:"category_name"`
 	CategoryId        int              `json:"category_id"`
 	Status            CycleCountStatus `json:"status"`
+	CountedBy         *int             `json:"counted_by"`
 	CountedByName     *string          `json:"counted_by_name"`
 	TotalItems        int              `json:"total_items"`
 	CountedItems      int              `json:"counted_items"`

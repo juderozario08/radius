@@ -18,6 +18,7 @@ import { ConnectionStatusBadge } from "@/components/common/ConnectionStatusBadge
 import { OrderCard } from "@/components/orders/OrderCard";
 import { globalStyles } from "@/constants/styles";
 import { dashboardStyles as styles } from "@/components/dashboard/dashboardStyles";
+import { DashboardControls } from "@/components/dashboard/DashboardControls";
 import { DashboardActivityCard, DashboardCycleCountCard } from "@/components/dashboard/DashboardFeedCards";
 import { COLORS } from "@/constants/colors";
 import { useAuth } from "@/hooks/useAuth";
@@ -780,157 +781,32 @@ export default function RealTimeDashboard() {
                         </View>
                     </View>
 
-                    <View style={styles.scopeSwitcherContainer}>
-                        <TouchableOpacity
-                            style={[styles.scopeButton, viewScope === "my_tasks" && styles.scopeButtonActive]}
-                            onPress={() => {
-                                setViewScope("my_tasks");
-                            }}
-                        >
-                            <Ionicons
-                                name="person"
-                                size={14}
-                                color={viewScope === "my_tasks" ? COLORS.primaryText : COLORS.textSecondary}
-                            />
-                            <Text style={[styles.scopeText, viewScope === "my_tasks" && styles.scopeTextActive]}>
-                                My Tasks
-                            </Text>
-                            {myOrders.length > 0 && (
-                                <View style={styles.scopeCountBadge}>
-                                    <Text style={styles.scopeCountText}>{myOrders.length}</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.scopeButton, viewScope === "store_wide" && styles.scopeButtonActive]}
-                            onPress={() => {
-                                setViewScope("store_wide");
-                            }}
-                        >
-                            <Ionicons
-                                name="business"
-                                size={14}
-                                color={viewScope === "store_wide" ? COLORS.primaryText : COLORS.textSecondary}
-                            />
-                            <Text style={[styles.scopeText, viewScope === "store_wide" && styles.scopeTextActive]}>
-                                Store-Wide
-                            </Text>
-                            <View style={[styles.scopeCountBadge, { backgroundColor: COLORS.inactiveBg }]}>
-                                <Text style={[styles.scopeCountText, { color: COLORS.textPrimary }]}>
-                                    {liveOrders.length}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.metricsRow}>
-                        <TouchableOpacity
-                            style={[styles.metricCard, activeTab === "orders" && styles.metricCardActive]}
-                            onPress={() => {
-                                if (activeTab === "orders") {
-                                    router.push({
-                                        pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders",
-                                        params: { from: "dashboard" },
-                                    });
-                                } else {
-                                    setActiveTab("orders");
-                                }
-                            }}
-                        >
-                            <View style={styles.metricIconRow}>
-                                <Ionicons name="cart" size={20} color={COLORS.primary} />
-                                <Text style={styles.metricValue}>{displayedOrders.length}</Text>
-                            </View>
-                            <View style={styles.metricLabelRow}>
-                                <Text style={styles.metricLabel}>
-                                    {viewScope === "my_tasks" ? "My Orders" : "Live Orders"}
-                                </Text>
-                                <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
-                            </View>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.metricCard, activeTab === "cycle_counts" && styles.metricCardActive]}
-                            onPress={() => {
-                                if (activeTab === "cycle_counts") {
-                                    router.push({
-                                        pathname: "/(app)/(tabs)/home/actions/back_room/CycleCount",
-                                        params: { from: "dashboard" },
-                                    });
-                                } else {
-                                    setActiveTab("cycle_counts");
-                                }
-                            }}
-                        >
-                            <View style={styles.metricIconRow}>
-                                <Ionicons name="barcode" size={20} color={COLORS.accent} />
-                                <Text style={styles.metricValue}>{displayedCycleCounts.length}</Text>
-                            </View>
-                            <View style={styles.metricLabelRow}>
-                                <Text style={styles.metricLabel}>Cycle Counts</Text>
-                                <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
-                            </View>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.metricCard, activeTab === "activities" && styles.metricCardActive]}
-                            onPress={() => {
-                                if (activeTab === "activities") {
-                                    router.push("/(app)/(tabs)/home/actions");
-                                } else {
-                                    setActiveTab("activities");
-                                }
-                            }}
-                        >
-                            <View style={styles.metricIconRow}>
-                                <Ionicons name="pulse" size={20} color={COLORS.success} />
-                                <Text style={styles.metricValue}>{displayedActivities.length}</Text>
-                            </View>
-                            <View style={styles.metricLabelRow}>
-                                <Text style={styles.metricLabel}>Activities</Text>
-                                <Ionicons name="chevron-forward" size={12} color={COLORS.textSecondary} />
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.tabsContainer}>
-                        <TouchableOpacity
-                            style={[styles.tabButton, activeTab === "overview" && styles.tabButtonActive]}
-                            onPress={() => setActiveTab("overview")}
-                        >
-                            <Text style={[styles.tabText, activeTab === "overview" && styles.tabTextActive]}>
-                                Overview
-                            </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.tabButton, activeTab === "orders" && styles.tabButtonActive]}
-                            onPress={() => setActiveTab("orders")}
-                        >
-                            <Text style={[styles.tabText, activeTab === "orders" && styles.tabTextActive]}>
-                                Live Orders ({displayedOrders.length})
-                            </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.tabButton, activeTab === "cycle_counts" && styles.tabButtonActive]}
-                            onPress={() => setActiveTab("cycle_counts")}
-                        >
-                            <Text style={[styles.tabText, activeTab === "cycle_counts" && styles.tabTextActive]}>
-                                Cycle Counts ({displayedCycleCounts.length})
-                            </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.tabButton, activeTab === "activities" && styles.tabButtonActive]}
-                            onPress={() => setActiveTab("activities")}
-                        >
-                            <Text style={[styles.tabText, activeTab === "activities" && styles.tabTextActive]}>
-                                Feed
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+                    <DashboardControls
+                        scope={viewScope}
+                        tab={activeTab}
+                        myOrderCount={myOrders.length}
+                        storeOrderCount={liveOrders.length}
+                        orderCount={displayedOrders.length}
+                        cycleCount={displayedCycleCounts.length}
+                        activityCount={displayedActivities.length}
+                        onScopeChange={setViewScope}
+                        onTabChange={setActiveTab}
+                        onOpenOrders={() => {
+                            router.push({
+                                pathname: "/(app)/(tabs)/home/actions/sales_floor/Orders",
+                                params: { from: "dashboard" },
+                            });
+                        }}
+                        onOpenCycleCounts={() => {
+                            router.push({
+                                pathname: "/(app)/(tabs)/home/actions/back_room/CycleCount",
+                                params: { from: "dashboard" },
+                            });
+                        }}
+                        onOpenActivities={() => {
+                            router.push("/(app)/(tabs)/home/actions");
+                        }}
+                    />
 
                     {initialLoading ? (
                         <View style={styles.loadingContainer}>

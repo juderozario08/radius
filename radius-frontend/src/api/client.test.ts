@@ -1,5 +1,6 @@
 import { apiFetch, ConflictError, TimeoutError, UnauthorizedError } from "./client";
-import { getToken, getRefreshToken, saveToken, saveRefreshToken } from "@/utils/token";
+import { getToken, getRefreshToken, saveToken, saveRefreshToken, deleteToken, deleteRefreshToken } from "@/utils/token";
+import { ENDPOINTS } from "@/constants/routes";
 
 jest.mock("@/utils/token", () => ({
     getToken: jest.fn(),
@@ -83,5 +84,95 @@ describe("apiFetch", () => {
             .mockResolvedValueOnce(mockResponse(200, { token: "new-access", refresh_token: "new-refresh" }))
             .mockResolvedValueOnce(mockResponse(401));
         await expect(apiFetch("/test", { cachePolicy: "no-store" })).rejects.toBeInstanceOf(UnauthorizedError);
+    });
+
+    describe("token refresh", () => {
+        const isRefresh = (url: string) => url.endsWith(ENDPOINTS.AUTH.refreshToken);
+        const refreshCalls = (fetchMock: jest.Mock) => fetchMock.mock.calls.filter(([url]) => isRefresh(url));
+
+        beforeEach(() => {
+            let stored = "old-access";
+            (getToken as jest.Mock).mockImplementation(async () => stored);
+            (saveToken as jest.Mock).mockImplementation(async (token: string) => { stored = token; });
+        });
+
+        it("shares one refresh between concurrent 401s and retries each with the new token", async () => {
+            const fetchMock = jest.fn(async (url: string, init: RequestInit) => {
+                if (isRefresh(url)) {
+                    await Promise.resolve();
+                    return mockResponse(200, { token: "new-access", refresh_token: "new-refresh" });
+                }
+                const auth = (init.headers as Record<string, string>).Authorization;
+                return auth === "Bearer new-access" ? mockResponse(200, { url }) : mockResponse(401);
+            });
+            global.fetch = fetchMock as unknown as typeof fetch;
+
+            const results = await Promise.all(["/a", "/b", "/c"].map((path) => apiFetch(path, { cachePolicy: "no-store" })));
+
+            expect(results).toHaveLength(3);
+            expect(refreshCalls(fetchMock)).toHaveLength(1);
+            expect(saveRefreshToken).toHaveBeenCalledTimes(1);
+        });
+
+        it("retries with the stored token instead of refreshing again when the rejected token was already replaced", async () => {
+            const fetchMock = jest.fn().mockResolvedValueOnce(mockResponse(401)).mockResolvedValueOnce(mockResponse(200, { ok: true }));
+            global.fetch = fetchMock;
+            (getToken as jest.Mock).mockResolvedValueOnce("old-access").mockResolvedValue("new-access");
+
+            await expect(apiFetch("/late", { cachePolicy: "no-store" })).resolves.toEqual({ ok: true });
+            expect(refreshCalls(fetchMock)).toHaveLength(0);
+            expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe("Bearer new-access");
+        });
+
+        it("keeps tokens when the refresh request fails on the network", async () => {
+            global.fetch = jest.fn()
+                .mockResolvedValueOnce(mockResponse(401))
+                .mockRejectedValueOnce(new TypeError("Network request failed"));
+
+            await expect(apiFetch("/test", { cachePolicy: "no-store" })).rejects.toThrow(new TypeError("Network request failed"));
+            expect(deleteToken).not.toHaveBeenCalled();
+            expect(deleteRefreshToken).not.toHaveBeenCalled();
+        });
+
+        it("keeps tokens when the refresh endpoint fails with a server error", async () => {
+            global.fetch = jest.fn()
+                .mockResolvedValueOnce(mockResponse(401))
+                .mockResolvedValueOnce(mockResponse(429));
+
+            await expect(apiFetch("/test", { cachePolicy: "no-store" })).rejects.not.toBeInstanceOf(UnauthorizedError);
+            expect(deleteToken).not.toHaveBeenCalled();
+            expect(deleteRefreshToken).not.toHaveBeenCalled();
+        });
+
+        it("keeps tokens when the refresh request times out", async () => {
+            jest.useFakeTimers();
+            try {
+                global.fetch = jest.fn((url: string, init: RequestInit) => isRefresh(url)
+                    ? new Promise<Response>((_resolve, reject) => {
+                        init.signal?.addEventListener("abort", () => reject(Object.assign(new Error("Aborted"), { name: "AbortError" })));
+                    })
+                    : Promise.resolve(mockResponse(401))) as unknown as typeof fetch;
+
+                const assertion = expect(apiFetch("/test", { cachePolicy: "no-store" })).rejects.toBeInstanceOf(TimeoutError);
+                await jest.advanceTimersByTimeAsync(15000);
+                await assertion;
+                expect(deleteToken).not.toHaveBeenCalled();
+                expect(deleteRefreshToken).not.toHaveBeenCalled();
+            } finally {
+                jest.useRealTimers();
+            }
+        });
+
+        it("clears tokens when the refresh token is rejected", async () => {
+            const fetchMock = jest.fn(async (url: string) => isRefresh(url) ? mockResponse(401, { error: "Request could not be completed" }) : mockResponse(401));
+            global.fetch = fetchMock as unknown as typeof fetch;
+
+            const results = await Promise.allSettled(["/a", "/b"].map((path) => apiFetch(path, { cachePolicy: "no-store" })));
+
+            expect(results.every((r) => r.status === "rejected" && r.reason instanceof UnauthorizedError)).toBe(true);
+            expect(refreshCalls(fetchMock)).toHaveLength(1);
+            expect(deleteToken).toHaveBeenCalledTimes(1);
+            expect(deleteRefreshToken).toHaveBeenCalledTimes(1);
+        });
     });
 });

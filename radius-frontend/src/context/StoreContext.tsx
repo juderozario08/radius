@@ -1,7 +1,8 @@
-import { apiFetch, clearSWRCache, setClientContext } from "@/api/client";
+import { apiFetch, clearSWRCache, setClientContext, UnauthorizedError } from "@/api/client";
 import { ENDPOINTS } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
 import { GetStoreResponse, Store } from "@/types/admin.types";
+import { handleSessionExpired } from "@/utils/helpers";
 import { hasPermission } from "@/utils/roles";
 import { createContext, ReactNode, useCallback, useEffect, useState } from "react";
 
@@ -16,7 +17,7 @@ type StoreContextType = {
 export const StoreContext = createContext<StoreContextType | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-    const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+    const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
     const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
     const activeStoreId = selectedStoreId ?? user?.store_id ?? null;
     const [store, setStore] = useState<Store | null>(null);
@@ -54,10 +55,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         } catch (err) {
             setStore(null);
             setError(String(err));
+            if (err instanceof UnauthorizedError) {
+                await handleSessionExpired(err.message, logout);
+            }
         } finally {
             setIsLoading(false);
         }
-    }, [canFetchStore, activeStoreId]);
+    }, [canFetchStore, activeStoreId, logout]);
 
     useEffect(() => {
         if (authLoading) return;

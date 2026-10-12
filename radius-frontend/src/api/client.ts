@@ -82,45 +82,49 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise
     }
 }
 
-async function refreshAccessToken(): Promise<string | null> {
+async function requestNewTokens(): Promise<string | null> {
+    const refreshToken = await getRefreshToken();
+    if (!refreshToken) {
+        return null;
+    }
+
+    const response = await fetchWithTimeout(`${BASE_URL}${ENDPOINTS.AUTH.refreshToken}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (response.status === 401 || response.status === 403) {
+        await deleteToken();
+        await deleteRefreshToken();
+        return null;
+    }
+
+    if (!response.ok) {
+        throw new Error("Couldn't renew your session. Try again.");
+    }
+
+    const data = (await response.json()) as RefreshTokenResponse;
+    await saveToken(data.token);
+    if (data.refresh_token) {
+        await saveRefreshToken(data.refresh_token);
+    }
+    return data.token;
+}
+
+// The backend rotates refresh tokens and terminates the whole session when a used one is replayed,
+// so every 401 must share one refresh, and a 401 for a token that was already replaced just retries.
+async function refreshAccessToken(rejectedToken: string | null): Promise<string | null> {
     if (refreshPromise) {
         return refreshPromise;
     }
-
-    refreshPromise = (async () => {
-        try {
-            const refreshToken = await getRefreshToken();
-            if (!refreshToken) {
-                return null;
-            }
-
-            const response = await fetchWithTimeout(`${BASE_URL}${ENDPOINTS.AUTH.refreshToken}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ refresh_token: refreshToken }),
-            });
-
-            if (!response.ok) {
-                await deleteToken();
-                await deleteRefreshToken();
-                return null;
-            }
-
-            const data = (await response.json()) as RefreshTokenResponse;
-            await saveToken(data.token);
-            if (data.refresh_token) {
-                await saveRefreshToken(data.refresh_token);
-            }
-            return data.token;
-        } catch {
-            await deleteToken();
-            await deleteRefreshToken();
-            return null;
-        } finally {
-            refreshPromise = null;
-        }
-    })();
-
+    const currentToken = await getToken();
+    if (currentToken && currentToken !== rejectedToken) {
+        return currentToken;
+    }
+    refreshPromise ??= requestNewTokens().finally(() => {
+        refreshPromise = null;
+    });
     return refreshPromise;
 }
 
@@ -149,7 +153,7 @@ async function executeNetworkFetch<T>(
     });
 
     if (response.status === 401) {
-        const newToken = await refreshAccessToken();
+        const newToken = await refreshAccessToken(token);
         if (!newToken) {
             throw new UnauthorizedError("Invalid or expired session");
         }

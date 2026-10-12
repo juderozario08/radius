@@ -10,6 +10,20 @@ export function showToast(type: "success" | "error" | "info", text: string) {
     Toast.show({ type, text1: text, position: "bottom", visibilityTime: 3000 });
 }
 
+let sessionExpiry: Promise<void> | null = null;
+
+export function handleSessionExpired(message: string, logout: () => Promise<void>): Promise<void> {
+    if (!sessionExpiry) {
+        showToast("error", message);
+        sessionExpiry = logout();
+    }
+    return sessionExpiry;
+}
+
+export function resetSessionExpiry() {
+    sessionExpiry = null;
+}
+
 export interface ApiCallOptions {
     method?: string;
     body?: any;
@@ -79,9 +93,10 @@ export async function callApi<T>(
             return null;
         }
         const errorMessage = err instanceof Error ? err.message : String(err);
-        showToast("error", errorMessage);
         if (err instanceof UnauthorizedError) {
-            await logout();
+            await handleSessionExpired(errorMessage, logout);
+        } else {
+            showToast("error", errorMessage);
         }
         return null;
     }

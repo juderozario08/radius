@@ -1,6 +1,6 @@
 import { apiFetch, apiFetchSWR, clearSWRCache, UnauthorizedError } from "@/api/client";
 import Toast from "react-native-toast-message";
-import { callApi, capitalize } from "./helpers";
+import { callApi, capitalize, resetSessionExpiry } from "./helpers";
 
 jest.mock("@/api/client", () => ({
     apiFetch: jest.fn(),
@@ -12,7 +12,10 @@ jest.mock("react-native-toast-message", () => ({ show: jest.fn() }));
 
 const logout = jest.fn().mockResolvedValue(undefined);
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+    jest.clearAllMocks();
+    resetSessionExpiry();
+});
 
 describe("callApi", () => {
     it("uses SWR for GET and returns the response", async () => {
@@ -56,6 +59,29 @@ describe("callApi", () => {
         await expect(callApi("/inventory", {}, logout)).resolves.toBeNull();
         expect(logout).toHaveBeenCalledTimes(1);
         expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: "error" }));
+    });
+
+    it("logs out and toasts once when parallel calls are unauthorized", async () => {
+        let finishLogout!: () => void;
+        const slowLogout = jest.fn(() => new Promise<void>((resolve) => { finishLogout = resolve; }));
+        (apiFetch as jest.Mock).mockRejectedValue(new UnauthorizedError("Invalid or expired session"));
+
+        const calls = Promise.all(["/a", "/b", "/c"].map((path) => callApi(path, {}, slowLogout)));
+        await Promise.resolve();
+        finishLogout();
+        await expect(calls).resolves.toEqual([null, null, null]);
+        await expect(callApi("/late", {}, slowLogout)).resolves.toBeNull();
+
+        expect(slowLogout).toHaveBeenCalledTimes(1);
+        expect(Toast.show).toHaveBeenCalledTimes(1);
+    });
+
+    it("handles a new session expiry after the next login", async () => {
+        (apiFetch as jest.Mock).mockRejectedValue(new UnauthorizedError("expired"));
+        await callApi("/inventory", {}, logout);
+        resetSessionExpiry();
+        await callApi("/inventory", {}, logout);
+        expect(logout).toHaveBeenCalledTimes(2);
     });
 
     it("does not toast or log out for cancellation", async () => {

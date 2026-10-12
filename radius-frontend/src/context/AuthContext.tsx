@@ -5,6 +5,7 @@ import Toast from "react-native-toast-message";
 import * as SecureStore from "expo-secure-store";
 import { LoginResponse, LogoutResponse, VerifyTokenResponse } from "@/types/auth.types";
 import { ENDPOINTS } from "@/constants/routes";
+import { resetSessionExpiry } from "@/utils/helpers";
 
 export type UserInfo = Omit<LoginResponse, 'token' | 'refresh_token'>;
 
@@ -83,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             employeeId: userData.employee_id,
         });
         setToken(userData.token);
+        resetSessionExpiry();
 
         const { token, refresh_token, ...userInfo } = userData;
         setUser(userInfo);

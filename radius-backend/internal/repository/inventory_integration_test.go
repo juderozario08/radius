@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net/url"
 	"os"
 	"radius/internal/models"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -45,6 +47,7 @@ func insertID(t *testing.T, db *sql.DB, query string, args ...any) int {
 }
 
 type inventoryFixture struct {
+	unique    string
 	fromStore int
 	toStore   int
 	employee  int
@@ -52,11 +55,19 @@ type inventoryFixture struct {
 	product   int
 }
 
-var fixtureSequence atomic.Int64
+var (
+	fixtureRunPrefix = fmt.Sprintf("%05x", (time.Now().UnixNano()/1e6)&0xFFFFF)
+	fixtureSequence  atomic.Int64
+)
+
+func uniqueFixtureID() string {
+	seq := fixtureSequence.Add(1)
+	return fmt.Sprintf("%s%03x", fixtureRunPrefix, seq&0xFFF)
+}
 
 func newInventoryFixture(t *testing.T, db *sql.DB) inventoryFixture {
 	t.Helper()
-	unique := strconv.FormatInt(fixtureSequence.Add(1), 10)
+	unique := uniqueFixtureID()
 	fromStore := insertID(t, db, `INSERT INTO stores (name,address,city,province,postal_code,phone) VALUES ($1,'1 Test St','Toronto','ON',$2,$3) RETURNING store_id`, "Test From "+unique, "A1A "+unique, "555"+unique)
 	toStore := insertID(t, db, `INSERT INTO stores (name,address,city,province,postal_code,phone) VALUES ($1,'2 Test St','Ottawa','ON',$2,$3) RETURNING store_id`, "Test To "+unique, "B2B "+unique, "556"+unique)
 	employee := insertID(t, db, `INSERT INTO employees (email,store_id,first_name,last_name,role,password_hash,phone,address,city,province,postal_code) VALUES ($1,$2,'Test','Employee','ADMIN','hash',$3,'1 Test St','Toronto','ON','A1A 1A1') RETURNING employee_id`, unique+"@example.invalid", fromStore, "557"+unique)
@@ -65,7 +76,14 @@ func newInventoryFixture(t *testing.T, db *sql.DB) inventoryFixture {
 	if _, err := db.ExecContext(context.Background(), `INSERT INTO product_suppliers (product_id,supplier_id,supplier_sku,cost_price,is_primary) VALUES ($1,$2,$3,12.50,true)`, product, supplier, "PS"+unique); err != nil {
 		t.Fatal(err)
 	}
-	return inventoryFixture{fromStore, toStore, employee, supplier, product}
+	return inventoryFixture{
+		unique:    unique,
+		fromStore: fromStore,
+		toStore:   toStore,
+		employee:  employee,
+		supplier:  supplier,
+		product:   product,
+	}
 }
 
 func TestTransferRepositoryIntegration(t *testing.T) {
@@ -175,7 +193,7 @@ func TestCycleCountRepositoryIntegration(t *testing.T) {
 	db := integrationDB(t)
 	f := newInventoryFixture(t, db)
 	ctx := context.Background()
-	category := insertID(t, db, `INSERT INTO categories (name) VALUES ('Integration Category') RETURNING category_id`)
+	category := insertID(t, db, `INSERT INTO categories (name) VALUES ($1) RETURNING category_id`, "Integration Category "+f.unique)
 	if _, err := db.ExecContext(ctx, `UPDATE products SET category_id=$1 WHERE product_id=$2`, category, f.product); err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +221,7 @@ func TestCycleCountSummariesIncludeCountedByIntegration(t *testing.T) {
 	db := integrationDB(t)
 	f := newInventoryFixture(t, db)
 	ctx := context.Background()
-	category := insertID(t, db, `INSERT INTO categories (name) VALUES ('Summary Category') RETURNING category_id`)
+	category := insertID(t, db, `INSERT INTO categories (name) VALUES ($1) RETURNING category_id`, "Summary Category "+f.unique)
 	assigned := insertID(t, db, `INSERT INTO cycle_counts (store_id,count_date,category_id,counted_by) VALUES ($1,CURRENT_DATE,$2,$3) RETURNING count_id`, f.fromStore, category, f.employee)
 	unassigned := insertID(t, db, `INSERT INTO cycle_counts (store_id,count_date,category_id) VALUES ($1,CURRENT_DATE,$2) RETURNING count_id`, f.fromStore, category)
 	repo := NewCycleCountRepo(db)

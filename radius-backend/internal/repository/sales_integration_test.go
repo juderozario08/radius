@@ -4,13 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"radius/internal/models"
-	"strconv"
 	"testing"
 )
 
 func newTaxedStore(t *testing.T, db *sql.DB, province string) int {
 	t.Helper()
-	unique := strconv.FormatInt(fixtureSequence.Add(1), 10)
+	unique := uniqueFixtureID()
 	return insertID(t, db, `INSERT INTO stores (name,address,city,province,postal_code,phone) VALUES ($1,'3 Test St','Test City',$2,$3,$4) RETURNING store_id`, "Taxed "+unique, province, "C3C "+unique, "558"+unique)
 }
 

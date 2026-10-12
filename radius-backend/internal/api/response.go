@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"radius/internal/logging"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,12 +16,34 @@ var (
 	ErrValidation = errors.New("validation error")
 )
 
+func requestID(c *gin.Context) string {
+	if c == nil {
+		return ""
+	}
+	if c.Request != nil {
+		if id := logging.RequestID(c.Request.Context()); id != "" {
+			return id
+		}
+	}
+	return c.GetString(logging.RequestIDKey)
+}
+
 func Success(c *gin.Context, status int, value any) { c.JSON(status, value) }
 
-func Error(c *gin.Context, status int, message string) { c.JSON(status, gin.H{"error": message}) }
+func Error(c *gin.Context, status int, message string) {
+	resp := gin.H{"error": message}
+	if id := requestID(c); id != "" {
+		resp["request_id"] = id
+	}
+	c.JSON(status, resp)
+}
 
 func ErrorWithDetails(c *gin.Context, status int, message, details string) {
-	c.JSON(status, gin.H{"error": message, "details": details})
+	resp := gin.H{"error": message, "details": details}
+	if id := requestID(c); id != "" {
+		resp["request_id"] = id
+	}
+	c.JSON(status, resp)
 }
 
 func Message(c *gin.Context, status int, message string) { c.JSON(status, gin.H{"message": message}) }
@@ -40,5 +63,5 @@ func HandleError(c *gin.Context, err error, fallback string) {
 	default:
 		slog.ErrorContext(c.Request.Context(), fallback, "error", err)
 	}
-	c.JSON(status, gin.H{"error": message})
+	Error(c, status, message)
 }

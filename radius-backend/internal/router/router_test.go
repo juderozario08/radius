@@ -123,10 +123,10 @@ func TestNewRouter_StatusPropagation(t *testing.T) {
 		target      string
 		ifNoneMatch string
 		wantStatus  int
-		wantBody    string
+		wantError   string
 	}{
-		{name: "unknown GET", method: http.MethodGet, target: "/api/does-not-exist", wantStatus: http.StatusNotFound, wantBody: `{"error":"Route not found"}`},
-		{name: "unknown POST", method: http.MethodPost, target: "/api/does-not-exist", wantStatus: http.StatusNotFound, wantBody: `{"error":"Route not found"}`},
+		{name: "unknown GET", method: http.MethodGet, target: "/api/does-not-exist", wantStatus: http.StatusNotFound, wantError: "Route not found"},
+		{name: "unknown POST", method: http.MethodPost, target: "/api/does-not-exist", wantStatus: http.StatusNotFound, wantError: "Route not found"},
 		{name: "ETag match returns 304", method: http.MethodGet, target: "/health", ifNoneMatch: etag, wantStatus: http.StatusNotModified},
 	}
 
@@ -143,8 +143,19 @@ func TestNewRouter_StatusPropagation(t *testing.T) {
 			if w.Code != tt.wantStatus {
 				t.Fatalf("status = %d, want %d", w.Code, tt.wantStatus)
 			}
-			if w.Body.String() != tt.wantBody {
-				t.Fatalf("body = %q, want %q", w.Body.String(), tt.wantBody)
+			if tt.wantError != "" {
+				var body map[string]string
+				if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+					t.Fatalf("body is not json: %v (%q)", err, w.Body.String())
+				}
+				if body["error"] != tt.wantError {
+					t.Fatalf("error = %q, want %q", body["error"], tt.wantError)
+				}
+				if body["request_id"] == "" {
+					t.Fatalf("expected non-empty request_id in error body")
+				}
+			} else if w.Body.Len() > 0 {
+				t.Fatalf("expected empty body, got %q", w.Body.String())
 			}
 
 			var record map[string]any

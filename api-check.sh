@@ -1,8 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${1:-${RADIUS_API_URL:-https://radius-2563.onrender.com}}"
+LOCAL_URL="http://localhost:8080"
+PROD_URL="https://radius-2563.onrender.com"
+
+BASE_URL="${1:-${RADIUS_API_URL:-}}"
+if [[ -z "$BASE_URL" ]]; then
+    echo "Which environment do you want to check?"
+    echo "  1) Local       ($LOCAL_URL)"
+    echo "  2) Production  ($PROD_URL)"
+    read -rp "Choice [1/2]: " choice
+    case "$choice" in
+        1) BASE_URL="$LOCAL_URL" ;;
+        2) BASE_URL="$PROD_URL" ;;
+        *) echo "Invalid choice: $choice" >&2; exit 1 ;;
+    esac
+    echo
+fi
 BASE_URL="${BASE_URL%/}"
+case "$BASE_URL" in
+    "$PROD_URL") TARGET="Production" ;;
+    "$LOCAL_URL") TARGET="Local" ;;
+    *) TARGET="Custom" ;;
+esac
 PACE_SECONDS=0.3
 
 for tool in curl python3; do
@@ -91,7 +111,7 @@ detail() {
     fi
 }
 
-echo "Radius production check → $BASE_URL"
+echo "Radius $TARGET check → $BASE_URL"
 echo
 read -rp "Email: " EMAIL
 read -rsp "Password: " PASSWORD
@@ -99,7 +119,11 @@ echo
 [[ -n "$EMAIL" && -n "$PASSWORD" ]] || { echo "Email and password are required." >&2; exit 1; }
 
 echo
-echo "Waking the service (the free Render plan can take up to a minute after idling)..."
+if [[ "$TARGET" == "Production" ]]; then
+    echo "Waking the service (the free Render plan can take up to a minute after idling)..."
+else
+    echo "Checking the service..."
+fi
 request "Health" GET /health
 WAKE_MS="$(tail -1 "$RESULTS" | cut -f3)"
 request "Readiness (DB + Redis)" GET /ready
@@ -189,7 +213,7 @@ if [[ "$ROLE" == "ADMIN" ]]; then
 fi
 
 echo
-python3 - "$RESULTS" "$WAKE_MS" "$WORK_DIR/metrics.json" <<'PY'
+python3 - "$RESULTS" "$WAKE_MS" "$WORK_DIR/metrics.json" "$TARGET" <<'PY'
 import json, os, statistics, sys
 
 rows = [line.rstrip("\n").split("\t") for line in open(sys.argv[1]) if line.strip()]
@@ -234,6 +258,7 @@ if problems:
     for label, code, ms, path, note in (r + [""] * (5 - len(r)) for r in problems):
         print(f"  {code}  {label}  {path}  {note}")
 print()
-print("Verdict:    " + ("✔ Production looks healthy" if fail == 0 else "✖ Production has failures, see above"))
+target = sys.argv[4]
+print("Verdict:    " + (f"✔ {target} looks healthy" if fail == 0 else f"✖ {target} has failures, see above"))
 sys.exit(1 if fail else 0)
 PY
